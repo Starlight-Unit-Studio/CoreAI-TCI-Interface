@@ -156,10 +156,10 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     # Do not launch sd-cli: inspect the exact job the running image service would execute.
     svc._run = lambda job, prompt: None
     job9 = svc.create('a photograph', 'normal', 42, model_id=profiles.QUALITY,
-                      user_license_accepted=True)
+                      user_license_accepted=True, encoder_mode='magic')
     job9['state'] = 'done'
     job4 = svc.create('a drawing', 'normal', 42, model_id=profiles.STANDARD,
-                      user_license_accepted=True)
+                      user_license_accepted=True, encoder_mode='magic')
     nine_args = svc.command(job9, 'a photograph')
     four_args = svc.command(job4, 'a drawing')
     assert nine_args[nine_args.index('--diffusion-model')+1] == '9b.gguf'
@@ -174,6 +174,39 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     assert svc.command(unlicensed, 'baseline')[svc.command(unlicensed, 'baseline').index('--llm') + 1] == 'qwen4.gguf', (
         'other user must never inherit non-commercial Ponpoke encoder approval')
     unlicensed['state'] = 'done'
+    # A licensed account still gets original Qwen in Standard mode.
+    licensed_standard = svc.create('original Qwen', 'normal', 41, model_id=profiles.STANDARD,
+                                   user_license_accepted=True, encoder_mode='standard')
+    standard_cmd = svc.command(licensed_standard, 'original Qwen')
+    assert standard_cmd[standard_cmd.index('--llm') + 1] == 'qwen4.gguf'
+    assert licensed_standard['text_encoder'] == 'original'
+    licensed_standard['state'] = 'done'
+    # A user or worker cannot request Magic without their own receipt.
+    try:
+        svc.create('unlicensed magic', 'normal', 41, model_id=profiles.STANDARD,
+                   user_license_accepted=False, encoder_mode='magic')
+    except ValueError as error:
+        assert str(error) == 'license_accept_required'
+    else:
+        raise AssertionError('Magic without account license was accepted')
+    # An absent Magic encoder must NEVER fall back to the original Qwen.
+    current_magic = svc.ponpoke_paths.pop(profiles.STANDARD)
+    try:
+        svc.create('no Magic installed', 'normal', 41, model_id=profiles.STANDARD,
+                   user_license_accepted=True, encoder_mode='magic')
+    except ValueError as error:
+        assert str(error) == 'pgen_magic_unavailable'
+    else:
+        raise AssertionError('missing Magic silently fell back to Standard')
+    # The admin can trigger verified background preparation without a terminal.
+    with mock.patch.object(worker.threading, 'Thread') as thread:
+        assert svc.prepare_encoder(profiles.STANDARD)
+        thread.assert_called_once()
+        thread.return_value.start.assert_called_once()
+        assert svc.ponpoke_loading
+    svc.ponpoke_loading = False
+    svc.ponpoke_paths[profiles.STANDARD] = current_magic
+    assert not svc.prepare_encoder('untrusted-model'), 'only the two pinned diffusion sizes are valid'
     assert svc.health()['ponpoke'][profiles.STANDARD]['ready']
     assert svc.health()['ponpoke'][profiles.QUALITY]['ready']
     assert job9['model_label'] == 'FLUX.2-klein 9B (Q8_0)'
@@ -195,8 +228,8 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     svc.profile_paths[profiles.QUALITY] = existing_paths
     import inspect
     handler_source = inspect.getsource(worker.make_handler)
-    assert "model_id == PGEN.QUALITY and data.get('user_license_accepted') is not True" in handler_source, (
-        '9B jobs must reject requests lacking the requesting user account consent flag')
+    assert "encoder_mode == 'magic'" in handler_source and "data.get('user_license_accepted') is not True" in handler_source, (
+        'Magic and 9B jobs reject requests without that user's account license')
     try:
         svc.create('bad model', 'normal', 1, model_id='arbitrary')
     except ValueError as error:
@@ -204,4 +237,4 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     else:
         raise AssertionError('arbitrary model accepted')
 
-print('CoreAI pGen: two profiles, immutable 4B, strict 9B pins, real worker path and metadata OK')
+print('CoreAI pGen: Standard/Magic x 4B/9B, no silent fallback, original Qwen and license gates OK')
