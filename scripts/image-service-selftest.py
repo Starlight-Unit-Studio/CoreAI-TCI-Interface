@@ -231,6 +231,10 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-service-') as tmp_name:
                                    'custom:' + custom_uuid, [], 'Mara in an office',
                                    profile_references=['custom:' + uid for uid in extra_uuids])
         five_public = five_mock.public(five_job)
+        # The mock deliberately does not download model weights. Provide
+        # harmless placeholder paths when checking only the -r command shape.
+        five_mock.profile_paths[service_mod.PGEN.STANDARD] = {
+            role: '/mock/' + role for role in ('diffusion_model', 'llm', 'vae')}
         five_command = five_mock.command(five_job, 'Mara in an office')
         check(five_job['reference_count'] == 5 and five_job['limit'] == 675
               and five_public['reference_count'] == 5 and five_public['time_limit_s'] == 675
