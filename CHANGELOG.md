@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.64 - 15.11.2026
+
+- **Vier pGen-Engine-Profile in CORE > Verwalten:** Statt der bisherigen gemeinsamen FLUX.2-4B-/9B-Auswahl stehen pGen Engine Standard (4B), pGen Engine Magic (4B), pGen Engine Standard (9B) und pGen Engine Magic (9B) zur Auswahl. Es bleiben dieselben zwei Diffusionsmodelle; nur die intern verwendeten Text-Encoder unterscheiden sich. Die Encoder erscheinen weder als eigene Optionen noch als technische Downloadnamen im pGen-Menue.
+- **Explizite Encoder-Zuordnung ohne unbemerkten Fallback:** Standard verwendet immer den Original-Qwen3-Encoder, selbst wenn fuer das Konto bereits eine Lizenz bestaetigt ist. Magic verwendet nur den zu 4B oder 9B passenden, verifizierten Ponpoke-Uncensored-Q8_0-Encoder. Ist Magic noch nicht bereit, faellt der Auftrag nicht stillschweigend auf Standard zurueck.
+- **Magic wird im Hintergrund vorbereitet:** Bei der Wahl eines noch nicht bereiten Magic-Profils kann CORE > Verwalten dessen verifizierte Komponente ueber den bestehenden Bilddienst laden. Standard bleibt aktiv, bis Magic wirklich bereit ist; dann kann das gewuenschte Profil automatisch uebernommen werden. Vorhandene 4B-/9B-Gewichte und Lockdateien werden wiederverwendet, kein neues grosses Bildmodell installiert.
+- **Bestehende Rechte bleiben erhalten:** Magic 4B/9B und Standard 9B setzen die individuelle Non-Commercial-Lizenzannahme des anfragenden Kontos voraus. Serverweit verfuegbare Gewichte/Cache oder die Einwilligung eines anderen Nutzers ersetzen diese Freigabe nicht. 9B behält seine Hardwarepruefung und Installationsverwaltung; die globale aktive pGen-Auswahl bleibt explizit serverweit.
+- **Bestandsinstallation ohne Bruch:** Die zuvor gespeicherte rohe 4B- beziehungsweise 9B-Auswahl wird sicher zu Standard 4B beziehungsweise Standard 9B migriert. Die Auswahl selbst beeinflusst keinen vorhandenen Ollama-/TCI-Text-Core.
+- **Regressionen:** PHP-Tests fuer genau vier Profile, alte Auswahlwerte, Hardware und pro Konto getrennte Lizenzen; Python-Tests fuer Original-vs.-Magic-Routing und fehlende Magic-Gewichte; Chat-Routing- und mobile UI-Tests fuer Vorbereitung/Aktivierung und nicht sichtbare Encoder. Live-Wechsel nach Serverupdate noch zu pruefen.
+
+
 ## 0.7.63 - 15.11.2026
 
 - **Referenzbilder im Chat erhalten reale CPU-Rechenzeit:** Der FLUX.2-Bildworker hat bisher alle 512-Pixel-Auftraege nach starren 300 Sekunden abgebrochen. Nach erfolgreichen 4B-/9B-Referenz-Benchmarks vom 15.11.2026 verwendet er fuer Bildauftraege mit Referenzen ein modell- und groessenabhaengiges Zeitbudget pro tatsaechlich aufgeloestem Bild. Ohne Referenzen bleiben die vorhandenen 300 s (512 Pixel) bzw. 720 s (1024 Pixel) unveraendert. Ein frueher fertiggestelltes Bild wird sofort ausgegeben.
