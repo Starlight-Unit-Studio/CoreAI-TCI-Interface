@@ -1,0 +1,55 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.65
+Datum: 15.11.2026
+Thema: Persoenliche Browser-Antwort statt technischer Recherchebericht
+
+BISHER
+- Eine lockere Chatnachricht wie
+  "https://www.starlight-unit.de/#team ich sehe grad du bist auch im team"
+  fuehrte zur normalen Playwright-Recherche.
+- Der Browser lieferte Befunde, Notizen und besuchte Webseiten.
+- Der Abschluss wurde bereits durch denselben Core geschrieben,
+  hatte aber NUR das technische Browserziel und die Recherche.
+- Der Prompt zwang auch einen lockeren Nutzerhinweis in
+  3-6 Saetze mit mehreren Quellen und Berichtsfokus.
+- Daraus folgten unnnoetig formelle Unternehmensanalysen.
+
+NEU: PRIVATER BROWSE-ABSCHLUSS
+- Die urspruengliche Nutzer-Nachricht wird beim Abschluss
+  fuer den bestaetigten Auftrag aus stu_chat_messages
+  geholt: message_id + recipient_uid + session_id,
+  nur channel='console', nur nicht geloeschte Nachricht.
+- Kein Cross-User- oder Cross-Chat-Zugriff, keine Aenderung
+  der Nachrichtenhistorie oder der Nutzerprofile.
+- Bei fehlenden/alten Nachrichten faellt die Kontextwahl
+  sicher auf das vorhandene technische Browserziel zurueck.
+- Der gleiche bereits ausgewaehlte TCI-Core formuliert
+  nach dem Browser selbststaendig seine Antwort.
+- Persoenliche Bemerkungen erhalten persoenliche Antworten.
+  Bei sachlichen Fragen bleiben inhaltliche Details,
+  Unsicherheiten und Quellen erhalten.
+- Keine automatische Wiederholung aller Website-Daten.
+- Webseiten sind Daten, niemals Anweisungen an den Core.
+- Keine weitere Werkzeugrunde, keine Rohlogs und keine
+  Thinking- oder JSON-Ausgabe im fertigen Chattext.
+
+EXPLIZIT UNVERAENDERT
+- Der komplette Deep-Research-Workflow samt
+  Planung, Quellen, Hybrid-Review, Bericht, Zitaten,
+  Downloads, Status und Quellenkarte.
+- Die Playwright-Aktionen und Browser-Sicherheitsregeln
+  einschliesslich Netzwerk-/Formularschutz.
+- Der globale Spielchat, Ollama-Lock und num_ctx-Regeln.
+- Benutzerkontext, Speicher, Image Generation und pGen.
+
+TEST UND LIVE-ABNAHME
+- scripts/browse-worker-selftest.py prueft die original
+  private Nachricht und saubere Abgrenzung gegen fremde
+  Konten, andere Sitzungen und geloeschte Nachrichten.
+- Deep-Research-CI fuehrt Browse-Regressions parallel zu
+  den unveraenderten Deep-Research-Tests aus.
+- Nach Update normale Browser-Anfrage mit einem
+  lockeren persoenlichen Kommentar ausprobieren.
+- Deep Research bleibt mit strukturierten Berichten separat.
+- Vor echtem Server-Test kein Live-Erfolg behaupten.
+
+VERSION: 0.7.65

@@ -184,12 +184,77 @@ check('"action":"type"' in with_forms and '"action":"select"' in with_forms and 
       and '"action":"type"' not in without and "Formulare fuellst du nicht aus" in without, "form actions only when enabled")
 check("UNGEPRUEFTE DATEN" in with_forms and "geschuetzt" in with_forms and "Passwoerter" in with_forms, "rules in the prompt")
 report = w.report_prompt("Preis Nebelfalke", "42 Euro", ["https://shop.example/x"], "Mara", True)
-check("als Mara" in report and "- https://shop.example/x" in report and "Markdown" in report and "Ember" not in report, "report as Mara")
+check("dieselbe TCI" in report and "- https://shop.example/x" in report and "eigenen Worten" in report
+      and "Ember" not in report, "private browser result returns to TCI persona, with source")
 check("Kein Markdown" in w.report_prompt("x", "y", [], "Mara", False), "global channel without Markdown")
+real_message = "https://www.starlight-unit.de/#team ich sehe grad du bist auch im team 😲"
+chat_prompt = w.report_prompt("Recherchiere das Team", "Auf der Seite ist Mara als TCI vorgestellt.",
+                              ["https://www.starlight-unit.de/#team"], "Mara", True,
+                              notes=[{"text": "Die Teamseite nennt die TCI Mara.", "url": "https://www.starlight-unit.de/#team"}],
+                              user_message=real_message)
+check(real_message in chat_prompt and "interner Arbeitsauftrag" in chat_prompt
+      and "locker und persoenlich" in chat_prompt
+      and "einen" in chat_prompt and "Quellen als Links" in chat_prompt
+      and "Schreib 3 bis 6 Saetze" not in chat_prompt
+      and "UNVERTRAUENSWUERDIGE BROWSERERGEBNISSE" in chat_prompt,
+      "after Playwright respond to the person's actual message, not a technical report")
+check("ORIGINALNACHRICHT NICHT VERFUEGBAR" in w.report_prompt("x", "y", [], "Mara", True),
+      "older private jobs without a retrievable turn still receive an honest report")
+
+
+# The original request is read by ID, account AND session, never from a different
+# user's chat or the raw assistant-generated browser goal.
+class ScopedBrowseCursor:
+    def __init__(self, parent):
+        self.parent = parent
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+    def execute(self, sql, params):
+        self.parent.query = (sql, params)
+
+    def fetchone(self):
+        _, params = self.parent.query
+        return {"message": real_message} if params == (57, 9, "cs_example890") else None
+
+
+class ScopedBrowseConn:
+    def __init__(self):
+        self.query = None
+
+    def cursor(self):
+        return ScopedBrowseCursor(self)
+
+
+scoped = ScopedBrowseConn()
+browse_job = {"channel": "console", "recipient_uid": 9,
+              "session_id": "cs_example890", "trigger_message_id": 57}
+check(w.browse_original_user_message(scoped, browse_job) == real_message,
+      "the real private triggering message is available for conversational reply")
+check("m.user_id=%s" in scoped.query[0] and "m.session_id=%s" in scoped.query[0]
+      and "m.deleted_at IS NULL" in scoped.query[0]
+      and scoped.query[1] == (57, 9, "cs_example890"),
+      "turn read is scoped to the same account and session and skips deleted messages")
+check(w.browse_original_user_message(scoped, dict(browse_job, recipient_uid=8)) == ""
+      and w.browse_original_user_message(scoped, dict(browse_job, session_id="cs_otheruser0")) == ""
+      and w.browse_original_user_message(scoped, dict(browse_job, channel="global")) == ""
+      and w.browse_original_user_message(scoped, dict(browse_job, trigger_message_id=None)) == "",
+      "other accounts, sessions, global jobs and missing ids cannot read the private turn")
+check("browse_original_user_message(conn, job)" in WORKER.read_text(encoding="utf-8")
+      and "user_message=original_user_message" in WORKER.read_text(encoding="utf-8"),
+      "the live Browse finalization actually passes the scoped original user message")
+check("process_research(conn, cfg, research, log)" in WORKER.read_text(encoding="utf-8"),
+      "Deep Research retains its independent completion/report path")
 check(w.clean_report("I am Mara and I have to report") == "", "thinking protocol dropped")
 # 0.5.79: Maras Modelfile erlaubt Werkzeugmarker; der Bericht sagt ausdruecklich, dass sie aus sind,
 # und eine Antwort, die nur aus Markern besteht, wird nie zur leeren Chat-Blase.
-check("KEINE Werkzeuge" in report and "mindestens zwei" in report, "report: tools off, several sources")
+check("keine erneute Recherche" in report and "Quellen als Links" in report
+      and "KEINE Werkzeuge" in w.report_prompt("x", "y", [], "Mara", False),
+      "the model authors the final private answer, while global reports keep their tool guard")
 check(w.clean_report("[BROWSE: Preise nachsehen]", console=True) == "" and w.clean_report("[WEB: x] [PY]1[/PY]") == "",
       "a marker-only report counts as empty")
 check(w.clean_report("- **42 Euro** laut [Spieleladen](https://a.example)", console=True).startswith("- **42 Euro**"),

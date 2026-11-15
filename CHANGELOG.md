@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.65 - 15.11.2026
+
+- **Playwright-Browser antwortet wieder als TCI:** Nach einer normalen privaten Browser-Recherche bekommt der bereits vorhandene abschliessende Core-Aufruf nun die **urspruengliche Benutzer-Nachricht** statt ausschliesslich des vom Modell erzeugten technischen Rechercheziels. Die Person kann damit auch eine lockere Beobachtung (etwa einen Teamseiten-Fund) aeussern, ohne eine ungefragte Unternehmensanalyse zu erhalten. Die finale Antwort schreibt weiterhin das ausgewaehlte Core-Modell selbst, in seiner Modelfile-Persona. Kein zweites Modell und kein neuer Text-Fallback fuer den Erfolgsweg.
+- **Antwortstil nach tatsaechlicher Frage:** Der Browser-Abschluss unterscheidet Smalltalk/persoenliche Beobachtungen und sachliche Recherchefragen, ohne feste Berichtsschablone. Begruendete Aussagen nutzen weiterhin die vom Browser gesichteten Quellen, Unsicherheiten werden kenntlich gemacht. Webseiteninhalt bleibt untrusted und darf keine Tool-/Persona-Anweisungen erteilen.
+- **Benutzer- und Sitzungstrennung:** Nur die urspruengliche, noch vorhandene private Nachricht wird ueber `message_id + recipient_uid + session_id` gelesen. Gibt es keine passende Nachricht (alte Jobs, geloescht, kein Zugriff), laeuft die bisherige Befund-Zusammenfassung ohne Zugriff auf fremde Chats. Kein Werkzeug-Rohlog, kein Thinking-Text.
+- **Deep Research bleibt unangetastet:** Browser-Sicherheitsregeln, Live-Frames, Warteschlange, globaler Spielkanal und `process_research` mit Hybrid-Orchestrierung, mehrstufiger Quellenauswertung, Bericht und Quellenkarte sind unveraendert. Nur die normale `process_job`-Abschlussmeldung wird natuerlicher.
+- **Regression:** Der Browser-Selbsttest prueft die tatsaechliche Originalnachricht im Abschluss-Prompt, exakte Benutzersitzungs-Scopes, fremde/deletete Nachrichten und den separaten Deep-Research-Pfad. Die Deep-Research-CI fuehrt den Browser-Selbsttest jetzt auch explizit aus.
+- **Live-Abnahme offen:** Nach Update eine lockere Beobachtung ueber eine konkrete oeffentliche Seite mit dem normalen Browserwerkzeug testen. Deep Research weiterhin mit seinem eigenen Plan und Bericht pruefen. CI verifiziert Verhalten und Sicherheit nur offline.
+
+
 ## 0.7.64 - 15.11.2026
 
 - **Vier pGen-Engine-Profile in CORE > Verwalten:** Statt der bisherigen gemeinsamen FLUX.2-4B-/9B-Auswahl stehen pGen Engine Standard (4B), pGen Engine Magic (4B), pGen Engine Standard (9B) und pGen Engine Magic (9B) zur Auswahl. Es bleiben dieselben zwei Diffusionsmodelle; nur die intern verwendeten Text-Encoder unterscheiden sich. Die Encoder erscheinen weder als eigene Optionen noch als technische Downloadnamen im pGen-Menue.
