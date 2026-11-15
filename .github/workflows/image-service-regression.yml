@@ -5,6 +5,7 @@ on:
     paths:
       - 'tools/image/image_service.py'
       - 'tools/image/pgen_profiles.py'
+      - 'tools/image/ponpoke_encoders.py'
       - 'tools/image/adopt_pgen.py'
       - 'tools/image/adopt_spike.py'
       - 'api/pgen.php'
@@ -14,6 +15,8 @@ on:
       - 'tools/image_spike/models.json'
       - 'compose.yaml'
       - 'api/image_gen.php'
+      - 'api/image_png_metadata.php'
+      - 'scripts/image-gen-selftest.php'
       - 'api/image_png_metadata.php'
       - 'scripts/image-gen-selftest.php'
       - 'api/profile.php'
@@ -61,6 +64,8 @@ on:
       - 'api/image_gen.php'
       - 'api/image_png_metadata.php'
       - 'scripts/image-gen-selftest.php'
+      - 'api/image_png_metadata.php'
+      - 'scripts/image-gen-selftest.php'
       - 'scripts/image-service-selftest.py'
       - 'scripts/vision-management-removal-selftest.py'
       - 'app.html'
@@ -84,7 +89,7 @@ jobs:
           python3 scripts/version-merge-check.py --base-version "$base_version"
       - name: Python syntax and offline image worker
         run: |
-          python3 -m py_compile tools/image/image_service.py tools/image/pgen_profiles.py tools/image/adopt_pgen.py scripts/pgen-selftest.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
+          python3 -m py_compile tools/image/image_service.py tools/image/pgen_profiles.py tools/image/ponpoke_encoders.py tools/image/adopt_pgen.py scripts/pgen-selftest.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
           python3 -I scripts/image-service-selftest.py
           python3 -I scripts/pgen-selftest.py
           python3 -I scripts/generator-core-selftest.py
@@ -110,6 +115,8 @@ jobs:
       - name: PHP, JavaScript, Bash syntax
         run: |
           php -l api/image_gen.php
+          php -l api/image_png_metadata.php
+          php scripts/image-gen-selftest.php
           php -l api/image_png_metadata.php
           php scripts/image-gen-selftest.php
           php -l api/pgen.php
