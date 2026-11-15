@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.60: pGen Core 4B/9B selection and image-worker hardware checks.
+# CoreAI: TCI Interface 0.7.61: pGen Core 4B/9B selection and image-worker hardware checks.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1014,6 +1014,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'P06-Arbeitsereignisse und sichere Python-Fehlerklassen geprueft.'
   else
     fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
+  fi
+  if compose exec -T php php scripts/image-work-diagnostic-selftest.php >/dev/null 2>&1; then
+    ok 'Bildfehlerdiagnose: klassifizierte Ursachen ohne private Workerlogs geprueft.'
+  else
+    fail 'Bildfehlerdiagnose-Selbsttest fehlgeschlagen.'
   fi
   if compose exec -T php php scripts/work-events-persistence-selftest.php >/dev/null 2>&1; then
     ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
