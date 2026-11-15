@@ -149,20 +149,11 @@ def verified(models: Path, profile: str) -> Path | None:
     except (OSError, ValueError, TypeError, KeyError):
         return None
 
-def install(models: Path, profile: str, token: str | None = None) -> Path:
-    if profile not in SOURCES:
-        raise ValueError('invalid_pgen_profile')
-    existing = verified(models, profile)
-    if existing is not None:
-        return existing
-    repo, filename = SOURCES[profile]
-    token = _token() if token is None else token
-    if not token:
-        raise RuntimeError('Hugging Face: HF_TOKEN fehlt oder Modellzugriff nicht freigeschaltet')
-    info = _head(repo, filename, token)
+def _download_verified(models: Path, profile: str, repo: str,
+                       filename: str, info: dict, token: str) -> Path:
     if info['size'] < 1024 * 1024 or info['size'] > 20 * 1024 ** 3:
         raise RuntimeError('Unplausible Groesse des Text-Encoders')
-    target, lock = _paths(models, profile)
+    target, lock = _paths(models, profile, repo, filename)
     if target.is_symlink() or lock.is_symlink():
         raise RuntimeError('Symlink statt Encoder-Datei oder Lock')
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -170,12 +161,12 @@ def install(models: Path, profile: str, token: str | None = None) -> Path:
         raise RuntimeError('Zu wenig freier Speicher fuer Ponpoke-Encoder')
     part = target.with_name(target.name + '.part')
     if part.is_symlink():
-        raise RuntimeError('Unzulassiger Encoder-Downloadpfad')
+        raise RuntimeError('Unzulaessiger Encoder-Downloadpfad')
     have = part.stat().st_size if part.is_file() else 0
     if have > info['size']:
         part.unlink()
         have = 0
-    headers = _headers(token) if info['requires_token'] else _headers('')
+    headers = _headers(token if info['requires_token'] else '')
     if 0 < have < info['size']:
         headers['Range'] = 'bytes=' + str(have) + '-'
     request = urllib.request.Request(info['url'], headers=headers)
@@ -193,6 +184,7 @@ def install(models: Path, profile: str, token: str | None = None) -> Path:
         raise RuntimeError('Ponpoke-Datei unvollstaendig oder SHA-256 ungueltig')
     os.replace(part, target)
     record = {'repo': repo, 'filename': filename, 'license': LICENSE,
+              'upstream_repo': SOURCES[profile][0],
               'revision': info['revision'], 'sha256': info['sha256'],
               'size': info['size']}
     draft = lock.with_name(lock.name + '.part')
@@ -201,3 +193,40 @@ def install(models: Path, profile: str, token: str | None = None) -> Path:
     draft.write_text(json.dumps(record, sort_keys=True) + '\n', encoding='utf-8')
     os.replace(draft, lock)
     return target
+
+
+def install(models: Path, profile: str, token: str | None = None) -> Path:
+    """Try anonymous public Q8_0 first, and gated origin only when needed.
+
+    Verified local installs always win. A private token is never sent to public
+    mirrors, and lower-precision weights are not silently substituted.
+    """
+    if profile not in SOURCES:
+        raise ValueError('invalid_pgen_profile')
+    existing = verified(models, profile)
+    if existing is not None:
+        return existing
+    token = _token() if token is None else token
+    errors = []
+    for repo, filename in _sources(profile):
+        use_token = ''
+        try:
+            info = _head(repo, filename, '')
+        except RuntimeError as anonymous_error:
+            # Only the canonical gated publisher may receive the token.
+            if repo != SOURCES[profile][0] or not token:
+                errors.append(repo + ': ' + str(anonymous_error))
+                continue
+            try:
+                info = _head(repo, filename, token)
+                use_token = token
+            except RuntimeError as gated_error:
+                errors.append(repo + ': ' + str(gated_error))
+                continue
+        try:
+            return _download_verified(models, profile, repo, filename, info, use_token)
+        except (RuntimeError, OSError, urllib.error.URLError) as error:
+            errors.append(repo + ': ' + str(error))
+    if profile == 'flux2-klein-4b' and not token:
+        raise RuntimeError('Ponpoke 4B Q8_0: Originalquelle zugriffsgeschuetzt; kein verifizierter oeffentlicher Q8_0-Spiegel. Standard-Encoder bleibt aktiv.')
+    raise RuntimeError('Ponpoke Q8_0 nicht verfuegbar: ' + '; '.join(errors)[:320])
