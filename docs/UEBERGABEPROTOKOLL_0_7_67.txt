@@ -1,0 +1,45 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.67
+Datum: 15.11.2026
+Basis: main 0.7.66
+Branch: fix/web-search-source-carousel-0767
+
+NUTZERBEFUND
+Das im WEB-Arbeitsweg angezeigte Quellenkarussell sprang alle 1,6 Sekunden
+zu einem anderen Suchtreffer. Rick hielt das zurecht fuer eine irrefuehrende
+Anzeige der Webseite, mit der Mara gerade arbeitet.
+Es handelt sich AUSSCHLIESSLICH um den normalen Websuche/SearXNG-Pfad,
+nicht um Playwright und nicht um Deep Research.
+
+NACHGEWIESENE URSACHE
+js/coreui-work-events.js startResearchTicker() wechselte selbststaendig
+per window.setInterval(...,1600) die Anzeige durch die gespeicherten URLs.
+Das Backend api/chat.php berichtet in diesem Pfad echte Webquelle-gefunden-
+Ereignisse aus SearXNG; alle Treffer/Snippets gelangen gemeinsam zur KI.
+Ein echter aktueller Seitenbesuch wird fuer normale Websuche NICHT gemeldet.
+Daher keine falschen "Seite wird gerade gelesen"-Behauptungen.
+
+UMSETZUNG
+- Autoplay-Timer entfernt. Die kompakte Quelle wechselt nur bei einem
+  tatsaechlich gemeldeten Webquelle-gefunden-Event.
+- Websuchtreffer klar als Suchtreffer statt besuchte Webseite benannt.
+- Aria-/Hover-Beschreibung "Zuletzt gefundener Suchtreffer" zeigt die
+  korrekte Bedeutung an; Besuchsstatus nur mit explizitem Besuchsereignis.
+- Vor dem ersten echten Treffer bleibt die Quellenadresse unsichtbar.
+- Suchende und gespeicherte Arbeitshistorie behalten die angezeigte URL
+  und die Liste stabil; Query/Fragment-Sanitizing bleibt erhalten.
+- Keine Aenderungen an Browser, Deep Research, Work-Queue oder KI-Prompts.
+
+REGRESSION / PRUEFUNG
+- scripts/work-events-ui-selftest.js prueft ohne 1600-ms-Quellenrotation,
+  sofortiges Umschalten nur auf echte Events, korrekte Labels, Nulltreffer,
+  Saved-Replay, Sicherheitsfilter und bestehende Arbeitsnotizen.
+- Scripts in scripts/preflight.sh und scripts/preflight-native.sh aufgerufen.
+- Bestehender CoreAI Sidebar and Project Theme Workflow prueft JS-Test,
+  Syntax und Version / Content-Cache.
+- Nach Merge auf Smartphone pruefen: mehrere Websuche-Treffer abwarten;
+  die aktive URL darf sich OHNE neues Ereignis nicht mehr aendern.
+  Suchtrefferliste bleibt ausklappbar; URLs sind anklickbar.
+- Vor Abschluss Tests/CI ansehen; kein Live-Test auf fremdem Server behaupten.
+
+VERSION 0.7.67
+Nach Merge ist 0.7.68 die naechste Version.

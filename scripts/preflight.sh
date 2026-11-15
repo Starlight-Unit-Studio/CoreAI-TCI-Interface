@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.66: pGen Core 4B/9B selection and image-worker hardware checks.
+# CoreAI: TCI Interface 0.7.67: pGen Core 4B/9B selection and image-worker hardware checks.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -217,6 +217,7 @@ UI_FILES=(
   scripts/tci-language-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
+  scripts/work-events-ui-selftest.js
   scripts/text-selection-ui-selftest.cjs
   scripts/tci-chat-layout-ui-selftest.cjs
   js/console-app.js
@@ -1498,6 +1499,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok 'Chat: Textmarkierung, Kopieren und nativer Rechtsklick sind freigegeben.'
     else
       fail 'Chat: Textauswahl-/Kopierschutz aus dem Game ist noch aktiv.'
+    fi
+    if node "$PROJECT_ROOT/scripts/work-events-ui-selftest.js" >/dev/null 2>&1; then
+      ok 'Websuche: Quellenzeile folgt echten Ereignissen ohne rotierende Schein-Webseiten.'
+    else
+      fail 'Websuche: Quellen-Karussell zeigt falschen Ablauf oder ist kaputt.'
     fi
     if compose exec -T php php /var/www/coreui/scripts/general-controls-selftest.php >/dev/null 2>&1; then
       ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'

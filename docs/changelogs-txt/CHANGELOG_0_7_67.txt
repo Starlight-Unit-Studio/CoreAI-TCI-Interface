@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.67
+15.11.2026
+
+WEB-SUCHTREFFERANZEIGE: QUELLEN NUR AUS TATSAECHLICHEN EREIGNISSEN
+- Der bisherige 1600-ms-Timer, der gefundene URLs ohne neue Werkzeugaktivitaet
+  rotieren liess, wurde aus js/coreui-work-events.js entfernt.
+- Die kompakte Quellenzeile aktualisiert die angezeigte URL nur bei einem
+  echten Webquelle-gefunden-SSE-Ereignis (oder einer bestaetigten Besuchsaktion).
+- SearXNG-Treffer heissen jetzt Suchtreffer und nicht besuchte Webseiten.
+  Der Link heisst barrierefrei "Zuletzt gefundener Suchtreffer".
+- Vor der ersten Rueckmeldung erscheint nur "Suche laeuft ...".
+  Am Suchende wird der Quellenstatus abgeschlossen, ohne URL-Rotation.
+- Die bestehende aufklappbare, sichere Trefferliste bleibt erhalten:
+  URLs ohne Query/Fragment, keine privaten IPs oder unsicheren Protokolle.
+- Der normale Websuche-Werkzeugpfad, Playwright und Deep Research bleiben
+  technisch unveraendert. Kein erfundener Seitenbesuch oder Lesefortschritt.
+- work-events-ui-selftest.js prueft echte SSE-Reihenfolge, fehlende
+  Timerrotation, Mehrfachtreffer, Ende, Wiederherstellung und Nulltreffer.
+- Der Test ist in beiden Preflights und im bestehenden GitHub-UI-Workflow.
+- Versions-/Cache-Marker synchronisiert. Echte Android-Liveabnahme nach Update.

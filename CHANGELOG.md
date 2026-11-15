@@ -1,6 +1,13 @@
 # CoreAI: TCI Interface
 
-## 0.7.66 - 15.11.2026
+## 0.7.67 - 15.11.2026
+
+- **WEB-Quellenanzeige zeigt keine erfundenen Seitenwechsel mehr:** Der 1,6-Sekunden-Timer in `js/coreui-work-events.js` hat bisher die Treffer unabhängig von der tatsächlichen Websuche zyklisch gewechselt. Diese automatische Rotation ist entfernt; die URL ändert sich ausschließlich bei einem neu gemeldeten Quellenereignis.
+- **Suchtreffer sind keine besuchten Webseiten:** Die normale SearXNG-Websuche übergibt Mara gefundene Titel, URLs und Snippets. Die Anzeige heißt nun eindeutig „Suchtreffer“; der aktive Link bezeichnet den *zuletzt gemeldeten Treffer* und nicht eine vermeintlich gerade gelesene Website.
+- **Kompaktes Layout und Quellenhistorie bleiben:** Echte Treffer und ihre sicheren, bereinigten Links erscheinen sofort über den vorhandenen SSE-Pfad. Die Trefferliste ist weiterhin aufklappbar; bei Suchende und beim Wiederladen bleibt die Auswahl stabil. Kein neuer Browser, kein Eingriff in Deep Research.
+- **Regression und Cache:** `scripts/work-events-ui-selftest.js` prüft die Reihenfolge, dass kein 1600-ms-URL-Timer existiert, neue Quellenereignisse, Suchende, gespeicherte Treffer und Nulltreffer. Beide Preflights und der bestehende UI-Workflow führen ihn aus; Browser-Cache-Schlüssel werden synchronisiert. Live-Abnahme auf Android nach Update bleibt erforderlich.
+
+
 
 - **Websuche standardmaessig, Playwright nur nach ausdruecklicher Auswahl:** Im privaten Chat loest nur der Werkzeug-Menueeintrag **Recherche** einen Playwright-Browserjob aus. Normale Texte, Links, Sprach- und Vision-Nachrichten sowie Maras automatische Arbeitsschritte nutzen fuer Internetwissen den bestehenden Web-Suchweg.
 - **Abwehr veralteter Browser-Marker:** Wenn der Core ausserhalb einer erlaubten Recherche noch `[BROWSE: ...]` ausgibt, leitet die Dispatcher-Schranke das Ziel zu `[WEB: ...]` um, sofern Websuche freigegeben ist; ohne Web-Freigabe startet kein Browser. Ebenso wird die automatische WDR-Browserumleitung nur fuer eine explizite Recherche verfuegbar.

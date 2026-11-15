@@ -1,3 +1,15 @@
+COREAI: TCI INTERFACE // NEUER ARBEITSSTAND 15.11.2026
+Basis: main 0.7.66, vorbereiteter PR-Branch fix/web-search-source-carousel-0767.
+DIESER CHAT: normales Websuche-Quellenkarussell zeigt irrefuehrend wechselnde
+URLs. Ursache: 1600-ms-Autoplay in js/coreui-work-events.js. In 0.7.67
+entfernt: Quellenanzeige wechselt nur bei ECHTEM Webquelle-gefunden-Event.
+SearXNG liefert Treffer/Snippets, keine nachgewiesenen Seitenbesuche.
+"Suchtreffer" ist die korrekte Beschriftung. Liste / sichere URLs bleiben.
+Regressionspruefung: scripts/work-events-ui-selftest.js, Preflights und UI-CI.
+Protokoll: docs/UEBERGABEPROTOKOLL_0_7_67.txt.
+Nach Merge folgt 0.7.68; keine Live-Abnahme behaupten.
+--- VORHERIGER ARBEITSSTAND ---
+
 COREAI: TCI INTERFACE // AKTUELLER CHATSTAND 15.11.2026
 Repository-Version nach letztem Merge: main 0.7.65.
 In Arbeit auf PR-Branch: 0.7.66 (fix/web-default-explicit-browser-0766).

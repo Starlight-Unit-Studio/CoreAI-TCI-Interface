@@ -322,15 +322,11 @@
   }
   // A single live source line replaces the tall per-page cards. The detail
   // list remains a user-expandable record, with hits distinct from visited pages.
-  function researchList(options) {
-    options = options || {};
+  function researchList() {
     var list = el('div','work-research');
-    list.setAttribute('aria-label','Webseiten der Recherche');
+    list.setAttribute('aria-label','Suchtreffer und besuchte Webseiten');
     list.hidden = true;
     list._sites = [];
-    list._live = !!options.live;
-    list._ticker = null;
-    list._selectedIndex = -1;
     var line = el('div','work-research-line');
     var label = el('span','work-research-label','');
     label.setAttribute('role','status');
@@ -381,7 +377,10 @@
     var url = researchURL(site.url);
     if (!url) return;
     list._active.href = url.href;
-    list._active.title = String(site.title || url.href).slice(0,180);
+    // A search hit is not a page Mara has actually opened.
+    var description = site.visited ? 'Zuletzt besuchte Webseite' : 'Zuletzt gefundener Suchtreffer';
+    list._active.title = description + ': ' + String(site.title || url.href).slice(0,160);
+    list._active.setAttribute('aria-label',description + ': ' + String(site.title || url.hostname).slice(0,160));
     list._activeInitial.textContent = url.hostname.charAt(0).toUpperCase();
     list._activeUrl.textContent = (url.hostname + url.pathname).slice(0,180);
     list._activeIcon.hidden = false;
@@ -392,20 +391,6 @@
       list._active.className += ' work-research-flip';
     }
     list._currentUrl = url.href;
-  }
-  function startResearchTicker(list) {
-    if (!list._live || list._ticker || typeof window.setInterval !== 'function') return;
-    list._ticker = window.setInterval(function () {
-      if (list.isConnected === false && list._wasConnected) {
-        window.clearInterval(list._ticker); list._ticker = null;
-        return;
-      }
-      if (list.isConnected) list._wasConnected = true;
-      var sites = list._sites || [];
-      if (sites.length < 2) return;
-      list._selectedIndex = (list._selectedIndex + 1) % sites.length;
-      showResearchSite(list,sites[list._selectedIndex]);
-    },1600);
   }
   function researchPage(list, raw, title, label) {
     var url = researchURL(raw);
@@ -439,14 +424,15 @@
     }
     if (visited) current.visited = true;
     current.status.textContent = current.visited ? (visited ? (label || 'Aktuelle Seite') : 'Besucht') : 'Suchtreffer';
-    list._selectedIndex = sites.indexOf(current);
-    list._label.textContent = sites.length + (sites.length === 1 ? ' Quelle gefunden' : ' Quellen gefunden');
+    // Every displayed URL comes from a real source event, not a timer.
+    var visits = sites.filter(function (site) { return site.visited; }).length;
+    list._label.textContent = visits
+      ? visits + (visits === 1 ? ' Webseite besucht' : ' Webseiten besucht')
+      : sites.length + (sites.length === 1 ? ' Suchtreffer' : ' Suchtreffer');
     list._active.hidden = false;
     list._history.hidden = false;
     showResearchSite(list,current);
-    startResearchTicker(list);
     list._count.textContent = String(sites.length);
-    var visits = sites.filter(function (site) { return site.visited; }).length;
     list._summary.textContent = visits
       ? visits + (visits === 1 ? ' Webseite besucht' : ' Webseiten besucht')
       : sites.length + (sites.length === 1 ? ' Suchtreffer' : ' Suchtreffer');
@@ -455,10 +441,6 @@
   }
   function finishResearch(list) {
     if (!list || !list._sites) return;
-    if (list._ticker && typeof window.clearInterval === 'function') {
-      window.clearInterval(list._ticker);
-      list._ticker = null;
-    }
     list._sites.forEach(function (site) {
       if (site.visited) site.status.textContent = 'Besucht';
     });
@@ -466,8 +448,8 @@
     var total = list._sites.length;
     list._label.textContent = total
       ? (visited ? visited + (visited === 1 ? ' Website besucht' : ' Websites besucht')
-          : total + (total === 1 ? ' Quelle gefunden' : ' Quellen gefunden'))
-      : 'Keine Quellen gefunden';
+          : total + (total === 1 ? ' Suchtreffer' : ' Suchtreffer'))
+      : 'Keine Suchtreffer';
     list.hidden = false;
   }
 
@@ -898,13 +880,13 @@
       return pending.id === event.id;
     })) return false;
 
-    // Actual WEB source events bypass the prose typewriter queue. The source
-    // carousel updates on SSE arrival, not at the end of the assistant reply.
+    // WEB URLs update from actual SSE source events, never cosmetic autoplay.
+    // Each URL is a search result unless a separate visit event confirms more.
     if (body._research && event.title === 'Websuche gestartet') {
       researchStart(body._research);
     }
-    if (event.title === 'Websuche beendet' && body._research && !body._research._sites.length) {
-      body._research._label.textContent = 'Keine verwertbaren Treffer';
+    if (event.title === 'Websuche beendet' && body._research) {
+      finishResearch(body._research);
     }
     if (event.title === 'Webquelle gefunden' && event.meta.page_url) {
       if (body._research) researchPage(body._research,event.meta.page_url,
@@ -990,7 +972,7 @@
     var counters = el('span','work-counts');
     if (options.codeOnly) counters.hidden = true;
     var body = el('div','work-body');
-    var research = researchList({live:live});
+    var research = researchList();
     body._research = research;
     body._workLive = live;
     body._workFollow = true;

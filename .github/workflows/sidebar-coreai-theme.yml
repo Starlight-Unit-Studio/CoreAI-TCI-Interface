@@ -7,6 +7,8 @@ on:
       - 'js/console-app.js'
       - 'js/coreui-projects.js'
       - 'js/coreui-sidebar-fold.js'
+      - 'js/coreui-work-events.js'
+      - 'scripts/work-events-ui-selftest.js'
       - 'css/coreui-sidebar-refresh.css'
       - 'css/coreui-project-theme.css'
       - 'css/coreui-softglass.css'
@@ -44,6 +46,9 @@ jobs:
           node --check js/coreui-sidebar-fold.js
           node --check scripts/text-selection-ui-selftest.cjs
           node scripts/text-selection-ui-selftest.cjs
+          node --check js/coreui-work-events.js
+          node --check scripts/work-events-ui-selftest.js
+          node scripts/work-events-ui-selftest.js
           node scripts/sidebar-sections-ui-selftest.cjs
           node scripts/softglass-ui-selftest.cjs
           node scripts/project-ui-selftest.cjs
