@@ -322,8 +322,7 @@
   }
   // A single live source line replaces the tall per-page cards. The detail
   // list remains a user-expandable record, with hits distinct from visited pages.
-  function researchList(options) {
-    options = options || {};
+  function researchList() {
     var list = el('div','work-research');
     list.setAttribute('aria-label','Suchtreffer und besuchte Webseiten');
     list.hidden = true;
@@ -973,7 +972,7 @@
     var counters = el('span','work-counts');
     if (options.codeOnly) counters.hidden = true;
     var body = el('div','work-body');
-    var research = researchList({live:live});
+    var research = researchList();
     body._research = research;
     body._workLive = live;
     body._workFollow = true;
