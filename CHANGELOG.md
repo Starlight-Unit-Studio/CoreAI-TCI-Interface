@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.62 - 15.11.2026
+
+- **9B-Bildtest nach Updates repariert:** `scripts/image-spike.sh` startet den weiterhin stark eingeschraenkten Testcontainer mit der zusaetzlichen Linux-Lesegruppe 33 (`--group-add 33`), damit gemeinsam genutzte, auf 33:33 und 0640 gesetzte 9B-Gewichte nach Hardlink-Uebernahme lesbar bleiben. Keine Docker-Sonderrechte, keine weltweiten Leserechte und kein erneuter Download erforderlich.
+- **Fehlerdiagnose statt Traceback:** Verweigert das Betriebssystem beim SHA-256-Check weiter den Dateizugriff, schreibt `run.py` eine konkrete Zugriffsfehlermeldung in den Testbericht und faehrt mit einem kontrollierten Fehler fort.
+- **Regressionen:** Der Bildtest-Selbsttest prueft die zusaetzliche Gruppe bei allen fetch-/run-Aufrufen, die beibehaltenen Sicherheitsflags und den abgefangenen `PermissionError`. Die 4B-Bildtest-Ergebnisse des Betreibers am 15.11. (inklusive Referenzbild) waren erfolgreich; der 9B-Aufruf wurde vor der Berechnung allein durch die Dateirechte gestoppt.
+- **Nicht Gegenstand dieses Fixes:** Der separate `image_worker_timeout` in Maras Chat ist damit noch nicht erklaert oder behoben. Ein realer 9B-Lauf auf dem Betreiber-Server steht aus.
+
+
 ## 0.7.61 - 15.11.2026
 
 - **A/B-Encoder-Diagnose im Admin Core:** Inhaber können FLUX.2-klein 4B mit gleichem Prompt, Seed und 512×512-Pixeln nacheinander über Qwen3-4B Q8_0 und Ponpoke Uncensored 4B Q8_0 prüfen. Laufzeit, Peak-RAM, Bildphase, Fehlercodes/Exitcodes und PNG-Validierung werden getrennt gezeigt. Nicht installierte Ponpoke-Gewichte und fehlende individuelle Lizenz werden explizit als nicht testbar markiert.
