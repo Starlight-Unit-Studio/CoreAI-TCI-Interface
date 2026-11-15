@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.60
+Datum: 15.11.2026
+Basis: main 0.7.59
+Branch: fix/pgen-public-q8-download-0760
+
+ENTSCHEIDUNG
+CoreAI muss wie die Standard-Bildmodelle ohne individuelle HF-Tokens auf jedem geeigneten Server installieren koennen. Die bisherigen PRs 314/315 waren dafuer nicht ausreichend. Implementierung muss Standard-/NonCommercial-Freigaben, pGen-Routing und Benutzerkonten strikt trennen.
+
+GEPRUEFTER STAND
+Die ursprünglichen Ponpoke-Repositories sind gated. Ein oeffentlich gelistetes 9B Q8_0-Repack ist WANG-CC/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF mit Datei flux2-klein-9b-uncensored-text-encoder-q8_0.gguf; als alternative Quelle ist KM445 gelistet (Live-Dateiliste/Download pruefen). Eine oeffentliche 4B Q8_0 Datei konnte nicht bestaetigt werden; 4B Q4 ist KEIN Q8-Ersatz.
+
+UMSETZUNG
+- tools/image/ponpoke_encoders.py: feste, erlaubte Quellen fuer 9B Q8_0 mit anonymer HF-HEAD-Anfrage vor dem gated Original; kein Token fuer externe Spiegel.
+- Bereits vorhandene verifizierte Ponpoke-Locks bleiben verwendbar, keine neue Downloadpflicht. Neuer SHA-Lock akzeptiert nur die deklarierte konkrete Repo-/Dateikombination, revision, size, sha256.
+- Bei 4B Q8_0 ohne verifizierte oeffentliche Quelle bleibt der bisherige Originaltextencoder aktiv. Authentifizierte Originalquelle kann weiterhin benutzt werden.
+- Image-DiT, VAE, Queue, 4B/9B Auswahl, Benutzerlizenzpruefung und CPU-Betrieb unveraendert.
+- scripts/pgen-selftest.py: anonymer 9B-Fall, 4B-Fallback, alte Locks, unzulaessige Repos.
+
+WICHTIGE GRENZE
+Das oeffentliche 9B-Repack hat weiterhin FLUX Non-Commercial License v2.1. Ein oeffentlicher Dateizugriff bedeutet NICHT automatisch, dass jede Nutzung oder Bereitstellung zulaessig ist; kontobezogene Lizenzannahme bleibt Pflicht. Echte HF-Datenuebertragung und sd-cli-Ausfuehrung koennen GitHub-CI-Tests nicht ersetzen.
+
+NAECHSTER SCHRITT
+Nach Merge auf geeigneter Hardware Update ueber CoreAI UI; pGen Karte kontrollieren. 9B sollte den neuen oeffentlichen Weg zuerst probieren. Fuer 4B Q8_0 bleibt eine geeignete oeffentliche Q8_0-Quelle oder individuell autorisierter Zugriff notwendig.
+Version: 0.7.60
