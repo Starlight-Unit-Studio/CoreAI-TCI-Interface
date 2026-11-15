@@ -6,10 +6,10 @@ require_once dirname(__DIR__) . '/api/console_composer_intent.php';
 require_once dirname(__DIR__) . '/api/console_agent_loop.php';
 
 function ember_extract_browse_marker(string $text): ?string {
-  return preg_match('~\\[BROWSE:\\s*([^\\]]+)\\]~i', $text, $m) ? trim($m[1]) : null;
+  return preg_match('~\[BROWSE:\s*([^\]]+)\]~i', $text, $m) ? trim($m[1]) : null;
 }
 function browser_test(bool $ok, string $message): void {
-  if (!$ok) { fwrite(STDERR, "Browser routing FAIL: {$message}\\n"); exit(1); }
+  if (!$ok) { fwrite(STDERR, "Browser routing FAIL: {$message}\n"); exit(1); }
 }
 $browse = coreui_composer_intent_peek('[[recherche]] Bitte lies die Teamseite');
 $web = coreui_composer_intent_peek('[[websuche]] Bitte lies die Teamseite');
@@ -31,4 +31,4 @@ browser_test(coreui_agent_next_tool($old, ['browse', 'web']) === ['tool'=>'brows
   'explicit browser permitted in agent loop');
 browser_test(coreui_agent_next_tool('[WEB: Test]', ['web']) === ['tool'=>'web', 'input'=>'Test'],
   'regular web query preserved');
-echo "Browser routing: only explicit Recherche uses Playwright; web fallback OK\\n";
+echo "Browser routing: only explicit Recherche uses Playwright; web fallback OK\n";
