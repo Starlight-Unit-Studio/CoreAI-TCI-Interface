@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.61
+Datum: 15.11.2026
+Basis: main 0.7.60
+Branch: fix/work-trail-image-diagnostics-0761
+PR-Status: Diagnose implementiert; Live-Test und Merge noch offen.
+
+ANLASS
+Bei Bildern meldete der Arbeitsweg nur image_failed und hielt den
+echten Bilddienst-Fehlertext zurueck. Betreiber zeigt fehlgeschlagene
+9B- und Standard-4B-Bilder nach den letzten Bildgenerator-PRs.
+
+UMSETZUNG
+- api/image_work_diagnostic.php klassifiziert nur bekannte
+  Bildfehlertexte und gibt keine Rohmeldungen weiter.
+- api/chat.php merkt sich letzte bestaetigte Bildphase und schreibt
+  klassifizierte Ereignisse; zuvor wurde nur error=image_failed gespeichert.
+- api/image_gen.php uebergibt modellbezogene, begrenzte Jobinformationen
+  als Arbeitsereignisse. api/console_work_store.php whitelisted diese.
+- js/coreui-work-events.js nennt klare Ursachen bei Bildfehlern;
+  generische Werkzeugfehler bleiben ebenfalls aussagekraeftiger.
+- Offline-Selbsttests und Docker-/Native-Preflight erweitert.
+
+REGRESSION: UNGEKLAERT
+- Besonders relevante Aenderungen der letzten PRs:
+  0.7.58 aktiviert bei Kontolizenz optional Ponpoke-Encoder auch fuer 4B.
+  0.7.56/0.7.58 starten Hintergrundinstallation von 9B/Encoder.
+- Weder Encoderfehler noch Ressourcenproblem ist ohne Serverlogs
+  bewiesen. Keine Gewichtsaenderung oder ungepruefter Fallback.
+- Nach Freigabe Liveversuch mit 4B (512 Pixel) und 9B, danach
+  Arbeitsereignis-Grund, Exitcode, letzte Bildphase und Bildcontainer-
+  Logs vergleichen. Bei sd-cli Exit 137 Speichergrenzen/OOM pruefen.
+  Beim Exit != 0 zudem Worker-Prozesslog auf Modell-Kompatibilitaet
+  untersuchen. Keine Token oder Rohprompts veroeffentlichen.
+- VERSION 0.7.61 ist nur fuer diesen PR vorgesehen.
+- Vor Merge: PHP-Lint fuer alle geaenderten PHP-Dateien, Node- und
+  PHP-Selbsttests, version-merge-check.py --base-version 0.7.60.
+- Nicht mergen, wenn Tests nicht nachweislich erfolgreich sind.
+
+NAECHSTE VERSION
+Nach Merge von 0.7.61 ist 0.7.62 erforderlich.
