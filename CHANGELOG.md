@@ -8,6 +8,9 @@
 - **Ausdrueckliche Recherche bleibt funktionsfaehig:** Das bestehende Browserfenster, URL-/SSRF-Schutz, Formulare, Quellen und der persoenliche Antwortstil aus 0.7.65 bleiben fuer die explizite Auswahl erhalten. Die separate Deep-Research-Orchestrierung und ihr Bericht-/Quellenpfad bleiben unveraendert.
 - **Regression:** Neuer `scripts/browser-routing-selftest.php` fuer die Freigabe, Marker-Umleitung und die zweite Agentenschleife; Aufnahme in beide Preflights. Echte Serverabnahme nach Merge weiterhin erforderlich.
 
+- **Kopier- und Markiersperre aus dem Game entfernt:** CoreAI hatte in `css/console.css` global `user-select: none` und `-webkit-user-select: none` auf dem `body`. Diese unpassende globale Regel ist entfernt. Normales Textmarkieren, Kopieren und das native Kontextmenue/Long-Press sind wieder moeglich; die gesonderte Gestensteuerung von Pet-Dock und Bildeditor bleibt bestehen.
+- **Cache und Regression:** Der SHA-256-basierte CSS-Cache-Schluessel in `app.html` ist aktualisiert. Neuer `scripts/text-selection-ui-selftest.cjs` prueft fehlende globale Kopier-/Kontextmenu-Sperren; beide Preflights und der vorhandene CoreAI-UI-Workflow pruefen den Test. Live-Abnahme auf Android und Desktop bleibt nach Merge erforderlich.
+
 ## 0.7.65 - 15.11.2026
 
 - **Playwright-Browser antwortet wieder als TCI:** Nach einer normalen privaten Browser-Recherche bekommt der bereits vorhandene abschliessende Core-Aufruf nun die **urspruengliche Benutzer-Nachricht** statt ausschliesslich des vom Modell erzeugten technischen Rechercheziels. Die Person kann damit auch eine lockere Beobachtung (etwa einen Teamseiten-Fund) aeussern, ohne eine ungefragte Unternehmensanalyse zu erhalten. Die finale Antwort schreibt weiterhin das ausgewaehlte Core-Modell selbst, in seiner Modelfile-Persona. Kein zweites Modell und kein neuer Text-Fallback fuer den Erfolgsweg.
