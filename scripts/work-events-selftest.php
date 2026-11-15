@@ -70,6 +70,7 @@ $imageDiag = coreui_work_safe_meta([
   'source'=>'image', 'reason'=>'image_worker_exit', 'exit_code'=>137,
   'model'=>'flux2-klein-9b', 'image_phase'=>'sampling', 'image_encoder'=>'ponpoke-uncensored-q8_0',
   'step'=>2, 'steps'=>4, 'image_px'=>1024, 'reference_count'=>3,
+  'time_limit_s'=>1010, 'elapsed_s'=>875, 'peak_rss_mb'=>17058,
   'raw_log'=>'Authorization: Bearer SECRET', 'prompt'=>'PRIVATE IMAGE PROMPT',
 ]);
 check_work(($imageDiag['reason'] ?? '') === 'image_worker_exit'
@@ -77,6 +78,9 @@ check_work(($imageDiag['reason'] ?? '') === 'image_worker_exit'
   && ($imageDiag['image_phase'] ?? '') === 'sampling'
   && ($imageDiag['image_encoder'] ?? '') === 'ponpoke-uncensored-q8_0'
   && ($imageDiag['reference_count'] ?? 0) === 3
+  && ($imageDiag['time_limit_s'] ?? 0) === 1010
+  && ($imageDiag['elapsed_s'] ?? 0) === 875
+  && ($imageDiag['peak_rss_mb'] ?? 0) === 17058
   && ($imageDiag['model'] ?? '') === 'flux2-klein-9b',
   'confirmed image model, phase and classified error are retained');
 check_work(!isset($imageDiag['raw_log']) && !isset($imageDiag['prompt'])
