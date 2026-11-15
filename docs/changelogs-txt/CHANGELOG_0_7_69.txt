@@ -1,0 +1,52 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.69
+Datum: 15.11.2026
+
+PROJEKTDATEIEN (ROADMAP P09, ERSTER SCHRITT)
+- Jedes Chat-Projekt behaelt jetzt seine Dateien. Textdateien, die Mara in
+  einem Projekt-Chat baut (lose Dateien und Textdateien im ZIP), landen
+  automatisch im Projekt. Bilder und andere Binaerdateien bleiben am Chat;
+  eine abgebrochene Ausgabe wird nicht uebernommen.
+- Neuer Tab "Dateien" auf der Projektseite: Dateibaum mit Ordnern, Suche in
+  Namen und Inhalt (mit Zeilennummern), Texteditor mit Zeilennummern und
+  Strg+S, Verlauf je Datei mit zeilenweisem Vergleich und Wiederherstellen,
+  neue Datei, umbenennen, loeschen, einzelne Datei herunterladen und den
+  aktuellen Stand als ZIP.
+- Nichts geht still verloren: Jeder gespeicherte Stand bleibt als Revision
+  (die letzten 20 je Datei). Hat ein Bau die Datei geaendert, waehrend sie
+  im Editor offen war, stoppt das Speichern mit einer klaren Meldung; die
+  Aenderung bleibt im Editor und kann ueber den neuen Stand gespeichert oder
+  verworfen werden. Ungespeicherte Aenderungen ueberstehen einen Tabwechsel
+  und gehen nur nach einer Rueckfrage verloren.
+- Grenzen: nur Textdateien (UTF-8, uebliche Code- und Textformate), 512 KB
+  je Datei, 200 Dateien und 10 MB je Projekt. Projektdateien samt Verlauf
+  zaehlen zum Speicher des Kontos (Einstellungen > Speicher, Admin Core).
+  Ein geloeschtes Projekt nimmt seine Dateien mit, die Chats bleiben.
+- Sicherheit: Zugriff nur fuer das angemeldete Konto und das Projekt,
+  Schreiben nur mit CSRF-Token, Pfade relativ und geprueft (kein "..",
+  hoechstens acht Ebenen). Dateien gehen nur als Text-Download heraus, der
+  Server zeigt nie HTML an.
+
+KORREKTUR: PROJEKTQUELLEN VON NGINX GESPERRT
+- api/console_project_sources.php (Tab "Quellen") fehlte in der PHP-Freigabe
+  beider nginx-Vorlagen und antwortete auf installierten Servern mit 404.
+  Jetzt freigegeben, zusammen mit dem neuen api/project_files.php.
+- Neuer Test scripts/api-allowlist-selftest.cjs vergleicht jeden Endpunkt,
+  den die Oberflaeche aufruft, mit beiden Freigabelisten.
+
+DATENBANK
+- Migration 044_project_files (Dateien und Revisionen), laeuft mit dem
+  normalen Update.
+
+README
+- Leicht gekuerzt, damit sie unter der 24-KB-Grenze bleibt (das Banner hatte
+  sie darueber geschoben); kein Inhalt entfernt, eine Zeile zu Projekten
+  ergaenzt.
+
+TESTS
+- scripts/project-files-selftest.php (SQLite, mit COREUI_SELFTEST_DB=1 auch
+  MariaDB), scripts/project-files-ui-selftest.cjs (Playwright),
+  scripts/api-allowlist-selftest.cjs; alle in beiden Preflights.
+
+NICHT GETESTET
+- Ein echter Bau in einem Projekt-Chat auf dem Server (Python-Worker,
+  Migration 044 auf der Live-Datenbank).

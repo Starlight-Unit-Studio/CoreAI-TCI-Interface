@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.68: pGen Core 4B/9B selection and image-worker hardware checks.
+# CoreAI: TCI Interface 0.7.69: project files (P09) and the nginx allowlist for every endpoint the interface calls.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -198,6 +198,14 @@ UI_FILES=(
   scripts/settings-theme-ui-selftest.cjs
   scripts/terran-terminology-selftest.cjs
   scripts/tci-language-selftest.cjs
+  database/migrations/044_project_files.sql
+  api/project_files.php
+  api/project_files_store.php
+  js/coreui-project-files.js
+  css/coreui-project-files.css
+  scripts/project-files-selftest.php
+  scripts/project-files-ui-selftest.cjs
+  scripts/api-allowlist-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1188,6 +1196,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Deep-Research-Selbsttest: ${deep_research_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.69 (P09): project files: paths, revisions, conflicts, search, ZIP, builds in project chats, limits.
+  project_files_test=''
+  if project_files_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-files-selftest.php" 2>&1)"; then
+    ok "$project_files_test"
+  else
+    fail "Projektdateien-Selbsttest: ${project_files_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1287,6 +1303,12 @@ if command -v php >/dev/null 2>&1; then
       ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
+    fi
+    # 0.7.69: every endpoint the interface calls is allowed by both nginx templates.
+    if node "$PROJECT_ROOT/scripts/api-allowlist-selftest.cjs" >/dev/null 2>&1; then
+      ok 'API-Freigabe: alle Endpunkte der Oberflaeche in beiden nginx-Vorlagen erlaubt.'
+    else
+      fail 'API-Freigabe: die Oberflaeche ruft einen Endpunkt, den nginx ablehnt.'
     fi
     if node "$PROJECT_ROOT/scripts/tci-chat-message-selftest.cjs" >/dev/null 2>&1; then
       ok 'TCI CORE: Chat-Kopf, breite Antwortspalte und Bildabschluss-Reihenfolge geprueft.'
@@ -1564,6 +1586,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Deep Research: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.69 (P09): the tab Dateien on the project page; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/project-files-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Projektdateien: Baum, Editor, Verlauf, Vergleich und Konflikt im Browser geprueft.'
+      else
+        fail 'Projektdateien: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Projektdateien: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

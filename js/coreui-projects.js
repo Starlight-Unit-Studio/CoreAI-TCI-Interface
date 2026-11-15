@@ -413,6 +413,10 @@
   }
   function openProject(id) {
     if(!projects.some(function(p){return p.id===id;}))return;
+    // Unsaved edits of another project are only dropped after a confirmation;
+    // the same project keeps them (back in the Dateien tab they are still there).
+    var files=filesTab(),dirtyIn=files?files.dirtyProject():'';
+    if(dirtyIn&&dirtyIn!==id){if(!files.leave())return;files.reset();}
     // The native composer is the only composer. Never send a project prompt
     // into whichever unrelated session happened to be active before opening.
     var app=chatApp();
@@ -438,15 +442,23 @@
     renderSidebar();
     try {if(new URLSearchParams(location.search).has('project'))history.replaceState(null,'',location.pathname);}catch(e){}
   }
+  function filesTab() {return window.CoreAIProjectFiles||null;}
   function setTab(next) {
+    // 0.7.69 (P09): the Dateien tab keeps an unsaved draft while other tabs are shown.
     tab=next;
     $('projectChatsPanel').hidden=next!=='chats';
     $('projectSourcesPanel').hidden=next!=='sources';
+    $('projectFilesPanel').hidden=next!=='files';
     $('projectTabChats').classList.toggle('active',next==='chats');
     $('projectTabSources').classList.toggle('active',next==='sources');
+    $('projectTabFiles').classList.toggle('active',next==='files');
     $('projectTabChats').setAttribute('aria-selected',next==='chats');
     $('projectTabSources').setAttribute('aria-selected',next==='sources');
-    if(next==='sources')loadSources();else renderChats();
+    $('projectTabFiles').setAttribute('aria-selected',next==='files');
+    if(next==='sources')loadSources();
+    else if(next==='files'){if(filesTab())filesTab().open(current);}
+    else renderChats();
+    return true;
   }
   function projectActions(p) {
     return [
@@ -557,6 +569,7 @@
   // its items are handled by the shared body-level project menu instead.
   $('projectTabChats').addEventListener('click',function(){setTab('chats');});
   $('projectTabSources').addEventListener('click',function(){setTab('sources');});
+  $('projectTabFiles').addEventListener('click',function(){setTab('files');});
   // Attachments and tools belong to the single native CoreAI composer.
   $('projectSourceSort').addEventListener('change',renderSources);
   $('projectSourceFilter').addEventListener('change',renderSources);

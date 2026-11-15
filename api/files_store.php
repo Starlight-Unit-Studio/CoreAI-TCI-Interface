@@ -15,6 +15,8 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/user_policy.php';
+// 0.7.69: project files count toward the account's storage.
+require_once __DIR__ . '/project_files_store.php';
 
 const COREUI_FILES_MIB = 1048576;
 const COREUI_FILES_PAGE = 60;
@@ -106,6 +108,12 @@ function coreui_files_usage(PDO $pdo, int $uid): array {
     $out['files']['count'] += (int)$row['n'];
     $out['files']['bytes'] += (int)$row['bytes'];
   }
+  // 0.7.69 (P09): project files with every kept revision count as files.
+  if (function_exists('coreui_pfiles_usage')) {
+    $project = coreui_pfiles_usage($pdo, $uid);
+    $out['files']['count'] += $project['count'];
+    $out['files']['bytes'] += $project['bytes'];
+  }
   $out['used'] = $out['images']['bytes'] + $out['files']['bytes'];
   return $out;
 }
@@ -118,6 +126,11 @@ function coreui_files_usage_all(PDO $pdo): array {
   }
   if (coreui_files_artifacts_ready($pdo)) {
     foreach ($pdo->query('SELECT user_id, COALESCE(SUM(file_size), 0) AS bytes FROM stu_console_artifacts GROUP BY user_id') ?: [] as $row) {
+      $out[(string)$row['user_id']] = ($out[(string)$row['user_id']] ?? 0) + (int)$row['bytes'];
+    }
+  }
+  if (function_exists('coreui_pfiles_schema_ready') && coreui_pfiles_schema_ready($pdo)) {
+    foreach ($pdo->query('SELECT user_id, COALESCE(SUM(size_bytes), 0) AS bytes FROM stu_console_project_file_revisions GROUP BY user_id') ?: [] as $row) {
       $out[(string)$row['user_id']] = ($out[(string)$row['user_id']] ?? 0) + (int)$row['bytes'];
     }
   }
