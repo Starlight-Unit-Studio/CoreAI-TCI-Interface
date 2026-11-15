@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.62
+Datum: 15.11.2026
+
+9B-BILDTEST: DATEIRECHTE NACH HARDLINK-UEBERNAHME
+- Fehler: Bildtest/Benchmark erzeugt 4B-Bilder erfolgreich,
+  bricht aber beim SHA-256-Einlesen von
+  /models/leejet__FLUX.2-klein-9B-GGUF/flux-2-klein-9b-Q8_0.gguf
+  mit PermissionError (Errno 13) ab.
+- Ursache im Quellcode: Installer uebernimmt Bildgewichte mit
+  Hardlinks, chown auf UID/GID 33 und chmod 0640 aendert dabei
+  auch die Dateirechte des urspruenglichen Benchmark-Inodes.
+  Der Bildtest startet als Root mit --cap-drop ALL und hatte keine
+  zusaetzliche Gruppenzugehoerigkeit 33; root ohne DAC_OVERRIDE
+  kann somit die unveraenderten Gewichte nicht lesen.
+- Reparatur: image-spike.sh nutzt --group-add 33 fuer die
+  isolierten Docker-Aufrufe. --cap-drop ALL, --read-only,
+  no-new-privileges, --network none im Bildlauf und die
+  lokalen Lizenzbedingungen bleiben unveraendert.
+- Kein chmod 777, keine root-privilegierte Ausnahme, keine
+  Aenderung an Gewichten, Repository-Locks oder globalen
+  Benutzereinstellungen. Kein --refetch erforderlich.
+- run.py behandelt PermissionError bei der SHA-256-Pruefung
+  als klares Fehlerergebnis im Testbericht statt Python-Traceback.
+- Selbsttest erweitert: gruppierter Docker-Trockenlauf,
+  unveraenderte Security-Flags und simulierter PermissionError.
+
+BETREIBERBEFUND
+- Bildtest 20261115-140513: 4B 512 p1-p3 63-67 s,
+  4B 512 mit Referenzbild 112,9 s, 4B 1024 217,8 s,
+  anschliessend 9B-Rechtefehler vor der Inferenz.
+- Eigenstaendiger Chat-Fehler image_worker_timeout nach 300 s
+  beim Sampling wird mit diesem Fix NICHT behoben.
+
+VALIDIERUNG
+- Offline-Selbsttests und Version-Guard vor Merge ausfuehren.
+- Echte 9B-Inferenz samt Berechtigung nach Live-Update
+  auf Betreiber-Server pruefen.
+
+VERSION: 0.7.62
