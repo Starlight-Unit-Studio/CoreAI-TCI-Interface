@@ -69,6 +69,7 @@ def _load(name: str, path: Path):
 SPIKE = _load('coreai_image_spike_run', ROOT / 'tools' / 'image_spike' / 'run.py')
 MARA_REFS = _load('coreai_mara_references', HERE / 'mara_references.py')
 PGEN = _load('coreai_pgen_profiles', HERE / 'pgen_profiles.py')
+PONPOKE = _load('coreai_ponpoke_encoders', HERE / 'ponpoke_encoders.py')
 if os.environ.get('COREAI_IMAGE_HF'):
     SPIKE.HF = os.environ['COREAI_IMAGE_HF'].rstrip('/')
 
@@ -240,6 +241,9 @@ class Service:
         self.pgen_loading = False
         self.pgen_error = ''
         self.pgen_installing = False
+        self.ponpoke_paths: dict[str, str] = {}
+        self.ponpoke_loading = False
+        self.ponpoke_error = ''
 
     # Weights ---------------------------------------------------------------
     def _verified(self) -> dict:
@@ -327,6 +331,7 @@ class Service:
             self.profile_paths[PGEN.STANDARD] = self.paths
             self.ready = True
             log('bereit: ' + self.reg['model']['label'])
+            threading.Thread(target=self._prepare_ponpoke, daemon=True).start()
             # Reuse tested pGen 9B files if the installer already adopted them.
             if self.pgen_lock.is_file() and not self.pgen_lock.is_symlink():
                 self._prepare_quality()
@@ -340,6 +345,22 @@ class Service:
             log('nicht bereit: ' + self.error)
         finally:
             self.loading = False
+
+    def _prepare_ponpoke(self) -> None:
+        self.ponpoke_loading = True
+        self.ponpoke_error = ''
+        try:
+            for model in (PGEN.STANDARD, PGEN.QUALITY):
+                try:
+                    path = PONPOKE.install(self.models, model)
+                    with self.state_lock:
+                        self.ponpoke_paths[model] = str(path)
+                    log('Ponpoke Uncensored Text-Encoder verifiziert: ' + model)
+                except Exception as error:
+                    self.ponpoke_error += ('; ' if self.ponpoke_error else '') + model + ': ' + str(error)[:150]
+                    log('Ponpoke ' + model + ': ' + str(error)[:150])
+        finally:
+            self.ponpoke_loading = False
 
     # pGen Quality: opt-in 9B with the same pinned-download and SHA-256 rules.
     def _prepare_quality(self) -> None:
@@ -465,7 +486,8 @@ class Service:
 
     def create(self, prompt: str, size_key: str, seed: int | None, reference: str | None = None,
                references: list[str] | None = None, scene_hint: str | None = None,
-               model_id: str = PGEN.STANDARD, profile_references: list[str] | None = None) -> dict:
+               model_id: str = PGEN.STANDARD, profile_references: list[str] | None = None,
+               user_license_accepted: bool = False) -> dict:
         if model_id not in self.profile_paths or model_id not in self.profiles:
             raise ValueError('pgen_unavailable')
         profile = self.profiles[model_id]
@@ -513,6 +535,8 @@ class Service:
             job_id = secrets.token_hex(16)
             job = {'id': job_id, 'state': 'queued', 'phase': 'load', 'step': 0, 'steps': int(profile['model']['steps']), 'model': model_id,
                    'model_label': profile['model']['label'],
+                   'llm_override': self.ponpoke_paths.get(model_id) if user_license_accepted is True else None,
+                   'text_encoder': 'ponpoke-uncensored-q8_0' if user_license_accepted is True and model_id in self.ponpoke_paths else 'original',
                    'error': '', 'size': size_key, 'width': size['width'], 'height': size['height'],
                    'seed': seed if seed is not None else secrets.randbelow(2 ** 31 - 1),
                    'seconds': None, 'peak_rss_mb': None, 'started': time.monotonic(), 'finished': None,
@@ -528,7 +552,9 @@ class Service:
     def command(self, job: dict, prompt: str) -> list[str]:
         profile = self.profiles[job.get('model', PGEN.STANDARD)]
         model = profile['model']
-        paths = self.profile_paths.get(job.get('model', PGEN.STANDARD), self.paths)
+        paths = dict(self.profile_paths.get(job.get('model', PGEN.STANDARD), self.paths))
+        if job.get('llm_override'):
+            paths['llm'] = job['llm_override']
         ref_paths = job.get('reference_paths')
         if ref_paths is None:
             ref_paths = [job['reference_path']] if job.get('reference_path') else []
@@ -630,7 +656,7 @@ class Service:
             return job
 
     def public(self, job: dict) -> dict:
-        keys = ('id', 'state', 'phase', 'step', 'steps', 'model', 'model_label', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
+        keys = ('id', 'state', 'phase', 'step', 'steps', 'model', 'model_label', 'text_encoder', 'error', 'size', 'width', 'height', 'seed', 'seconds', 'peak_rss_mb', 'preview', 'reference_count', 'curated_mara_count')
         return {key: job[key] for key in keys}
 
     def health(self) -> dict:
@@ -638,6 +664,9 @@ class Service:
         return {'ok': True, 'ready': self.ready, 'loading': self.loading, 'error': self.error, 'busy': self.busy(),
                 'model': model.get('label', ''), 'license': model.get('license', ''), 'threads': self.threads,
                 'preview': self.preview,
+                'ponpoke': {'loading': self.ponpoke_loading, 'error': self.ponpoke_error,
+                            PGEN.STANDARD: {'ready': PGEN.STANDARD in self.ponpoke_paths},
+                            PGEN.QUALITY: {'ready': PGEN.QUALITY in self.ponpoke_paths}},
                 'sizes': {key: {'width': s['width'], 'height': s['height']} for key, s in (self.reg.get('sizes') or {}).items()},
                 'weights': self.weights_progress(),
                 'pgen': {
@@ -655,7 +684,7 @@ class Service:
             return
         paths = [HERE / 'image_service.py', HERE / 'mara_references.py', ROOT / 'tools' / 'image_spike' / 'run.py',
                  ROOT / 'config' / 'image' / 'mara-references.json', REGISTRY,
-                 HERE / 'pgen_profiles.py']
+                 HERE / 'pgen_profiles.py', HERE / 'ponpoke_encoders.py']
 
         def stamp() -> list[int]:
             out = []
@@ -802,7 +831,8 @@ def make_handler(service: Service):
                 return self._json(503, {'ok': False, 'error': 'image_loading' if service.loading else 'image_unavailable',
                                         'detail': service.error})
             try:
-                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint, model_id, profile_references)
+                job = service.create(prompt.strip(), size, seed, reference, references, scene_hint, model_id, profile_references,
+                                     data.get('user_license_accepted') is True)
             except BlockingIOError:
                 return self._json(503, {'ok': False, 'error': 'image_busy'})
             except MemoryError as error:
