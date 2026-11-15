@@ -9,7 +9,7 @@ function ember_extract_browse_marker(string $text): ?string {
   return preg_match('~\[BROWSE:\s*([^\]]+)\]~i', $text, $m) ? trim($m[1]) : null;
 }
 function ember_extract_web_marker(string $text): ?string {
-  return preg_match('~\\[WEB:\\s*([^\\]]+)\\]~i', $text, $m) ? trim($m[1]) : null;
+  return preg_match('~\[WEB:\s*([^\]]+)\]~i', $text, $m) ? trim($m[1]) : null;
 }
 function browser_test(bool $ok, string $message): void {
   if (!$ok) { fwrite(STDERR, "Browser routing FAIL: {$message}\n"); exit(1); }
