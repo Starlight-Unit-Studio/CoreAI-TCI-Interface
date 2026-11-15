@@ -456,6 +456,7 @@ img_gen_test($magic9['error'] === 'image_busy'
   && $GLOBALS['img_calls'][1][2]['model'] === COREUI_PGEN_QUALITY
   && $GLOBALS['img_calls'][1][2]['mode'] === 'magic',
   'Magic 9B uses same base model and different internal encoder mode');
+$pdo->exec('DELETE FROM stu_coreui_pgen_user_licenses WHERE user_id=5');
 $phpWriteProfile(COREUI_PGEN_4B_STANDARD);
 
 // Busy service: the lease is given back.
