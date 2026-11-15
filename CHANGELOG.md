@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.66 - 15.11.2026
+
+- **Websuche standardmaessig, Playwright nur nach ausdruecklicher Auswahl:** Im privaten Chat loest nur der Werkzeug-Menueeintrag **Recherche** einen Playwright-Browserjob aus. Normale Texte, Links, Sprach- und Vision-Nachrichten sowie Maras automatische Arbeitsschritte nutzen fuer Internetwissen den bestehenden Web-Suchweg.
+- **Abwehr veralteter Browser-Marker:** Wenn der Core ausserhalb einer erlaubten Recherche noch `[BROWSE: ...]` ausgibt, leitet die Dispatcher-Schranke das Ziel zu `[WEB: ...]` um, sofern Websuche freigegeben ist; ohne Web-Freigabe startet kein Browser. Ebenso wird die automatische WDR-Browserumleitung nur fuer eine explizite Recherche verfuegbar.
+- **Keine autonomen Playwright-Newsjobs:** Interessante Funde der selbststaendigen Newsreaktion werden auf Grundlage der bereits geladenen Websuche besprochen statt an den Browser-Worker uebergeben.
+- **Ausdrueckliche Recherche bleibt funktionsfaehig:** Das bestehende Browserfenster, URL-/SSRF-Schutz, Formulare, Quellen und der persoenliche Antwortstil aus 0.7.65 bleiben fuer die explizite Auswahl erhalten. Die separate Deep-Research-Orchestrierung und ihr Bericht-/Quellenpfad bleiben unveraendert.
+- **Regression:** Neuer `scripts/browser-routing-selftest.php` fuer die Freigabe, Marker-Umleitung und die zweite Agentenschleife; Aufnahme in beide Preflights. Echte Serverabnahme nach Merge weiterhin erforderlich.
+
 ## 0.7.65 - 15.11.2026
 
 - **Playwright-Browser antwortet wieder als TCI:** Nach einer normalen privaten Browser-Recherche bekommt der bereits vorhandene abschliessende Core-Aufruf nun die **urspruengliche Benutzer-Nachricht** statt ausschliesslich des vom Modell erzeugten technischen Rechercheziels. Die Person kann damit auch eine lockere Beobachtung (etwa einen Teamseiten-Fund) aeussern, ohne eine ungefragte Unternehmensanalyse zu erhalten. Die finale Antwort schreibt weiterhin das ausgewaehlte Core-Modell selbst, in seiner Modelfile-Persona. Kein zweites Modell und kein neuer Text-Fallback fuer den Erfolgsweg.
