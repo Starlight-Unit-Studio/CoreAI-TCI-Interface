@@ -305,6 +305,7 @@ COREUI_INSTALL_VOICE=$INSTALL_VOICE
 COREUI_INSTALL_IMAGE=$INSTALL_IMAGE
 COREUI_SEARXNG_URL=$SEARXNG_URL
 COREUI_SEARXNG_SECRET=$SEARXNG_SECRET
+HF_TOKEN=$IMAGE_HF_TOKEN
 ENV
   install -m 0600 -o root -g root "$env_tmp" "$ENV_FILE"
 
@@ -602,6 +603,7 @@ SAVED_INSTALL_VOICE="$(read_saved_env COREUI_INSTALL_VOICE || true)"
 SAVED_INSTALL_IMAGE="$(read_saved_env COREUI_INSTALL_IMAGE || true)"
 SAVED_SEARXNG_URL="$(read_saved_env COREUI_SEARXNG_URL || true)"
 SAVED_SEARXNG_SECRET="$(read_saved_env COREUI_SEARXNG_SECRET || true)"
+SAVED_HF_TOKEN="$(read_saved_env HF_TOKEN || true)"
 
 if [[ -e "$PROJECT_ROOT/var/mariadb/ibdata1" || -d "$PROJECT_ROOT/var/mariadb/mysql" ]]; then
   if [[ -n "$REQUEST_DB_NAME" && "$REQUEST_DB_NAME" != "$SAVED_DB_NAME" \
@@ -671,6 +673,12 @@ else
   SEARXNG_URL="${REQUEST_SEARXNG_URL:-${SAVED_SEARXNG_URL:-}}"
 fi
 SEARXNG_SECRET="${SAVED_SEARXNG_SECRET:-$(openssl rand -hex 32)}"
+# Preserve an existing instance's HF access across installer/update runs.
+# A newly provided HF_TOKEN overrides the saved secret; never log either.
+IMAGE_HF_TOKEN="${HF_TOKEN:-$SAVED_HF_TOKEN}"
+if [[ -n "$IMAGE_HF_TOKEN" && ! "$IMAGE_HF_TOKEN" =~ ^[A-Za-z0-9_-]{20,256}$ ]]; then
+  die 'HF_TOKEN ist ungueltig (nur Zeichenformat geprueft).'
+fi
 
 for port in "$HTTP_PORT" "$PHP_PORT" "$DB_PORT" "$SEARXNG_PORT"; do
   valid_port "$port" || die "Ungueltiger oder privilegierter Port: $port"
