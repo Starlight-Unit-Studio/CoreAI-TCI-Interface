@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.58 - 15.11.2026
+
+- **pGen 4B und 9B mit Ponpoke Uncensored Q8_0:** Beide vorhandenen FLUX.2-klein-Profile können statt des ursprünglichen Qwen3-Encoders die zum jeweiligen DiT passenden GGUF-Text-Encoder von `ponpoke/flux2-klein-4b-uncensored-text-encoder` und `ponpoke/flux2-klein-9b-uncensored-text-encoder` über `sd-cli --llm` verwenden, ohne Ollama-Zwischenschritt.
+- **Gated Hugging Face mit Prüfungen:** Zugang nur nach den Bedingungen des jeweiligen HuggingFace-Repositories; ein `HF_TOKEN` wird ausschließlich aus der Serverumgebung bezogen, nicht im Code gespeichert. Beim ersten erfolgreichen Download werden Commit, Dateigröße und SHA-256 geprüft und lokal festgeschrieben. Bestehende Bildgewichte und Encoder werden nicht gelöscht. Wenn HF-Zugriff/Download/Verifikation fehlt, ist der Zustand in pGen sichtbar und der bisherige Encoder bleibt verfügbar.
+- **Individuelle Freigabe bleibt:** Das serverweit heruntergeladene uncensored-Modell wird nur bei Nutzerkonten mit individuell bestätigter FLUX-Non-Commercial-Lizenz eingesetzt. 9B bleibt ohnehin bis zur Freigabe gesperrt; bei 4B nutzen nicht freigeschaltete Accounts vorerst den bisherigen Apache-Encoder.
+- **Herkunftsdaten stimmen:** Generierte PNGs benennen bei aktivem Ponpoke-Encoder dessen Repository, Revision, SHA-256 und Lizenz statt fälschlich den ursprünglichen Qwen-Encoder.
+- **Offline-Tests:** Zwei Profile, per-Account-Routing, Signatur-/Pfadprüfung und Rückfall bei fehlendem HF-Zugang. Ein realer Bildvergleich benötigt die freigegebenen Dateien auf dem Betreiber-Server.
+
 ## 0.7.57 - 15.11.2026
 
 - **SU-Logo bleibt unser sichtbares Branding:** Das vorhandene transparente SU-Chiplogo wird bei allen generierten Bildern rechts unten mit 13 % Bildbreite und 85 % Transparenzfaktor (statt 11,5 % / 50 %) eingebrannt. Es wird kein offizielles EU-Symbol verändert oder nachgezeichnet.
