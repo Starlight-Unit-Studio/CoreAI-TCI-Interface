@@ -53,9 +53,9 @@ loop_test(str_contains($menu, '[WEB: WEITER]') && !str_contains($menu, '[BROWSE:
 loop_test(str_contains(coreui_agent_loop_hint(false, false), '[WEB: WEITER]')
   && str_contains(coreui_agent_loop_hint(true, false), 'Namensgleiche'),
   'small and full models learn pagination and identity caution');
-$oldEvidence = "1. Alte Quelle [https://example.org/old]\\n   "
+$oldEvidence = "1. Alte Quelle [https://example.org/old]\n   "
   . str_repeat('A',260);
-$newEvidence = "1. Neue Quelle [https://example.org/new]\\n   "
+$newEvidence = "1. Neue Quelle [https://example.org/new]\n   "
   . str_repeat('B',260);
 $chain = coreui_agent_step_prompt('BASIS',[
   ['label'=>'Websuche: „Begriff“','result'=>$oldEvidence],
