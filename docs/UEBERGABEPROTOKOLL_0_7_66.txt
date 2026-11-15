@@ -20,6 +20,9 @@ UMSETZUNG
   Browserfaehigkeit und nutzt den vorhandenen Live-Wetter/Web-Pfad.
 - Autonome Newsreaktion: auch bei hoher Relevanz aus WEB-Suchergebnissen
   formulieren statt Playwright-Job einzureihen.
+- Zusaetzliche serverseitige Warteschlangensperre: ein Browserjob braucht
+  die echte gespeicherte [[recherche]]-Auswahl derselben Benutzer-ID,
+  Nachricht und Sitzung. Fehler oder fehlende Auswahl sperren Playwright.
 - Anhaenge, Websuche, Bildgenerator, Cores, Locking,
   Browsersicherheit und die neue persoenliche Browser-Antwort bleiben.
 - Deep Research: eigener Plan-/Worker-/Hybrid-Forschungspfad,
