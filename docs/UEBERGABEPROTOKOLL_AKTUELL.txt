@@ -1,3 +1,14 @@
+COREAI: TCI INTERFACE // AKTUELLER CHATSTAND 15.11.2026
+Repository-Version nach letztem Merge: main 0.7.65.
+In Arbeit auf PR-Branch: 0.7.66 (fix/web-default-explicit-browser-0766).
+NEUE BETREIBER-ENTSCHEIDUNG: Playwright ausschliesslich bei expliziter Auswahl
+von + > Recherche. Alle autonomen Webarbeiten verwenden Websuche.
+Deep Research bleibt getrennt und unveraendert. Verbindliche Details:
+docs/UEBERGABEPROTOKOLL_0_7_66.txt und 0_7_65.txt.
+Nach Merge: naechste Version 0.7.67.
+
+--- HISTORISCHER STAND VOR 0.7.66 (unten zur Nachverfolgung) ---
+
 COREAI: TCI INTERFACE // QUANTUM SOFTWAREFAMILIE
 AKTUELLE CHAT-UEBERGABE
 PR-Stand: 0.7.51 auf main 0.7.50 (Bildtest: FLUX.2-klein 9B zuschaltbar, Gesichtsprompt mit Referenzbild).
