@@ -466,7 +466,7 @@ for (const bad of ['javascript:alert(1)','http://localhost/a','http://127.0.0.1/
 }
 found.querySelector('.work-site-icon').handlers.error();
 assert.equal(found.querySelector('.work-site-icon').hidden,true,'missing favicon keeps fallback');
-assert(found.querySelector('.work-research-current'),'web source is shown as a compact ticker');
+assert(found.querySelector('.work-research-current'),'web source is shown as a compact event-driven source line');
 assert(found.querySelector('.work-research-history'),'source list is initially collapsed');
 assert.equal(found.querySelector('.work-research-history').tag,'details');
 assert.equal(found.querySelector('.work-research-history').hidden,false,
@@ -477,7 +477,10 @@ assert.equal(found.querySelector('.work-research-url').textContent,'example.org/
 assert.equal(research._currentUrl,'https://example.net/b');
 assert.equal(research.querySelector('.work-research-url').textContent,'example.net/b');
 assert.equal(research.querySelector('.work-research-label').textContent,'2 Websites besucht');
-assert.equal(found.querySelector('.work-research-label').textContent,'1 Quelle gefunden','WEB uses the source count instead of Web wird durchsucht');
+assert.equal(found.querySelector('.work-research-label').textContent,'1 Suchtreffer','WEB does not mistake a search hit for a page visit');
+assert(found.querySelector('.work-research-current').title.includes('Zuletzt gefundener Suchtreffer'));
+assert(!found.querySelector('.work-research-label').textContent.includes('besucht'));
+assert(!found.querySelector('.work-research-current').title.includes('besuchte Webseite'));
 const codeFold = work.create({live:true,codeOnly:true});
 assert(work.source(codeFold.querySelector('.work-body'),{phase:'begin',file_name:'index.html',attempt:1}));
 assert.equal(codeFold.querySelector('.work-source').tag,'details');
@@ -490,7 +493,7 @@ const delayedWeb = [];
 const tickerWeb = [];
 sandbox.window.setTimeout = fn => { delayedWeb.push(fn); return delayedWeb.length; };
 sandbox.window.clearTimeout = () => {};
-sandbox.window.setInterval = fn => { tickerWeb.push(fn); return tickerWeb.length; };
+sandbox.window.setInterval = (fn,ms) => { tickerWeb.push({fn,ms}); return tickerWeb.length; };
 sandbox.window.clearInterval = () => {};
 sandbox.document.hidden = false;
 const realtime = work.create({live:true,startedAt:Date.now()});
@@ -507,15 +510,26 @@ work.add(realtimeBody,{id:992,kind:'tool',state:'info',title:'Webquelle gefunden
   meta:{page_url:'https://example.org/a?private=1',page_title:'Quelle A'}});
 assert.equal(liveResearch._sites.length,1,'first source is shown without draining the narration');
 assert.equal(liveResearch._currentUrl,'https://example.org/a');
-assert.equal(liveResearch._label.textContent,'1 Quelle gefunden');
+assert.equal(liveResearch._label.textContent,'1 Suchtreffer');
 assert.equal(realtimeBody._workQueue.length,1,'only the technical tool start is queued');
 work.add(realtimeBody,{id:993,kind:'tool',state:'info',title:'Webquelle gefunden',
   meta:{page_url:'https://example.net/b',page_title:'Quelle B'}});
 assert.equal(liveResearch._sites.length,2);
-assert.equal(liveResearch._label.textContent,'2 Quellen gefunden');
+assert.equal(liveResearch._label.textContent,'2 Suchtreffer');
 assert.equal(liveResearch._currentUrl,'https://example.net/b');
-tickerWeb[tickerWeb.length - 1]();
-assert.equal(liveResearch._currentUrl,'https://example.org/a','ticker rotates real recorded sources');
+assert(!tickerWeb.some(timer => timer.ms === 1600), 'WEB source carousel has no cosmetic rotation timer');
+const latestRealSource = liveResearch._currentUrl;
+tickerWeb.forEach(timer => timer.fn());
+assert.equal(liveResearch._currentUrl,latestRealSource,'status updates cannot invent a different active source');
+assert.equal(liveResearch.querySelector('.work-research-current').attributes['aria-label'],
+  'Zuletzt gefundener Suchtreffer: Quelle B');
+work.add(realtimeBody,{id:996,kind:'tool',state:'info',title:'Webquelle gefunden',
+  meta:{page_url:'https://example.com/c?secret=removed',page_title:'Quelle C'}});
+assert.equal(liveResearch._currentUrl,'https://example.com/c','a new genuine source event updates the highlighted URL');
+assert.equal(liveResearch._label.textContent,'3 Suchtreffer');
+work.add(realtimeBody,{id:997,kind:'tool',state:'info',title:'Websuche beendet',meta:{knowledge_hits:3}});
+assert.equal(liveResearch._currentUrl,'https://example.com/c','finishing a search must not scroll through older hits');
+assert.equal(liveResearch._label.textContent,'3 Suchtreffer');
 work.add(realtimeBody,{id:994,kind:'tool',state:'success',title:'Schritt 1 von 6: Websuche',meta:{}});
 work.add(realtimeBody,{id:995,kind:'commentary',state:'info',
   title:'Mara meldet ihren naechsten Schritt',
@@ -536,7 +550,7 @@ const emptyWebHistory = work.create({events:[
   {id:998,kind:'tool',state:'info',title:'Websuche beendet',meta:{knowledge_hits:0}}
 ]});
 assert.equal(emptyWebHistory.querySelector('.work-research-label').textContent,
-  'Keine Quellen gefunden','finished empty searches must not look like ongoing work');
+  'Keine Suchtreffer','finished empty searches must not look like ongoing work');
 
 // 0.6.22: the transcript before the answer is one step with an end. An open step per part was told as
 // "Ich führe gerade „Core schreibt die Aufnahme mit (Teil 1 von 1)“ aus. Der Abschluss steht noch aus." (operator, 06.11.2026).
