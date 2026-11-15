@@ -676,6 +676,20 @@ SEARXNG_SECRET="${SAVED_SEARXNG_SECRET:-$(openssl rand -hex 32)}"
 # Preserve an existing instance's HF access across installer/update runs.
 # A newly provided HF_TOKEN overrides the saved secret; never log either.
 IMAGE_HF_TOKEN="${HF_TOKEN:-$SAVED_HF_TOKEN}"
+# Reuse an already authenticated operator's local Hugging Face CLI token.
+# No extra login is needed if the original image-spike setup used hf auth login.
+if [[ -z "$IMAGE_HF_TOKEN" ]]; then
+  for hf_file in "${HF_HOME:-/root/.cache/huggingface}/token" /root/.cache/huggingface/token /root/.huggingface/token; do
+    if [[ -f "$hf_file" && ! -L "$hf_file" ]]; then
+      candidate="$(head -n 1 "$hf_file" 2>/dev/null || true)"
+      if [[ "$candidate" =~ ^[A-Za-z0-9_-]{20,256}$ ]]; then
+        IMAGE_HF_TOKEN="$candidate"
+        break
+      fi
+    fi
+  done
+  unset candidate hf_file
+fi
 if [[ -n "$IMAGE_HF_TOKEN" && ! "$IMAGE_HF_TOKEN" =~ ^[A-Za-z0-9_-]{20,256}$ ]]; then
   die 'HF_TOKEN ist ungueltig (nur Zeichenformat geprueft).'
 fi
