@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.66
+Datum: 15.11.2026
+Basis: main 0.7.65
+Branch: fix/web-default-explicit-browser-0766
+
+BETREIBER-ENTSCHEIDUNG
+Playwright (Menuepunkt "Recherche") darf ausschliesslich bei der
+ausdruecklichen Werkzeugauswahl im + Menue gestartet werden.
+Sonst verwendet Mara/Ember die vorhandene Websuche. Die Nutzernachricht
+allein, ein Link und Modellmarker sind KEINE Browserfreigabe.
+
+UMSETZUNG
+- api/console_agent_loop.php: explizite Auswahl pruefen; alte
+  BROWSE-Modellmarker auf WEB umleiten, sofern Websuche freigegeben.
+- api/chat.php: in beiden Prompt-Bauern Browserhinweise nur fuer die
+  explizit markierte Recherche; Agentenschleife und Stimmsequenz
+  bekommen Browse nur bei dieser Auswahl; vor dem Async-Browse
+  serverseitige Dispatcher-Schranke.
+- Der WDR-Wetterpfad bekommt ohne explizite Freigabe keine
+  Browserfaehigkeit und nutzt den vorhandenen Live-Wetter/Web-Pfad.
+- Autonome Newsreaktion: auch bei hoher Relevanz aus WEB-Suchergebnissen
+  formulieren statt Playwright-Job einzureihen.
+- Anhaenge, Websuche, Bildgenerator, Cores, Locking,
+  Browsersicherheit und die neue persoenliche Browser-Antwort bleiben.
+- Deep Research: eigener Plan-/Worker-/Hybrid-Forschungspfad,
+  nicht mit normaler Browse-Queue vermischt, unveraendert.
+
+TEST
+- scripts/browser-routing-selftest.php prueft Freigabe, Fallback,
+  alten Marker, zweite Agentenschleife und Deaktivierung.
+- Beide Preflight-Listen enthalten den Test.
+- Nach Merge live pruefen: normale URL, normales "recherchiere mal",
+  Text/Voice, + Websuche, + Recherche, + Deep Research,
+  Newsreaktion und WDR-Wetter. Kein Erfolg nur aus CI ableiten.
+- Syntax-/Version-/Preflight-Pruefungen vor Merge sind Pflicht.
+
+VERSION
+0.7.66; nach Merge ist 0.7.67 die naechste Version.
