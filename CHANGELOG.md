@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.61 - 15.11.2026
+
+- **Bildfehler nachvollziehbar:** Der Arbeitsweg unterscheidet Worker-Exitcodes, Zeitlimits, Exceptions, fehlende/ungueltige PNGs, Warteschlangen- und Speicherprobleme. Statt nur `image_failed` zu melden, wird die letzte bestaetigte Bildphase mit den tatsaechlich erreichten Schritten angezeigt.
+- **Arbeitsweg informativer:** Bei sonstigen Werkzeugfehlern erscheinen vorhandene begrenzte Fehlercodes/Fehlerklassen; Bildmodell, Encoder, Groesse und Anzahl der Referenzen sind als technische Metadaten sichtbar, sofern vom Worker bestaetigt.
+- **Datenschutz:** Keine rohen Worker-Logs, Benutzerprompts, privaten Medienpfade oder Modell-Thinking-Ausgaben in der Timeline. Fehlerdiagnose klassifiziert nur bekannte Meldungen.
+- **4B/9B-Regression untersuchen:** Die neuen Diagnosen sollen auf dem Betreiber-Server den realen Fehler sichtbar machen; der Generierungsweg wird bis zur Auswertung echter Logs nicht unbewiesen veraendert.
+- **Tests:** Separate Fehlerklassifikation und UI-/Work-Event-Selbsttests ergaenzt. Live-Lauf mit 4B und 9B ausstehend.
+
+
 ## 0.7.60 - 15.11.2026
 
 - **Ponpoke 9B Q8_0 ohne Betreiber-Token:** Der pGen-Bilddienst versucht zuerst öffentlich gelistete GGUF-Repositories `WANG-CC/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF` und `KM445/flux2-klein-9b-uncensored-text-encoder-Q8_0-GGUF`, bevor er auf das gated Original zurückfällt. Für öffentliche Repositories wird nie ein privater HF-Token mitgesendet.
