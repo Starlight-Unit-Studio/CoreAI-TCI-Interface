@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'tools/image/image_service.py'
+      - 'tools/image_spike/run.py'
+      - 'scripts/image-spike.sh'
+      - 'scripts/image-spike-selftest.py'
       - 'tools/image/pgen_profiles.py'
       - 'tools/image/ponpoke_encoders.py'
       - 'tools/image/adopt_pgen.py'
@@ -74,6 +77,9 @@ on:
     branches: [main]
     paths:
       - 'tools/image/image_service.py'
+      - 'tools/image_spike/run.py'
+      - 'scripts/image-spike.sh'
+      - 'scripts/image-spike-selftest.py'
       - 'api/image_gen.php'
       - 'api/image_work_diagnostic.php'
       - 'api/image_ab_diagnostic.php'
@@ -115,8 +121,9 @@ jobs:
           python3 scripts/version-merge-check.py --base-version "$base_version"
       - name: Python syntax and offline image worker
         run: |
-          python3 -m py_compile tools/image/image_service.py tools/image/pgen_profiles.py tools/image/ponpoke_encoders.py tools/image/adopt_pgen.py scripts/pgen-selftest.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
+          python3 -m py_compile tools/image_spike/run.py scripts/image-spike-selftest.py tools/image/image_service.py tools/image/pgen_profiles.py tools/image/ponpoke_encoders.py tools/image/adopt_pgen.py scripts/pgen-selftest.py scripts/image-service-selftest.py scripts/vision-management-removal-selftest.py scripts/ensure-generator-core.py scripts/generator-core-selftest.py
           python3 -I scripts/image-service-selftest.py
+          python3 -I scripts/image-spike-selftest.py
           python3 -I scripts/pgen-selftest.py
           python3 -I scripts/generator-core-selftest.py
       - name: Verify removal and retained standard generator
@@ -171,6 +178,6 @@ jobs:
           node --check js/coreui-core-mode.js
           node scripts/thinking-switch-ui-selftest.cjs
           node scripts/core-install-ui-selftest.cjs
-          bash -n scripts/install.sh scripts/install-native.sh scripts/preflight.sh scripts/preflight-native.sh
+          bash -n scripts/install.sh scripts/install-native.sh scripts/preflight.sh scripts/preflight-native.sh scripts/image-spike.sh
       - name: Static asset fingerprints and version metadata
         run: python3 scripts/cache-bust.py --verify

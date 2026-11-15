@@ -298,9 +298,16 @@ def verify(models: Path, group_id: str) -> tuple[dict, list[dict], str]:
     paths: dict[str, str] = {}
     for entry in lock.get('files') or []:
         path = models / entry['file']
-        if not path.is_file() or path.stat().st_size != entry['size']:
-            return {}, lock.get('files') or [], entry['path'] + ' fehlt oder hat die falsche Groesse'
-        if sha256_file(path) != entry['sha256']:
+        try:
+            if not path.is_file() or path.stat().st_size != entry['size']:
+                return {}, lock.get('files') or [], entry['path'] + ' fehlt oder hat die falsche Groesse'
+            digest = sha256_file(path)
+        except PermissionError:
+            # update/install may hardlink 9B into the live service and set
+            # ownership to 33:33; a root container with all caps dropped
+            # then needs supplementary group 33 to read the unchanged inode.
+            return {}, lock.get('files') or [], entry['path'] + ': Dateizugriff verweigert (Gruppenrechte des Bildtests pruefen)'
+        if digest != entry['sha256']:
             return {}, lock.get('files') or [], entry['path'] + ' hat sich seit dem Laden veraendert (SHA-256)'
         paths[entry['role']] = str(path)
     missing = [role for role in ROLES if role not in paths]

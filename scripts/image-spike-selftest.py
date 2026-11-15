@@ -25,6 +25,7 @@ import tempfile
 import threading
 import zlib
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / 'tools' / 'image_spike'))
@@ -201,6 +202,12 @@ with tempfile.TemporaryDirectory(prefix='coreai-image-spike-') as tmp_name:
     paths, entries, error = spike.verify(models, 'mini')
     check(error == '' and set(paths) == {'diffusion_model', 'llm', 'vae'} and Path(paths['vae']).name == 'ae.safetensors',
           'the lock checks out: ' + error)
+    # A 33:33 hardlinked weight may be inaccessible to an ungrouped,
+    # capability-restricted root container. Report it, do not crash.
+    with patch.object(spike, 'sha256_file', side_effect=PermissionError(13, 'Permission denied')):
+        no_paths, _, denied = spike.verify(models, 'mini')
+    check(not no_paths and 'Dateizugriff verweigert' in denied
+          and 'Gruppenrechte' in denied, 'permission error becomes a reportable diagnosis')
     # A file changed after loading is refused; a wrong SHA-256 at Hugging Face deletes the download.
     target = Path(paths['llm'])
     original = target.read_bytes()
@@ -339,7 +346,10 @@ print({LOG!r})
     check(dry.returncode == 0, 'dry run: ' + text[-400:])
     check('docker build --pull -t coreai-image-spike:0.6.37' in text and text.count('run.py fetch --group') == 2
           and text.count('--network none') == 2 and 'run.py run --group zimage-turbo' in text and 'run.py report --run-dir' in text
-          and '-v ' + str(tmp / 'base' / 'models') + ':/models:ro' in text and '--cap-drop ALL' in text,
+          and '-v ' + str(tmp / 'base' / 'models') + ':/models:ro' in text
+          and '--cap-drop ALL' in text and '--group-add 33' in text
+          and text.count('--group-add 33') == 4
+          and '--privileged' not in text and '--cap-add' not in text,
           'build, fetch with network, run without network and read-only weights, report: ' + text[-600:])
     check(not (tmp / 'base').exists(), 'a dry run creates nothing')
     one = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-4b', '--full'],
@@ -359,7 +369,8 @@ print({LOG!r})
     accepted = subprocess.run(['bash', str(ROOT / 'scripts' / 'image-spike.sh'), '--dry-run', '--threads', '1', '--groups', 'flux2-klein-4b,flux2-klein-9b',
                                '--accept-license', 'flux-non-commercial'], capture_output=True, text=True, env=env, timeout=60)
     check(accepted.returncode == 0 and 'run.py fetch --group flux2-klein-9b' in accepted.stdout and 'run.py run --group flux2-klein-9b' in accepted.stdout
-          and 'run.py run --group flux2-klein-4b' in accepted.stdout and 'zimage-turbo' not in accepted.stdout,
+          and 'run.py run --group flux2-klein-4b' in accepted.stdout and 'zimage-turbo' not in accepted.stdout
+          and accepted.stdout.count('--group-add 33') == 4,
           'accepted: 4B and 9B side by side: ' + (accepted.stdout + accepted.stderr)[-300:])
     # A copy of the project without Mara's reference pictures: nothing is mounted (Docker would create the folder).
     bare = tmp / 'bare'

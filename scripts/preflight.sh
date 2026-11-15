@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.61: pGen Core 4B/9B selection and image-worker hardware checks.
+# CoreAI: TCI Interface 0.7.62: pGen Core 4B/9B selection and image-worker hardware checks.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
