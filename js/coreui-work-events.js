@@ -73,7 +73,7 @@
     var meta = event.meta || {};
     var code = String(meta.reason || '');
     var note = IMAGE_FAILURES[code] || 'Der Bildauftrag ist fehlgeschlagen; der Dienst hat keinen genauer klassifizierbaren Grund geliefert.';
-    if (code === 'image_worker_exit' && /^\\d{1,3}$/.test(String(meta.exit_code || ''))) {
+    if (code === 'image_worker_exit' && /^\d{1,3}$/.test(String(meta.exit_code || ''))) {
       note += ' Exitcode: ' + meta.exit_code + '.';
     }
     if (code === 'image_worker_exception' && meta.error_type) {
