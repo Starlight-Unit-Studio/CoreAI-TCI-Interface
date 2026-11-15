@@ -409,6 +409,55 @@ $http = $fake([['GET', '/health', $ready]]);
 $r = coreui_image_generate($pdo, 5, 'ember', 'a fox', 'huge', $lease, $unlease, static function (): void {}, $never, $http);
 img_gen_test($r['error'] === 'bad_size', 'unknown size');
 
+// Profile modes never depend on whether a user happened to accept the license.
+// Standard always routes to the original encoder; Magic requires a personal
+// receipt and explicitly requests a verified Magic component.
+require_once $root . '/api/pgen.php';
+$pdo->exec('CREATE TABLE stu_coreui_pgen_user_licenses (
+  user_id INTEGER PRIMARY KEY, license_sha256 CHAR(64) NOT NULL, accepted_at DATETIME NOT NULL)');
+$profilePath = coreui_pgen_file();
+$phpWriteProfile = static function (string $profile) use ($profilePath): void {
+  file_put_contents($profilePath, json_encode(['model'=>$profile]));
+};
+$phpWriteProfile(COREUI_PGEN_4B_MAGIC);
+$http = $fake([['GET', '/health', $ready]]);
+$oldLeases = $leases; $oldUnleases = $unleases;
+$magicDenied = coreui_image_generate($pdo, 5, 'ember', 'a galaxy', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http);
+img_gen_test(($magicDenied['error'] ?? null) === 'license_accept_required'
+  && count($GLOBALS['img_calls']) === 1 && $leases === $oldLeases + 1
+  && $unleases === $oldUnleases + 1,
+  'Magic never executes without this user license');
+coreui_generator_license_user_accept($pdo, 5, coreui_generator_license_hash());
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs',
+  [503, ['ok'=>false,'error'=>'image_busy'], '']]]);
+$magic = coreui_image_generate($pdo, 5, 'ember', 'a galaxy', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http);
+img_gen_test($magic['error'] === 'image_busy'
+  && $GLOBALS['img_calls'][1][2]['model'] === COREUI_PGEN_STANDARD
+  && $GLOBALS['img_calls'][1][2]['mode'] === 'magic'
+  && $GLOBALS['img_calls'][1][2]['user_license_accepted'] === true,
+  '4B Magic routes explicitly without exposing an encoder path');
+$phpWriteProfile(COREUI_PGEN_4B_STANDARD);
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs',
+  [503, ['ok'=>false,'error'=>'image_busy'], '']]]);
+$standard = coreui_image_generate($pdo, 5, 'ember', 'a galaxy', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http);
+img_gen_test($standard['error'] === 'image_busy'
+  && $GLOBALS['img_calls'][1][2]['mode'] === 'standard'
+  && $GLOBALS['img_calls'][1][2]['user_license_accepted'] === true,
+  'Standard stays original even with a valid Magic license');
+$phpWriteProfile(COREUI_PGEN_9B_MAGIC);
+$http = $fake([['GET', '/health', $ready], ['POST', '/jobs',
+  [503, ['ok'=>false,'error'=>'image_busy'], '']]]);
+$magic9 = coreui_image_generate($pdo, 5, 'ember', 'a galaxy', 'normal',
+  $lease, $unlease, static function (): void {}, $never, $http);
+img_gen_test($magic9['error'] === 'image_busy'
+  && $GLOBALS['img_calls'][1][2]['model'] === COREUI_PGEN_QUALITY
+  && $GLOBALS['img_calls'][1][2]['mode'] === 'magic',
+  'Magic 9B uses same base model and different internal encoder mode');
+$phpWriteProfile(COREUI_PGEN_4B_STANDARD);
+
 // Busy service: the lease is given back.
 $http = $fake([['GET', '/health', $ready], ['POST', '/jobs', [503, ['ok' => false, 'error' => 'image_busy'], '']]]);
 $leases = $unleases = 0;
@@ -498,7 +547,7 @@ img_gen_test($r['ok'] === true && preg_match('~^[a-f0-9]{32}$~', $r['uuid']) ===
 img_gen_test($titles === ['Bild: Gewichte werden geladen', 'Bild: Schritt 2 von 4', 'Bild: Schritt 4 von 4', 'Bild wird erzeugt'],
   'every change of phase and step is shown once: ' . json_encode($titles));
 img_gen_test($leases === 1 && $unleases === 1, 'the queue is held for the job and given back');
-img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal', 'model' => 'flux2-klein-4b', 'user_license_accepted' => false],
+img_gen_test($GLOBALS['img_calls'][1][2] === ['prompt' => 'A red fox, sitting in snow', 'size' => 'normal', 'model' => 'flux2-klein-4b', 'mode' => 'standard', 'user_license_accepted' => false],
   'generic image tasks do not send Mara identity, scene selection or reference data');
 $row = $pdo->query('SELECT * FROM stu_console_media')->fetch(PDO::FETCH_ASSOC);
 img_gen_test($row['uuid'] === $r['uuid'] && (int)$row['user_id'] === 5 && $row['kind'] === 'image' && $row['public_url'] === null
