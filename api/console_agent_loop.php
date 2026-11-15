@@ -152,7 +152,7 @@ function coreui_agent_compact_web_evidence(string $result): string {
     $line = '   ' . $line;
   }
   unset($line);
-  return implode("\\n", $lines);
+  return implode("\n", $lines);
 }
 
 /**
