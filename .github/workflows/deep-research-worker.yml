@@ -15,6 +15,9 @@ on:
       - 'tools/coreai_research_browser.py'
       - 'tools/ember_browse_worker.py'
       - 'scripts/browse-worker-selftest.py'
+      - 'api/chat.php'
+      - 'api/console_agent_loop.php'
+      - 'scripts/browser-routing-selftest.php'
       - 'scripts/deep-research-worker-selftest.py'
       - 'scripts/deep-research-hybrid-selftest.py'
       - 'scripts/deep-research-zero-source-selftest.py'
@@ -48,6 +51,12 @@ jobs:
           coverage: none
       - name: Check hybrid PHP storage syntax
         run: php -l api/deep_research_store.php
+      - name: Validate browser tool dispatch and PHP syntax
+        run: |
+          php -l api/chat.php
+          php -l api/console_agent_loop.php
+          php -l scripts/browser-routing-selftest.php
+          php scripts/browser-routing-selftest.php
       - name: Reject false zero-source research reports
         run: python3 scripts/deep-research-zero-source-selftest.py
       - name: Validate release contract
