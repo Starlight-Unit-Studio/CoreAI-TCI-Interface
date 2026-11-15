@@ -93,7 +93,7 @@ with tempfile.TemporaryDirectory(prefix='pgen-selftest-') as name:
     public_info = {'size': len(public_bytes), 'sha256': hashlib.sha256(public_bytes).hexdigest(),
                    'revision': 'a' * 40, 'url': 'https://cas-bridge.xethub.hf.co/dummy',
                    'requires_token': False}
-    with mock.patch.object(ponpoke, '_head', return_value=public_info) as head, \\
+    with mock.patch.object(ponpoke, '_head', return_value=public_info) as head, \
          mock.patch.object(ponpoke, '_download_verified', return_value=tmp / 'faux-9b.gguf') as download:
         assert ponpoke.install(model_dir, profiles.QUALITY, token='') == tmp / 'faux-9b.gguf'
         head.assert_called_once_with(public_repo, public_name, '')
