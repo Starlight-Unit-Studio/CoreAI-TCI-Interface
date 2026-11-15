@@ -99,6 +99,8 @@ function coreui_pgen_status(?array $health = null, ?array $hardware = null, ?PDO
       'license'=>$base === COREUI_PGEN_QUALITY || $mode === 'magic'
         ? 'FLUX Non-Commercial License v2.1' : 'Apache-2.0',
       'ready'=>$modelReady && (!$licenseRequired || $approved),
+      'base_installed'=>($baseState['installed'] ?? false) === true,
+      'base_ready'=>$physicalReady,
       'installed'=>($baseState['installed'] ?? false) === true
         && ($mode === 'standard' || $magicReady),
       'loading'=>($baseState['loading'] ?? false) === true
