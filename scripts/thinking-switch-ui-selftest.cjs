@@ -69,6 +69,7 @@ function server(opts) {
   opts = opts || {};
   const calls = [];
   const st = {thinking: opts.thinking !== false, override: opts.override || '', loaded: ['ember-coreui:latest']};
+  const defaultModel = opts.defaultModel || 'ember-coreui:latest';
   const models = opts.models || MODELS;
   const labelFor = name => (models.find(m => m.name === name) || {}).label || name;
   const reply = (status, body) => Promise.resolve({ok: status < 400, status, json: () => Promise.resolve(body)});
@@ -76,8 +77,8 @@ function server(opts) {
     calls.push({url, init});
     if (url === './api/models.php') {
       return opts.failModels ? reply(503, {ok: false, error: 'model_catalog_unavailable'})
-        : reply(200, {ok: true, models, default_model: 'ember-coreui:latest', default_label: 'TCI Core Normal',
-          missing_tiers: opts.missing || MISSING, install: opts.install || null,
+        : reply(200, {ok: true, models, default_model: defaultModel, default_label: 'TCI Core Normal',
+          selected_tiers: opts.selectedTiers || {}, missing_tiers: opts.missing || MISSING, install: opts.install || null,
           generator_engine: opts.generatorEngine || null,
           generator_license_accepted: opts.generatorLicensed === true});
     }
@@ -92,14 +93,14 @@ function server(opts) {
       if (body.action === 'core') {
         if (!['', ...models.map(m => m.name)].includes(body.model_override)) return reply(400, {ok: false, error: 'model_not_available'});
         st.override = body.model_override;
-        const model = st.override || 'ember-coreui:latest';
+        const model = st.override || defaultModel;
         const preload = /cloud/.test(model) ? 'cloud' : (st.loaded.includes(model) ? 'loaded' : 'started');
         return reply(200, {ok: true, model_override: st.override, model, label: labelFor(model), preload});
       }
     }
     return reply(200, {ok: true, settings: {thinking_enabled: st.thinking, model_override: st.override},
-      default_model: 'ember-coreui:latest', default_label: 'TCI Core Normal',
-      core_label: labelFor(st.override || 'ember-coreui:latest'), csrf_token: 'tok123', permission_level: opts.level ?? 4});
+      default_model: defaultModel, default_label: 'TCI Core Normal',
+      core_label: labelFor(st.override || defaultModel), csrf_token: 'tok123', permission_level: opts.level ?? 4});
   };
   return {fetch, calls, st};
 }
@@ -337,63 +338,47 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(plusRow, ['TCI Core Plus', 'gemma4:12b, ember-core:12b (TCI Modelfile)', 'installiert']);
   }
 
-  // Multiple installed variants in Normal and Pro must be selectable by
-  // their exact Ollama tag instead of silently preferring Mara's original.
+  // Admin has already selected one exact tag per tier. The chat shows ONE
+  // normal row and ONE pro row, never a second menu of Original/Uncensored.
   {
     const p = page();
-    const normalUC = 'mdhm_hmmd/gemma4-e4b-uncensored-q8:latest';
+    const normalUC = 'mo-shakib/gemma4-e4b-uncensored:q4_k_m';
     const proUC = 'eriktonon/gemma4-uncensored:26b';
     const models = MODELS.concat([
-      {name: normalUC, label: 'TCI Core Normal', parameter_size: '8.1B'},
+      {name: normalUC, label: 'TCI Core Normal', parameter_size: '8.0B'},
       {name: 'ember-core:26b', label: 'TCI Core Pro', parameter_size: '25.2B', mara: true},
-      {name: proUC, label: 'TCI Core Pro', parameter_size: '26B'}
+      {name: proUC, label: 'TCI Core Pro', parameter_size: '25.2B'}
     ]);
-    const st = server({models, missing: [{tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b'}]});
-    const modeWithVariants = api.create(p.doc, st.fetch, () => {});
-    await modeWithVariants.ready;
-    await modeWithVariants.open();
-    const tierRow = label => rowItems(p.els.coreModeList).find(row =>
-      row.children[0].children[0].textContent === label);
-    const variantsIn = label => {
-      const row = tierRow(label);
-      assert(row, 'tier row exists for ' + label);
-      const group = row.children.find(child => child.className === 'core-mode-model-choices');
-      assert(group, 'real model choices shown inside ' + label);
-      return group.children;
-    };
-    assert.equal(api.tierLabel(normalUC), 'TCI Core Normal', 'HF Uncensored E4B belongs to Normal');
-    assert.equal(api.tierLabel(proUC), 'TCI Core Pro', 'Ollama Uncensored 26B belongs to Pro');
-    const normalOptions = variantsIn('TCI Core Normal');
-    assert.equal(normalOptions.length, 3, 'Normal shows default, regular base and Uncensored');
-    assert(normalOptions.some(o => o.getAttribute('data-model') === normalUC));
-    assert(normalOptions.some(o => o.getAttribute('data-model') === 'ember-coreui:latest'));
-    assert.equal(normalOptions.find(o => o.getAttribute('data-model') === 'ember-coreui:latest')
-      .getAttribute('aria-checked'), 'true', 'default remains selected after an install');
-    const normalUcButton = normalOptions.find(o => o.getAttribute('data-model') === normalUC);
-    assert.match(normalUcButton.textContent, /Uncensored/);
-    await normalUcButton.handlers.click({stopPropagation() {}});
-    assert.equal(st.st.override, normalUC, 'backend persists the exact installed Uncensored name');
-    assert.equal(JSON.parse(st.calls.filter(c => c.init.method === 'POST').pop().init.body).model_override,
-      normalUC, 'actual Ollama variant is submitted, never its tier alias');
-    assert.match(p.els.coreModeName.textContent, /Normal · UC/, 'chip shows active Uncensored variant');
-    assert.equal(variantsIn('TCI Core Normal').find(o => o.getAttribute('data-model') === normalUC)
-      .getAttribute('aria-checked'), 'true', 'selected variant has a persistent check');
-    const original = variantsIn('TCI Core Normal').find(o =>
-      o.getAttribute('data-model') === 'ember-coreui:latest');
-    await original.handlers.click({stopPropagation() {}});
-    assert.equal(st.st.override, '', 'switching to original resets to the default model');
-    assert.doesNotMatch(p.els.coreModeName.textContent, /UC/);
-    const proChoices = variantsIn('TCI Core Pro');
-    assert.equal(proChoices.length, 2, 'Pro shows TCI original and vendor Uncensored');
-    assert(proChoices.some(o => o.getAttribute('data-model') === 'ember-core:26b'));
-    await proChoices.find(o => o.getAttribute('data-model') === proUC).handlers.click({stopPropagation() {}});
+    const st = server({models, defaultModel: normalUC,
+      selectedTiers: {schnell: 'gemma4:e2b', normal: normalUC, pro: proUC},
+      missing: [{tier: 'plus', label: 'TCI Core Plus', base: 'gemma4:12b'}]});
+    const m = api.create(p.doc, st.fetch, () => {});
+    await m.ready;
+    await m.open();
+    const rows = entries(p.els.coreModeList);
+    assert.equal(rows.filter(o => o.children[0].textContent === 'TCI Core Normal').length, 1,
+      'Normal is a single menu row despite multiple installed tags');
+    assert.equal(rows.filter(o => o.children[0].textContent === 'TCI Core Pro').length, 1,
+      'Pro is a single menu row despite multiple installed tags');
+    assert(!p.els.coreModeList.textContent.includes('Original · TCI'),
+      'variant configuration is absent from the chat picker');
+    assert(!p.els.coreModeList.children.some(row =>
+      row.children.some(child => child.className === 'core-mode-model-choices')),
+      'chat picker never embeds admin variant controls');
+    const normal = rows.find(o => o.children[0].textContent === 'TCI Core Normal');
+    const pro = rows.find(o => o.children[0].textContent === 'TCI Core Pro');
+    assert.equal(normal.getAttribute('data-value'), '', 'selected default Normal maps to empty override');
+    assert.equal(pro.getAttribute('data-value'), proUC, 'Pro tier routes to the admin selected tag');
+    assert.match(p.els.coreModeName.textContent, /Normal · UC/, 'small chip indicates the active variant');
+    await pro.handlers.click({stopPropagation() {}});
     assert.equal(st.st.override, proUC);
+    assert.deepEqual(JSON.parse(st.calls.filter(c => c.init.method === 'POST').pop().init.body),
+      {action: 'core', model_override: proUC}, 'exact configured Pro tag is sent to backend');
     assert.match(p.els.coreModeName.textContent, /Pro · UC/);
-    assert.equal(variantsIn('TCI Core Pro').find(o => o.getAttribute('data-model') === proUC)
-      .getAttribute('aria-checked'), 'true');
-    await modeWithVariants.choose('ember-core:26b');
-    assert.equal(st.st.override, 'ember-core:26b', 'Original Pro remains independently selectable');
-    assert.doesNotMatch(p.els.coreModeName.textContent, /UC/);
+    await entries(p.els.coreModeList).find(o => o.children[0].textContent === 'TCI Core Normal')
+      .handlers.click({stopPropagation() {}});
+    assert.equal(st.st.override, '', 'normal tier still resets to configured server default');
+    assert.match(p.els.coreModeName.textContent, /Normal · UC/);
   }
 
   // The Generator is ALWAYS visible when the API reports the Quantum Gen Engine state.
