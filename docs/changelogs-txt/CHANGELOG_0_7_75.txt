@@ -1,0 +1,33 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.75
+Datum: 16.11.2026
+
+VORSCHAU VON WEB-PROJEKTEN (ROADMAP P10, SCHRITT A)
+- Im Tab Dateien eines Projekts zeigt "Vorschau" eine HTML-Seite des
+  Projekts. Die Liste oeffnet index.html oder die erste Seite, eine geoeffnete
+  Seite hat einen eigenen Knopf.
+- Stylesheets und Skripte des Projekts kommen in die Seite, SVG-Bilder werden
+  zu Datenadressen, fetch() und XMLHttpRequest lesen die anderen Textdateien
+  des Projekts, Links auf andere Seiten des Projekts oeffnen sie in der
+  Vorschau.
+- Isoliert: Die Seite kommt von api/project_files.php?preview= mit
+  "Content-Security-Policy: sandbox allow-scripts allow-forms allow-modals
+  allow-popups" und laeuft in einem Rahmen mit derselben Sandbox. Sie hat eine
+  eigene Herkunft und keinen Zugriff auf Cookies, Chat, API oder die
+  umgebende Seite, auch nicht in einem eigenen Tab. Auf dem Server laeuft
+  nichts.
+- Fehler mit Datei und Zeile: Skriptfehler der Seite stehen ueber ihr, mit der
+  Datei und der Zeile in dieser Datei. Skripte mit defer behalten ihre
+  Reihenfolge und laufen wie im Browser vor DOMContentLoaded.
+- Aktuell: Die Vorschau zeigt den gespeicherten Stand und laedt nach
+  Speichern, Wiederherstellen, Umbenennen oder Loeschen neu.
+- Noch nicht: Befehle und Tests ausfuehren (P10 B), Entwicklungsserver mit
+  Prozess (P10 C). Importe zwischen ES-Modulen des Projekts loest die Vorschau
+  nicht auf.
+
+TESTS
+- scripts/project-preview-selftest.php und
+  scripts/project-preview-ui-selftest.cjs (Playwright, mit dem echten
+  PHP-Seitenaufbau und der echten CSP), beide in beiden Preflights.
+
+NICHT GETESTET
+- Die Vorschau auf dem echten Server hinter dem Reverse-Proxy.

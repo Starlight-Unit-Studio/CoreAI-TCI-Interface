@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.74`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.75`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
@@ -86,6 +86,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Save text files Mara produces within a project into its **Files** tab, with a folder tree, filename/content search and line numbers.
 - Create, edit, rename, delete and download text files; compare revisions, restore earlier versions and export the current project as ZIP.
 - In a project chat, Mara reads a single project file, changes exact passages or writes a new file; every change is all-or-nothing, saved as a revision marked as hers and can be restored.
+- Preview an HTML page of a project in the **Files** tab: its stylesheets, scripts, SVG pictures and data files come from the project, links open its other pages, and script errors are listed with file and line. The preview shows the saved state, reloads after saving and runs isolated from the account (its own sandboxed origin, no access to cookies, chats or the API). Running commands, tests and development servers are not part of it yet.
 - Protect concurrent editor changes and unsaved drafts; files stay account/project scoped and count toward storage limits.
 - Keep project chat history after deleting a project; project files and sources are deleted with that project.
 - Retrieve account-scoped **RAG-Lite knowledge**, maintain long-term memory where supported and generate an account memory summary.
@@ -208,7 +209,7 @@ CoreAI's web frontend communicates with backend PHP endpoints using **JSON** and
 | `api/console_actions.php` | Message actions: feedback, alternative answer, continue, edit, branch into a new chat, compaction | Account ownership, CSRF for writes; refused while Mara is still writing |
 | `api/models.php`, `api/user_settings.php` | Model inventory, Core tier preferences, user settings | Allowed-model filters and privileged variant updates |
 | `api/console_upload.php`, `api/console_media.php` | Uploaded files, generated images and account media | Scoped storage and private media delivery |
-| `api/console_project_store.php`, `api/project_files.php` | Projects, chats, text-file storage and versioning | Project/account ownership, per-file constraints |
+| `api/console_project_store.php`, `api/project_files.php` | Projects, chats, text-file storage, versioning and the page preview | Project/account ownership, per-file constraints; the preview is sent with a sandbox CSP |
 | `api/console_artifacts.php`, `api/console_artifact.php` | Generated files, ZIP outputs and download links | Real registered artifacts and guarded downloads |
 | `api/skills.php`, `api/console_native_tools.php` | Curated Skills and controlled tool orchestration | Server-authorized tools, bounded actions |
 | `api/deep_research.php` | Research plan, status, cancellation and report download | Signed-in run ownership; CSRF for writes |

@@ -1,0 +1,61 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.75
+Datum: 16.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.74 nach PR #330
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Roadmap P10 (Terminal, Laufzeiten und Vorschau), aufgeteilt wie P09:
+- A (diese Version): Vorschau von Web-Projekten (CF-040, statischer Teil).
+- B: Befehle und Tests im Sandbox-Container des Python-Workers ausfuehren, mit echter Ausgabe und
+  Exitcode, auch fuer Mara (CF-036, CF-039).
+- C: Terminal- und Prozesssitzungen, Entwicklungsserver mit Vorschau (CF-035, CF-040).
+Abnahme von P10 laut Roadmap: Ein Beispielprojekt startet, zeigt eine Vorschau und liefert echte
+Testausgaben; ein eingebauter Fehler wird bearbeitet und der Ablauf erneut geprueft. Schritt A deckt
+die Vorschau ab, die Testausgaben kommen mit B.
+
+UMSETZUNG
+- api/project_preview_store.php (rein bis auf das Laden der Dateien):
+  - coreui_preview_ref: Verweise nur innerhalb des Projekts; Webadressen, data:, javascript:, Anker
+    und ".." ueber die Wurzel hinaus bleiben draussen. Abfrage und Anker werden entfernt.
+  - coreui_preview_build in einem Durchgang: Stylesheets und Skripte des Projekts kommen in die Seite
+    ("</style" und "</script" darin entschaerft), Skripte mit sourceURL und ohne Zeilenvorschub vor
+    dem Code (Zeile 1 der Datei ist Zeile 1 des Skripts). Skripte mit defer wandern ans Ende von
+    <body> (laufen nach dem Aufbau und vor DOMContentLoaded, in Reihenfolge). Module bleiben Module.
+    SVG-Bilder werden Datenadressen; Links auf vorhandene Seiten des Projekts bekommen
+    data-coreai-page. Die uebrigen Textdateien (hoechstens 2 MB) gehen als Datenliste in ein kleines
+    Skript am Anfang von <head>, in einer einzigen Zeile, JSON mit JSON_HEX_TAG usw.
+  - Das Skript bedient fetch() und XMLHttpRequest fuer Projektdateien (Blob-Adressen), schickt
+    Seitenlinks per postMessage an die Oberflaeche (im eigenen Tab: echte Navigation) und meldet
+    Fehler mit Datei und Zeile; fuer die eigenen Zeilen der Seite rechnet eine Zeilenliste die
+    Verschiebung durch eingebettete Dateien zurueck.
+  - Kopfzeilen: text/html, "Content-Security-Policy: sandbox allow-scripts allow-forms allow-modals
+    allow-popups" (kein allow-same-origin, kein allow-top-navigation), nosniff, no-store,
+    Referrer-Policy no-referrer. Fehlerseite als kurzes HTML mit denselben Kopfzeilen.
+- api/project_files.php: GET ?project_id=P&preview=PFAD (geprueft mit coreui_pfiles_path, nur .html
+  und .htm, nur das eigene Projekt). Kein neuer Endpunkt, keine nginx-Aenderung.
+- js/coreui-project-files.js: Knopf "Vorschau" in der Liste (index.html oder erste Seite) und bei
+  einer geoeffneten HTML-Datei; eigener Bereich ausserhalb der neu gezeichneten Liste (Tippen und
+  Verlauf laden die Seite nicht neu); Rahmen mit sandbox="allow-scripts allow-forms allow-modals
+  allow-popups"; "Neu laden", "In neuem Tab", "Schliessen"; Fehlerliste (hoechstens 5); Nachrichten
+  nur vom eigenen Rahmen; nach Speichern, Wiederherstellen, Umbenennen, Loeschen und Anlegen neu.
+- css/coreui-project-files.css: Vorschau mit weisser Seite in beiden Looks, Telefon.
+- README (Abschnitt 4 und API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3 und P10), Feature-Matrix
+  CF-040 auf Teilbestand.
+- Keine Migration, kein Installer, kein Worker, keine nginx-Vorlage geaendert. Modelfile und
+  SYSTEM-Prompts unberuehrt.
+- Grenzen: Importe zwischen ES-Modulen des Projekts werden nicht aufgeloest; Bilder ausser SVG gibt
+  es in Projekten nicht (nur Textdateien); absolute Webadressen laedt der Browser selbst.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Die Vorschau auf dem echten Server hinter dem Reverse-Proxy: nach dem Update in einem Projekt mit
+  einer HTML-Seite im Tab Dateien auf "Vorschau" tippen. Kein Deployment behauptet.
+
+NAECHSTER SCHRITT
+- P10 B: Befehle und Tests im Sandbox-Container ausfuehren (Projektdateien als Arbeitsverzeichnis,
+  echte Ausgabe und Exitcode), auch als Werkzeug fuer Mara im Projekt-Chat.
+
+Version: 0.7.75

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.74: a chat branches off at one of Mara's replies into a new chat (P09 C).
+# CoreAI: TCI Interface 0.7.75: the preview of a web project in the tab Dateien (P10 A).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -230,6 +230,9 @@ UI_FILES=(
   api/console_branch_store.php
   scripts/chat-branch-selftest.php
   scripts/chat-branch-ui-selftest.cjs
+  api/project_preview_store.php
+  scripts/project-preview-selftest.php
+  scripts/project-preview-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1440,6 +1443,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Gespraechszweig-Selbsttest: ${chat_branch_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.75 (P10 A): the preview of a web project in an origin of its own.
+  project_preview_test=''
+  if project_preview_test="$(compose exec -T php php scripts/project-preview-selftest.php 2>&1)"; then
+    ok "$project_preview_test"
+  else
+    fail "Projektvorschau-Selbsttest: ${project_preview_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1838,6 +1849,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Gespraechszweige: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.75 (P10 A): the preview in the tab Dateien; needs Playwright for Node and php.
+    if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/project-preview-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Projektvorschau: Seite, Skripte, Daten, Fehler mit Zeile und Aktualisieren im Browser geprueft.'
+      else
+        fail 'Projektvorschau: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Projektvorschau: Oberflaechentest uebersprungen (Playwright fuer Node oder php nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

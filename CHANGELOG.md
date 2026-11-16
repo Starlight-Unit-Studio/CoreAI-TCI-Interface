@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.75 - 16.11.2026
+
+- **Preview of a web project (roadmap P10, step A):** In the **Files** tab of a project, "Vorschau" shows an HTML page of the project (the list opens `index.html` or the first page; an open page has its own button). The project's stylesheets and scripts are put into the page, SVG pictures become data addresses, `fetch()` and `XMLHttpRequest` read the project's other text files, and links to other pages of the project open them in the preview.
+- **Isolated:** The page is sent by `api/project_files.php?preview=` with `Content-Security-Policy: sandbox allow-scripts allow-forms allow-modals allow-popups` and runs in a frame with the same sandbox: an origin of its own, no access to cookies, the chat, the API or the surrounding page, also in a tab of its own. Nothing runs on the server.
+- **Errors with file and line:** Script errors of the page appear above it with the file and the line in that file (scripts carry a sourceURL; the page's own lines are mapped back). Deferred scripts keep their order and run before `DOMContentLoaded` as in the browser.
+- **Current state:** The preview shows the saved state and reloads after saving, restoring, renaming or deleting.
+- **Not yet:** Running commands and tests (P10 B) and development servers with a process (P10 C). ES module imports between project files are not resolved in the preview.
+- **Tests:** New `scripts/project-preview-selftest.php` and `scripts/project-preview-ui-selftest.cjs` (Playwright, with the real PHP page builder and the real CSP), both in both preflights.
+
 ## 0.7.74 - 16.11.2026
 
 - **Conversation branches (roadmap P09, step C):** Every reply of Mara has the action "In neuem Chat abzweigen". It opens a new chat that goes on from exactly that reply; the original chat is only read, never changed.

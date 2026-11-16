@@ -1,4 +1,15 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
+Version main: 0.7.74, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.75).
+ZIEL 0.7.75: Roadmap P10 Schritt A, Vorschau von Web-Projekten im Tab
+Dateien (eigene Sandbox-Herkunft, Stylesheets, Skripte, Daten, Seitenlinks,
+Fehler mit Datei und Zeile, nach dem Speichern aktuell). Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_75.txt.
+Naechster Schritt: P10 B (Ausfuehren und Testen im Sandbox-Container),
+danach P10 C (Terminal, Entwicklungsserver).
+Nach Merge naechste Version 0.7.76.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
 Version main: 0.7.73, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.74).
 ZIEL 0.7.74: Roadmap P09 Schritt C, Gespraechszweige. An einer Antwort von
 Mara zweigt ein Chat in einen neuen Chat ab: Nachrichten bis dorthin mit

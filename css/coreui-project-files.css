@@ -136,8 +136,27 @@
   font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; white-space:pre; overflow:auto;
 }
 
+/* 0.7.75 (P10 A): the preview of a page. The page keeps its own white canvas in both looks. */
+.project-preview { margin-top:14px; border:1px solid var(--line-strong); background:var(--panel-solid); }
+.project-preview[hidden] { display:none; }
+.project-preview-head {
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:8px 10px;
+  border-bottom:1px solid var(--line); background:var(--panel-cx);
+}
+.project-preview-title { display:flex; flex-direction:column; min-width:0; flex:1 1 200px; }
+.project-preview-title small { color:var(--muted); overflow-wrap:anywhere; }
+.project-preview-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.project-preview-errors {
+  margin:0; padding:8px 12px 8px 28px; color:var(--red); font-size:13px; overflow-wrap:anywhere;
+  border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--red) 8%, transparent);
+}
+.project-preview-errors[hidden] { display:none; }
+.project-preview-frame { display:block; width:100%; height:min(70vh, 720px); min-height:320px; border:0; background:#fff; }
+
 @media (max-width: 640px) {
   .project-files-toolbar > * { flex:1 1 auto; }
+  .project-preview-actions > * { flex:1 1 auto; }
+  .project-preview-frame { height:60vh; }
   .project-file-actions > * { flex:1 1 calc(50% - 8px); }
   .project-file-revision { flex-wrap:wrap; }
   .project-file-compare-actions { margin-left:0; width:100%; }
