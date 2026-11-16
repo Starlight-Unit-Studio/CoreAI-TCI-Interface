@@ -18,11 +18,22 @@ UMSETZUNG
   Werkzeuge und Medien, Suche/Browser/Deep Research, Projektdateien,
   Skills, Pet/Personalisierung, Konten, Security und Workflows.
   Statusgrenzen und Links zu den bestehenden Quellmodulen.
-- docs/OPERATIONS.md erhaelt alle vorherigen Detailtexte zur
-  Installation/Update/Uninstall/Server-Hardware sowie Diagnosebefehle,
-  bevor sie im README auf eine sichere Kurzfassung reduziert wurden.
-- README bleibt <24000 Byte; offizielle setup.sh URL, "Quick start:",
-  "Updating CoreAI", aktuelles CHANGELOG und Lizenzlinks bleiben.
+- docs/OPERATIONS.md konserviert die vorherigen Betriebshinweise;
+  die README selbst enthaelt Install/Update/Uninstall/Hardware/Diagnose
+  ebenfalls vollstaendig und ohne erzwungenen Dateiwechsel.
+- Betreiberentscheidung 16.11.2026: README bis 512 KiB/524288 Bytes.
+  Version-Skript und AGENTS/CLAUDE/VERSIONING_POLICY sind entsprechend
+  geaendert; fruehere 24-KB-Sperre ist ungueltig.
+- README selbst enthaelt APIs und Schnittstellen: PHP JSON/SSE, Ollama,
+  SearXNG und Upstream-Engines, Deep-Research-Quellen, Read-only-MCP,
+  vorbereiteten aber nicht aktiven OpenAI-kompatiblen Adapter,
+  optionale Media-/Mail-/Push-Dienste, Provider-/Lizenzbedingungen.
+- Deutliches Unabhaengigkeitsstatement fuer CoreAI gegenueber
+  CoreUI, altem Starlight-Spielchat und STU Console; alte Pfadnamen
+  bleiben historisch, sind aber keine Laufzeitvoraussetzung.
+- Regionale Wetteranbieter nicht namentlich in der README auffuehren.
+  Offizielle setup.sh URL, "Quick start:", "Updating CoreAI",
+  CHANGELOG und Lizenzlinks bleiben sichtbar.
 - Dokumentation trennt klar die normale SearXNG-Trefferliste von
   tatsaechlichem Seitenlesen in Deep Research sowie explizitem
   Playwright. Kein unbewiesener Anspruch auf vollstaendige GPT-
