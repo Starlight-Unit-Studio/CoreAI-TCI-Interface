@@ -4,6 +4,11 @@
 
 **PUBLIC GITHUB DOCUMENTATION DEFAULTS TO ENGLISH.** The entire active `README.md` must be written in English. This includes Quick start, Hardware requirements, Updating CoreAI, explanations and tables. **Translate button names and settings paths into English in the README too, without German labels in parentheses.** This is documentation-only. The **System/Light/Dark appearance mode is implemented in 0.6.12**; the complete English/German UI language selector remains planned. Historical German changelogs, handovers, UI strings and the legally binding `LICENSE.de.md` are not to be translated automatically.
 
+**README-INHALT (Betreiberentscheidung 16.11.2026):**
+- Die README darf bis zu **512 KiB / 524288 Bytes** gross sein; der alte 24-KB-Grenzwert gilt nicht mehr.
+- Mara-Funktionen, APIs, externe Provider, Suchanbindungen, Voraussetzungen, Hosting, Install/Update/Uninstall und Lizenz in der README selbst erlaeutern. Zusatzdokumente sind optional, kein Ersatz.
+- SearXNG bedeutet keine verpflichtende Google-Suche/Google-API; nur wirklich verfuegbare Integrationen als umgesetzt bezeichnen.
+
 **README.md IST KEIN CHANGELOG.**
 
 - Die englische README beschreibt den aktuellen Produktstand, Hardware-Richtwerte, den **offiziellen Installations-One-Liner**, den **integrierten Updater unter Settings > System > CoreAI Update**, Bedienung, Betrieb und Lizenz.

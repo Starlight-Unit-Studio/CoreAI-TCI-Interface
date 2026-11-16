@@ -1,6 +1,6 @@
 # CoreAI: TCI Interface
 
-## 0.7.72 - 16.11.2026
+## 0.7.73 - 16.11.2026
 
 - **Mara changes single project files (roadmap P09, step B):** In a chat that belongs to a project, Mara can now read a project file and change it in a targeted way instead of building the whole project again. Three tools in her work loop: `[DATEI: path]` reads a file with line numbers, `[DATEI_AENDERN: path]` changes it with one or more SEARCH/REPLACE blocks (`<<<<<<< SUCHEN` ... `=======` ... `>>>>>>> ERSETZEN`), `[DATEI_NEU: path]` creates a file or replaces it as a whole.
 - **All or nothing:** Every search text has to occur exactly once in the file; if one block does not match, nothing changes and Mara gets told why (missing or ambiguous), so she can read the file again and retry. CRLF files keep their line endings; a code fence around a whole new file is removed.
@@ -9,6 +9,14 @@
 - **Prompt:** In a project chat Mara's prompt lists the project's files (up to 40, 15 for small Cores) and the format of the tools. The operator Modelfile and SYSTEM prompts are unchanged. File blocks never reach the chat, also when an answer is cut off.
 - **Database:** Migration `045_project_files_mara` adds the revision source `mara`.
 - **Tests:** New `scripts/project-file-tools-selftest.php` (markers, SEARCH/REPLACE, all or nothing, tools against SQLite and MariaDB, prompt hint, a whole turn with a scripted Core, the safety net). `image-gen-selftest.php` and `skills-selftest.php` follow the extended list of first-step tools.
+
+## 0.7.72 - 16.11.2026
+
+- **Complete, self-contained product README:** Mara's implemented capabilities are organized across conversation/agentic work, research, coding/files, projects/memory, image/vision, audio/video, personalization, user roles and security. Installation, updating, uninstalling, hardware planning and diagnostics remain directly in the README; [docs/CAPABILITIES.md](docs/CAPABILITIES.md) and [docs/OPERATIONS.md](docs/OPERATIONS.md) add technical detail.
+- **APIs and integrations documented:** An explicit section describes the internal authenticated PHP JSON/SSE API, the built-in local Ollama connection, optional Ollama Cloud, SearXNG and its configurable upstream search providers, guarded Research/Playwright, conditional DuckDuckGo fallback, read-only public MCP discovery, optional FLUX image/voice/SMTP/Push services and the **currently disabled** generic OpenAI-compatible provider adapter. Planned connectors are not represented as live.
+- **Correct product and model description:** CoreAI is documented as its own application, without presenting the separate E.M.B.E.R. game-chat framework as an integrated component or install requirement. TCI Cores are default presets, not the only usable models; other compatible installed Ollama tags are supported with owner-controlled grants. Unrelated product history is omitted from the README.
+- **README owner limit:** The previous repository-only 24 KB cap is replaced by **512 KiB (524288 bytes)** in `scripts/version-merge-check.py`; `AGENTS.md`, `CLAUDE.md` and `docs/VERSIONING_POLICY.md` have been synchronized. The README remains in English and is still a product guide, not a release diary.
+- **Documentation-only implementation:** No new model, inference adapter, database migration, API capability or service was introduced. Version/asset checks and technical handover remain part of the normal release contract.
 
 ## 0.7.71 - 16.11.2026
 

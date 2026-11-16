@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.72: Mara reads and changes single project files in a project chat (P09 B).
+# CoreAI: TCI Interface 0.7.73: Mara reads and changes single project files in a project chat (P09 B).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1420,7 +1420,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Projektdateien-Selbsttest: ${project_files_test:-Unbekannter Fehler}"
   fi
 
-  # 0.7.72 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
+  # 0.7.73 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
   project_file_tools_test=''
   if project_file_tools_test="$(compose exec -T php php scripts/project-file-tools-selftest.php 2>&1)"; then
     ok "$project_file_tools_test"
