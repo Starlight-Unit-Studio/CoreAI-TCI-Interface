@@ -44,6 +44,7 @@
   function isGenerator(name) { return /^ember-coreui:gen$/i.test(String(name || '').trim()); }
 
   // Mirror of coreui_core_tier() for names the server has not labelled yet.
+  var TIER_KEYS = ['schnell', 'normal', 'plus', 'pro', 'premium'];
   var TIERS = [['e2b', 'TCI Core Schnell', 'Gemma 4 E2B'], ['e4b', 'TCI Core Normal', 'Gemma 4 E4B'],
     ['12b', 'TCI Core Plus', 'Gemma 4 12B'], ['26b', 'TCI Core Pro', 'Gemma 4 26B'],
     ['31b', 'TCI Core Premium', 'Gemma 4 31B']];
@@ -307,8 +308,8 @@
         if (state.override && labelOf(state.override) === label
             && isCloud(state.override) === cloud
             && names.some(function (n) { return sameCore(n, state.override); })) return state.override;
-        var id = TIERS.filter(function (t) { return t[1] === label; })[0];
-        var preferred = id && state.selectedTiers[id[0]];
+        var idx = TIERS.findIndex(function (t) { return t[1] === label; });
+        var preferred = idx >= 0 ? state.selectedTiers[TIER_KEYS[idx]] : '';
         if (preferred && isCloud(preferred) === cloud && labelOf(preferred) === label
             && names.some(function (n) { return sameCore(n, preferred); })) {
           return sameCore(preferred, state.defaultModel) ? '' : preferred;
