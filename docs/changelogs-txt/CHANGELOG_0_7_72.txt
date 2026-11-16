@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.72
+16.11.2026
+
+README UND FUNKTIONSKATALOG
+- Die README ist weiterhin vollstaendig Englisch und wurde als
+  aktuelle Produkt- statt als Release-/Bugfix-Sammlung strukturiert.
+- Maras derzeitige Funktionen stehen erstmals zentral in acht klar
+  gegliederten Bereichen: Chat/Agent, Web/Deep Research, Code/Dateien,
+  Projekte/Wissen/Gedaechtnis, Vision/Bilder, Audio/Video,
+  Chat/Personalisierung sowie Admin/Sicherheit.
+- Wichtige Grenzen direkt gekennzeichnet: Modell-/Hardware-/Lizenz-
+  und Kontovoraussetzungen; normale SearXNG-Treffer sind kein
+  Nachweis tatsaechlich besuchter Seiten; Playwright nur nach
+  bewusster Recherche-Auswahl, externe Connectoren weiter geplant.
+- Die Core-Varianten-Verwaltung 0.7.71 wird korrekt beschrieben:
+  Betreiberwaehler in "Manage Cores", eine Chat-Option je TCI-Stufe.
+- Der Installations-One-Liner, Owner-Updater, Server-Sicherheit,
+  Hardware-Richtwerte, Uninstall und Lizenzinformation bleiben im
+  README knapp vorhanden. Alle bisherigen Details wurden ohne
+  Funktionsverlust in docs/OPERATIONS.md ueberfuehrt.
+- Neuer ausfuehrlicher docs/CAPABILITIES.md mit Statusgrenzen und
+  Links auf die verantwortlichen Implementierungen. Keine geplanten
+  Funktionen als vollendet dargestellt.
+- README-Umfang bleibt unter der bestehenden 24.000-Byte-Grenze.
+  Kein App-Verhalten, keine API, kein Modell/Modelfile, keine
+  Datenbankmigration und keine Laufzeitkonfiguration geaendert.
+- GitHub Versions-/README-/Cache-Vertraege und Preflights pruefen.
+  Die Quelltext-Version 0.7.72 gilt erst nach Merge; ein GitHub
+  Merge allein aktualisiert keinen laufenden CoreAI-Server.
