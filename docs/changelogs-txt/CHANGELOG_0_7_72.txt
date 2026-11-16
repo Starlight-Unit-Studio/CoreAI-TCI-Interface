@@ -28,9 +28,11 @@ README UND FUNKTIONSKATALOG
   SearXNG, das optionale oeffentliche Read-only-MCP, Sprach-/Bilddienste,
   SMTP und Push. Keine Connector-/Provider-Funktion als aktiv behauptet,
   die derzeit nur vorbereitet oder geplant ist.
-- Der unabhängige Betrieb von CoreAI ohne altes CoreUI, Gamechat oder
-  STU Console wird gleich am Anfang ausdruecklich klargestellt. Die
-  vorhandenen historischen Dateinamen sind keine Laufzeitabhaengigkeit.
+- Die README stellt klar: E.M.B.E.R. gehoert bereits zu CoreAI und
+  muss nicht als separates Softwareprodukt installiert werden. TCI
+  Cores sind Standard-Voreinstellungen, keine exklusiven Modelle;
+  weitere kompatible Ollama-Tags koennen vom Betreiber freigegeben
+  und in CoreAI genutzt werden. Keine irrelevante Produktvorgeschichte.
 - Keine neuen Laufzeitfeatures, APIs, Modelle, Datenbankmigrationen
   oder Dienste implementiert; nur Produktdokumentation/Versionsregeln.
 - GitHub Versions-/README-/Cache-Vertraege und Preflights pruefen.
