@@ -1,0 +1,92 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.69
+Datum: 15.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.68
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: Bildgenerierung abgeschlossen, weiter mit der Roadmap. Naechstes Paket ist P09
+(Projekt-Workspace: gebaute Projekte bleiben als Ordner, gezielte Aenderungen einzelner Dateien,
+neues ZIP). Diese Version ist Schritt A: die Dateien bleiben im Projekt und lassen sich dort
+bearbeiten. Schritt B (Mara aendert einzelne Dateien selbst) folgt.
+
+VORHER VORHANDEN
+- Chat-Projekte seit Migration 037 (Name, offener oder isolierter Kontext, Anweisungen, Quellen
+  als RAG-Lite, Chats). Python-Bauten erzeugen Artefakte je Antwort (stu_console_artifacts,
+  Dateien unter var/ember_py/artifacts, SHA-256 geprueft), aber ohne dauerhaften Projektordner.
+
+UMSETZUNG
+- Migration 044_project_files: stu_console_project_files (aktueller Stand, Pfad utf8mb4_bin,
+  eindeutig je Projekt) und stu_console_project_file_revisions (jeder Stand mit Quelle build,
+  create, edit, rename, restore, bei Bauten mit session_id und message_id). Fremdschluessel auf
+  Projekt und Konto mit ON DELETE CASCADE.
+- api/project_files_store.php: Pfadpruefung (relativ, Buchstaben, Ziffern, Leerzeichen, ._-()+,
+  keine "."/".."-Teile, hoechstens 8 Ebenen und 200 Zeichen, bekannte Textendung), Textpruefung
+  (UTF-8, kein NUL, hoechstens 512 KB), Schreiben mit Konfliktpruefung (base_sha256), gleicher
+  Inhalt schreibt nichts, Verlauf mit den letzten 20 Staenden, Umbenennen mit Verlauf, Loeschen
+  mit Verlauf, Wiederherstellen als neuer Stand, Suche (LIKE mit Escape, Zeilennummern), ZIP raus
+  (ZipArchive, Name aus dem Projektnamen), ZIP rein (gemeinsamer Oberordner entfernt, __MACOSX,
+  Binaer, zu gross und ungueltige Namen ausgelassen und benannt), Grenzen je Projekt (200 Dateien,
+  10 MB) und Kontospeicher (coreui_files_room), Arbeit als Savepoint im laufenden Transaktionsrahmen.
+- api/chat.php: nach coreui_console_artifact_attach uebernimmt coreui_pfiles_import_build die
+  Textdateien eines Baus, wenn der Chat zu einem Projekt gehoert (Fehler werden nur geloggt, die
+  Antwort bleibt). Das Arbeitsprotokoll zeigt "N Dateien im Projekt gespeichert".
+- api/files_store.php: Projektdateien samt Revisionen zaehlen im Speicher (Einstellungen > Speicher
+  und Admin Core). api/console_project_store.php: Projekt loeschen nimmt Dateien und Verlauf mit.
+- api/project_files.php: GET Liste, Datei, Stand, Download (nur text/plain als Anhang, CSP sandbox),
+  Suche, ZIP; POST create, save, rename, delete, restore mit CSRF. Fehler mit klaren Codes
+  (404, 409 bei file_exists und file_changed, 413 bei project_full und storage_full, 503 ohne
+  Migration).
+- js/coreui-project-files.js und css/coreui-project-files.css: Tab "Dateien" (Baum, Suche, Editor
+  mit Zeilennummern und Strg+S, Verlauf, Vergleich nach Myers mit eingeklappten unveraenderten
+  Bereichen, Wiederherstellen, Konfliktloesung, Umbenennen, Loeschen, ZIP). Ungespeicherte
+  Aenderungen bleiben beim Tabwechsel erhalten; Wechsel in ein anderes Projekt, Zurueck zur Liste
+  und eine andere Datei fragen vorher. js/coreui-projects.js: dritter Tab, app.html: Tab und Panel.
+
+KORREKTUR NEBENBEI
+- api/console_project_sources.php (Tab "Quellen", seit 037) stand nicht in der PHP-Freigabe beider
+  nginx-Vorlagen und antwortete auf installierten Servern mit 404. Jetzt freigegeben.
+- scripts/api-allowlist-selftest.cjs vergleicht alle Endpunkte, die js/*.js und die HTML-Seiten
+  aufrufen (nur Zeichenketten, keine Kommentare), mit beiden Freigabelisten. Mit der alten Liste
+  schlaegt er genau bei console_project_sources und project_files fehl.
+- README.md war auf main 24128 Bytes gross (Banner) und liess den Versions-Guard scheitern. Ohne
+  Inhaltsverlust auf 23994 Bytes gekuerzt (Zeitzone, zwei Log-Bloecke zusammengefasst, SQLite-
+  Hinweis, Zuschnitt, Hosting-Satz), eine Zeile "Projects" ergaenzt.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien, node --check fuer beide Skripte, bash -n fuer beide Preflights.
+- scripts/project-files-selftest.php gegen SQLite und mit COREUI_SELFTEST_DB=1 gegen MariaDB (Migration
+  044 eingespielt; gross/klein getrennte Pfade, Emoji, FOR UPDATE, Import im laufenden Transaktionsrahmen,
+  Kaskade beim Loeschen des Projekts). Eigene Testkonten mit example.test, danach entfernt.
+- scripts/project-files-ui-selftest.cjs (Playwright): leeres Projekt, abgelehnter Pfad, neue Datei,
+  Bearbeiten mit Strg+S, Verlauf, Vergleich (+2 -1), Wiederherstellen, Konflikt nach einem Bau mit beiden
+  Auswegen, Umbenennen, Rueckfrage bei ungespeicherten Aenderungen, Baum mit Ordnern, Suche, Loeschen,
+  Zeilenvergleich gegen 300 Zufallsfaelle, Dunkel, Telefon ohne seitliches Scrollen. Screenshots angesehen.
+- scripts/api-allowlist-selftest.cjs: besteht; mit der alten Freigabeliste schlaegt er bei
+  console_project_sources und project_files fehl.
+- Gegenproben (absichtlich eingebaute Fehler, danach zurueckgesetzt): ".." erlaubt, Konfliktpruefung aus,
+  Import auch ausserhalb von Projekten, Speicherpruefung aus, keine Rueckfrage vor dem Verwerfen,
+  Konfliktknoepfe fehlen. Jeder Fall laesst den passenden Test scheitern.
+- Alle Selbsttests, die Projekte, Speicher, app.html oder nginx betreffen (79): 70 bestanden, 9
+  fehlgeschlagen; dieselben 9 scheitern auch auf main 0.7.68 (chat-menu-ui, image-progress-ui,
+  long-chat, model-library-ui, pets-ui, profile-stats-ui, security-ui, session-list-ui, voice-input).
+- python3 scripts/version-merge-check.py --base-version 0.7.68 und scripts/cache-bust.py --verify.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
+  Branch 0.7.69: 172 bestanden, 15 fehlgeschlagen. main 0.7.68: 169 bestanden, 15 fehlgeschlagen.
+  Auf beiden Seiten dieselben 15 (browse-image: Python-Playwright fehlt hier; browse-live-ui, chat-menu-ui,
+  image-progress-ui, long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser,
+  security-ui, session-list-ui, settings-tabs-ui, update-ui, voice-input, voice-samples-ui). Die drei
+  zusaetzlich bestandenen sind die neuen Tests. Durch 0.7.69 kommt kein Fehlschlag dazu.
+- GitHub-Pruefungen auf dem PR (10 Laeufe): alle bestanden.
+
+NICHT GETESTET
+- Ein echter Bau in einem Projekt-Chat auf dem Server (Python-Worker, Migration 044 auf der
+  Live-Datenbank). Nach dem Update: in einem Projekt-Chat etwas bauen lassen, dann im Tab
+  "Dateien" pruefen, ob die Dateien da sind. Kein Deployment und kein ZIP-Release behauptet.
+
+NAECHSTER SCHRITT (P09 B)
+- Mara liest und aendert im Projekt-Chat einzelne Dateien selbst (Werkzeuge im Arbeitsablauf mit
+  Vergleich im Chat), statt das ganze Projekt neu zu bauen. Danach Gespraechsverzweigungen (P09)
+  und P10 (Terminal, Vorschau).
+
+Version: 0.7.69

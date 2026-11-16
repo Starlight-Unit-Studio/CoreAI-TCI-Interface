@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.7.69 - 15.11.2026
+
+- **Project files (roadmap P09, first step):** Every chat project now keeps its files. Text files that Mara builds in a project chat (the loose files and the text files inside the ZIP) are saved to the project automatically. Images and other binary files stay attached to the chat; an incomplete output is not imported.
+- **New tab "Dateien" on the project page:** File tree with folders, search in names and content (with line numbers), a text editor with line numbers and Ctrl+S, the history of every file with a line-by-line comparison and restore, new file, rename, delete, a single file as download and the whole current state as a ZIP.
+- **Nothing is lost silently:** Every saved state stays as a revision (the newest 20 per file). If a build changed a file while it was open in the editor, saving stops with a clear message; the edit stays in the editor and can be saved over the new state or discarded. Unsaved edits survive switching tabs and are only dropped after a confirmation.
+- **Limits and storage:** Text files only (UTF-8, common code and text formats), 512 KB per file, 200 files and 10 MB per project. Project files and their revisions count toward the account's storage (Settings > Storage, Admin Core). Deleting a project deletes its files; its chats stay.
+- **Safety:** All access is bound to the signed-in account and the project; writes need the CSRF token. Paths are relative and checked (no `..`, at most eight levels). Files are only ever delivered as plain-text downloads, never rendered as HTML by the server.
+- **Fix: project sources were blocked by nginx:** `api/console_project_sources.php` (tab "Quellen") was missing from the PHP allowlist of both nginx templates and answered 404 on installed servers. It is allowed now, together with the new `api/project_files.php`. A new check (`scripts/api-allowlist-selftest.cjs`) compares every endpoint the interface calls with both allowlists.
+- **Database:** Migration `044_project_files` (two tables, files and revisions); it runs with the normal update.
+- **README:** Shortened slightly to stay within the 24 KB documentation limit (the banner pushed it over); no content removed, a line on projects added.
+- **Tests:** New `scripts/project-files-selftest.php` (SQLite, and MariaDB with `COREUI_SELFTEST_DB=1`), `scripts/project-files-ui-selftest.cjs` (Playwright) and `scripts/api-allowlist-selftest.cjs`, all in both preflights.
+
 ## 0.7.68 - 15.11.2026
 
 - **Kontextgerechte Treffergruppen:** Selbst bei einem Betreiberlimit von zehn Treffern werden nur vollständig in `STU_EMBER_WEB_MAX_CHARS` passende Quellen an Mara und die Quellenanzeige übergeben. Die restlichen Treffer bleiben bis zur nächsten angeforderten Runde im Seitenpuffer; keine abgeschnittenen Quellenbelege.

@@ -12,6 +12,7 @@ require_once __DIR__ . '/console_project_handoff.php';
 require_once __DIR__ . '/console_native_tools.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/console_project_store.php';
+require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/profile_store.php';
 require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
@@ -3505,7 +3506,15 @@ function ember_insert(
   }
   $insertedId = (int)$pdo->lastInsertId();
   if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null) {
-    if ($pendingArtifacts !== null) coreui_console_artifact_attach($pdo, $uid, $sessionId, (int)$replyToId, $insertedId, $pendingArtifacts);
+    if ($pendingArtifacts !== null) {
+      coreui_console_artifact_attach($pdo, $uid, $sessionId, (int)$replyToId, $insertedId, $pendingArtifacts);
+      // 0.7.69 (P09): in a project chat the built text files stay as project files.
+      try {
+        coreui_pfiles_import_build($pdo, $uid, $sessionId, $insertedId, (array)($pendingArtifacts['files'] ?? []));
+      } catch (Throwable $e) {
+        error_log('[CoreAI] project files import failed: ' . get_class($e));
+      }
+    }
     if ((int)$replyToId > 0) coreui_plan_bind_response($pdo,$uid,$sessionId,(int)$replyToId,$insertedId);
     // 0.6.39 (P20.5): the images Mara made in this turn belong to her answer.
     if ((int)$replyToId > 0 && !empty($GLOBALS['COREUI_PENDING_IMAGES'])) {

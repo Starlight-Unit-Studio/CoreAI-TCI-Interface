@@ -1,0 +1,146 @@
+/* CoreAI 0.7.69 (P09): the tab "Dateien" on the project page (js/coreui-project-files.js).
+   Uses the CoreAI theme variables, so light, dark and the motifs follow without own colors. */
+#projectFilesPanel[hidden] { display:none !important; }
+.project-file-results { min-width:0; }
+.project-files { display:flex; flex-direction:column; gap:10px; min-width:0; color:var(--txt); }
+.project-files.is-busy { cursor:progress; }
+
+.project-files-toolbar,
+.project-file-actions,
+.project-files-form-actions,
+.project-file-compare-actions,
+.project-files-conflict { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.project-files-search {
+  flex:1 1 220px; min-width:0; min-height:40px; padding:8px 12px;
+  border:1px solid var(--line); background:var(--panel); color:var(--txt);
+  font:15px var(--coreui-font,"Rajdhani"),"Segoe UI",sans-serif;
+}
+.project-files-search:focus-visible,
+.project-files-form input:focus-visible { outline:2px solid var(--cx); outline-offset:1px; }
+.project-file-editor:focus-visible { outline:2px solid var(--cx); outline-offset:-2px; }
+
+.project-files-primary,
+.project-files-secondary,
+.project-files-danger,
+.project-files-back {
+  display:inline-flex; align-items:center; justify-content:center; min-height:38px; padding:7px 14px;
+  border:1px solid var(--line-strong); background:var(--panel); color:var(--cx);
+  font:600 14px var(--coreui-font,"Rajdhani"),"Segoe UI",sans-serif; letter-spacing:.02em;
+  text-decoration:none; cursor:pointer;
+  clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.project-files-primary { background:var(--cx); border-color:var(--cx); color:#fff; }
+.project-files-danger { color:var(--red); border-color:color-mix(in srgb, var(--red) 55%, transparent); }
+.project-files-back { border-color:transparent; background:transparent; padding-left:0; }
+.project-files-primary:disabled,
+.project-files-secondary:disabled { opacity:.45; cursor:not-allowed; }
+.project-files-secondary:hover,
+.project-files-danger:hover,
+.project-files-back:hover { background:var(--panel-cx); }
+.project-files-primary:focus-visible,
+.project-files-secondary:focus-visible,
+.project-files-danger:focus-visible,
+.project-files-back:focus-visible,
+.project-file-row:focus-visible,
+.project-folder-row:focus-visible,
+.project-search-result:focus-visible { outline:2px solid var(--cx); outline-offset:2px; }
+
+.project-files-summary,
+.project-files-hint { margin:0; color:var(--muted); font-size:13px; }
+.project-files-status { margin:0; min-height:1.2em; font-size:14px; color:var(--muted); }
+.project-files-status:empty { min-height:0; }
+.project-files-status.is-ok { color:var(--green); }
+.project-files-status.is-error { color:var(--red); }
+.project-files-empty {
+  margin:0; padding:16px; border:1px dashed var(--line); background:var(--panel); color:var(--muted); line-height:1.45;
+}
+.project-files-empty.is-error { color:var(--red); }
+
+.project-files-form {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; padding:12px;
+  border:1px solid var(--line-strong); background:var(--panel-solid);
+}
+.project-files-form-label { display:flex; flex-direction:column; gap:5px; flex:1 1 260px; min-width:0; font-size:13px; color:var(--muted); }
+.project-files-form input {
+  min-height:38px; padding:7px 10px; border:1px solid var(--line); background:var(--panel); color:var(--txt);
+  font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+
+.project-files-tree,
+.project-files-results,
+.project-file-history { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.project-file-row,
+.project-folder-row,
+.project-search-result {
+  display:flex; align-items:center; gap:10px; width:100%; min-width:0; min-height:44px;
+  padding:8px 12px 8px calc(12px + var(--depth, 0) * 18px);
+  border:1px solid var(--line); background:var(--panel); color:var(--txt);
+  text-align:left; font:inherit; cursor:pointer;
+}
+.project-file-row:hover,
+.project-folder-row:hover,
+.project-search-result:hover { background:var(--panel-cx); border-color:var(--line-strong); }
+.project-folder-row { border-style:dashed; color:var(--muted); font-weight:600; }
+.project-folder-chevron { width:12px; color:var(--cx); }
+.project-folder-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.project-file-kind {
+  flex:0 0 auto; min-width:42px; padding:3px 4px; border:1px solid var(--line-strong); color:var(--cx);
+  font:700 11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; text-align:center;
+}
+.project-file-text { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+.project-file-text strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+.project-file-text small { color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.project-search-result { flex-direction:column; align-items:stretch; padding-left:12px; }
+.project-search-line { display:flex; gap:8px; min-width:0; font-size:13px; color:var(--muted); }
+.project-search-number { flex:0 0 auto; }
+.project-search-line code { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--txt);
+  font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+
+.project-file-head { display:flex; align-items:center; gap:10px; min-width:0; flex-wrap:wrap; }
+.project-file-title { display:flex; flex-direction:column; gap:2px; min-width:0; flex:1 1 220px; }
+.project-file-title strong { overflow-wrap:anywhere; font:600 17px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+.project-file-title small { color:var(--muted); font-size:13px; }
+
+.project-file-revision {
+  display:flex; align-items:center; gap:10px; padding:8px 12px; border:1px solid var(--line); background:var(--panel);
+}
+.project-file-revision.is-current { border-left:2px solid var(--cx); }
+
+.project-file-compare { border:1px solid var(--line-strong); background:var(--panel-solid); min-width:0; }
+.project-file-compare-head { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); }
+.project-diff-count { color:var(--muted); font:13px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+.project-file-compare-actions { margin-left:auto; }
+.project-diff { max-height:50vh; overflow:auto; font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+.project-diff-row { display:grid; grid-template-columns:3.2em 3.2em 1.4em minmax(0, 1fr); min-width:max-content; }
+.project-diff-row.is-add { background:color-mix(in srgb, var(--green) 16%, transparent); }
+.project-diff-row.is-del { background:color-mix(in srgb, var(--red) 16%, transparent); }
+.project-diff-num { padding:0 6px; text-align:right; color:var(--muted); user-select:none; }
+.project-diff-sign { text-align:center; user-select:none; }
+.project-diff-row.is-add .project-diff-sign { color:var(--green); }
+.project-diff-row.is-del .project-diff-sign { color:var(--red); }
+.project-diff-text { white-space:pre; padding-right:12px; font:inherit; }
+.project-diff-gap { padding:3px 12px; color:var(--muted); background:var(--panel-cx); font-style:italic; }
+
+.project-file-editor-wrap {
+  display:flex; min-width:0; height:min(62vh, 640px); min-height:280px;
+  border:1px solid var(--line-strong); background:var(--panel-solid);
+}
+.project-file-gutter {
+  margin:0; padding:10px 8px; min-width:3.4em; overflow:hidden; text-align:right; user-select:none;
+  color:var(--muted); background:var(--panel-cx); border-right:1px solid var(--line);
+  font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.project-file-editor {
+  flex:1; min-width:0; margin:0; padding:10px 12px; border:0; resize:none; background:transparent; color:var(--txt);
+  font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; tab-size:2; white-space:pre; overflow:auto;
+}
+
+@media (max-width: 640px) {
+  .project-files-toolbar > * { flex:1 1 auto; }
+  .project-file-actions > * { flex:1 1 calc(50% - 8px); }
+  .project-file-revision { flex-wrap:wrap; }
+  .project-file-compare-actions { margin-left:0; width:100%; }
+  .project-file-compare-actions > * { flex:1 1 auto; }
+  .project-file-editor-wrap { height:58vh; }
+}

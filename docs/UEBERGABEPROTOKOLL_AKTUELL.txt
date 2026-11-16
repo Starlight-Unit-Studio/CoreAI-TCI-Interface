@@ -1,4 +1,17 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 15.11.2026
+Version main: 0.7.68, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.69).
+ZIEL 0.7.69: Roadmap P09 Schritt A, Projektdateien. Bauten in Projekt-Chats
+bleiben als Textdateien im Projekt; neuer Tab "Dateien" mit Baum, Suche,
+Editor, Verlauf, Vergleich, Wiederherstellen, Umbenennen, Loeschen und ZIP.
+Migration 044_project_files. Nebenbei: api/console_project_sources.php in
+beiden nginx-Vorlagen freigegeben (Tab Quellen lieferte 404), neuer Test
+scripts/api-allowlist-selftest.cjs; README unter 24 KB gebracht.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_69.txt.
+Naechster Schritt: P09 B (Mara aendert einzelne Projektdateien selbst).
+Nach Merge naechste Version 0.7.70.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 15.11.2026
 Version main: 0.7.67, Branch in Arbeit: fix/progressive-web-research-0768.
 ZIEL 0.7.68: progressive Websuche statt bloss vier Suchtreffern pro Suche.
 SearXNG bleibt; neue Treffergruppen auf [WEB: WEITER], per-Turn-Puffer,

@@ -92,6 +92,8 @@ function coreui_project_delete(PDO $pdo, int $uid, string $projectId): array {
     $s->execute([$uid,$projectId]);
     foreach ($s->fetchAll(PDO::FETCH_COLUMN) ?: [] as $uuid) coreui_knowledge_delete($pdo,$uid,(string)$uuid);
   }
+  // 0.7.69 (P09): the project's files and their history go with it.
+  if (function_exists('coreui_pfiles_purge')) coreui_pfiles_purge($pdo,$uid,$projectId);
   $del=$pdo->prepare('DELETE FROM stu_console_projects WHERE id=? AND user_id=?');
   $del->execute([$projectId,$uid]);
   return ['deleted'=>($del->rowCount()===1),'chats_kept'=>(int)$st->rowCount()];

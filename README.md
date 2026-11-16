@@ -10,7 +10,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.68`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.69`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
@@ -52,7 +52,7 @@ The updater is `scripts/coreai-updater.sh` with host-side systemd services; the 
 
 ### Alternative: update over SSH
 
-If the built-in updater is not yet installed or a server has no working systemd update service, rerun the **same one-liner from Quick start** on the host. This also installs/configures the update service where supported. Avoid treating a GitHub merge as an already completed server update.
+If the built-in updater is not yet installed or a server has no working systemd update service, rerun the **same one-liner from Quick start** on the host. This also installs/configures the update service where supported. A GitHub merge is not a completed server update.
 
 For diagnostics:
 
@@ -61,7 +61,7 @@ systemctl status coreai-update.path coreai-update-check.timer
 sudo tail -n 80 /opt/ember-coreui/var/update/update.log
 ```
 
-The last command reads the updater's log; if no update has run, the log may not exist yet.
+The log may not exist before the first update.
 
 ## Uninstalling CoreAI
 
@@ -110,7 +110,7 @@ A compatible GPU or vGPU with enough VRAM **may substantially accelerate Ollama 
 | RS 4000 G12 | 12 | 32 GB | E4B / 12B, depending on workload |
 | RS 8000 G12 | 16 | 64 GB | Larger CPU-only models and more headroom |
 
-No named hosting product is a required minimum. A GPU-free server can run CoreAI, but available RAM, memory bandwidth and CPU speed determine the practical experience.
+No named hosting product is a required minimum. On a GPU-free server, RAM, memory bandwidth and CPU speed decide the practical experience.
 
 ## Access and important settings
 
@@ -131,12 +131,13 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 ## Current capabilities
 
 - **Mara and Cores:** The chat Core selector and Thinking effort are separate. In **Cores verwalten**, admins can search Ollama, install additional local Cores, inspect installed Cores, update individual local Cores and safely remove nonprotected Cores. The default Core and its base are deletion-protected; Ollama accounts are optional. Hugging Face browsing is **In preparation**. Inference stays serialized.
-- **Local time awareness:** Mara uses the browser's IANA time zone to calculate date and time for private chats. No location permission is needed; invalid or unavailable values fall back to the configured server time zone.
+- **Local time awareness:** Mara takes date and time for private chats from the browser's IANA time zone (no location permission; the server time zone is the fallback).
 - **Conversations and accounts:** The chat opens on an unsaved welcome screen with a personal greeting and four example questions. A new chat is saved only on its first text, attachment or spoken turn; earlier chats stay in the sidebar. History, follow-up suggestions, context management and owner, admin, user and optional guest roles remain. Mara's TCI header sits beside her avatar; her reply starts below it at full chat width.
 - **Chat menu:** The ⋮ menu of a chat shares it as a Markdown file, pins it on top, lists its uploaded files, searches all its messages, gives a direct link for the home screen, locks it with the account PIN, adds it to a project, archives or deletes it. **Settings → Archived chats** searches, filters, restores and deletes them; **Settings → Data controls** exports the account and archives or deletes all chats (never locked or busy ones).
 - **Research:** Websuche continues via `[WEB: WEITER]`. Playwright only via **+ > Research**. Deep Research separate. Weather: WDR / Open-Meteo.
 - **Deep Research:** Hybrid Lead/Workers, parallel web I/O, checkpoints, Citation Agent and safe tools. [Architecture](docs/DEEP_RESEARCH_HYBRID_ARCHITECTURE.md).
 - **Input row (+ menu):** **Attach** Photos, Camera or Files (up to ten). **Tools** Create image, Web search, Research or Deep Research, shown as a chip. Unavailable tools are greyed with the reason; Connectors are **In preparation**.
+- **Projects:** Projects group chats with instructions, sources and files; text files Mara builds there stay in the **Files** tab (tree, search, editor, history with compare and restore, ZIP).
 - **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected Core and tools.
 - **Notifications:** **Settings → Notifications** sends Push (Web Push, also when CoreAI is closed; iPhone/iPad from the Home screen) or E-Mail for long answers, sign-ins and password changes, new features after an installed update, and new CoreAI versions (owner). Planned categories show **In preparation**. The owner sets up E-Mail sending under **Admin Core → Operations → E-Mail sending** (STARTTLS, SSL/TLS, or plain only to a local relay; encrypted password, test mail); SMTP values in `api/config.local.php` or `COREUI_SMTP_*` take precedence.
 - **Sign-in and security:** **Settings → Security** offers passkeys and security keys, an authenticator app, E-Mail codes, ten one-time recovery codes, Lockdown mode (no web or browser), advanced account security (passkey-only sign-in, no reset by E-Mail, 24-hour sessions), sign-out everywhere, security history. Account PIN, push approval and CSP are **In preparation**. Host-side reset: `php scripts/security-reset.php <email> [--passkeys]`.
@@ -160,7 +161,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 
 ## Operations and diagnostics
 
-Leftover language-test accounts: preview with `bash scripts/stack.sh exec php php scripts/cleanup-language-test-users.php --dry-run`; `--execute` requires confirmation.
+Leftover language-test accounts: preview `bash scripts/stack.sh exec php php scripts/cleanup-language-test-users.php --dry-run`; `--execute` requires confirmation.
 
 Run these commands on the installed host:
 
@@ -174,21 +175,15 @@ curl -fsS http://127.0.0.1:9080/api/health.php
 
 Local TCI tiers appear as **TCI Core Schnell, Normal, Plus, Pro and Premium**; newly built Ollama models use `ember-core:e2b`, `:e4b`, `:12b`, `:26b` and `:31b`. After a verified install or update only newly pulled temporary Gemma source tags are deleted; existing tags and older defaults stay (Ollama shares identical weight blobs). Cloud tags are unchanged.
 
-In Settings > Profile, photo uploads open a touch crop editor (square for the user, free/portrait for the assistant). Originals and crop coordinates are kept, so uploads can be cropped again. Image generation uses the 1024px reference.
+In Settings > Profile, photo uploads open a touch crop editor (square for the user, free/portrait for the assistant). Originals and crop coordinates are kept for re-cropping. Image generation uses the 1024px reference.
 
-The portrait-reference regression check uses optional PDO SQLite for account-isolation and memory-side-effect tests. On hosts without that driver, avatar geometry and prompt consistency are still checked; preflight prints a `PARTIAL` warning instead of reporting full coverage.
+Without the optional PDO SQLite driver, the portrait-reference check still covers avatar geometry and prompt consistency but skips its isolation tests; preflight then prints `PARTIAL`.
 
-To inspect the optional voice service:
+To inspect the optional voice or image service:
 
 ```bash
 cd /opt/ember-coreui
 sudo ./scripts/stack.sh logs --tail=100 voice
-```
-
-To inspect the optional image service:
-
-```bash
-cd /opt/ember-coreui
 sudo ./scripts/stack.sh logs --tail=100 image
 ```
 
