@@ -6,7 +6,9 @@
 
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**CoreAI: TCI Interface** is a free, self-hosted AI chat and working environment built by **Starlight Unit Studios**. **Mara Thorne** is the single TCI assistant; **E.M.B.E.R.** is the framework that provides her models, tools, research, memory and work execution. CoreAI runs primarily on your own Linux server with **Ollama**, with optional outside services, and is **not** a standalone operating system.
+**CoreAI: TCI Interface** is a free, self-hosted AI assistant and working environment built by **Starlight Unit Studios**. **Mara Thorne** is the single TCI assistant; **E.M.B.E.R.** is her framework for models, tools, memory, research and work execution. CoreAI runs primarily on your own Linux server with **Ollama**, with optional external services. It is **not a standalone operating system**.
+
+**CoreAI is independent from the former CoreUI project, the Starlight Unit game chat and the discontinued STU Console.** Earlier software was a development starting point, not a runtime requirement. Historical names such as `ember-coreui` or `/opt/ember-coreui` remain in some paths and model tags for compatibility; they do **not** mean the game or old CoreUI must be installed. Playwright is the separately integrated browser tool.
 
 **Current source version: `0.7.72`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
@@ -14,20 +16,26 @@
 
 ## Quick start: install CoreAI
 
-Use the **official installer** on a Debian 12+ or Ubuntu 24.04+ Linux server with root/`sudo` access, internet access and adequate CPU, RAM and storage. The installer can set up the isolated Nginx, PHP-FPM, MariaDB, workers, Docker/Compose and Ollama environment.
+Run the **official one-line installer** on the target server over an interactive SSH connection:
 
-~~~bash
+```bash
 ( setup_file="$(mktemp)" && trap 'rm -f -- "$setup_file"' EXIT && curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh -o "$setup_file" && sudo bash "$setup_file" )
-~~~
+```
 
-On first setup, enter an admin e-mail address and a password of **at least 12 characters**. The default installation path is `/opt/ember-coreui` (a retained historical path name). The app binds to `127.0.0.1:9080` by default; put remote access behind a properly secured HTTPS reverse proxy or use an SSH tunnel.
+This command downloads the setup launcher to a temporary file, runs it as root and removes it afterwards. It can also update an existing installation, but after initial setup the **built-in updater is the preferred day-to-day method**.
 
-The installer follows the current `main` source, performs a preflight and preserves existing user data on normal updates. For complete setup parameters, host configuration, model downloads and recovery, use the [installation and operations manual](docs/OPERATIONS.md).
+**Requirements:** Debian 12+ or Ubuntu 24.04+, root or `sudo` access, internet access and sufficient CPU, RAM and storage for the chosen Ollama model. The installer can install host tools, Docker/Compose and Ollama. Downloads and model builds require additional disk space and bandwidth.
+
+On first installation, the setup prompts for an administrator email and a password of at least 12 characters at the terminal. Its default installation path is `/opt/ember-coreui`; that historical directory name remains unchanged for compatibility.
+
+The launcher installs the latest `main` commit and runs preflight. Updates preserve settings, accounts, database, uploads and logs. Verify the application in your browser.
+
+An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still be selected explicitly through `COREUI_SETUP_SOURCE=release`. It is **not** the current source version. A `main` source checkout must not be represented as a newly verified ZIP release.
 
 
 ## What Mara can do
 
-This is an inventory of **implemented, user-facing functions**, not a claim that every model supports them. Features marked **optional** require enabled services, hardware, account rights or individual model licenses. Source-level implementation and successful tests do not guarantee that a server has been updated. For evidence, scope and detailed limitations, see the [capability catalog](CAPABILITIES.md).
+This is an inventory of **implemented, user-facing functions**, not a claim that every model supports them. Features marked **optional** require enabled services, hardware, account rights or individual model licenses. Source-level implementation and successful tests do not guarantee that a server has been updated. For evidence, scope and detailed limitations, see the [capability catalog](docs/CAPABILITIES.md).
 
 ### 1. Conversation, thinking and agentic work
 
@@ -56,7 +64,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Combine a serial lead/reasoner with isolated research workers and parallel **network I/O**, checkpoints, source-quality checks and follow-up searches; not parallel Ollama inference.
 - Preview and download Deep Research reports as Markdown with numbered, clickable references grounded in sources actually read by that workflow.
 - Inspect supported public PDF, CSV and JSON sources via bounded, guarded document adapters where available.
-- Request weather context from the configured **WDR/Open-Meteo** integration; the normal search and browser tools remain separate.
+- Retrieve current weather context using configured weather-data providers; this stays separate from ordinary search and browser navigation.
 - Respect account restrictions and **Lockdown** mode that disables web and browser access.
 
 ### 3. Code, calculations, files and generated outputs
@@ -140,45 +148,212 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Fully translated English/German UI, public creator profile, public chat-link sharing, and settings explicitly labeled **In preparation**.
 - Guaranteed vision/audio/image support on every model, browser access to every site, or equal performance on every CPU server.
 
+## Integrations and API connections
+
+CoreAI has its **own HTTP/SSE application API** and integrates local inference, search, research, image and voice services. Its standard installation does **not** depend on the earlier CoreUI, the game chat, the STU Console, a Google developer account, or an OpenAI subscription. External services can be enabled when required for a particular feature. A connection is not advertised as usable merely because a form or configuration key exists.
+
+**Status key:** **Integrated** means a corresponding implementation exists; **optional** requires setup, a compatible model or permission; **prepared** means configuration/code scaffolding exists but is **not** a finished selectable service; **planned** means not currently shipped.
+
+### Local, cloud and model-provider connections
+
+| Provider / connection | Status | What actually works |
+| --- | --- | --- |
+| **Ollama REST API** | **Integrated (default)** | Local inference for Mara using installed Gemma/TCI and other approved Ollama models. The application uses Ollama's model inventory, model details and chat endpoints; model calls share CoreAI's serial queue. |
+| **Ollama model library** | **Integrated (admin)** | Administrators can search the official Ollama registry and install/update eligible local models. Compatibility and per-account permissions still apply. |
+| **TCI Original / Uncensored variants** | **Integrated (admin)** | In **Manage Cores**, the operator binds an installed local Ollama tag to each TCI tier. The chat displays one tier entry, not an extra model gallery. |
+| **Ollama Cloud tags** | **Optional** | Available only through a suitable configured Ollama runtime/account, with the remote provider's terms and availability. A cloud model is not equivalent to local/offline processing. |
+| **Generic OpenAI-compatible external API** | **Prepared, not activated** | Admin Core can store an HTTPS endpoint, label and model name, with server-side key configuration. The provider adapter currently reports `adapter_reserved` and is intentionally not available as a working chat model. |
+| **Direct OpenAI, Anthropic, Gemini and other hosted API adapters** | **Not generally shipped** | The roadmap may reference these services or their architectures; an API key alone does not create a tested account integration. |
+
+A Core can have text, tools, image understanding, speech or other capabilities only when its **actual model implementation supports them**. A tier name, license acceptance or installation alone does not guarantee those modalities. The owner can enable/disable available models and tools independently.
+
+### Web search and source providers
+
+**CoreAI Web Search does not require a Google Search API key, a Google login or the Google Custom Search service.** It uses a **self-hosted SearXNG metasearch instance** by default. SearXNG queries whichever upstream search engines the operator has enabled. Those upstream engines can include Google, but there is no single mandatory Google dependency.
+
+- **SearXNG: integrated.** Configure its local JSON search endpoint through `COREUI_SEARXNG_URL` or `STU_EMBER_WEB_URL`. Server templates enable the JSON response format. Upstream results and rate limits depend on the chosen engines.
+- **Progressive search: integrated.** Mara can request more unseen source hits using `[WEB: WEITER]`, paginate, refine terms and deduplicate URLs while staying within turn and context budgets.
+- **Evidence boundary:** A normal search hit is a **title, URL and excerpt**, not proof that Mara read the original page. The source strip accurately shows what the selected Web Search tool returned.
+- **DuckDuckGo public results: conditional research fallback.** Deep Research contains a guarded public-HTML discovery path when its configured SearXNG search fails. It is not an unrestricted second web browser.
+- **Playwright browser: optional, explicitly selected.** The **Research** action in the attachment/tool menu authorizes the separate browser reader. Ordinary Web Search must not silently launch Playwright.
+- **Deep Research: optional, integrated.** This longer workflow combines guarded HTTP document readers, browser page reads, verified reference extraction, quality checks and reports. Discovery snippets alone are not accepted as proof that a page was read.
+- **Public read-only MCP search discovery: optional and restricted.** An owner-configured HTTPS MCP tool can return public URL candidates to Deep Research. The endpoint and tool name are constrained, returned URLs are checked, and private account credentials or arbitrary MCP actions are not exposed.
+
+Searches sent through a self-hosted SearXNG gateway can still reach third-party upstream engines. **Self-hosted search is not the same as fully offline searching**, and no search engine guarantees that every website is available.
+
+### Media, system and notification integrations
+
+| Integration | Status | Purpose |
+| --- | --- | --- |
+| **Open-Meteo API** | **Integrated, requires internet** | Optional geocoding and location-based weather forecasts for weather-related requests. |
+| **Local FLUX.2-klein / pGen image service** | **Optional, integrated** | CPU-based image generation and supported edits; local job, status, preview and image APIs. Hardware, model and account-license checks apply. |
+| **Hugging Face model downloads** | **Optional source of model assets** | Certain image weights or text encoders have gated license/token requirements. A server token is not a replacement for each user's required consent. |
+| **Local voice/TTS service (Eve/Pocket TTS)** | **Optional, integrated** | Speech output, available voices, previews and hands-free features; model-dependent audio input/transcription remains a separate capability. |
+| **SMTP service or relay** | **Optional, integrated** | Authentication codes, password recovery, security alerts, notifications and owner test mail. Credentials are configured server-side. |
+| **Web Push / VAPID** | **Optional, integrated** | Device subscriptions and supported push notifications over HTTPS, subject to browser permissions. |
+| **GitHub repository/official installer** | **Integrated for update delivery** | Official source, release information, installer/update discovery. This is **not** a general GitHub account connector that lets Mara edit repositories or create pull requests on a user's behalf. |
+| **Generic account-linked Connectors / OAuth app marketplace** | **Planned** | No general-purpose third-party account integration is promised simply because its entry exists as a placeholder. |
+
+### CoreAI internal HTTP and streaming API
+
+CoreAI's web frontend communicates with backend PHP endpoints using **JSON** and authenticated **Server-Sent Events (SSE)** for live replies/progress. These APIs are application interfaces, **not an officially supported unrestricted public REST/SDK service**. Do not expose private endpoints to the internet without the deployed authentication, TLS and reverse-proxy controls.
+
+| API module | User-facing function | Protection / behavior |
+| --- | --- | --- |
+| `api/auth.php`, `api/account_security.php` | Authentication, sessions, second factors, security management | Session security, rate limits, signed-in controls |
+| `api/console_stream.php` | Streaming conversation, tool activity and source previews | Authenticated conversation and scoped job, SSE |
+| `api/console_sessions.php`, `api/console_messages.php` | Chat list, messages and conversation context | Account ownership, locks and visibility |
+| `api/models.php`, `api/user_settings.php` | Model inventory, Core tier preferences, user settings | Allowed-model filters and privileged variant updates |
+| `api/console_upload.php`, `api/console_media.php` | Uploaded files, generated images and account media | Scoped storage and private media delivery |
+| `api/console_project_store.php`, `api/project_files.php` | Projects, chats, text-file storage and versioning | Project/account ownership, per-file constraints |
+| `api/console_artifacts.php`, `api/console_artifact.php` | Generated files, ZIP outputs and download links | Real registered artifacts and guarded downloads |
+| `api/skills.php`, `api/console_native_tools.php` | Curated Skills and controlled tool orchestration | Server-authorized tools, bounded actions |
+| `api/deep_research.php` | Research plan, status, cancellation and report download | Signed-in run ownership; CSRF for writes |
+| `api/console_browse_stream.php` | Browser frames and step events | Account-scoped browser-job SSE |
+| `api/image_gen.php`, `api/pgen.php` | Image-generation profiles, requests and results | Per-user quotas, hardware/license gates |
+| `api/voice.php`, `api/voice_live.php` | Voice settings, read-aloud/live speech sessions | Account, device/browser and service availability |
+| `api/notifications.php`, `api/web_push.php` | Notification preferences and browser push | Subscription permissions and push keys |
+| `api/update.php`, `api/admin.php` | Owner update controls, system settings, diagnostics | Role-checked operations; privileged actions |
+| `api/health.php` | Runtime dependency/health summary | Limited operational diagnostics, not an open admin endpoint |
+
+**Security and data flow:** Write actions require the applicable session permissions and CSRF protection. Uploaded documents, memory, project sources and generated outputs are account-scoped. A selected external inference or search provider may process data off the host; provider configuration and privacy terms should be reviewed before enabling it. Do not paste API secrets into messages or commit them to Git.
+
+### Interface, deployment and source configuration
+
+- **Frontend:** responsive browser app (phone and desktop), with its own CoreAI angular theme, optional SoftGlass, and private session endpoints.
+- **Application services:** Nginx, PHP-FPM, MariaDB, model queue/agent worker, Ollama, optional image/voice/browser workers and optional SearXNG service.
+- **Configuration:** local overrides live outside committed secrets. See `api/config.local.php.example` and `api/config.php`. Change one operator-facing option at a time and run the preflight.
+- **Developer access:** GitHub hosts the source and regression workflows; self-hosted installations do not require a ChatGPT/Claude developer subscription to run the default local chat.
+- **Historical naming:** `coreui` and `ember-coreui` paths/tags are compatibility artifacts, **not dependencies on the former CoreUI website or game chat**.
+
+
 ## Updating CoreAI
 
-**Preferred after initial setup:** the owner opens **Settings > System > CoreAI Update**, checks for an update, reviews the change notes and starts it from the interface. The host-side updater first backs up the database, runs the official setup and reports success/failure. A host systemd service is needed; the browser alone does not update the server.
+### Recommended: update from the CoreAI interface
 
-Automatic updates are **off by default**. When the owner explicitly enables them, the configured host service checks `main` at approximately 10-minute intervals. **Later** pauses prompts/automatic runs for 60 minutes; manual updates remain available. A merge does not itself deploy to an installed instance.
+Once the initial setup has installed the host-side update service, **the owner can update CoreAI without SSH**.
 
-**SSH fallback:** rerun the same official one-liner above. See [updater setup, automatic-update behavior, backups and troubleshooting](docs/OPERATIONS.md#updating-coreai).
+1. Sign in with the **owner** account and navigate to **Settings → System → CoreAI Update**.
+2. Select **Check now** to request a GitHub check. The host also checks the repository's `main` branch **approximately every 10 minutes** when the systemd update service is running.
+3. When a new commit is available, choose **Open update window**, or use the notification shown to the owner. Review the version and available change notes.
+4. Choose whether Ollama should be restarted afterwards, then select **Start update**. CoreAI creates a **database backup** first, runs its official setup and reports progress in the interface.
+5. During service restarts, connected users see a waiting screen. The application reloads automatically when CoreAI is available again. If an update fails, the owner can inspect its status and update log.
+
+**Important:** Automatic installation is **off by default** and requires the owner's explicit opt-in in **Settings → System → CoreAI Update**. If enabled, the host checks official `main` about every 10 minutes and installs a new merge one check later. A **Later** click pauses both the popup and automatic updates for **60 minutes**, including across reloads and new merges; manual updates remain possible. Each commit is attempted automatically at most once. A failed Preflight is logged with a **Retry** action; no repair is claimed until a corrected release exists. Auto-updates create backups and restart CoreAI services, so active conversations may be interrupted. Other roles cannot change these controls.
+
+> **Interface language:** General offers German, English (beta) and browser-auto detection. Core UI labels have English translations; some strings remain German. Light/dark mode is under **Settings → Appearance**.
+
+The updater is `scripts/coreai-updater.sh` with host-side systemd services; the web UI submits requests, not shell commands. Backups are stored under `/opt/ember-coreui/var/backups`, with the updater retaining the five most recent automatic SQL backups. The built-in updater follows the same official `main` setup path as the one-liner.
+
+### Alternative: update over SSH
+
+If the built-in updater is not yet installed or a server has no working systemd update service, rerun the **same one-liner from Quick start** on the host. This also installs/configures the update service where supported. A GitHub merge is not a completed server update.
+
+For diagnostics:
+
+```bash
+systemctl status coreai-update.path coreai-update-check.timer
+sudo tail -n 80 /opt/ember-coreui/var/update/update.log
+```
+
+The log may not exist before the first update.
 
 ## Uninstalling CoreAI
 
-The owner can start a safe uninstall from **Admin Core > Operations**, with password and typed confirmation. It archives the installation instead of silently purging it. A separate interactive [SSH uninstall procedure](docs/OPERATIONS.md#uninstalling-coreai) is available if the UI fails. Permanent deletion requires stronger host-side confirmation; other Docker apps and Ollama installations are not removed by the safe uninstall.
+The **owner** can request a safe uninstall from **Admin Core → Operations**. Confirm with the owner password and `COREAI ENTFERNEN`. A host service stops only the `ember-coreui` Compose project and CoreAI's own systemd services. It archives the whole installation (MariaDB data, accounts, uploads, settings, backups) under `/opt/ember-coreui.uninstalled.*`. Other Docker apps, web servers and Ollama with its models stay untouched. A separate reverse-proxy route may need manual removal.
 
-## Hardware and deployment
+If the web UI or updater is broken, run this **standalone SSH one-liner** on the CoreAI server:
 
-**CPU-only is the supported baseline; a GPU/VRAM is optional.** These are **planning guidelines**, not benchmarks or guaranteed minimums. Model quantization, token context, simultaneous services and memory bandwidth significantly change requirements.
+```bash
+( uninstall_file="$(mktemp)" && trap 'rm -f -- "$uninstall_file"' EXIT && curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/scripts/uninstall.sh -o "$uninstall_file" && sudo bash "$uninstall_file" --execute )
+```
 
-| Local model tier | RAM guideline | CPU guideline | SSD/NVMe space |
-| --- | --- | --- | --- |
-| E2B restricted entry | 8 GB | 4 dedicated cores | 40 GB |
-| E2B comfortable entry | 16 GB | 4–8 cores | 60–80 GB |
-| E4B everyday | 24–32 GB | 6–12 cores | 80 GB+ |
-| 12B larger | 32 GB+ | 8+ cores | 100 GB+ |
-| 26B / 31B large | 64–96 GB+ | 12–16+ cores | 120 GB+ |
+The interactive script also asks for `COREAI ENTFERNEN`. Preview without changes: `sudo bash /opt/ember-coreui/scripts/uninstall.sh --dry-run`. **Permanent data deletion** is available only through interactive SSH via `--purge-data` and a second, stronger typed phrase; it is intentionally unavailable from the admin UI. These commands support the standard Docker installation in `/opt/ember-coreui`, not native or custom installations.
 
-These totals include system headroom and are **not equivalent to Ollama weight size**. Larger context windows may increase RAM sharply. Optional speech, FLUX image generation and browser workers need additional resources; image downloads and builds also take disk space and time.
+## Hardware requirements
 
-The standard private deployment uses an isolated Nginx/PHP-FPM/MariaDB/worker stack. Its default network bind is `127.0.0.1:9080`; publicly exposed installations need a secured reverse proxy, HTTPS and access controls. Default model/runtime names on new installations can differ from retained models on older hosts. A dedicated native installer also exists but is **not** the normal coexisting-app installation path.
+**CPU-only is the baseline.** CoreAI is designed to operate on a Linux root server **without a dedicated GPU or VRAM**. CPU performance, system RAM and SSD/NVMe storage matter more than a graphics card for the standard deployment.
 
-[Detailed RAM and CPU estimates, optional image/voice requirements and supported installer flags](docs/OPERATIONS.md#hardware-requirements).
+These configurations are **planning guidelines, not benchmarks or guarantees**. They assume one locally active Ollama model in roughly 4-bit quantization and a relatively short 4K-8K token context. Much larger contexts, such as 131K tokens, can increase memory requirements substantially.
 
-## Managing, diagnosing and backing up CoreAI
+| CPU-only profile | System RAM | CPU | Available SSD/NVMe space | Intended use |
+| --- | --- | --- | --- | --- |
+| **E2B, restricted minimum** | **8 GB** | 4 dedicated cores | 40 GB | Short context; omit optional voice and browser worker; limited features |
+| **E2B, recommended** | **16 GB** | 4-8 dedicated cores | 60-80 GB | More room for CoreAI services and tools |
+| **E4B, recommended** | **24-32 GB** | 6-12 dedicated cores | 80 GB+ | Comfortable starting point for the standard local model |
+| **12B, larger model** | **32 GB+** | 8+ dedicated cores | 100 GB+ | CPU generation may be noticeably slower |
+| **26B A4B / 31B, large models** | **64-96 GB or more** | 12-16+ dedicated cores | 120 GB+ | Plan separately for context size, responsiveness and concurrency |
 
-- **Model management:** Admins install, update or remove eligible Ollama models; the default is protected. The installed variant chosen per TCI tier is configured in **Manage Cores**. Image-generation pGen profiles have their own selection, hardware and license path.
-- **Operator controls:** Admin Core provides user roles, limits, permissions, diagnostics and service options. The owner can configure mail, storage, secure updates and relevant tests.
-- **Diagnostics:** From the installed host run `sudo ./scripts/preflight.sh`, `sudo ./scripts/stack.sh ps`, `sudo ./scripts/stack.sh logs --tail=100` or check `http://127.0.0.1:9080/api/health.php`.
-- **Privacy:** Self-hosting does not require a subscription or phone-home. Optional cloud models, public search services and external integrations may send data off-server under their own terms.
-- **Backups:** The owner updater backs up MariaDB before installing; the safe uninstaller archives installation data. Regular operator backups and access-control checks remain important.
+**Model memory is not server memory.** Google's [Gemma 4 model documentation](https://ai.google.dev/gemma/docs/core) gives approximate Q4 model memory figures of 2.9 GB (E2B), 4.5 GB (E4B), 6.7 GB (12B), 14.4 GB (26B A4B) and 17.5 GB (31B). They cover model loading only and **are not total server RAM requirements**: add memory for the KV cache, context, Ollama, Linux, containers, MariaDB, search and workers.
 
-For runnable commands, the native-install warning, voice/image service logs and reset procedures, read [Operations](docs/OPERATIONS.md).
+**Optional voice service:** Eve's measured voice configuration used about 2.5 GB RAM and up to four CPU cores; the container has a 6 GB memory limit. On small servers, consider `COREUI_INSTALL_VOICE=0` at first installation; changing an existing installation needs a configuration review and backup.
+
+**Optional image service:** FLUX.2-klein 4B needs about 9.4 GB RAM for a 512 × 512 image and about 14.4 GB for 1024 × 1024 (20-thread AVX-512 CPU: about 1 and 3.5 minutes); the container has a 20 GB memory limit, and the weights take about 9 GB of disk space. It is installed by default on servers with 32 GB RAM or more; `COREUI_INSTALL_IMAGE=0` leaves it out, `COREUI_INSTALL_IMAGE=1` forces it. The first installation compiles stable-diffusion.cpp for the CPU (10 to 20 minutes).
+
+### Optional high performance: GPU and VRAM
+
+A compatible GPU or vGPU with enough VRAM **may substantially accelerate Ollama inference**, but is **not required**. Benefits depend on drivers, model support, quantization and how much model data and KV cache fit in VRAM; offloading may need host configuration and does not speed up every CoreAI tool.
+
+### Example CPU root-server configurations
+
+[netcup root servers](https://www.netcup.com/de/server/root-server) are included as **price-oriented examples**, not mandatory hardware or a claim that one provider always has the lowest prices in Germany. Server specifications and availability can change.
+
+| Example netcup plan | CPU cores | RAM | Suggested profile |
+| --- | ---: | ---: | --- |
+| RS 1000 G12 | 4 | 8 GB | Restricted E2B entry point |
+| RS 2000 G12 | 8 | 16 GB | Recommended E2B |
+| RS 4000 G12 | 12 | 32 GB | E4B / 12B, depending on workload |
+| RS 8000 G12 | 16 | 64 GB | Larger CPU-only models and more headroom |
+
+No named hosting product is a required minimum. On a GPU-free server, RAM, memory bandwidth and CPU speed decide the practical experience.
+
+## Access and important settings
+
+By default, CoreAI binds to `127.0.0.1:9080` and is **not directly exposed to the public internet**. Use an SSH tunnel or a separately secured reverse proxy for remote access. Public deployment also requires appropriate HTTPS, access control and operator compliance measures.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `COREUI_HTTP_PORT` | `9080` | Local HTTP port |
+| `COREUI_BIND_ADDRESS` | `127.0.0.1` | Web interface bind address |
+| `COREUI_MODEL_NAME` | `ember-core:e4b` | New installs use this tag; existing saved model names remain unchanged |
+| `COREUI_INSTALL_BROWSE` | `1` | Install the Playwright browser worker |
+| `COREUI_INSTALL_SEARXNG` | `1` | Set up the dedicated search service |
+| `COREUI_INSTALL_VOICE` | `1` | Attempt to build the optional Eve voice service |
+| `COREUI_INSTALL_IMAGE` | `1` from 32 GB RAM, else `0` | Build the optional image service (FLUX.2-klein 4B) |
+
+An existing installation's settings are not silently overwritten. `COREUI_FORCE_CONFIG=1` permits deliberate regeneration, **not a routine update**; review and back up configuration beforehand. See [`scripts/install.sh`](scripts/install.sh) for the full list of options.
+
+## Operations and diagnostics
+
+Leftover language-test accounts: preview `bash scripts/stack.sh exec php php scripts/cleanup-language-test-users.php --dry-run`; `--execute` requires confirmation.
+
+Run these commands on the installed host:
+
+```bash
+cd /opt/ember-coreui
+sudo ./scripts/preflight.sh
+sudo ./scripts/stack.sh ps
+sudo ./scripts/stack.sh logs --tail=100
+curl -fsS http://127.0.0.1:9080/api/health.php
+```
+
+Local TCI tiers appear as **TCI Core Schnell, Normal, Plus, Pro and Premium**; newly built Ollama models use `ember-core:e2b`, `:e4b`, `:12b`, `:26b` and `:31b`. After a verified install or update only newly pulled temporary Gemma source tags are deleted; existing tags and older defaults stay (Ollama shares identical weight blobs). Cloud tags are unchanged.
+
+In Settings > Profile, photo uploads open a touch crop editor (square for the user, free/portrait for the assistant). Originals and crop coordinates are kept for re-cropping. Image generation uses the 1024px reference.
+
+Without the optional PDO SQLite driver, the portrait-reference check still covers avatar geometry and prompt consistency but skips its isolation tests; preflight then prints `PARTIAL`.
+
+To inspect the optional voice or image service:
+
+```bash
+cd /opt/ember-coreui
+sudo ./scripts/stack.sh logs --tail=100 voice
+sudo ./scripts/stack.sh logs --tail=100 image
+```
+
+Use `sudo ./scripts/stack.sh restart` for a normal stack restart or `sudo ./scripts/stack.sh stop` to stop services without deleting data.
+
+**Separate installation path:** `scripts/install-native.sh` is intended for an explicitly dedicated, empty host. It changes system-level services and is **not** the standard installer for parallel operation alongside other Starlight Unit applications.
 
 ## Repository and documentation
 
