@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-// CoreAI 0.7.70 (P09 B): Mara reads and changes single project files in a project chat.
+// CoreAI 0.7.71 (P09 B): Mara reads and changes single project files in a project chat.
 //   php scripts/project-file-tools-selftest.php
 // Offline: the markers [DATEI: pfad], [DATEI_AENDERN: pfad] (SUCHEN/ERSETZEN) and [DATEI_NEU: pfad],
 // the change itself (exactly once, all or nothing, CRLF), line numbers, a wrapping code fence,

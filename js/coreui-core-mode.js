@@ -36,6 +36,9 @@
     return s && s.indexOf(':') < 0 ? s + ':latest' : s;
   }
   function isCloud(name) { return /(?:^|[:._-])cloud(?:$|[:._-])/i.test(String(name || '')); }
+  // Tags from any vendor are distinguished by their *actual* Ollama name.
+  // Installing a variant does not silently activate it.
+  function isUncensored(name) { return /(?:^|[^a-z0-9])uncensored(?:$|[^a-z0-9])/i.test(String(name || '')); }
   function sameCore(a, b) { return !!modelKey(a) && modelKey(a) === modelKey(b); }
   function shortLabel(label) { return String(label || '').replace(/^TCI\s+/, '') || 'Core'; }
   function isGenerator(name) { return /^ember-coreui:gen$/i.test(String(name || '').trim()); }
@@ -96,6 +99,7 @@
 
     function render() {
       var core = shortLabel(labelOf(effective()));
+      if (isUncensored(effective()) && tierLabel(effective())) core += ' · UC';
       chip.setAttribute('data-state', state.loading ? 'loading' : 'ready');
       chip.setAttribute('aria-label', 'Core ' + core + (state.loading ? ', wird geladen' : '') + '. Core auswählen');
       if (nameEl) nameEl.textContent = core;
@@ -278,17 +282,65 @@
       var standard = labelOf(state.defaultModel);
       var shown = {};
       var found = state.override === '';
-      function row(value, extra) {
+      function row(value, extra, choiceGroup) {
         var core = value || state.defaultModel;
         shown[modelKey(core)] = true;
         if (value === state.override) found = true;
         var item = doc.createElement('div');
         item.className = 'core-mode-item';
-        item.appendChild(option(value, labelOf(core), metaFor(core, sizeOf(core), value ? '' : 'Standard'), false));
+        var isTier = tierLabels.indexOf(labelOf(core)) >= 0;
+        var hint = !value ? 'Standard' : isTier && isUncensored(core) ? 'Uncensored' : '';
+        item.appendChild(option(value, labelOf(core), metaFor(core, sizeOf(core), hint), false));
         if (extra) item.appendChild(extra);
+        if (choiceGroup) item.appendChild(choiceGroup);
         list.appendChild(item);
       }
-      function cores(label, cloud) {
+      // The tier row stays compact, but multiple tags remain selectable by exact name.
+    function modelChoices(label, pool) {
+      if (pool.length < 2) return null;
+      var group = doc.createElement('div');
+      group.className = 'core-mode-model-choices';
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-label', label + ': installierte Varianten');
+      pool.slice().sort(function (a, b) {
+        var left = (isUncensored(a) ? 4 : 0) + (state.mara[modelKey(a)] ? 0 : 2);
+        var right = (isUncensored(b) ? 4 : 0) + (state.mara[modelKey(b)] ? 0 : 2);
+        return left - right || a.localeCompare(b);
+      }).forEach(function (name) {
+        var isDefault = sameCore(name, state.defaultModel);
+        var selected = isDefault ? state.override === '' : sameCore(name, state.override);
+        var button = doc.createElement('button');
+        button.type = 'button';
+        button.className = 'core-mode-model-choice';
+        button.setAttribute('role', 'radio');
+        button.setAttribute('data-value', isDefault ? '' : name);
+        button.setAttribute('data-model', name);
+        button.setAttribute('aria-checked', selected ? 'true' : 'false');
+        button.setAttribute('aria-label', label + ': ' + (isUncensored(name) ? 'Uncensored' : 'Original') + ', ' + name);
+        button.disabled = state.saving || state.guest;
+        var title = doc.createElement('span');
+        title.className = 'core-mode-model-choice-title';
+        title.textContent = isUncensored(name) ? 'Uncensored'
+          : (state.mara[modelKey(name)] || isDefault ? 'Original · TCI' : 'Original');
+        var tag = doc.createElement('small');
+        tag.className = 'core-mode-model-choice-tag';
+        tag.textContent = name + (sizeOf(name) ? ' · ' + sizeOf(name) : '');
+        var check = doc.createElement('span');
+        check.className = 'core-mode-model-choice-check';
+        check.setAttribute('aria-hidden', 'true');
+        check.textContent = selected ? '✓' : '';
+        button.appendChild(title);
+        button.appendChild(tag);
+        button.appendChild(check);
+        button.addEventListener('click', function (event) {
+          if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+          return choose(isDefault ? '' : name);
+        });
+        group.appendChild(button);
+      });
+      return group;
+    }
+    function cores(label, cloud) {
         return names.filter(function (n) {
           return isCloud(n) === cloud && labelOf(n) === label && !sameCore(n, state.defaultModel);
         });
@@ -310,7 +362,11 @@
           return;
         }
         var useCloud = cloud !== null && (local === null || cloud === state.override);
-        row(useCloud ? cloud : local, cloud !== null ? variants(tier[1], local, cloud, useCloud, miss) : null);
+        var choices = cores(tier[1], useCloud);
+        if (standard === tier[1] && isCloud(state.defaultModel) === useCloud) choices.unshift(state.defaultModel);
+        row(useCloud ? cloud : local,
+          cloud !== null ? variants(tier[1], local, cloud, useCloud, miss) : null,
+          modelChoices(tier[1], choices));
         // A further Core of the same tier chosen elsewhere (KI-Profil) stays visible.
         cores(tier[1], false).concat(cores(tier[1], true)).forEach(function (n) {
           if (n === state.override && !shown[modelKey(n)]) row(n, null);

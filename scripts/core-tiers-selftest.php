@@ -18,6 +18,8 @@ foreach ([
   'gemma4:e2b' => 'TCI Core Schnell',
   'gemma4:e4b' => 'TCI Core Normal',
   'gemma4:26b' => 'TCI Core Pro',
+  'mdhm_hmmd/gemma4-e4b-uncensored-q8:latest' => 'TCI Core Normal',
+  'eriktonon/gemma4-uncensored:26b' => 'TCI Core Pro',
   'gemma4:31b' => 'TCI Core Premium',
   'gemma4:31b-cloud' => 'TCI Core Premium',
   'gemma4:26b-a4b-it-q4_K_M' => 'TCI Core Pro',

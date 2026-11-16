@@ -369,7 +369,7 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  * `[WEB: ...]`-Befehl") and stay; before 0.5.76 they left "``" behind.
  */
 function ember_strip_stray_tool_markers(string $out): string {
-  // 0.7.70: a project file block (closed, or cut off at the end) never reaches the chat.
+  // 0.7.71: a project file block (closed, or cut off at the end) never reaches the chat.
   $out = (string)preg_replace('~\[\s*(DATEI_(?:AENDERN|NEU))\s*:[^\]\r\n]*\][\s\S]*?(?:\[\s*/\s*\1\s*\]|\z)~u', '', $out);
   $out = (string)preg_replace('~\[\s*DATEI\s*:[^\]\r\n]*\]~u', '', $out);
   return (string)preg_replace_callback(
@@ -5208,7 +5208,7 @@ function ember_build_chat_prompt(
   $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
   $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
-  // 0.7.70 (P09 B): the project's files and Mara's file tools.
+  // 0.7.71 (P09 B): the project's files and Mara's file tools.
   $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact']) : '';
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
@@ -5290,7 +5290,7 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
       : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.');
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
-  // 0.7.70 (P09 B): project files; the project comes from this chat, never from the marker.
+  // 0.7.71 (P09 B): project files; the project comes from this chat, never from the marker.
   if (in_array($tool['tool'], ['pfile_read', 'pfile_edit', 'pfile_write'], true)) {
     return $channel === 'console' ? coreui_pftools_run($pdo, $uid, $sessionId, $tool) : 'Projektdateien gibt es nur im privaten Chat.';
   }
@@ -5521,7 +5521,7 @@ function ember_agent_allowed_tools(int $uid, string $sessionId, bool $explicitBr
   if (coreui_skills_index_active()) $tools[] = 'skill';
   // 0.6.39 (P20.5): images, when this account may have them.
   if ($sessionId !== '' && ember_image_allowed($uid)) $tools[] = 'image';
-  // 0.7.70 (P09 B): in a project chat Mara reads and changes the project's files.
+  // 0.7.71 (P09 B): in a project chat Mara reads and changes the project's files.
   try {
     if (coreui_pftools_project(stu_pdo(), $uid, $sessionId) !== '') array_push($tools, 'pfile_read', 'pfile_edit', 'pfile_write');
   } catch (Throwable $e) {
@@ -5743,7 +5743,7 @@ function ember_generate_reply(
   $profilePromptBlock = !$projectIsolated && function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
   $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
-  // 0.7.70 (P09 B): the project's files and Mara's file tools.
+  // 0.7.71 (P09 B): the project's files and Mara's file tools.
   $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact']) : '';
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";

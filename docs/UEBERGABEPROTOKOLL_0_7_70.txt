@@ -1,66 +1,54 @@
 COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.70
 Datum: 16.11.2026
-Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
-Basis: main 0.7.69 nach PR #325
-Branch: claude/bold-galileo-myoyi0
+Basis: main 0.7.69
+Branch: fix/core-tier-variant-choice-0770
 
-AUFTRAG
-Roadmap P09, Schritt B (angekuendigt in 0.7.69): Mara liest und aendert im Projekt-Chat einzelne
-Projektdateien selbst, statt das ganze Projekt neu zu bauen.
+BETREIBERBEFUND
+Im Core-Menue wurden mehrere installierte Gemma-4-Modelle derselben
+TCI-Stufe auf einen einzelnen Eintrag reduziert. Beispiel:
+- Normal: ember-coreui:latest und mdhm_hmmd/gemma4-e4b-uncensored-q8:latest
+- Pro: ember-core:26b und eriktonon/gemma4-uncensored:26b
+Die Installation allein schaltet Uncensored NICHT frei. Der alte
+Frontend-Slot bevorzugte Maras Modelfile oder den Standard-Core und
+versteckte die anderen Varianten im normalen Core-Menue.
 
 UMSETZUNG
-- api/project_file_tools.php:
-  - coreui_pftools_project: Projekt eines Chats (nur das eigene Konto, nur verfuegbare Projekte).
-  - Marker: [DATEI: pfad], [DATEI_AENDERN: pfad] ... [/DATEI_AENDERN], [DATEI_NEU: pfad] ... [/DATEI_NEU].
-    Nur geschlossene Bloecke zaehlen; ein abgeschnittener Block ist keine Aenderung.
-  - SUCHEN/ERSETZEN: 7 bis 9 Zeichen, CRLF erlaubt, leeres ERSETZEN loescht. Jeder SUCHEN-Text muss
-    genau einmal vorkommen; sonst aendert sich nichts (Meldung: fehlt oder mehrdeutig, mit Hinweis).
-    CRLF-Dateien behalten CRLF.
-  - Lesen mit Zeilennummern (hoechstens 16000 Zeichen, dann gekuerzt), DATEI_NEU ohne umgebenden
-    Code-Zaun und mit Zeilenende am Schluss.
-  - coreui_pftools_run: Ergebnis immer als Satz fuer Mara, auch bei Fehlern (Pfad, Typ, fehlt, voll,
-    Datenbankfehler); Arbeitsereignisse "Projektdatei gelesen/geaendert/angelegt/ersetzt/nicht geaendert".
-  - coreui_pftools_hint: Dateiliste (40, kompakt 15) und Format im Prompt des Projekt-Chats.
-- api/project_files_store.php: Quelle "mara" (neue Datei und Aenderung).
-- database/migrations/045_project_files_mara.sql: ENUM um "mara" erweitert.
-- api/console_agent_loop.php: Dateiwerkzeuge werden zuerst erkannt (Code in einem Dateiblock darf
-  keinen anderen Marker ausloesen), Titel, oeffentliche Notiz nur mit Pfad, Bezeichnung im Prompt,
-  Werkzeugmenue, Bildabschluss-Pruefung.
-- api/chat.php: Werkzeuge nur im Projekt-Chat erlaubt (ember_agent_allowed_tools), im ersten Schritt
-  erkannt, Ausfuehrung ueber coreui_pftools_run, Hinweis in beiden Prompt-Bauern direkt nach dem
-  Projektblock, ember_strip_stray_tool_markers entfernt Dateibloecke (geschlossen oder bis zum Ende).
-- js/coreui-project-files.js: Verlauf zeigt "Von Mara geaendert".
-- Nicht angefasst: Modelfile, SYSTEM-Prompts, Bau-Pfad (PROJECT_BUILD), Sprach- und Live-Pfad.
+- js/coreui-core-mode.js: pro TCI-Stufe weiterhin eine Hauptkarte mit
+  unveraendertem Schnell/Normal/Plus/Pro/Premium-Schema. Bei zwei oder
+  mehr installierten Tags pro lokalem oder Cloud-Slot erscheint darunter
+  ein klarer Variantenauswahl-Block. Anzeigename Original / Uncensored,
+  darunter echter voller Ollama-Tag und Modellgroesse.
+- Die gewaehlt Variante bekommt Haken/Status, waehrend ein nicht
+  ausgewaehltes installiertes Modell im Standby bleibt. Eine aktiv
+  gewaehlt Uncensored-Gemma4-Variante ist im Chat-Chip als UC erkennbar,
+  ohne die schmale Smartphone-Fusszeile zu sprengen.
+- Alle Variantentasten nutzen den bereits vorhandenen POST
+  action=core, model_override=<exakter Ollama-Tag>. Das Backend prueft
+  weiterhin Installation, Freigaben, Lizenz und speichert pro Konto.
+  Bei Auswahl des Standard-Cores wird model_override='' gespeichert.
+- Die normale Ollama-/Modelfile-Auswahl bleibt: kein heimlicher
+  Autowechsel beim Installieren, kein Umbau an Mara Modelfile,
+  Modellwarteschlange oder Ollama-Server.
+- Cores verwalten, Installieren/Aktualisieren/Deinstallieren und die
+  Generator-Lizenz bleiben unveraendert; Gaeste wechseln nicht.
+- css/console.css: native, eckige CoreAI-UI fuer Varianten, auf
+  Smartphones umbrechende lange Ollama-Namen, keine runden Karten.
+- Keine Modelle werden deinstalliert oder verschoben.
 
-TESTS (in dieser Sitzung ausgefuehrt)
-- php -l fuer alle geaenderten PHP-Dateien, node --check, bash -n fuer beide Preflights.
-- scripts/project-file-tools-selftest.php ohne Datenbank, gegen SQLite und mit COREUI_SELFTEST_DB=1 gegen
-  MariaDB (Migrationen 044 und 045 eingespielt, Aenderung mit Emoji und Quelle mara; Testkonto
-  example.test, danach entfernt). Enthalten: ein ganzer Durchlauf der Arbeitsschleife mit einem
-  Attrappen-Core (lesen, aendern, antworten).
-- Gegenproben (absichtlich eingebaute Fehler, danach zurueckgesetzt): mehrdeutiger SUCHEN-Text
-  angenommen, nicht ganz-oder-gar-nicht, Werkzeuge ausserhalb von Projekt-Chats, Dateibloecke im Chat,
-  Code in der oeffentlichen Notiz, Websuche vor den Dateiwerkzeugen geprueft. Jeder Fall laesst den
-  Test scheitern (der letzte erst, nachdem der Test die echte Websuche-Erkennung aus chat.php laedt).
-- Nachgezogen und bestanden: image-gen-selftest.php, skills-selftest.php (erweiterte Werkzeugliste
-  im ersten Schritt). Weiter bestanden: agent-loop, tool-mention, project-files (SQLite und MariaDB),
-  project-files-ui, project-ui, api-allowlist, composer-intent, project-isolation, contextual-project,
-  model-project-intent, local-file-tool, progressive-web-search, browser-routing, weather-live,
-  tci-language, terran-terminology.
-- python3 scripts/version-merge-check.py --base-version 0.7.69 und scripts/cache-bust.py --verify.
-- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
-  Branch 0.7.70: 173 bestanden, 15 fehlgeschlagen. main 0.7.69: 172 bestanden, 15 fehlgeschlagen.
-  Auf beiden Seiten dieselben 15 (dieselben wie in 0.7.69 beschrieben). Der zusaetzlich bestandene
-  ist der neue Test. Durch 0.7.70 kommt kein Fehlschlag dazu.
-- GitHub-Pruefungen auf dem PR (10 Laeufe): alle bestanden.
+TESTS
+- scripts/thinking-switch-ui-selftest.cjs: Normal und Pro mit Original
+  plus Uncensored; exakter gespeicherter Tag, aktives Haekchen,
+  Umschalten zu Original und zurueck. Bestehende Cloud-/Lizenz-/
+  Installations-/Gastauswahl und Denkaufwand unveraendert.
+- scripts/core-tiers-selftest.php und scripts/model-access-selftest.php
+  erkennen beide Uncensored-Tags in ihrer korrekten Stufe.
+- Browser-Asset-Fingerprints fuer die geaenderten JS-/CSS-/Bootstrap-
+  Dateien auf allen sechs HTML-Seiten synchronisiert.
+- Ein separater GitHub-Testworkflow prueft die Core-Auswahl und
+  Version/Asset-Hash-Vertraege.
+- Nach Merge und Update auf Android: beide Core-Stufen oeffnen,
+  Uncensored waehlen, Haken/Chip und reale Antwort/Core-Info pruefen.
+  Server-Liveabnahme kann GitHub CI nicht ersetzen.
 
-NICHT GETESTET
-- Ein echter Durchlauf mit einem lokalen Gemma-Core: ob der Core das SUCHEN/ERSETZEN-Format
-  zuverlaessig trifft. Nach dem Update in einem Projekt-Chat mit Dateien um eine kleine Aenderung
-  bitten (zum Beispiel "mach die Ueberschrift in index.html blau") und im Tab Dateien den Verlauf
-  pruefen. Kein Deployment behauptet.
-
-NAECHSTER SCHRITT
-- P09: Gespraechsverzweigungen. Danach P10 (Terminal, Laufzeiten, Vorschau).
-
-Version: 0.7.70
+VERSION
+main 0.7.69 => Branch 0.7.70. Naechste Version nach Merge 0.7.71.

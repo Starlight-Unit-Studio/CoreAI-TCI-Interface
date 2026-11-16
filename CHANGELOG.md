@@ -1,6 +1,6 @@
 # CoreAI: TCI Interface
 
-## 0.7.70 - 16.11.2026
+## 0.7.71 - 16.11.2026
 
 - **Mara changes single project files (roadmap P09, step B):** In a chat that belongs to a project, Mara can now read a project file and change it in a targeted way instead of building the whole project again. Three tools in her work loop: `[DATEI: path]` reads a file with line numbers, `[DATEI_AENDERN: path]` changes it with one or more SEARCH/REPLACE blocks (`<<<<<<< SUCHEN` ... `=======` ... `>>>>>>> ERSETZEN`), `[DATEI_NEU: path]` creates a file or replaces it as a whole.
 - **All or nothing:** Every search text has to occur exactly once in the file; if one block does not match, nothing changes and Mara gets told why (missing or ambiguous), so she can read the file again and retry. CRLF files keep their line endings; a code fence around a whole new file is removed.
@@ -9,6 +9,13 @@
 - **Prompt:** In a project chat Mara's prompt lists the project's files (up to 40, 15 for small Cores) and the format of the tools. The operator Modelfile and SYSTEM prompts are unchanged. File blocks never reach the chat, also when an answer is cut off.
 - **Database:** Migration `045_project_files_mara` adds the revision source `mara`.
 - **Tests:** New `scripts/project-file-tools-selftest.php` (markers, SEARCH/REPLACE, all or nothing, tools against SQLite and MariaDB, prompt hint, a whole turn with a scripted Core, the safety net). `image-gen-selftest.php` and `skills-selftest.php` follow the extended list of first-step tools.
+
+## 0.7.70 - 16.11.2026
+
+- **Original und Uncensored einzeln auswählbar:** Wenn mehrere Ollama-Tags zur gleichen Gemma-4-Stufe gehören, erscheint im Chat-Core-Menü eine echte Variantenauswahl mit vollständigem technischen Tag. Die bisherige Vorzugswahl des Standard- oder Mara-Cores versteckt die anderen installierten Modelle nicht mehr.
+- **Persistenter Modellwechsel:** Das Menü verwendet unverändert die geprüfte `action=core`-API mit dem exakten `model_override`. Im Chat-Chip kennzeichnet `UC` eine aktiv gewählte Uncensored-Variante. Installation alleine wählt weiterhin kein Modell aus.
+- **Design und Zugriff:** Schlankes, eckiges CoreAI-Layout mit umbrechenden Namen auf Android. Gast-, Lizenz-, Core-Installations-, Update- und Modellfreigabe-Regeln sowie Maras Modelfile bleiben unverändert.
+- **Regressionen:** UI-Test für Normal/Pro und Original/Uncensored mit echtem POST-Namen und Wechsel zurück; Core-Tier-/Modellzugriffs-Tests erweitert. CSS-/JS-Fingerprints in sechs HTML-Seiten aktualisiert. Live-Abnahme nach Server-Update erforderlich.
 
 ## 0.7.69 - 15.11.2026
 

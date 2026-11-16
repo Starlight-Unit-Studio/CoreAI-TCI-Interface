@@ -14,7 +14,7 @@ function access_test(bool $ok, string $why): void {
 }
 
 // What belongs to CoreAI.
-foreach (['gemma4:e2b', 'gemma4:e4b', 'gemma4:12b', 'gemma4:26b', 'gemma4:31b-cloud', 'ember-coreui:latest', 'ember-coreui:12b', 'Gemma4:E4B'] as $core) {
+foreach (['gemma4:e2b', 'gemma4:e4b', 'gemma4:12b', 'gemma4:26b', 'gemma4:31b-cloud', 'ember-coreui:latest', 'ember-coreui:12b', 'Gemma4:E4B', 'mdhm_hmmd/gemma4-e4b-uncensored-q8:latest', 'eriktonon/gemma4-uncensored:26b'] as $core) {
   access_test(coreui_model_is_coreai($core), 'CoreAI Core: ' . $core);
 }
 foreach (['gpt-oss:120b-cloud', 'llama3.2:latest', 'gemma3:4b', 'qwen3:8b', 'mistral'] as $other) {
