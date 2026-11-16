@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.70
+16.11.2026
+
+CORE-MODELLVARIANTEN IM CHAT
+- Bei mehreren installierten Ollama-Modellen innerhalb derselben
+  TCI-Stufe zeigt das Core-Menue jetzt eine echte Auswahl je Modell.
+- Original-/Uncensored-Bezeichnung mit exaktem Ollama-Namen, ohne
+  ein Gemma4-Modell hinter dem bevorzugten Mara-Core zu verstecken.
+- Umschalten speichert den realen model_override ueber die vorhandene
+  geschuetzte API; aktiver Haken, Status und UC im kompakten Chat-Chip.
+- Kein automatischer Wechsel durch Installation. Alle vorhandenen
+  Core-Verwaltungs-, Gast-, Modellfreigabe- und Lizenzregeln bleiben.
+- Responsive eckige Auswahl im bestehenden CoreAI-Design.
+- UI-/Core-Tier-/Model-Access-Selbsttests erweitert, Cache-Hinweise in
+  sechs HTML-Dateien aktualisiert, GitHub-Workflow fuer Regression.
+- Nach Update auf dem Server Smartphone-Liveabnahme erforderlich.
