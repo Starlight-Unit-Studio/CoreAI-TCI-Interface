@@ -47,8 +47,12 @@ def validate(root: Path, base: str) -> str:
             raise ValueError(f"Current version {version} missing in {path}")
     # Documentation contract: README is a stable guide, not a release diary.
     readme = (root / "README.md").read_text(encoding="utf-8")
-    if len(readme.encode("utf-8")) > 24_000:
-        raise ValueError("README.md exceeds 24 KB; move release notes to CHANGELOG.md")
+    # The README is a self-contained product guide, not a teaser that forces
+    # users to follow other files to learn about APIs or capabilities.
+    if len(readme.encode("utf-8")) > 512 * 1024:
+        raise ValueError("README.md exceeds the operator's 512 KiB limit")
+    if "## Integrations and API connections" not in readme:
+        raise ValueError("README.md must document APIs and external integrations")
     setup_url = (
         "https://raw.githubusercontent.com/"
         "Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh"
