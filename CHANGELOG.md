@@ -9,6 +9,7 @@
 - **Prompt:** In a project chat Mara's prompt lists the project's files (up to 40, 15 for small Cores) and the format of the tools. The operator Modelfile and SYSTEM prompts are unchanged. File blocks never reach the chat, also when an answer is cut off.
 - **Database:** Migration `045_project_files_mara` adds the revision source `mara`.
 - **Tests:** New `scripts/project-file-tools-selftest.php` (markers, SEARCH/REPLACE, all or nothing, tools against SQLite and MariaDB, prompt hint, a whole turn with a scripted Core, the safety net). `image-gen-selftest.php` and `skills-selftest.php` follow the extended list of first-step tools.
+- **Version guard test:** `tests/test_version_merge_check.py` follows the README rule from 0.7.72 (the section "Integrations and API connections" is required, the README may be larger than 24 KB) and checks both; before, eight of its cases failed on main.
 
 ## 0.7.72 - 16.11.2026
 

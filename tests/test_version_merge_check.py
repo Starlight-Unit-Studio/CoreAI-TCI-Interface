@@ -15,6 +15,7 @@ README = (
     "# CoreAI: TCI Interface\n\n"
     "**Aktueller Quellstand: `0.5.6`** | [CHANGELOG.md](CHANGELOG.md)\n\n"
     "## Quick start: install CoreAI\n\n"
+    "## Integrations and API connections\n\n"
     "## Updating CoreAI\n\n"
     "Use Settings > System > CoreAI Update after initial installation.\n\n"
     "curl -fsSL https://raw.githubusercontent.com/Starlight-Unit-Studio/"
@@ -106,6 +107,15 @@ class MergeVersionTests(unittest.TestCase):
         self.write("README.md", README + "\n## Mara liest vor (0.5.6)\n\nNeu.\n")
         with self.assertRaisesRegex(ValueError, "per-version changelog"):
             mod.validate(self.root, "0.5.5")
+
+    def test_readme_must_document_integrations(self):
+        self.write("README.md", README.replace("## Integrations and API connections\n\n", ""))
+        with self.assertRaisesRegex(ValueError, "APIs and external integrations"):
+            mod.validate(self.root, "0.5.5")
+
+    def test_readme_may_exceed_old_24_kb(self):
+        self.write("README.md", README + "\n" + ("Mara answers locally. " * 2000))
+        mod.validate(self.root, "0.5.5")
 
 
 if __name__ == "__main__":

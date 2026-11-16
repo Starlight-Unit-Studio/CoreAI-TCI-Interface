@@ -34,6 +34,10 @@ TESTS
   mit einem Attrappen-Core, Bereinigung).
 - image-gen-selftest.php und skills-selftest.php pruefen die erweiterte Liste
   der Werkzeuge im ersten Schritt.
+- tests/test_version_merge_check.py folgt der README-Regel aus 0.7.72
+  (Abschnitt "Integrations and API connections" ist Pflicht, die README darf
+  groesser als 24 KB sein) und prueft beides. Vorher scheiterten acht seiner
+  Faelle auf main.
 
 NICHT GETESTET
 - Ein echter Durchlauf mit einem lokalen Gemma-Core auf dem Server: ob der

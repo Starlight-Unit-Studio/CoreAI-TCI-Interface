@@ -75,6 +75,19 @@ TESTS (in dieser Sitzung ausgefuehrt)
   "4. Projects, sources and memory" und gleichlautend in docs/CAPABILITIES.md (Stand dort 0.7.73).
   Der Versionssprung auf main hatte die vier historischen
   0.7.69-Kommentare erneut mitgezogen (auf 0.7.72); sie stehen wieder auf 0.7.69.
+- Nach dem dritten Einmischen erneut bestanden: project-file-tools (ohne Datenbank, SQLite, MariaDB),
+  project-files (SQLite, MariaDB), image-gen, skills, branding, api-allowlist, tci-language,
+  terran-terminology; php -l, bash -n, Versions-Guard gegen 0.7.72 und Cache-Bust-Verify.
+- Gesamte Selbsttest-Reihe nach dem dritten Einmischen, nacheinander: Branch 0.7.73 173 bestanden,
+  16 fehlgeschlagen; main 0.7.72 171 bestanden, 17 fehlgeschlagen. Auf beiden Seiten die bekannten 15
+  und zusaetzlich tests/test_version_merge_check.py: PR #329 hat dem Versions-Guard den Pflichtabschnitt
+  "Integrations and API connections" gegeben, die Testvorlage aber nicht nachgezogen (7 Fehler, 1
+  Abbruch). Auf main scheiterte ausserdem einmal installed-cores-selftest.php ("unlicensed Generator
+  cannot enter installed-Core updater"); einzeln wiederholt besteht er auf main und Branch.
+- Behoben in diesem PR: die Testvorlage in tests/test_version_merge_check.py enthaelt den
+  Pflichtabschnitt; zwei neue Faelle pruefen, dass eine README ohne ihn scheitert und eine README ueber
+  24 KB besteht (15 Faelle bestanden). Gegenprobe: ohne die Abschnittspruefung oder mit der alten
+  24-KB-Grenze im Guard scheitert der Test. Damit ist der Branch bei 174 bestanden und den bekannten 15.
 
 NICHT GETESTET
 - Ein echter Durchlauf mit einem lokalen Gemma-Core: ob der Core das SUCHEN/ERSETZEN-Format
