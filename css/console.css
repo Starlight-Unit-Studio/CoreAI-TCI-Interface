@@ -4452,6 +4452,68 @@ html.live-open body {
   opacity: 0.55;
 }
 
+/* 0.7.70: explicit local variants of a single installed Gemma tier.
+   No rounded game styles; the actual Ollama tag remains visible on mobile. */
+.core-mode-model-choices {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 6px 7px 16px;
+  border-left: 1px solid var(--line);
+}
+
+.core-mode-model-choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--txt);
+  text-align: left;
+  cursor: pointer;
+}
+
+.core-mode-model-choice[aria-checked="true"] {
+  border-color: var(--line-strong);
+  background: var(--panel-cx);
+}
+
+.core-mode-model-choice-title {
+  grid-column: 1;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.core-mode-model-choice-tag {
+  grid-column: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.core-mode-model-choice-check {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: var(--cx);
+}
+
+.core-mode-model-choice:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.core-mode-model-choice:focus-visible {
+  outline: 2px solid var(--amb);
+  outline-offset: 1px;
+}
+
 .core-mode-variant:focus-visible,
 .core-mode-manage:focus-visible,
 .core-install-tier-btn:focus-visible {
