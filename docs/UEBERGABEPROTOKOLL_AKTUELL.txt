@@ -1,3 +1,17 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
+Basis main 0.7.69, Branch fix/core-tier-variant-choice-0770, naechste Version 0.7.70.
+Problem: Gemma4 Original und Uncensored installierbar, aber mehrere Ollama-
+Tags derselben TCI-Stufe wurden im Chat-Core-Menue zu nur einer Hauptkarte
+kollabiert. 0.7.70: echte lokale/Cloud-Untervarianten je Stufe mit exaktem
+Ollama-Tag, Original-/Uncensored-Markierung, persistenter Server-Auswahl
+und sichtbarem UC-Zeichen im schmalen Chat-Core-Chip.
+Kein Wechsel allein durch Installation. Kein Umgehen von Gast-/Lizenz-/
+Modellfreigaben. Vorhandene Core-Verwaltung, Modelfile und Arbeitsschleife
+bleiben unberuehrt. Docs: docs/UEBERGABEPROTOKOLL_0_7_70.txt.
+GitHub-CI und Server-/Android-Test vor Merge oder Release pruefen.
+Nach Merge naechste Version: 0.7.71.
+--- VORHERIGER ARBEITSSTAND ---
+
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 15.11.2026
 Version main: 0.7.68, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.69).
 ZIEL 0.7.69: Roadmap P09 Schritt A, Projektdateien. Bauten in Projekt-Chats
