@@ -48,8 +48,11 @@ TESTS (in dieser Sitzung ausgefuehrt)
   model-project-intent, local-file-tool, progressive-web-search, browser-routing, weather-live,
   tci-language, terran-terminology.
 - python3 scripts/version-merge-check.py --base-version 0.7.69 und scripts/cache-bust.py --verify.
-- Gesamte Selbsttest-Reihe auf Branch und main 0.7.69: laeuft beim Oeffnen des PR; das Ergebnis
-  steht im Folge-Commit. Bis dahin bleibt der PR ein Entwurf.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*) nacheinander, Branch und main:
+  Branch 0.7.70: 173 bestanden, 15 fehlgeschlagen. main 0.7.69: 172 bestanden, 15 fehlgeschlagen.
+  Auf beiden Seiten dieselben 15 (dieselben wie in 0.7.69 beschrieben). Der zusaetzlich bestandene
+  ist der neue Test. Durch 0.7.70 kommt kein Fehlschlag dazu.
+- GitHub-Pruefungen auf dem PR (10 Laeufe): alle bestanden.
 
 NICHT GETESTET
 - Ein echter Durchlauf mit einem lokalen Gemma-Core: ob der Core das SUCHEN/ERSETZEN-Format
