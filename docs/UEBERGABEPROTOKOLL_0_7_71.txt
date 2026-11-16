@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.71
+Datum: 16.11.2026
+Basis: main 0.7.70
+Branch: fix/core-variants-in-management-0771
+
+BETREIBERKORREKTUR
+0.7.70 platzierte die Original-/Uncensored-Wahl als grosse Unterkarten
+im Chat-Core-Dropdown. Das ist die falsche Verantwortung: Das Dropdown
+waehlt die TCI-Stufe; "Cores verwalten" bestimmt den installierten
+Ollama-Tag, der die Stufe abbildet. Der Betreiber hat die rechte Seite
+der Verwaltungszeilen in Android-Screenshots als Ziel markiert.
+
+UMSETZUNG
+- In "Cores verwalten" erscheint rechts neben Aktualisieren/
+  Deinstallieren ein kleiner, rechteckiger Variantenwaehler, sobald
+  mehrere lokale Ollama-Tags derselben TCI-Stufe vorhanden sind.
+  "Original" oder "Uncensored", bei Mehrdeutigkeit mit technischem
+  Namen. Stufen mit nur einem Modell bleiben schlank.
+- Die Wahl steht in den vorhandenen stu_app_settings unter den Keys
+  core_tier_variant_schnell/normal/plus/pro/premium. Keine Migration
+  oder neue Tabellen. Nur Admins gemaess COREUI_CORE_INSTALL_PERMISSION_MAX
+  mit gueltigem CSRF duerfen sie aendern; der POST prueft ein exaktes,
+  derzeit installiertes lokales Ollama-Modell der angefragten Stufe.
+- api/core_tier_variants.php ist die gemeinsame Backend-Semantik:
+  Default nimmt den originalen Mara-Core, danach andere Originale;
+  gespeicherte Wahl ueberschreibt nur passende lokale TCI-Modelle,
+  niemals Generator, Cloud oder fremde Modellfamilien.
+- api/ai_settings.php ermittelt das effektive Modell vor einem Chat-Turn,
+  api/user_settings.php prueft Core-Auswahl und laedt die wirksame Variante,
+  api/models.php meldet fuer den Chat das Mapping. Alter accountbezogener
+  model_override bleibt gespeichert, nur fuer den Turn aufgeloest.
+- Beim Entfernen eines aktiven Ollama-Tags wird seine Zuordnung entfernt
+  und die Stufe faellt auf den installierten Original-Core zurueck.
+- js/coreui-core-mode.js: 0.7.70-Unterkarten vollstaendig entfernt,
+  nur eine Karte je TCI-Stufe. Bestehende Cloud-Umschaltung bleibt,
+  Chat-Chip zeigt bei aktiver Uncensored-Variante weiterhin UC.
+- js/coreui-core-install.js: Variantenwaehler rechts an den vorhandenen
+  Verwaltungsbuttons, Speichern ueber vorhandene CSRF-geschuetzte API,
+  aktives Chat-Dropdown wird danach aktualisiert.
+- css/console.css: die Unterkarten-Stile entfernt, kompakte native
+  Selectbox ohne Rundungen im CoreAI-Design. Smartphone-freundlich.
+
+TESTS
+- scripts/core-tier-variant-selftest.php: SQLite-Inventar, originale
+  Defaults, persistente Wahl, falsche Tags/andere Stufen/Cloud/
+  Generator blockiert, Turn-Routing, Reset und Deinstallation.
+- scripts/core-install-ui-selftest.cjs: rechte Verwaltungssteuerung,
+  exakte POST-Tags, getrennte Normal/Pro-Wahl, zurueck zu Original.
+- scripts/thinking-switch-ui-selftest.cjs: ein Eintrag je Stufe,
+  korrekter ausgesuchter Tag, aktiver Chip, Cloud weiter separat.
+- Eigener GitHub CI-Workflow und bestehende Preflight/Regressionen.
+- Asset-Cache auf allen sechs Seiten aktualisieren und verifizieren.
+
+ABNAHME NACH MERGE
+Android: Verwaltung Normal/Pro rechts Original/Uncensored schalten,
+Chat-Dropdown nur mit einem Normal/Pro-Eintrag; Antwort verwendet
+tatsaechlichen Tag. Gast-, Lizenz-/Modellzugriff, vorhandene Core-
+Modelfiles und globale Modellwarteschlange bleiben unberuehrt.
+Deployment und Live-Abnahme nicht automatisch durch GitHub bestanden.
+
+VERSION: 0.7.71
+NAECHSTE VERSION NACH MERGE: 0.7.72
