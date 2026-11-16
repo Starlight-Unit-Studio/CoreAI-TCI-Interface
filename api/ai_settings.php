@@ -12,6 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/user_policy.php';
 require_once __DIR__ . '/guest_access.php';
+require_once __DIR__ . '/core_tier_variants.php';
 
 function coreui_ai_settings_schema_ready(PDO $pdo): bool {
   try {
@@ -324,6 +325,16 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
       && coreui_core_is_generator((string)$settings['model_override'])
       && !coreui_generator_license_user_accepted($pdo, $uid)) {
     $settings['model_override'] = '';
+  }
+  // The operator's selected variant applies at turn start, including the
+  // server default (empty account override), without overwriting user data.
+  $configuredModel = (string)$settings['model_override'];
+  if ($configuredModel === '') {
+    $configuredModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest';
+  }
+  $effectiveModel = coreui_tier_variant_effective($pdo, $configuredModel);
+  if (!coreui_core_same($effectiveModel, $configuredModel)) {
+    $settings['model_override'] = $effectiveModel;
   }
   // #113: the context window is fixed once per request, which is one run. A
   // value saved while an agent job works applies from the next job on, so a
