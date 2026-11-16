@@ -14,16 +14,25 @@ README UND FUNKTIONSKATALOG
   bewusster Recherche-Auswahl, externe Connectoren weiter geplant.
 - Die Core-Varianten-Verwaltung 0.7.71 wird korrekt beschrieben:
   Betreiberwaehler in "Manage Cores", eine Chat-Option je TCI-Stufe.
-- Der Installations-One-Liner, Owner-Updater, Server-Sicherheit,
-  Hardware-Richtwerte, Uninstall und Lizenzinformation bleiben im
-  README knapp vorhanden. Alle bisherigen Details wurden ohne
-  Funktionsverlust in docs/OPERATIONS.md ueberfuehrt.
+- Die README enthaelt auch den vollstaendigen Installations-, Update-,
+  Uninstall-, Hardware-, Diagnose- und Sicherheitsabschnitt aus der
+  vorherigen Fassung; docs/OPERATIONS.md bleibt als Zusatzreferenz.
 - Neuer ausfuehrlicher docs/CAPABILITIES.md mit Statusgrenzen und
   Links auf die verantwortlichen Implementierungen. Keine geplanten
   Funktionen als vollendet dargestellt.
-- README-Umfang bleibt unter der bestehenden 24.000-Byte-Grenze.
-  Kein App-Verhalten, keine API, kein Modell/Modelfile, keine
-  Datenbankmigration und keine Laufzeitkonfiguration geaendert.
+- Betreiberentscheidung: README darf bis zu 512 KiB (524288 Bytes)
+  umfassen. Die veraltete 24-KB-Sperre wurde im Versionscheck sowie
+  AGENTS/CLAUDE/VERSIONING_POLICY ersetzt. README bleibt unter 512 KiB.
+- Die README behandelt nun auch interne HTTP-/SSE-APIs, Ollama,
+  externe/optionale Provider, die vorbereitete OpenAI-kompatible API,
+  SearXNG, das optionale oeffentliche Read-only-MCP, Sprach-/Bilddienste,
+  SMTP und Push. Keine Connector-/Provider-Funktion als aktiv behauptet,
+  die derzeit nur vorbereitet oder geplant ist.
+- Der unabhängige Betrieb von CoreAI ohne altes CoreUI, Gamechat oder
+  STU Console wird gleich am Anfang ausdruecklich klargestellt. Die
+  vorhandenen historischen Dateinamen sind keine Laufzeitabhaengigkeit.
+- Keine neuen Laufzeitfeatures, APIs, Modelle, Datenbankmigrationen
+  oder Dienste implementiert; nur Produktdokumentation/Versionsregeln.
 - GitHub Versions-/README-/Cache-Vertraege und Preflights pruefen.
   Die Quelltext-Version 0.7.72 gilt erst nach Merge; ein GitHub
   Merge allein aktualisiert keinen laufenden CoreAI-Server.
