@@ -117,7 +117,7 @@ Die Phasennummer in jeder Soll-Zelle benennt den vorgesehenen Schwerpunkt. Sie e
 | CF-037 | Git-Arbeit im Projekt [OC-G], [OW-T] | Offen | **M3.** Status, Diff, Branches, Commits und Konfliktbearbeitung integrieren. Abnahme: Eine Änderung lässt sich prüfen und auf einem eigenen Branch sichern; Konflikte werden ohne Verlust fremder Arbeit behandelt. |
 | CF-038 | Isolierte Checkouts und Wiederherstellung [OC-G] | Offen | **M3.** Getrennte Projektarbeiten und Rücksetzpunkte ermöglichen. Abnahme: Zwei Arbeitsstände verändern einander nicht; eine Wiederherstellung betrifft nur den gewählten Stand und berücksichtigt ungesicherte Änderungen. |
 | CF-039 | Tests, Build und Diagnose [OC-T], [OW-T] | Offen | **M3.** Projektspezifische Tests und Builds ausführen und auswerten. Abnahme: Ein Fehler ist samt echter Ausgabe nachvollziehbar; nach einer Korrektur wird das relevante Ergebnis neu geprüft. |
-| CF-040 | Entwicklungsserver und Vorschau [OW-T], [OW-B] | Offen | **M3.** Laufende Projekte und erzeugte Oberflächen zugänglich vorzeigen. Abnahme: Vorschau gehört zum richtigen Projekt, zeigt aktuelle Änderungen und endet kontrolliert mit dem zugehörigen Prozess. |
+| CF-040 | Entwicklungsserver und Vorschau [OW-T], [OW-B] | Teilbestand | **M3.** Laufende Projekte und erzeugte Oberflächen zugänglich vorzeigen. Abnahme: Vorschau gehört zum richtigen Projekt, zeigt aktuelle Änderungen und endet kontrolliert mit dem zugehörigen Prozess. **Seit 0.7.75:** statische Vorschau von HTML-Seiten eines Projekts (gehört zum Projekt, zeigt nach dem Speichern den aktuellen Stand, eigene Sandbox-Herkunft). Offen: Entwicklungsserver mit Prozess (P10 C). |
 
 ## 6. Tools, Skills und Plugins
 

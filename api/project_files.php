@@ -10,11 +10,13 @@ declare(strict_types=1);
  * GET  ?project_id=P&path=X&download=1       the file as a download (never inline)
  * GET  ?project_id=P&search=Q                paths and lines that contain Q
  * GET  ?project_id=P&zip=1                   the current state as a ZIP
+ * GET  ?project_id=P&preview=X               0.7.75 (P10 A): an HTML file as a sandboxed preview
  * POST {action: create|save|rename|delete|restore, project_id, ...} with CSRF
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/project_files_store.php';
+require_once __DIR__ . '/project_preview_store.php';
 
 $pdo = stu_pdo();
 $uid = (int)stu_require_user_id();
@@ -35,6 +37,29 @@ try {
   if ($method === 'GET') {
     $projectId = coreui_project_id($_GET['project_id'] ?? '');
     $path = (string)($_GET['path'] ?? '');
+    // 0.7.75 (P10 A): the page runs in an origin of its own (CSP sandbox), never with the account.
+    if (isset($_GET['preview'])) {
+      coreui_preview_headers();
+      try {
+        $page = coreui_pfiles_path((string)$_GET['preview']);
+        if ($page === '' || !coreui_preview_is_page($page)) throw new InvalidArgumentException('preview_not_page');
+        $files = coreui_preview_files($pdo, $uid, $projectId);
+        if (!isset($files[$page])) throw new RuntimeException('file_not_found');
+        echo coreui_preview_build($files, $page, './project_files.php?project_id=' . rawurlencode($projectId) . '&preview=');
+      } catch (Throwable $e) {
+        $code = $e->getMessage();
+        if ($e instanceof PDOException) error_log('[CoreAI] project preview: ' . get_class($e));
+        $text = [
+          'preview_not_page' => 'Eine Vorschau gibt es nur für HTML-Seiten des Projekts.',
+          'file_not_found' => 'Diese Seite gibt es im Projekt nicht mehr.',
+          'project_not_found' => 'Das Projekt wurde nicht gefunden.',
+          'invalid_path' => 'Ungültiger Pfad.',
+        ][$code] ?? 'Die Vorschau konnte nicht geladen werden.';
+        http_response_code(in_array($code, ['file_not_found', 'project_not_found'], true) ? 404 : ($e instanceof PDOException ? 500 : 422));
+        echo coreui_preview_error_page($text);
+      }
+      exit;
+    }
     if (isset($_GET['zip'])) {
       $zip = coreui_pfiles_zip($pdo, $uid, $projectId);
       try {

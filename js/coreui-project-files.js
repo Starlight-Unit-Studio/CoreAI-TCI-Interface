@@ -1,4 +1,5 @@
 /* CoreAI 0.7.69 (P09): the tab "Dateien" on the project page.
+ * 0.7.75 (P10 A): the preview of an HTML page of the project in a sandboxed frame. 
  * Files of the project as a tree, search in names and content, a text editor
  * for single files, the history of a file with a comparison and restore, new
  * file, rename, delete and the current state as a ZIP. The server owns every
@@ -14,7 +15,7 @@
 
   var state = { project: '', files: [], bytes: 0, limits: null, csrf: '', loaded: false, error: '',
     file: null, draft: '', history: false, compare: null, query: '', results: null, folders: {},
-    form: null, status: '', statusKind: '', conflict: false, busy: false };
+    form: null, status: '', statusKind: '', conflict: false, busy: false, preview: null };
   var searchTimer = 0;
 
   var ERR = {
@@ -34,6 +35,7 @@
     invalid_query: 'Bitte mindestens zwei Zeichen eingeben.',
     csrf_failed: 'Die Sitzung wurde geändert. Bitte die Seite neu laden.'
   };
+  var MAX_PREVIEW_ERRORS = 5;
   var SOURCE = { build: 'Von Mara gebaut', mara: 'Von Mara geändert', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt',
     restore: 'Wiederhergestellt' };
 
@@ -165,7 +167,8 @@
     if (state.busy) return;
     state.busy = true;
     render();
-    work().catch(function (e) { setStatus(message(e), 'error'); })
+    work().then(function (changed) { if (changed !== false) refreshPreview(); })
+      .catch(function (e) { setStatus(message(e), 'error'); })
       .then(function () { state.busy = false; render(); });
   }
   function save(force) {
@@ -205,8 +208,12 @@
   function renameFile(newPath) {
     busy(function () {
       var wasDirty = dirty(), draft = state.draft;
+      var oldPath = state.file.path;
       return post({ action: 'rename', path: state.file.path, new_path: newPath }).then(function (d) {
         state.form = null;
+        if (state.preview && state.preview.path === oldPath) {
+          if (isPage(d.file.path)) state.preview.path = d.file.path; else closePreview();
+        }
         return getJson({ project_id: state.project, path: d.file.path }).then(function (f) {
           // Unsaved edits survive a rename; they still need "Speichern".
           state.file = f.file; state.draft = wasDirty ? draft : f.file.content;
@@ -241,9 +248,106 @@
     busy(function () {
       return getJson({ project_id: state.project, path: state.file.path, revision: revision }).then(function (d) {
         state.compare = { revision: d.revision.revision, source: d.revision.source, content: d.revision.content };
+        return false;
       });
     });
   }
+
+  // --- Preview (0.7.75, P10 A) ----------------------------------------------------------------
+  // The page comes from api/project_files.php?preview= with "Content-Security-Policy: sandbox":
+  // it runs in an origin of its own and never reaches the account. The frame lives outside the
+  // re-rendered list, so typing or opening the history does not reload it.
+  var previewBox = el('section', 'project-preview');
+  previewBox.hidden = true;
+  previewBox.setAttribute('aria-label', 'Vorschau');
+  panel.appendChild(previewBox);
+  var frame = null, previewErrors = null;
+  function isPage(path) { return /\.html?$/i.test(String(path || '')); }
+  function pages() {
+    return state.files.map(function (f) { return f.path; }).filter(isPage).sort();
+  }
+  function startPage() {
+    var list = pages();
+    if (list.indexOf('index.html') >= 0) return 'index.html';
+    var index = list.filter(function (p) { return /(^|\/)index\.html?$/i.test(p); });
+    return index[0] || list[0] || '';
+  }
+  function previewUrl() {
+    return url({ project_id: state.project, preview: state.preview.path, v: state.preview.nonce });
+  }
+  function openPreview(path) {
+    if (!path) return;
+    state.preview = { path: path, nonce: Date.now(), errors: [] };
+    renderPreview();
+  }
+  function closePreview() {
+    state.preview = null;
+    renderPreview();
+  }
+  function refreshPreview() {
+    if (!state.preview) return;
+    if (state.loaded && pages().indexOf(state.preview.path) < 0 && !(state.file && state.file.path === state.preview.path)) {
+      var next = startPage();
+      if (!next) { closePreview(); return; }
+      state.preview.path = next;
+    }
+    state.preview.nonce = Date.now();
+    state.preview.errors = [];
+    renderPreview();
+  }
+  function showPreviewErrors() {
+    if (!previewErrors || !state.preview) return;
+    var list = state.preview.errors;
+    previewErrors.hidden = !list.length;
+    previewErrors.textContent = '';
+    list.forEach(function (e) {
+      previewErrors.appendChild(el('li', '', e.message + (e.source ? ' · ' + e.source + (e.line ? ', Zeile ' + e.line : '') : '')));
+    });
+  }
+  function renderPreview() {
+    previewBox.textContent = '';
+    frame = null; previewErrors = null;
+    previewBox.hidden = !state.preview;
+    if (!state.preview) return;
+    var head = el('div', 'project-preview-head');
+    var title = el('div', 'project-preview-title');
+    title.appendChild(el('strong', '', 'Vorschau'));
+    title.appendChild(el('small', '', state.preview.path + ' · gespeicherter Stand'));
+    head.appendChild(title);
+    var actions = el('div', 'project-preview-actions');
+    actions.appendChild(button('Neu laden', 'project-files-secondary', refreshPreview, { id: 'projectPreviewReload' }));
+    var tab = el('a', 'project-files-secondary', 'In neuem Tab');
+    tab.href = previewUrl(); tab.target = '_blank'; tab.rel = 'noopener noreferrer';
+    tab.id = 'projectPreviewTab';
+    actions.appendChild(tab);
+    actions.appendChild(button('Schließen', 'project-files-secondary', closePreview, { id: 'projectPreviewClose' }));
+    head.appendChild(actions);
+    previewBox.appendChild(head);
+    previewErrors = el('ul', 'project-preview-errors');
+    previewErrors.setAttribute('role', 'status');
+    previewErrors.setAttribute('aria-label', 'Fehler in der Seite');
+    previewBox.appendChild(previewErrors);
+    showPreviewErrors();
+    frame = document.createElement('iframe');
+    frame.className = 'project-preview-frame';
+    frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-modals allow-popups');
+    frame.setAttribute('referrerpolicy', 'no-referrer');
+    frame.title = 'Vorschau von ' + state.preview.path;
+    frame.src = previewUrl();
+    previewBox.appendChild(frame);
+  }
+  window.addEventListener('message', function (event) {
+    if (!frame || !state.preview || event.source !== frame.contentWindow) return;
+    var data = event.data;
+    if (!data || typeof data !== 'object') return;
+    if (data.coreaiPreview === 'open' && typeof data.path === 'string' && pages().indexOf(data.path) >= 0) {
+      openPreview(data.path);
+    } else if (data.coreaiPreview === 'error' && state.preview.errors.length < MAX_PREVIEW_ERRORS) {
+      state.preview.errors.push({ message: String(data.message || 'Fehler').slice(0, 300),
+        source: String(data.source || '').slice(0, 200), line: Number(data.line) || 0 });
+      showPreviewErrors();
+    }
+  });
 
   // --- Rendering ----------------------------------------------------------------------------
   function statusLine() {
@@ -322,6 +426,10 @@
     bar.appendChild(button('Neue Datei', 'project-files-secondary', function () {
       state.form = { kind: 'create' }; setStatus(''); render();
     }, { id: 'projectFilesNew' }));
+    if (startPage()) {
+      bar.appendChild(button('Vorschau', 'project-files-secondary', function () { openPreview(startPage()); },
+        { id: 'projectFilesPreview' }));
+    }
     if (state.files.length) {
       var zip = el('a', 'project-files-secondary project-files-zip', 'Als ZIP herunterladen');
       zip.href = url({ project_id: state.project, zip: 1 });
@@ -436,6 +544,10 @@
     actions.appendChild(saveBtn);
     actions.appendChild(button('Verlauf', 'project-files-secondary', function () { state.history = !state.history; state.compare = null; render(); },
       { 'aria-expanded': String(state.history) }));
+    if (isPage(f.path)) {
+      actions.appendChild(button('Vorschau', 'project-files-secondary', function () { openPreview(f.path); },
+        { id: 'projectFilePreview', title: 'Zeigt den gespeicherten Stand' }));
+    }
     var dl = el('a', 'project-files-secondary', 'Herunterladen');
     dl.href = url({ project_id: state.project, path: f.path, download: 1 });
     dl.setAttribute('download', '');
@@ -519,6 +631,7 @@
   function reset() {
     state.project = ''; state.files = []; state.file = null; state.draft = ''; state.query = ''; state.results = null;
     state.form = null; state.compare = null; state.loaded = false; state.conflict = false; setStatus('');
+    if (state.preview) closePreview();
   }
   function open(projectId) {
     if (projectId !== state.project) { reset(); state.project = projectId || ''; }
