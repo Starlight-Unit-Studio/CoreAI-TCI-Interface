@@ -28,9 +28,11 @@ UMSETZUNG
   SearXNG und Upstream-Engines, Deep-Research-Quellen, Read-only-MCP,
   vorbereiteten aber nicht aktiven OpenAI-kompatiblen Adapter,
   optionale Media-/Mail-/Push-Dienste, Provider-/Lizenzbedingungen.
-- Deutliches Unabhaengigkeitsstatement fuer CoreAI gegenueber
-  CoreUI, altem Starlight-Spielchat und STU Console; alte Pfadnamen
-  bleiben historisch, sind aber keine Laufzeitvoraussetzung.
+- Betreiberpraezisierung: Produktdarstellung statt Vorgeschichte.
+  E.M.B.E.R. ist ein integraler Bestandteil von CoreAI, keine separat
+  zu installierende Software. Die TCI-Stufen sind Standardoptionen;
+  andere kompatible installierte Ollama-Modelle sind ebenfalls nutzbar,
+  sofern der Betreiber sie fuer die betreffenden Konten freigibt.
 - Regionale Wetteranbieter nicht namentlich in der README auffuehren.
   Offizielle setup.sh URL, "Quick start:", "Updating CoreAI",
   CHANGELOG und Lizenzlinks bleiben sichtbar.
