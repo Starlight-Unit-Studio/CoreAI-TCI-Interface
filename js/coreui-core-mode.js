@@ -99,7 +99,7 @@
 
     function render() {
       var core = shortLabel(labelOf(effective()));
-      if (isUncensored(effective()) && tierLabel(effective())) core += ' · Uncensored';
+      if (isUncensored(effective()) && tierLabel(effective())) core += ' · UC';
       chip.setAttribute('data-state', state.loading ? 'loading' : 'ready');
       chip.setAttribute('aria-label', 'Core ' + core + (state.loading ? ', wird geladen' : '') + '. Core auswählen');
       if (nameEl) nameEl.textContent = core;
@@ -295,8 +295,7 @@
         if (choiceGroup) item.appendChild(choiceGroup);
         list.appendChild(item);
       }
-      // The tier row stays compact, but when multiple tags are installed the
-    // person may choose the EXACT Ollama tag rather than a hidden priority.
+      // The tier row stays compact, but multiple tags remain selectable by exact name.
     function modelChoices(label, pool) {
       if (pool.length < 2) return null;
       var group = doc.createElement('div');
@@ -322,7 +321,7 @@
         var title = doc.createElement('span');
         title.className = 'core-mode-model-choice-title';
         title.textContent = isUncensored(name) ? 'Uncensored'
-          : state.mara[modelKey(name)] || isDefault ? 'Original · TCI' : 'Original';
+          : (state.mara[modelKey(name)] || isDefault ? 'Original · TCI' : 'Original');
         var tag = doc.createElement('small');
         tag.className = 'core-mode-model-choice-tag';
         tag.textContent = name + (sizeOf(name) ? ' · ' + sizeOf(name) : '');
