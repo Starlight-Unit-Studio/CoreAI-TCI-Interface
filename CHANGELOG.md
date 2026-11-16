@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.76 - 16.11.2026
+
+- **Unified Core library:** One discovery tab combines Ollama registry and public Hugging Face GGUF repositories. Both sources appear in one result list, with source labels and a shared search field.
+- **Random current suggestions:** With an empty search, eligible recent GGUF repositories and local Ollama listings are shuffled. Entering a query switches to targeted results; there are no automatic installs.
+- **HF local install:** Explicit GGUF filename choices use the existing serialized Ollama pull worker, progress, installed inventory, selection, updates and removal. Restricted/private repositories are refused until a separate authorized flow is available.
+- **Security:** Fixed upstream URLs, verified public GGUF filenames, owner/admin permissions, existing CSRF and installer lock; original TCI Modelfiles and licensing rules are unchanged.
+- **Validation:** Added isolated GGUF metadata/parser checks and extended shared library UI regression. Server live deployment is not claimed.
+
 ## 0.7.75 - 16.11.2026
 
 - **Preview of a web project (roadmap P10, step A):** In the **Files** tab of a project, "Vorschau" shows an HTML page of the project (the list opens `index.html` or the first page; an open page has its own button). The project's stylesheets and scripts are put into the page, SVG pictures become data addresses, `fetch()` and `XMLHttpRequest` read the project's other text files, and links to other pages of the project open them in the preview.
