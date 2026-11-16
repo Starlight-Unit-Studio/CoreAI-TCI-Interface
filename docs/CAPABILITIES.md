@@ -6,7 +6,7 @@ This catalog inventories Mara's existing user-facing tools and CoreAI's applicat
 
 ## What Mara can do
 
-This is an inventory of **implemented, user-facing functions**, not a claim that every model supports them. Features marked **optional** require enabled services, hardware, account rights or individual model licenses. Source-level implementation and successful tests do not guarantee that a server has been updated. For evidence, scope and detailed limitations, see the [capability catalog](CAPABILITIES.md).
+This is an inventory of **implemented, user-facing functions**, not a claim that every model supports them. Features marked **optional** require enabled services, hardware, account rights or individual model licenses. Source-level implementation and successful tests do not guarantee that a server has been updated. For API integrations, operating requirements and detailed boundaries, see the [full product README](../README.md).
 
 ### 1. Conversation, thinking and agentic work
 
@@ -35,7 +35,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Combine a serial lead/reasoner with isolated research workers and parallel **network I/O**, checkpoints, source-quality checks and follow-up searches; not parallel Ollama inference.
 - Preview and download Deep Research reports as Markdown with numbered, clickable references grounded in sources actually read by that workflow.
 - Inspect supported public PDF, CSV and JSON sources via bounded, guarded document adapters where available.
-- Request weather context from the configured **WDR/Open-Meteo** integration; the normal search and browser tools remain separate.
+- Retrieve current weather context using configured weather-data providers; normal search and browser navigation remain separate.
 - Respect account restrictions and **Lockdown** mode that disables web and browser access.
 
 ### 3. Code, calculations, files and generated outputs
