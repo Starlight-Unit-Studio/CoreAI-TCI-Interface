@@ -9,6 +9,20 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - Explain **both** the one-line first-install/fallback command **and** the built-in owner-only updater under **Settings > System > CoreAI Update**. The built-in updater is the preferred method after initial setup.
 - Do not retroactively translate or modify historical change logs, handover records, or the legally binding German `LICENSE.de.md` solely to meet the English README standard. Application interface labels may remain in German until full English/German localization ships. **System/Light/Dark appearance is available from 0.6.12**, while complete interface localization remains planned.
 
+## Vollstaendige README und Betreiberlimit (16.11.2026)
+
+- Die README darf **bis zu 512 KiB (524288 Bytes)** umfassen, nicht nur 24 KB.
+  Dieses Limit stammt vom Betreiber und ist in
+  `scripts/version-merge-check.py` verbindlich hinterlegt.
+- Sie muss alle tatsaechlich angebotenen Mara-/CoreAI-Funktionen sowie
+  HTTP-/SSE-/interne APIs, externe Dienste und optionale Anbindungen
+  nachvollziehbar erlaeutern. Die Kerninformationen muessen direkt in
+  der README stehen, nicht ausschliesslich in docs/ verlinkt sein.
+- Google-/GitHub-Leser sollen CoreAI ohne Zusatzdatei verstehen;
+  Websuche nicht als zwingende Google-API-Abhaengigkeit darstellen.
+- Nicht verfuegbare OpenAI-kompatible Adapter, generelle Drittanbieter-
+  Connectoren und andere Roadmap-Plaene klar als solche kennzeichnen.
+
 ## README ist kein Changelog
 
 1. `README.md` ist eine aktuelle Projekt- und Installationsanleitung: Produktzweck, reale Funktionen, Hardware-Richtwerte, Voraussetzungen, **offizieller One-Liner**, Updates, Diagnose, Lizenz und Links.
