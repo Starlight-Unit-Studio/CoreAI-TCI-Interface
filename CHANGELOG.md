@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.72 - 16.11.2026
+
+- **Complete, self-contained product README:** Mara's implemented capabilities are organized across conversation/agentic work, research, coding/files, projects/memory, image/vision, audio/video, personalization, user roles and security. Installation, updating, uninstalling, hardware planning and diagnostics remain directly in the README; [docs/CAPABILITIES.md](docs/CAPABILITIES.md) and [docs/OPERATIONS.md](docs/OPERATIONS.md) add technical detail.
+- **APIs and integrations documented:** An explicit section describes the internal authenticated PHP JSON/SSE API, the built-in local Ollama connection, optional Ollama Cloud, SearXNG and its configurable upstream search providers, guarded Research/Playwright, conditional DuckDuckGo fallback, read-only public MCP discovery, optional FLUX image/voice/SMTP/Push services and the **currently disabled** generic OpenAI-compatible provider adapter. Planned connectors are not represented as live.
+- **Independent CoreAI identity:** The README clarifies that CoreAI does not require the old CoreUI, the Starlight Unit game chat or STU Console. Legacy paths/Modelfile names are historical, not runtime dependencies. No mandatory Google Search API key is needed for SearXNG.
+- **README owner limit:** The previous repository-only 24 KB cap is replaced by **512 KiB (524288 bytes)** in `scripts/version-merge-check.py`; `AGENTS.md`, `CLAUDE.md` and `docs/VERSIONING_POLICY.md` have been synchronized. The README remains in English and is still a product guide, not a release diary.
+- **Documentation-only implementation:** No new model, inference adapter, database migration, API capability or service was introduced. Version/asset checks and technical handover remain part of the normal release contract.
+
 ## 0.7.71 - 16.11.2026
 
 - **Korrektur Core-Verantwortung:** Original/Uncensored gehört in **Cores verwalten**, nicht als aufgeklappte Unterkarten ins Chat-Core-Menü. Das Chat-Menü zeigt wieder nur **einen Core je TCI-Stufe**; die dort aktive Variante bestimmt allein die bestehende Betreiberzuordnung.
