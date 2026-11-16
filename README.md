@@ -8,7 +8,7 @@
 
 **CoreAI: TCI Interface** is a free, self-hosted AI assistant and working environment by **Starlight Unit Studios**. **Mara Thorne** is the default TCI assistant. CoreAI brings together its own chat interface, model management, tools, memory, research and working features. It runs primarily on your Linux server with **Ollama**, supports compatible installed and permitted models alongside the TCI presets, and offers optional external integrations. It is **not a standalone operating system**.
 
-**TCI Cores are defaults, not an exclusive model requirement.** CoreAI can use other compatible Ollama models installed on the server. The owner can select them and grant access to individual models for other accounts. Available functions depend on the chosen model, installation and permissions. No separate application framework needs to be installed.
+**TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **Hugging Face-hosted GGUF models that have been imported into the local Ollama runtime**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
 **Current source version: `0.7.72`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
@@ -42,7 +42,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Answer questions, explain complex topics, translate, summarize, draft, revise and discuss text or code with a selected **TCI Core or other compatible, authorized Ollama model**.
 - Use one normal private chat as a workspace, with saved context, responses, follow-up suggestions and multimodal attachments; no artificial Chat/Work switch.
 - Open a personalized welcome screen with starter prompts; a conversation is not stored until its first message or attachment.
-- Select a **TCI Core or another installed and authorized Ollama model** separately from **Thinking**; supported model-dependent options apply to subsequent turns.
+- Select a **TCI Core or another installed and authorized model**, including compatible Hugging Face models imported through Ollama, separately from **Thinking**; supported model-dependent options apply to subsequent turns.
 - Let the operator configure which installed Original/Uncensored Ollama tag backs a TCI tier in **Manage Cores**. The chat menu lists one row per TCI tier **and separately named permitted models where available**.
 - Optionally route eligible complex private text turns to a higher allowed local Core, subject to permissions and availability.
 - Run a **bounded tool-and-result loop**: pick an allowed action, examine its real result, refine the task and decide whether another step is needed.
@@ -142,7 +142,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 ### Not yet complete (do not advertise as shipped)
 
 - General-purpose third-party **Connectors** and a fully integrated external-app marketplace.
-- Full Hugging Face model-catalog browsing from the standard Core manager.
+- Native Hugging Face Hub browsing, authorization and one-click installation **inside** the Core manager. Compatible Hugging Face models already imported into Ollama **can** be used as chat models; the missing feature is the direct Hugging Face repository installer.
 - An unrestricted Codex/Claude-Code-equivalent coding IDE, general host terminal or unlimited self-executing agent.
 - Unsolicited scheduled conversations and broad background automations outside explicitly implemented events.
 - Fully translated English/German UI, public creator profile, public chat-link sharing, and settings explicitly labeled **In preparation**.
@@ -160,6 +160,7 @@ CoreAI has its **own HTTP/SSE application API** for local inference, research, i
 | --- | --- | --- |
 | **Ollama REST API** | **Integrated (default)** | Local inference with **any installed model compatible with CoreAI's Ollama integration and granted to the account**, not just the bundled Gemma/TCI tiers. The application uses Ollama's model inventory, model details and chat endpoints; model calls share CoreAI's serial queue. |
 | **Ollama model library** | **Integrated (admin)** | Administrators can search the official Ollama registry and install/update eligible **TCI and non-TCI local models**. The owner has access to available models; individual non-TCI models can be granted to other accounts. |
+| **Hugging Face language models (GGUF via Ollama)** | **Usable when imported; direct HF catalog not yet integrated** | Compatible GGUF models originating on Hugging Face can be imported into Ollama by the server operator. Once installed and listed by Ollama, CoreAI can offer them as independently named chat models, subject to account permissions and model-specific tool/vision/audio compatibility. The **HUGGING FACE** provider tab in the in-app library is still marked **In preparation**: CoreAI does not yet provide native browsing, authorization and installation of arbitrary Hugging Face Hub repositories. |
 | **TCI Original / Uncensored variants** | **Integrated (admin)** | In **Manage Cores**, the operator binds an installed local Ollama tag to each TCI tier. The chat displays one tier entry, not an extra model gallery. |
 | **Ollama Cloud tags** | **Optional** | Available only through a suitable configured Ollama runtime/account, with the remote provider's terms and availability. A cloud model is not equivalent to local/offline processing. |
 | **Generic OpenAI-compatible external API** | **Prepared, not activated** | Admin Core can store an HTTPS endpoint, label and model name, with server-side key configuration. The provider adapter currently reports `adapter_reserved` and is intentionally not available as a working chat model. |
@@ -187,7 +188,7 @@ Searches sent through a self-hosted SearXNG gateway can still reach third-party 
 | --- | --- | --- |
 | **Open-Meteo API** | **Integrated, requires internet** | Optional geocoding and location-based weather forecasts for weather-related requests. |
 | **Local FLUX.2-klein / pGen image service** | **Optional, integrated** | CPU-based image generation and supported edits; local job, status, preview and image APIs. Hardware, model and account-license checks apply. |
-| **Hugging Face model downloads** | **Optional source of model assets** | Certain image weights or text encoders have gated license/token requirements. A server token is not a replacement for each user's required consent. |
+| **Hugging Face image models and encoders** | **Optional model assets** | Separately from language models imported into Ollama, some image-generator weights and text encoders come from Hugging Face and require their own installation, gated license/token steps and user acceptance where applicable. |
 | **Local voice/TTS service (Eve/Pocket TTS)** | **Optional, integrated** | Speech output, available voices, previews and hands-free features; model-dependent audio input/transcription remains a separate capability. |
 | **SMTP service or relay** | **Optional, integrated** | Authentication codes, password recovery, security alerts, notifications and owner test mail. Credentials are configured server-side. |
 | **Web Push / VAPID** | **Optional, integrated** | Device subscriptions and supported push notifications over HTTPS, subject to browser permissions. |
