@@ -175,6 +175,12 @@ function server(opts) {
         st.licenseAccepted = true;
         return reply(200, {ok: true, license: {accepted: true, sha256: body.sha256}});
       }
+      if (body.action === 'core_tier_variant') {
+        const tier = st.tiers.find(row => row.tier === body.tier);
+        if (!tier || !(tier.local || []).includes(body.model)) return reply(409, {ok: false, error: 'model_not_installed'});
+        tier.selected_model = body.model;
+        return reply(200, {ok: true, tier: body.tier, model: body.model});
+      }
       if (body.action === 'core_auto_update') {
         if (opts.failAuto) return reply(503, {ok: false, error: 'save_failed'});
         st.auto = body.enabled ? {enabled: true, last: null, next: 1762300000} : {enabled: false, last: null, next: null};
@@ -411,6 +417,57 @@ assert.equal(api.gb(20 * 1073741824), '20 GB');
   assert.deepEqual(els.coreInstallResults.children.map(li => [li.textContent, li.getAttribute('data-state')]), [
     ['TCI Core Schnell: aktuell', 'ok'], ['TCI Core Normal: neue Fassung, neu gebaut', 'ok'],
     ['TCI Core Pro: Ollama meldet: kaputt', 'bad']]);
+
+  // The variant selection belongs to "Cores verwalten" on the right,
+  // and only appears for tiers with multiple local tags.
+  {
+    const p = page();
+    const normalUC = 'mo-shakib/gemma4-e4b-uncensored:q4_k_m';
+    const proUC = 'eriktonon/gemma4-uncensored:26b';
+    const tiers = TIERS.map(t => {
+      if (t.tier === 'normal') return Object.assign({}, t, {
+        local: ['ember-coreui:latest', normalUC], selected_model: 'ember-coreui:latest'
+      });
+      if (t.tier === 'pro') return Object.assign({}, t, {
+        local: ['ember-core:26b', proUC], selected_model: 'ember-core:26b'
+      });
+      return Object.assign({}, t);
+    });
+    const st = server({tiers});
+    const control = api.create(p.doc, st.fetch, () => {});
+    await control.manage();
+    const selectOf = tierIndex => {
+      const row = p.els.coreInstallTierList.children[tierIndex];
+      const actions = row.children.find(c => c.className === 'core-install-tier-actions');
+      return actions && actions.children.find(c => c.className === 'core-install-tier-variant');
+    };
+    assert.equal(selectOf(0), undefined, 'Schnell with one tag has no extra switch');
+    assert.equal(selectOf(2), undefined, 'Plus without a Core has no extra switch');
+    assert.equal(selectOf(4), undefined, 'Cloud-only Premium has no local switch');
+    const normal = selectOf(1);
+    const pro = selectOf(3);
+    assert(normal && pro, 'Normal and Pro have compact selectors inside their admin row');
+    assert(normal.children[1].className === 'core-install-tier-variant-select');
+    assert.deepEqual(normal.children[1].children.map(o => o.value),
+      ['ember-coreui:latest', normalUC], 'the selector lists exact installed Normal tags');
+    assert.match(normal.children[1].children[1].textContent, /Uncensored/);
+    assert.equal(normal.children[1].value, 'ember-coreui:latest', 'original is initially configured');
+    normal.children[1].value = normalUC;
+    await normal.children[1].handlers.change();
+    assert.deepEqual(JSON.parse(st.calls.filter(c => c.init.method === 'POST').pop().init.body),
+      {action: 'core_tier_variant', tier: 'normal', model: normalUC});
+    assert.equal(st.st.tiers[1].selected_model, normalUC, 'variant is persisted by the server');
+    assert.equal(selectOf(1).children[1].value, normalUC, 'admin control shows the stored active model');
+    assert.match(p.els.coreInstallNote.textContent, /nächsten Nachricht/);
+    selectOf(3).children[1].value = proUC;
+    await selectOf(3).children[1].handlers.change();
+    assert.equal(st.st.tiers[3].selected_model, proUC, 'Pro retains independent variant selection');
+    selectOf(1).children[1].value = 'ember-coreui:latest';
+    await selectOf(1).children[1].handlers.change();
+    assert.equal(st.st.tiers[1].selected_model, 'ember-coreui:latest', 'Original can be restored');
+    assert.equal(st.calls.filter(c => c.init.method === 'POST'
+      && JSON.parse(c.init.body).action === 'core_tier_variant').length, 3);
+  }
 
   // 0.5.77: each installed tier can be updated alone and removed with two taps;
   // Mara's own Core is never offered for removal.
