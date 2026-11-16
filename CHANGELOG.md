@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.70 - 16.11.2026
+
+- **Original und Uncensored einzeln auswählbar:** Wenn mehrere Ollama-Tags zur gleichen Gemma-4-Stufe gehören, erscheint im Chat-Core-Menü eine echte Variantenauswahl mit vollständigem technischen Tag. Die bisherige Vorzugswahl des Standard- oder Mara-Cores versteckt die anderen installierten Modelle nicht mehr.
+- **Persistenter Modellwechsel:** Das Menü verwendet unverändert die geprüfte `action=core`-API mit dem exakten `model_override`. Im Chat-Chip kennzeichnet `UC` eine aktiv gewählte Uncensored-Variante. Installation alleine wählt weiterhin kein Modell aus.
+- **Design und Zugriff:** Schlankes, eckiges CoreAI-Layout mit umbrechenden Namen auf Android. Gast-, Lizenz-, Core-Installations-, Update- und Modellfreigabe-Regeln sowie Maras Modelfile bleiben unverändert.
+- **Regressionen:** UI-Test für Normal/Pro und Original/Uncensored mit echtem POST-Namen und Wechsel zurück; Core-Tier-/Modellzugriffs-Tests erweitert. CSS-/JS-Fingerprints in sechs HTML-Seiten aktualisiert. Live-Abnahme nach Server-Update erforderlich.
+
 ## 0.7.69 - 15.11.2026
 
 - **Project files (roadmap P09, first step):** Every chat project now keeps its files. Text files that Mara builds in a project chat (the loose files and the text files inside the ZIP) are saved to the project automatically. Images and other binary files stay attached to the chat; an incomplete output is not imported.
