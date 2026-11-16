@@ -1,0 +1,18 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.71
+16.11.2026
+
+CORE-VARIANTEN IN DIE VERWALTUNG VERLEGT
+- 0.7.70-Unterkarten Original/Uncensored wieder aus dem Chat-Core-
+  Dropdown entfernt. Pro TCI-Stufe steht nur noch ein Eintrag.
+- In "Cores verwalten" rechts pro Stufe ein kleiner Variantenwaehler,
+  wenn mehrere lokale Ollama-Tags installiert sind. Sonst kein
+  zusaetzlicher Steuereintrag.
+- Ausgewaehlten exakten Tag dauerhaft als Betreiberzuordnung pro
+  Stufe gespeichert, mit Berechtigungs-, CSRF- und Live-Ollama-Check.
+- Chat, Core-Preload und neue Antworten verwenden die wirksame
+  Zuordnung, ohne die originale Server-Modelfile zu veraendern.
+- Generator, Cloud-Varianten, fremde Modelle, Gast-Sperren und
+  bestehende Warteschlange weiterhin unveraendert.
+- Beim Entfernen der aktiven Variante Auswahl automatisch freigeben.
+- PHP- und UI-Regressionstests, Versions- und Cache-Fingerprints.
+- Android-Server-Livetest nach Merge bleibt erforderlich.
