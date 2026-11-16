@@ -337,6 +337,7 @@ if (($body['action'] ?? '') === 'general') {
 }
 // Only the installation operator may change the active tag behind a TCI tier.
 if (($body['action'] ?? '') === 'core_tier_variant') {
+  require_once __DIR__ . '/core_install.php';
   stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
   $tier = trim((string)($body['tier'] ?? ''));
   $name = trim((string)($body['model'] ?? ''));
