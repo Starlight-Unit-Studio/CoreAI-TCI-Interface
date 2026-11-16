@@ -6,13 +6,13 @@
 
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**CoreAI: TCI Interface** is a free, self-hosted AI assistant and working environment built by **Starlight Unit Studios**. **Mara Thorne** is the single TCI assistant; **E.M.B.E.R.** is her framework for models, tools, memory, research and work execution. CoreAI runs primarily on your own Linux server with **Ollama**, with optional external services. It is **not a standalone operating system**.
+**CoreAI: TCI Interface** is a free, self-hosted AI assistant and working environment by **Starlight Unit Studios**. **Mara Thorne** is the default TCI assistant. **E.M.B.E.R. is already part of CoreAI**, providing its integrated models, tools, memory, research and work infrastructure; it is **not an additional product or software package users need to install**. CoreAI runs primarily on your Linux server with **Ollama**, supports other installed and permitted models alongside the TCI presets, and offers optional external integrations. It is **not a standalone operating system**.
 
-**CoreAI is independent from the former CoreUI project, the Starlight Unit game chat and the discontinued STU Console.** Earlier software was a development starting point, not a runtime requirement. Historical names such as `ember-coreui` or `/opt/ember-coreui` remain in some paths and model tags for compatibility; they do **not** mean the game or old CoreUI must be installed. Playwright is the separately integrated browser tool.
+**TCI Cores are defaults, not an exclusive model requirement.** CoreAI can use other compatible Ollama models already installed on the server. The owner can select them directly and grant access to individual models for other accounts. Available functions depend on the chosen model and permissions; no separate E.M.B.E.R. installation or TCI-only license is required.
 
 **Current source version: `0.7.72`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
-**Read this first:** CoreAI already has text chat, multiple Cores, bounded multi-step tools, web search, research, projects, files, memory and multimodal paths. **Availability depends on the chosen Core, installed optional services, model permissions and server hardware.** A merged GitHub change is not an installed or live-verified server update.
+**Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
 ## Quick start: install CoreAI
 
@@ -39,11 +39,11 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 
 ### 1. Conversation, thinking and agentic work
 
-- Answer questions, explain complex topics, translate, summarize, draft, revise and discuss text or code using the selected TCI Core.
+- Answer questions, explain complex topics, translate, summarize, draft, revise and discuss text or code with a selected **TCI Core or other compatible, authorized Ollama model**.
 - Use one normal private chat as a workspace, with saved context, responses, follow-up suggestions and multimodal attachments; no artificial Chat/Work switch.
 - Open a personalized welcome screen with starter prompts; a conversation is not stored until its first message or attachment.
-- Choose the **TCI Core** tier separately from **Thinking**; the model-dependent options apply to subsequent turns.
-- Let the operator configure which installed Original/Uncensored Ollama tag backs a tier in **Manage Cores**. The chat menu still lists just one row per tier.
+- Select a **TCI Core or another installed and authorized Ollama model** separately from **Thinking**; supported model-dependent options apply to subsequent turns.
+- Let the operator configure which installed Original/Uncensored Ollama tag backs a TCI tier in **Manage Cores**. The chat menu lists one row per TCI tier **and separately named permitted models where available**.
 - Optionally route eligible complex private text turns to a higher allowed local Core, subject to permissions and availability.
 - Run a **bounded tool-and-result loop**: pick an allowed action, examine its real result, refine the task and decide whether another step is needed.
 - Save, extend and continue structured Markdown plans through validated native plan actions. This does not grant unrestricted terminal access.
@@ -135,7 +135,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Use Lockdown mode, controlled sessions, account-wide sign-out and role-protected endpoints; uploads and generated files are access checked.
 - Configure **Web Push and/or e-mail notifications** for eligible long tasks, security events and owner update alerts.
 - Manage accounts, roles, limits, audit and operator functions through the separate **Admin Core**.
-- Manage **Ollama models**: inspect/install/update/delete eligible Cores, protect built-in defaults and map installed Original/Uncensored variants to a TCI tier.
+- Manage **Ollama models**: inspect, install, update and remove eligible models, protect built-in defaults, choose installed TCI variants and grant access to other Ollama models for individual accounts.
 - Control image licensing, optional services, mail settings, backup/update operations, tool permissions and server diagnostics.
 - Update through the owner-only built-in host updater after initial setup, or through the official SSH installer; preserve accounts and user data.
 
@@ -150,7 +150,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 
 ## Integrations and API connections
 
-CoreAI has its **own HTTP/SSE application API** and integrates local inference, search, research, image and voice services. Its standard installation does **not** depend on the earlier CoreUI, the game chat, the STU Console, a Google developer account, or an OpenAI subscription. External services can be enabled when required for a particular feature. A connection is not advertised as usable merely because a form or configuration key exists.
+CoreAI includes the **E.M.B.E.R. framework** and its **own HTTP/SSE application API**, with local inference, research, image and voice pathways. E.M.B.E.R. is internal to CoreAI, **not a separately installed dependency**. The default TCI models are optional choices within a wider selection of compatible Ollama models, with access controlled per account. Optional outside providers can be configured for supported features; the presence of a configuration field alone does not prove an adapter is active.
 
 **Status key:** **Integrated** means a corresponding implementation exists; **optional** requires setup, a compatible model or permission; **prepared** means configuration/code scaffolding exists but is **not** a finished selectable service; **planned** means not currently shipped.
 
@@ -158,8 +158,8 @@ CoreAI has its **own HTTP/SSE application API** and integrates local inference, 
 
 | Provider / connection | Status | What actually works |
 | --- | --- | --- |
-| **Ollama REST API** | **Integrated (default)** | Local inference for Mara using installed Gemma/TCI and other approved Ollama models. The application uses Ollama's model inventory, model details and chat endpoints; model calls share CoreAI's serial queue. |
-| **Ollama model library** | **Integrated (admin)** | Administrators can search the official Ollama registry and install/update eligible local models. Compatibility and per-account permissions still apply. |
+| **Ollama REST API** | **Integrated (default)** | Local inference with **any installed model compatible with CoreAI's Ollama integration and granted to the account**, not just the bundled Gemma/TCI tiers. The application uses Ollama's model inventory, model details and chat endpoints; model calls share CoreAI's serial queue. |
+| **Ollama model library** | **Integrated (admin)** | Administrators can search the official Ollama registry and install/update eligible **TCI and non-TCI local models**. The owner has access to available models; individual non-TCI models can be granted to other accounts. |
 | **TCI Original / Uncensored variants** | **Integrated (admin)** | In **Manage Cores**, the operator binds an installed local Ollama tag to each TCI tier. The chat displays one tier entry, not an extra model gallery. |
 | **Ollama Cloud tags** | **Optional** | Available only through a suitable configured Ollama runtime/account, with the remote provider's terms and availability. A cloud model is not equivalent to local/offline processing. |
 | **Generic OpenAI-compatible external API** | **Prepared, not activated** | Admin Core can store an HTTPS endpoint, label and model name, with server-side key configuration. The provider adapter currently reports `adapter_reserved` and is intentionally not available as a working chat model. |
@@ -224,7 +224,7 @@ CoreAI's web frontend communicates with backend PHP endpoints using **JSON** and
 - **Application services:** Nginx, PHP-FPM, MariaDB, model queue/agent worker, Ollama, optional image/voice/browser workers and optional SearXNG service.
 - **Configuration:** local overrides live outside committed secrets. See `api/config.local.php.example` and `api/config.php`. Change one operator-facing option at a time and run the preflight.
 - **Developer access:** GitHub hosts the source and regression workflows; self-hosted installations do not require a ChatGPT/Claude developer subscription to run the default local chat.
-- **Historical naming:** `coreui` and `ember-coreui` paths/tags are compatibility artifacts, **not dependencies on the former CoreUI website or game chat**.
+- **Compatibility identifiers:** Some default install paths and Ollama tags retain older technical names. They are internal identifiers, **not extra software dependencies**.
 
 
 ## Updating CoreAI
