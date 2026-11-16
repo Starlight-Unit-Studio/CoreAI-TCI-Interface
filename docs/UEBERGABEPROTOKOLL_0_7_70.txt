@@ -1,0 +1,54 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.70
+Datum: 16.11.2026
+Basis: main 0.7.69
+Branch: fix/core-tier-variant-choice-0770
+
+BETREIBERBEFUND
+Im Core-Menue wurden mehrere installierte Gemma-4-Modelle derselben
+TCI-Stufe auf einen einzelnen Eintrag reduziert. Beispiel:
+- Normal: ember-coreui:latest und mdhm_hmmd/gemma4-e4b-uncensored-q8:latest
+- Pro: ember-core:26b und eriktonon/gemma4-uncensored:26b
+Die Installation allein schaltet Uncensored NICHT frei. Der alte
+Frontend-Slot bevorzugte Maras Modelfile oder den Standard-Core und
+versteckte die anderen Varianten im normalen Core-Menue.
+
+UMSETZUNG
+- js/coreui-core-mode.js: pro TCI-Stufe weiterhin eine Hauptkarte mit
+  unveraendertem Schnell/Normal/Plus/Pro/Premium-Schema. Bei zwei oder
+  mehr installierten Tags pro lokalem oder Cloud-Slot erscheint darunter
+  ein klarer Variantenauswahl-Block. Anzeigename Original / Uncensored,
+  darunter echter voller Ollama-Tag und Modellgroesse.
+- Die gewaehlt Variante bekommt Haken/Status, waehrend ein nicht
+  ausgewaehltes installiertes Modell im Standby bleibt. Eine aktiv
+  gewaehlt Uncensored-Gemma4-Variante ist im Chat-Chip als UC erkennbar,
+  ohne die schmale Smartphone-Fusszeile zu sprengen.
+- Alle Variantentasten nutzen den bereits vorhandenen POST
+  action=core, model_override=<exakter Ollama-Tag>. Das Backend prueft
+  weiterhin Installation, Freigaben, Lizenz und speichert pro Konto.
+  Bei Auswahl des Standard-Cores wird model_override='' gespeichert.
+- Die normale Ollama-/Modelfile-Auswahl bleibt: kein heimlicher
+  Autowechsel beim Installieren, kein Umbau an Mara Modelfile,
+  Modellwarteschlange oder Ollama-Server.
+- Cores verwalten, Installieren/Aktualisieren/Deinstallieren und die
+  Generator-Lizenz bleiben unveraendert; Gaeste wechseln nicht.
+- css/console.css: native, eckige CoreAI-UI fuer Varianten, auf
+  Smartphones umbrechende lange Ollama-Namen, keine runden Karten.
+- Keine Modelle werden deinstalliert oder verschoben.
+
+TESTS
+- scripts/thinking-switch-ui-selftest.cjs: Normal und Pro mit Original
+  plus Uncensored; exakter gespeicherter Tag, aktives Haekchen,
+  Umschalten zu Original und zurueck. Bestehende Cloud-/Lizenz-/
+  Installations-/Gastauswahl und Denkaufwand unveraendert.
+- scripts/core-tiers-selftest.php und scripts/model-access-selftest.php
+  erkennen beide Uncensored-Tags in ihrer korrekten Stufe.
+- Browser-Asset-Fingerprints fuer die geaenderten JS-/CSS-/Bootstrap-
+  Dateien auf allen sechs HTML-Seiten synchronisiert.
+- Ein separater GitHub-Testworkflow prueft die Core-Auswahl und
+  Version/Asset-Hash-Vertraege.
+- Nach Merge und Update auf Android: beide Core-Stufen oeffnen,
+  Uncensored waehlen, Haken/Chip und reale Antwort/Core-Info pruefen.
+  Server-Liveabnahme kann GitHub CI nicht ersetzen.
+
+VERSION
+main 0.7.69 => Branch 0.7.70. Naechste Version nach Merge 0.7.71.
