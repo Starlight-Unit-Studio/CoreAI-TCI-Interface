@@ -13,7 +13,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Answer questions, explain complex topics, translate, summarize, draft, revise and discuss text or code using the selected TCI Core.
 - Use one normal private chat as a workspace, with saved context, responses, follow-up suggestions and multimodal attachments; no artificial Chat/Work switch.
 - Open a personalized welcome screen with starter prompts; a conversation is not stored until its first message or attachment.
-- Choose the **TCI Core** tier separately from **Thinking**; the model-dependent options apply to subsequent turns.
+- Choose **TCI Cores or other compatible, installed Ollama language models**, including Hugging Face-sourced models installed through Ollama, separately from **Thinking**. Account permissions and model capabilities still apply.
 - Let the operator configure which installed Original/Uncensored Ollama tag backs a tier in **Manage Cores**. The chat menu still lists just one row per tier.
 - Optionally route eligible complex private text turns to a higher allowed local Core, subject to permissions and availability.
 - Run a **bounded tool-and-result loop**: pick an allowed action, examine its real result, refine the task and decide whether another step is needed.
@@ -113,7 +113,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 ### Not yet complete (do not advertise as shipped)
 
 - General-purpose third-party **Connectors** and a fully integrated external-app marketplace.
-- Full Hugging Face model-catalog browsing from the standard Core manager.
+- Direct Hugging Face Hub catalog browsing and one-click model installation in **Manage Cores** (in preparation). Compatible Hugging Face language models **already installed in Ollama** are usable as regular authorized chat models.
 - An unrestricted Codex/Claude-Code-equivalent coding IDE, general host terminal or unlimited self-executing agent.
 - Unsolicited scheduled conversations and broad background automations outside explicitly implemented events.
 - Fully translated English/German UI, public creator profile, public chat-link sharing, and settings explicitly labeled **In preparation**.
