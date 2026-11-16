@@ -18,7 +18,7 @@ declare(strict_types=1);
  * (skills.php) as a step, before she goes on with the task.
  * 0.6.39 (P20.5): [BILD: description] makes an image (api/image_gen.php) as a step;
  * it is attached to her answer, and she says in her answer that it is there.
- * 0.7.71 (P09 B): in a project chat [DATEI: pfad], [DATEI_AENDERN: pfad] and [DATEI_NEU: pfad]
+ * 0.7.72 (P09 B): in a project chat [DATEI: pfad], [DATEI_AENDERN: pfad] and [DATEI_NEU: pfad]
  * read and change single project files (api/project_file_tools.php).
  */
 
@@ -27,7 +27,7 @@ const COREUI_AGENT_MAX_STEPS = 6;
 /** The tool Mara asks for next (pure), or null when she answers. */
 function coreui_agent_next_tool(string $reply, array $allowed): ?array {
   $checks = [
-    // 0.7.71: project files first; their blocks may contain code that looks like other markers.
+    // 0.7.72: project files first; their blocks may contain code that looks like other markers.
     'pfile_write'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_write') ? coreui_pftools_extract_write($r) : null,
     'pfile_edit'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_edit') ? coreui_pftools_extract_edit($r) : null,
     'pfile_read'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_read') ? coreui_pftools_extract_read($r) : null,

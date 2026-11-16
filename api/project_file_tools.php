@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * 0.7.71 (P09 B): Mara reads and changes single project files in a project chat.
+ * 0.7.72 (P09 B): Mara reads and changes single project files in a project chat.
  *
  *   [DATEI: pfad]                          read a file (with line numbers)
  *   [DATEI_AENDERN: pfad]                  targeted change: one or more blocks

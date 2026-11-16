@@ -40,7 +40,10 @@
     nothing_to_update: 'Es ist noch keine lokale Stufe installiert, es gibt nichts zu aktualisieren.',
     cloud_signin_required: 'Für diese optionale Funktion zuerst ein bestehendes Ollama-Konto verbinden (Ollama-Verbindung, unten).',
     nothing_to_remove: 'Hier gibt es nichts zu entfernen; Der Standard-Core bleibt immer installiert.',
-    unknown_tier: 'Diese Stufe kennt der Installer nicht.'
+    unknown_tier: 'Diese Stufe kennt der Installer nicht.',
+    invalid_tier: 'Unbekannte TCI-Stufe.',
+    invalid_model_name: 'Ungültiger Ollama-Core.',
+    model_not_installed: 'Diese Variante ist nicht mehr installiert.'
   };
   var RESULT = {updated: 'neue Fassung, neu gebaut', rebuilt: 'Modelfile-Text erneuert', current: 'aktuell'};
   var STATUS = {installed: 'installiert', cloud: 'nur Cloud', missing: 'nicht installiert'};
@@ -271,8 +274,64 @@
           if (!connected()) cloud.setAttribute('title', 'Erst den Server mit einem Ollama-Konto verbinden');
           cloud.addEventListener('click', function () { return start({action: 'core_cloud_add', tier: tier.tier}); });
         }
+        // Operator chooses the active local tag HERE, not in the chat menu.
+        if (tier.tier !== 'generator' && (tier.local || []).length > 1) {
+          var selector = add(actions, 'label', 'core-install-tier-variant');
+          add(selector, 'span', 'core-install-tier-variant-label', 'VARIANTE');
+          var select = add(selector, 'select', 'core-install-tier-variant-select');
+          select.setAttribute('aria-label', tier.label + ': aktive Variante');
+          select.disabled = busy;
+          var names = tier.local.slice().sort(function (a, b) {
+            var ucA = /uncensored/i.test(a) ? 1 : 0;
+            var ucB = /uncensored/i.test(b) ? 1 : 0;
+            return ucA - ucB || a.localeCompare(b);
+          });
+          names.forEach(function (name) {
+            var uncensored = /uncensored/i.test(name);
+            var mara = /^ember-core(?:ui)?:/i.test(name);
+            var label = uncensored ? 'Uncensored' : mara ? 'Original · TCI' : 'Original';
+            // More than two variants remain distinguishable in the native picker.
+            if (names.filter(function (other) { return /uncensored/i.test(other) === uncensored; }).length > 1) {
+              label += ' · ' + name.replace(/:latest$/i, '');
+            }
+            var option = add(select, 'option', '', label);
+            option.value = name;
+            option.setAttribute('value', name);
+            option.selected = name === tier.selected_model;
+          });
+          select.value = tier.selected_model || names[0];
+          select.setAttribute('title', select.value);
+          select.addEventListener('change', function () {
+            return selectTierVariant(tier.tier, String(select.value));
+          });
+        }
         if (!actions.firstChild) li.removeChild(actions);
       });
+    }
+
+    function selectTierVariant(tier, name) {
+      if (state.busy || !name) return Promise.resolve();
+      state.busy = true;
+      state.error = '';
+      state.notice = 'Core-Variante wird gespeichert …';
+      render();
+      return request(API, 'POST', {action: 'core_tier_variant', tier: tier, model: name})
+        .then(function (data) {
+          (state.tiers || []).forEach(function (t) {
+            if (t.tier === tier) t.selected_model = String(data.model || name);
+          });
+          state.notice = 'Variante gespeichert. Ab der nächsten Nachricht aktiv.';
+          // The chip can change immediately; the active Ollama model is chosen
+          // only when a chat turn starts (no extra server work or queue lane).
+          var current = window.CoreUICoreMode && window.CoreUICoreMode.instance;
+          return current && typeof current.refresh === 'function'
+            ? current.refresh().catch(function () {}) : Promise.resolve();
+        }).catch(function (error) {
+          state.error = ERRORS[error.code] || 'Die Core-Variante konnte nicht gespeichert werden.';
+        }).then(function () {
+          state.busy = false;
+          render();
+        });
     }
 
     function removeButton(tier, cloud, busy) {

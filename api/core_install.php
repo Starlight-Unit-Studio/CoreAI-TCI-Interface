@@ -34,6 +34,7 @@ declare(strict_types=1);
  */
 
 require_once __DIR__ . '/model_catalog.php';
+require_once __DIR__ . '/core_tier_variants.php';
 require_once __DIR__ . '/core_generator_license.php';
 require_once __DIR__ . '/core_generator_engine.php';
 require_once __DIR__ . '/ai_context_estimate.php';
@@ -914,6 +915,7 @@ function coreui_core_uninstall(PDO $pdo, array $targets): array {
     else $failed[] = $name;
   }
   if ($removed !== []) {
+    coreui_tier_variant_clear_removed($pdo, $removed);
     $marks = implode(',', array_fill(0, count($removed), '?'));
     try {
       $pdo->prepare("UPDATE stu_user_ai_settings SET model_override = NULL WHERE model_override IN ({$marks})")->execute($removed);

@@ -7,6 +7,7 @@ require_once __DIR__ . '/core_install.php';
 require_once __DIR__ . '/core_generator_engine.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/model_access.php';
+require_once __DIR__ . '/core_tier_variants.php';
 
 $uid = stu_require_user_id();
 if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
@@ -33,7 +34,9 @@ try {
   require_once __DIR__ . '/core_generator_license.php';
   $generatorLicensed = coreui_generator_license_user_accepted(stu_pdo(), (int)$uid);
   $generatorEngine = coreui_generator_engine_public(coreui_generator_engine_status());
+  $selectedTiers = coreui_tier_variant_map(stu_pdo(), $models);
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
+  if ($default !== '') $default = coreui_tier_variant_effective(stu_pdo(), $default);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
   stu_json([
     'ok'=>true,
@@ -42,6 +45,7 @@ try {
     'generator_license_accepted'=>$generatorLicensed,
     'default_model'=>$default,
     'default_label'=>$default !== '' ? coreui_core_label($default) : '',
+    'selected_tiers'=>$selectedTiers,
     'missing_tiers'=>coreui_core_missing_tiers($models),
     'install'=>coreui_core_install_status(),
   ]);

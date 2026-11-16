@@ -1,6 +1,6 @@
 # CoreAI: TCI Interface
 
-## 0.7.71 - 16.11.2026
+## 0.7.72 - 16.11.2026
 
 - **Mara changes single project files (roadmap P09, step B):** In a chat that belongs to a project, Mara can now read a project file and change it in a targeted way instead of building the whole project again. Three tools in her work loop: `[DATEI: path]` reads a file with line numbers, `[DATEI_AENDERN: path]` changes it with one or more SEARCH/REPLACE blocks (`<<<<<<< SUCHEN` ... `=======` ... `>>>>>>> ERSETZEN`), `[DATEI_NEU: path]` creates a file or replaces it as a whole.
 - **All or nothing:** Every search text has to occur exactly once in the file; if one block does not match, nothing changes and Mara gets told why (missing or ambiguous), so she can read the file again and retry. CRLF files keep their line endings; a code fence around a whole new file is removed.
@@ -9,6 +9,13 @@
 - **Prompt:** In a project chat Mara's prompt lists the project's files (up to 40, 15 for small Cores) and the format of the tools. The operator Modelfile and SYSTEM prompts are unchanged. File blocks never reach the chat, also when an answer is cut off.
 - **Database:** Migration `045_project_files_mara` adds the revision source `mara`.
 - **Tests:** New `scripts/project-file-tools-selftest.php` (markers, SEARCH/REPLACE, all or nothing, tools against SQLite and MariaDB, prompt hint, a whole turn with a scripted Core, the safety net). `image-gen-selftest.php` and `skills-selftest.php` follow the extended list of first-step tools.
+
+## 0.7.71 - 16.11.2026
+
+- **Korrektur Core-Verantwortung:** Original/Uncensored gehört in **Cores verwalten**, nicht als aufgeklappte Unterkarten ins Chat-Core-Menü. Das Chat-Menü zeigt wieder nur **einen Core je TCI-Stufe**; die dort aktive Variante bestimmt allein die bestehende Betreiberzuordnung.
+- **Kompakter Variantenwähler:** Rechts in der Verwaltungszeile erscheint bei mehreren installierten lokalen Ollama-Tags eine kleine Auswahl für Original bzw. Uncensored. Keine unnötigen Schalter bei nur einem Modell, kein neues Menü.
+- **Persistente, geschützte Zuordnung:** Admins konfigurieren die tatsächlich installierte lokale Variante einmal pro Stufe in den vorhandenen Anwendungseinstellungen. API, Preload und Chat-Turn nutzen den exakten gewählten Tag, ohne die ursprünglichen Modelfiles oder Konto-Einstellungen zu überschreiben. Generator, Cloud und Fremdmodelle bleiben getrennt; beim Deinstallieren wird eine ungültige Zuordnung bereinigt.
+- **Regression:** Neuer Core-Tier-Variantentest (SQLite und Schnittstellen), angepasste Mobil-/Menü- und Verwaltungs-Tests, eigene CI, Asset-Fingerprints und Release-Metadaten. Live-Abnahme nach dem Betreiber-Update bleibt offen.
 
 ## 0.7.70 - 16.11.2026
 

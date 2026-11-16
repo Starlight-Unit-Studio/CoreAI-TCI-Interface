@@ -185,7 +185,7 @@ function coreui_pfiles_add_revision(PDO $pdo, string $fileId, string $projectId,
 function coreui_pfiles_write(PDO $pdo, int $uid, string $projectId, string $path, string $content,
     string $source, array $opts = []): array {
   $project = coreui_pfiles_require($pdo, $uid, $projectId);
-  // 0.7.71: "mara" is a change Mara made with her file tools in a project chat.
+  // 0.7.72: "mara" is a change Mara made with her file tools in a project chat.
   if (!in_array($source, ['build', 'create', 'edit', 'restore', 'mara'], true)) throw new InvalidArgumentException('invalid_source');
   $path = coreui_pfiles_path($path);
   $content = coreui_pfiles_text($content);

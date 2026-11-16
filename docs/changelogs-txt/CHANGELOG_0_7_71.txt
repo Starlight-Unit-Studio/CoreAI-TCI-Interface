@@ -1,40 +1,18 @@
 COREAI: TCI INTERFACE // CHANGELOG 0.7.71
-Datum: 16.11.2026
+16.11.2026
 
-MARA AENDERT EINZELNE PROJEKTDATEIEN (ROADMAP P09, SCHRITT B)
-- In einem Chat, der zu einem Projekt gehoert, liest Mara eine Projektdatei
-  und aendert sie gezielt, statt das ganze Projekt neu zu bauen.
-- Drei Werkzeuge in ihrer Arbeitsschleife:
-  [DATEI: pfad]          liest eine Datei mit Zeilennummern
-  [DATEI_AENDERN: pfad]  aendert gezielt mit SUCHEN/ERSETZEN-Bloecken
-                         (<<<<<<< SUCHEN ... ======= ... >>>>>>> ERSETZEN)
-  [DATEI_NEU: pfad]      legt eine Datei an oder ersetzt sie ganz
-- Ganz oder gar nicht: Jeder SUCHEN-Text muss genau einmal vorkommen. Passt
-  ein Block nicht, aendert sich nichts, und Mara erfaehrt warum (fehlt oder
-  mehrdeutig). CRLF-Dateien behalten ihre Zeilenenden; ein Code-Zaun um eine
-  ganze neue Datei wird entfernt.
-- Nachvollziehbar: Jede Aenderung von Mara ist ein neuer Stand mit der Quelle
-  "Von Mara geaendert" im Verlauf des Tabs Dateien und laesst sich
-  vergleichen und wiederherstellen. Das Arbeitsprotokoll nennt die Datei,
-  nie den Code.
-- Begrenzt: Das Projekt kommt immer aus dem Chat auf dem Server, nie aus dem
-  Marker. Chats ohne Projekt, andere Projekte und andere Konten haben keine
-  Datei-Werkzeuge. Es gelten die Grenzen aus 0.7.69.
-- Prompt: Im Projekt-Chat nennt Maras Prompt die Dateien des Projekts (bis
-  zu 40, bei kleinen Cores 15) und das Format der Werkzeuge. Modelfile und
-  SYSTEM-Prompts des Betreibers bleiben unveraendert. Dateibloecke erreichen
-  den Chat nie, auch nicht bei einer abgeschnittenen Antwort.
-
-DATENBANK
-- Migration 045_project_files_mara: Quelle "mara" fuer Revisionen.
-
-TESTS
-- scripts/project-file-tools-selftest.php (Marker, SUCHEN/ERSETZEN, ganz oder
-  gar nicht, Werkzeuge gegen SQLite und MariaDB, Hinweis, ganzer Durchlauf
-  mit einem Attrappen-Core, Bereinigung).
-- image-gen-selftest.php und skills-selftest.php pruefen die erweiterte Liste
-  der Werkzeuge im ersten Schritt.
-
-NICHT GETESTET
-- Ein echter Durchlauf mit einem lokalen Gemma-Core auf dem Server: ob der
-  Core das SUCHEN/ERSETZEN-Format zuverlaessig trifft, zeigt erst der Betrieb.
+CORE-VARIANTEN IN DIE VERWALTUNG VERLEGT
+- 0.7.70-Unterkarten Original/Uncensored wieder aus dem Chat-Core-
+  Dropdown entfernt. Pro TCI-Stufe steht nur noch ein Eintrag.
+- In "Cores verwalten" rechts pro Stufe ein kleiner Variantenwaehler,
+  wenn mehrere lokale Ollama-Tags installiert sind. Sonst kein
+  zusaetzlicher Steuereintrag.
+- Ausgewaehlten exakten Tag dauerhaft als Betreiberzuordnung pro
+  Stufe gespeichert, mit Berechtigungs-, CSRF- und Live-Ollama-Check.
+- Chat, Core-Preload und neue Antworten verwenden die wirksame
+  Zuordnung, ohne die originale Server-Modelfile zu veraendern.
+- Generator, Cloud-Varianten, fremde Modelle, Gast-Sperren und
+  bestehende Warteschlange weiterhin unveraendert.
+- Beim Entfernen der aktiven Variante Auswahl automatisch freigeben.
+- PHP- und UI-Regressionstests, Versions- und Cache-Fingerprints.
+- Android-Server-Livetest nach Merge bleibt erforderlich.

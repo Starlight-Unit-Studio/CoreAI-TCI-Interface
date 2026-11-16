@@ -1,13 +1,29 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
-Version main: 0.7.70, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.71).
-ZIEL 0.7.71: Roadmap P09 Schritt B. Mara liest und aendert im Projekt-Chat
+Version main: 0.7.71, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.72).
+ZIEL 0.7.72: Roadmap P09 Schritt B. Mara liest und aendert im Projekt-Chat
 einzelne Projektdateien: [DATEI: pfad], [DATEI_AENDERN: pfad] mit
 SUCHEN/ERSETZEN (ganz oder gar nicht), [DATEI_NEU: pfad]. Jede Aenderung ist
 ein Stand "Von Mara geaendert" im Tab Dateien. Migration 045_project_files_mara.
-Dokument: docs/UEBERGABEPROTOKOLL_0_7_71.txt.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_72.txt.
 Naechster Schritt: P09 Gespraechsverzweigungen, danach P10.
-Nach Merge naechste Version 0.7.72.
+Nach Merge naechste Version 0.7.73.
 --- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
+Basis main 0.7.70, Branch fix/core-variants-in-management-0771, Version 0.7.71.
+Betreiberkorrektur: 0.7.70 nahm Original/Uncensored als grosse Unterkarten
+ins Chat-Dropdown auf. Das war die falsche Schicht. Jetzt rechts im
+bestehenden Fenster "Cores verwalten" ein kompakter Variantenwaehler
+fuer Normal/Pro bzw. weitere mehrfache lokale TCI-Tags. Das Chat-Menue
+zeigt wieder nur genau eine Karte je Stufe. Gespeicherte Betreiberwahl
+pro Stufe bestimmt den tatsaechlichen Ollama-Tag beim naechsten Turn;
+originale Modelfile, Cloud-/Generatorregeln und Berechtigungen bleiben.
+Neue Selbsttests pruefen Admin-Auswahl, Persistenz, Laufzeit und Uninstall.
+Vollstaendiger Stand: docs/UEBERGABEPROTOKOLL_0_7_71.txt.
+Naechste Version nach Merge 0.7.72. Server-Liveabnahme bleibt offen.
+--- VORHERIGER ARBEITSSTAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
 Basis main 0.7.69, Branch fix/core-tier-variant-choice-0770, naechste Version 0.7.70.
 Problem: Gemma4 Original und Uncensored installierbar, aber mehrere Ollama-
 Tags derselben TCI-Stufe wurden im Chat-Core-Menue zu nur einer Hauptkarte
