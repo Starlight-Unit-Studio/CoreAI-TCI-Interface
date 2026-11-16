@@ -1,4 +1,4 @@
-# CoreAI: TCI Interface
+# Quantum CoreAI: TCI Interface
 
 <div align="center">
   <img src="assets/Quantum-CoreAI-github-banner_20261115_212829.png" alt="Quantum CoreAI - TCI Interface" width="100%">
