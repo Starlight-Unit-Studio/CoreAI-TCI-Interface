@@ -29,10 +29,12 @@ UMSETZUNG
   vorbereiteten aber nicht aktiven OpenAI-kompatiblen Adapter,
   optionale Media-/Mail-/Push-Dienste, Provider-/Lizenzbedingungen.
 - Betreiberpraezisierung: Produktdarstellung statt Vorgeschichte.
-  E.M.B.E.R. ist ein integraler Bestandteil von CoreAI, keine separat
-  zu installierende Software. Die TCI-Stufen sind Standardoptionen;
-  andere kompatible installierte Ollama-Modelle sind ebenfalls nutzbar,
-  sofern der Betreiber sie fuer die betreffenden Konten freigibt.
+  Das E.M.B.E.R.-Framework gehoert zum getrennten Gamechat-System.
+  CoreAI entstand auf Basis einer Kopie des urspruenglichen Chats,
+  ist aber eigenstaendig; E.M.B.E.R. darf NICHT als integrierte CoreAI-
+  Laufzeitabhaengigkeit beschrieben werden. Keine Game-/STU-Historie
+  ins oeffentliche README aufnehmen. Die TCI-Stufen sind Standardoptionen;
+  andere kompatible Ollama-Modelle sind mit Betreiberfreigabe nutzbar.
 - Regionale Wetteranbieter nicht namentlich in der README auffuehren.
   Offizielle setup.sh URL, "Quick start:", "Updating CoreAI",
   CHANGELOG und Lizenzlinks bleiben sichtbar.
