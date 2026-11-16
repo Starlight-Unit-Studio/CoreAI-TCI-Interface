@@ -593,7 +593,7 @@
       </section>
       <section class="core-install-library" id="coreInstallLibraryEntry" hidden>
         <h4>CORE-BIBLIOTHEK</h4>
-        <p class="core-install-update-info">Ollama durchsuchen, später Hugging Face nutzen und bereits installierte Cores verwalten.</p>
+        <p class="core-install-update-info">Modelle aus der gemeinsamen Core-Bibliothek entdecken und installierte Cores verwalten.</p>
         <button class="core-install-btn core-install-btn--go" id="coreInstallLibraryOpen" type="button">Cores verwalten</button>
       </section>
       <section class="core-install-check" id="coreInstallCheck" aria-labelledby="coreInstallCheckTitle">
@@ -684,13 +684,8 @@
       <div class="core-library-providers" role="tablist" aria-label="Core-Bibliothek und installierte Cores">
         <button type="button" class="core-library-provider core-library-provider--active" id="coreLibraryOllamaProvider"
           role="tab" aria-selected="true" aria-controls="coreLibraryBrowser">
-          <strong>OLLAMA</strong>
-          <span>Offizielle Suche</span>
-        </button>
-        <button type="button" class="core-library-provider core-library-provider--future" id="coreLibraryHfProvider"
-          role="tab" aria-selected="false" aria-disabled="true" disabled>
-          <strong>HUGGING FACE</strong>
-          <span>In Vorbereitung</span>
+          <strong>CORE-BIBLIOTHEK</strong>
+          <span>Ollama + Hugging Face</span>
         </button>
         <button type="button" class="core-library-provider" id="coreLibraryInstalledProvider"
           role="tab" aria-selected="false" aria-controls="coreLibraryInstalled">
@@ -699,16 +694,16 @@
         </button>
       </div>
       <section class="core-library-browser" id="coreLibraryBrowser" role="tabpanel"
-        aria-labelledby="coreLibraryOllamaProvider" aria-label="Ollama-Suche">
+        aria-labelledby="coreLibraryOllamaProvider" aria-label="Core-Bibliothek">
         <form class="core-library-search" id="coreLibrarySearchForm">
           <label for="coreLibraryQuery">CORE SUCHEN</label>
           <div class="core-library-search-controls">
-            <input id="coreLibraryQuery" type="search" maxlength="80" placeholder="z. B. qwen3.5, llama, gemma" autocomplete="off" />
+            <input id="coreLibraryQuery" type="search" maxlength="80" placeholder="z. B. qwen, llama, gemma" autocomplete="off" />
             <button class="core-install-btn core-install-btn--go" type="submit">Suchen</button>
           </div>
-          <a href="https://ollama.com/search" target="_blank" rel="noopener noreferrer" id="coreLibraryOfficialSearch">Offizielle Ollama-Suche öffnen</a>
+          <span class="core-library-source-links"><a href="https://ollama.com/search" target="_blank" rel="noopener noreferrer" id="coreLibraryOfficialSearch">Ollama</a> · <a href="https://huggingface.co/models?library=gguf" target="_blank" rel="noopener noreferrer">Hugging Face</a></span>
         </form>
-        <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Die Einträge werden aus der offiziellen Ollama-Suche geladen.</p>
+        <p class="core-library-feedback" id="coreLibraryStatus" role="status" aria-live="polite">Ohne Suchbegriff zeigen wir wechselnde aktuelle Cores aus beiden Bibliotheken.</p>
         <div class="core-library-results" id="coreLibraryResults" role="list"></div>
       </section>
       <section class="core-library-installed" id="coreLibraryInstalled" role="tabpanel"
@@ -725,7 +720,7 @@
         <select id="coreLibraryTag"></select>
         <p class="core-library-hint" id="coreLibraryHint"></p>
         <div class="core-library-detail-actions">
-          <a id="coreLibraryModelLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Auf Ollama ansehen</a>
+          <a id="coreLibraryModelLink" href="https://ollama.com/search" target="_blank" rel="noopener noreferrer">Auf der Modellseite ansehen</a>
           <button class="core-install-btn core-install-btn--go" id="coreLibraryInstall" type="button" disabled>Installieren</button>
         </div>
       </section>
