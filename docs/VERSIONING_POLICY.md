@@ -33,6 +33,22 @@ Stand: 04.11.2026
 - **Alle in der README erwaehnten Buttons, Registerkarten und Menuepfade ins Englische uebersetzen.** Keine deutschen Original-Buttontexte in Klammern einfuegen. Die README beschreibt den seit 0.6.12 implementierten Tag-/Nachtmodus (System/Hell/Dunkel) als aktuelle Funktion. Die vollstaendige Englisch/Deutsch-Uebersetzung bleibt als geplant ausgewiesen.
 - Historische Changelogs, Uebergabeprotokolle, bestehende UI-Texte und die rechtlich massgebliche deutsche `LICENSE.de.md` bleiben bei einer README-Ueberarbeitung unangetastet. Kein rueckwirkendes Uebersetzen.
 
+## README Umfang und Vollstaendigkeit (Betreiberentscheidung 16.11.2026)
+
+- **Maximal 512 KiB (524288 Bytes), nicht 24000 Bytes.** Diese Grenze ist
+  eine ausdrueckliche Betreiberentscheidung, keine GitHub-Grenze. Der alte
+  24-KB-Check im Version-Skript ist entsprechend ersetzt.
+- Die README ist eine **vollstaendige, allein lesbare Produktbeschreibung**.
+  Sie fuehrt Maras aktuelle Funktionen, lokale und externe APIs, Anbieter,
+  Anbindungen, Voraussetzungen, Hardware und Betrieb auf. Bei einer
+  GitHub-/Google-Suche muss niemand mehrere Zusatzdateien durchklicken,
+  um zu verstehen, was CoreAI kann.
+- Detailsammlungen in docs/ bleiben moeglich, sind aber zusaetzliche
+  technische Referenzen und kein Ersatz fuer die Funktionsliste der README.
+- Implementierte, optionale, nur vorbereitete und geplante Funktionen
+  klar auseinanderhalten. Keine nicht vorhandene Cloud-/Connector-
+  API-Integration als bereits funktionsfaehig bezeichnen.
+
 ## Dokumentationsrollen: README ist kein Changelog (seit 04.11.2026)
 
 - `README.md` ist die **aktuelle Produkt- und Installationsanleitung**, kein Changelog. Die Datei enthaelt Produktzweck, nachvollziehbare Hardware-Richtwerte, aktuelle Funktionen, den offiziellen One-Liner, Updates, Diagnose, Lizenz und weiterfuehrende Links.

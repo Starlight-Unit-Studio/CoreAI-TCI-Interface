@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.72
+16.11.2026
+
+README UND FUNKTIONSKATALOG
+- Die README ist weiterhin vollstaendig Englisch und wurde als
+  aktuelle Produkt- statt als Release-/Bugfix-Sammlung strukturiert.
+- Maras derzeitige Funktionen stehen erstmals zentral in acht klar
+  gegliederten Bereichen: Chat/Agent, Web/Deep Research, Code/Dateien,
+  Projekte/Wissen/Gedaechtnis, Vision/Bilder, Audio/Video,
+  Chat/Personalisierung sowie Admin/Sicherheit.
+- Wichtige Grenzen direkt gekennzeichnet: Modell-/Hardware-/Lizenz-
+  und Kontovoraussetzungen; normale SearXNG-Treffer sind kein
+  Nachweis tatsaechlich besuchter Seiten; Playwright nur nach
+  bewusster Recherche-Auswahl, externe Connectoren weiter geplant.
+- Die Core-Varianten-Verwaltung 0.7.71 wird korrekt beschrieben:
+  Betreiberwaehler in "Manage Cores", eine Chat-Option je TCI-Stufe.
+- Die README enthaelt auch den vollstaendigen Installations-, Update-,
+  Uninstall-, Hardware-, Diagnose- und Sicherheitsabschnitt aus der
+  vorherigen Fassung; docs/OPERATIONS.md bleibt als Zusatzreferenz.
+- Neuer ausfuehrlicher docs/CAPABILITIES.md mit Statusgrenzen und
+  Links auf die verantwortlichen Implementierungen. Keine geplanten
+  Funktionen als vollendet dargestellt.
+- Betreiberentscheidung: README darf bis zu 512 KiB (524288 Bytes)
+  umfassen. Die veraltete 24-KB-Sperre wurde im Versionscheck sowie
+  AGENTS/CLAUDE/VERSIONING_POLICY ersetzt. README bleibt unter 512 KiB.
+- Die README behandelt nun auch interne HTTP-/SSE-APIs, Ollama,
+  externe/optionale Provider, die vorbereitete OpenAI-kompatible API,
+  SearXNG, das optionale oeffentliche Read-only-MCP, Sprach-/Bilddienste,
+  SMTP und Push. Keine Connector-/Provider-Funktion als aktiv behauptet,
+  die derzeit nur vorbereitet oder geplant ist.
+- Die README beschreibt CoreAI als eigenstaendige Anwendung und behauptet
+  NICHT, das separate E.M.B.E.R.-Framework sei Bestandteil von CoreAI.
+  TCI Cores sind Standard-Voreinstellungen, keine exklusiven Modelle;
+  weitere kompatible Ollama-Tags koennen vom Betreiber freigegeben
+  und in CoreAI genutzt werden. Keine irrelevante Produktvorgeschichte.
+- Keine neuen Laufzeitfeatures, APIs, Modelle, Datenbankmigrationen
+  oder Dienste implementiert; nur Produktdokumentation/Versionsregeln.
+- GitHub Versions-/README-/Cache-Vertraege und Preflights pruefen.
+  Die Quelltext-Version 0.7.72 gilt erst nach Merge; ein GitHub
+  Merge allein aktualisiert keinen laufenden CoreAI-Server.

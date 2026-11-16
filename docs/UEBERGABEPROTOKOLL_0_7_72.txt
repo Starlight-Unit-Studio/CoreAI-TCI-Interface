@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.72
+Datum: 16.11.2026
+Basis: main 0.7.71
+Branch: docs/readme-mara-capabilities-0772
+
+BETREIBERAUFTRAG
+README ueberarbeiten und ALLE aktuellen Funktionen von Mara/CoreAI
+sichtbar und nachvollziehbar aufzuehlen; Installation, Hardware,
+Weiterentwicklung und rechtliche Grenzen nicht verlieren.
+
+UMSETZUNG
+- README.md (englisch gemaess docs/VERSIONING_POLICY.md) fachlich neu
+  gegliedert: klares Produktversprechen, Quick Start, umfangreiche
+  Funktionsliste mit acht Bereichen, mit optionalen Voraussetzungen
+  gekennzeichnete Dienste, Abgrenzung zu Roadmap/noch geplanten
+  Funktionen, Operator-Updater, Hardware, Support und Lizenz.
+- docs/CAPABILITIES.md enthaelt die detaillierte Inventur: echte
+  Werkzeuge und Medien, Suche/Browser/Deep Research, Projektdateien,
+  Skills, Pet/Personalisierung, Konten, Security und Workflows.
+  Statusgrenzen und Links zu den bestehenden Quellmodulen.
+- docs/OPERATIONS.md konserviert die vorherigen Betriebshinweise;
+  die README selbst enthaelt Install/Update/Uninstall/Hardware/Diagnose
+  ebenfalls vollstaendig und ohne erzwungenen Dateiwechsel.
+- Betreiberentscheidung 16.11.2026: README bis 512 KiB/524288 Bytes.
+  Version-Skript und AGENTS/CLAUDE/VERSIONING_POLICY sind entsprechend
+  geaendert; fruehere 24-KB-Sperre ist ungueltig.
+- README selbst enthaelt APIs und Schnittstellen: PHP JSON/SSE, Ollama,
+  SearXNG und Upstream-Engines, Deep-Research-Quellen, Read-only-MCP,
+  vorbereiteten aber nicht aktiven OpenAI-kompatiblen Adapter,
+  optionale Media-/Mail-/Push-Dienste, Provider-/Lizenzbedingungen.
+- Betreiberpraezisierung: Produktdarstellung statt Vorgeschichte.
+  Das E.M.B.E.R.-Framework gehoert zum getrennten Gamechat-System.
+  CoreAI entstand auf Basis einer Kopie des urspruenglichen Chats,
+  ist aber eigenstaendig; E.M.B.E.R. darf NICHT als integrierte CoreAI-
+  Laufzeitabhaengigkeit beschrieben werden. Keine Game-/STU-Historie
+  ins oeffentliche README aufnehmen. Die TCI-Stufen sind Standardoptionen;
+  andere kompatible Ollama-Modelle sind mit Betreiberfreigabe nutzbar.
+- Regionale Wetteranbieter nicht namentlich in der README auffuehren.
+  Offizielle setup.sh URL, "Quick start:", "Updating CoreAI",
+  CHANGELOG und Lizenzlinks bleiben sichtbar.
+- Dokumentation trennt klar die normale SearXNG-Trefferliste von
+  tatsaechlichem Seitenlesen in Deep Research sowie explizitem
+  Playwright. Kein unbewiesener Anspruch auf vollstaendige GPT-
+  Paritaet oder unbegrenzte Automatisierung.
+- Admin-Core-Variantenwahl aus 0.7.71, serielle Modellwarteschlange,
+  CPU-only als Standard, optionale FLUX/Audio/Browser-Dienste sowie
+  Lizenzpflichten sind aufgenommen.
+- Keine Verhaltensaenderung an Mara oder einem Core; keine DB-
+  Migration, keine neuen Dienste, keine Modell-Downloads.
+- Version 0.7.72; bestehende sechs HTML-Seiten, JS-Bootstrap,
+  Versionschecks und HTML-Cache-Schluessel werden synchronisiert.
+
+PR- UND LIVEABNAHME
+- Versionscheck mit --base-version 0.7.71; README-Umfang und
+  erforderliche Navigationsabschnitte pruefen.
+- Alle neuen lokalen Markdownlinks gegen main/Branch-Pfade abgleichen.
+- Preflights/GitHub CI soweit verfuegbar pruefen; dies ersetzt
+  keine Server-Liveabnahme.
+- Nach Merge: integriertes CoreAI-Update oder offiziellen One-Liner
+  ausfuehren, die README selbst ist unmittelbar auf GitHub sichtbar.
+
+NAECHSTE VERSION NACH MERGE: 0.7.73
