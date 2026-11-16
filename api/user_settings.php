@@ -142,6 +142,35 @@ if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
   stu_json(['ok'=>true, 'cloud'=>coreui_ollama_cloud_status()]);
 }
 
+// A single Core library merges official Ollama and public Hugging Face GGUFs.
+// Independent upstream failures never make the other catalog unavailable.
+if ($method === 'GET' && array_key_exists('core_library_search', $_GET)) {
+  require_once __DIR__ . '/huggingface_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  $query = trim((string)$_GET['core_library_search']);
+  if (mb_strlen($query) > 80 || preg_match('~[\x00-\x1f\x7f]~', $query) === 1) {
+    stu_json(['ok'=>false, 'error'=>'invalid_search'], 400);
+  }
+  $rows = [];
+  $failed = [];
+  foreach (['ollama', 'huggingface'] as $source) {
+    try {
+      $found = $source === 'ollama' ? coreui_library_search($query) : coreui_hf_search($query);
+      foreach ($found as $entry) {
+        $entry['source'] = $source;
+        $rows[] = $entry;
+      }
+    } catch (Throwable $e) {
+      $failed[] = $source;
+    }
+  }
+  if (count($failed) === 2) stu_json(['ok'=>false, 'error'=>'registry_unavailable'], 503);
+  if ($query === '') shuffle($rows);
+  stu_json(['ok'=>true, 'models'=>$rows, 'unavailable_sources'=>$failed, 'csrf_token'=>$csrf]);
+}
+
 // Hugging Face public GGUF discovery: same Core library, same local Ollama runtime.
 if ($method === 'GET' && (array_key_exists('hf_search', $_GET) || array_key_exists('hf_detail', $_GET))) {
   require_once __DIR__ . '/huggingface_library.php';
