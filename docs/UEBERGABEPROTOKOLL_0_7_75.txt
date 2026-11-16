@@ -48,7 +48,33 @@ UMSETZUNG
   es in Projekten nicht (nur Textdateien); absolute Webadressen laedt der Browser selbst.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer api/project_files.php, api/project_preview_store.php und den neuen Selbsttest,
+  node --check fuer js/coreui-project-files.js, bash -n fuer beide Preflights.
+- scripts/project-preview-selftest.php: Verweise (14 Faelle, auch "..", Webadressen, Anker,
+  Entitaeten), Attribute, Einbetten mit "</style" und "</script", defer am Ende von <body>, Module,
+  SVG, Seitenlinks, Datenliste mit Grenze und Escaping, Vorschau-Skript in einer Zeile,
+  Zeilenliste und Rueckrechnung, Fehlerseite, CSP ohne allow-same-origin, Endpunkt-Verdrahtung.
+- scripts/project-preview-ui-selftest.cjs (Playwright, echter PHP-Seitenaufbau und echte CSP):
+  Knopf, Stylesheet, defer-Skript mit DOMContentLoaded, fetch und XHR, SVG, document.cookie
+  gesperrt, kein Zugriff auf die Elternseite, window.origin "null", Seitenlink, Fehler
+  "js/oops.js, Zeile 2" und "about.html, Zeile 8", Speichern laedt die Vorschau mit der Aenderung
+  neu, In neuem Tab, Schliessen, Telefon ohne seitliches Scrollen, dunkler Look um weisse Seite.
+- Gegenproben (absichtlich eingebaute Fehler, danach zurueckgesetzt): allow-same-origin, "</script"
+  und "</style" nicht entschaerft, ".." ueber die Wurzel, Seitenzeilen nicht zurueckgerechnet, XHR
+  und fetch nicht bedient, kein Neuladen nach dem Speichern, Nachrichten von ueberall, Vorschau im
+  neu gezeichneten Bereich: jede laesst einen Test scheitern (10 von 11). Die elfte (Anker-Pruefung
+  entfernt) ist gleichwertig, ein reiner Anker wird danach zu einem leeren Pfad und abgelehnt.
+- Weiter bestanden: project-files-ui, project-files, branding, tci-language, terran-terminology,
+  api-allowlist, tests/test_version_merge_check.py; Versions-Guard gegen 0.7.74, Cache-Bust-Verify.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*), nacheinander:
+  Branch 0.7.75 178 bestanden, 15 fehlgeschlagen; main 0.7.74 176 bestanden, 15 fehlgeschlagen.
+  Auf beiden Seiten dieselben bekannten 15 dieser Umgebung (browse-image, browse-live-ui,
+  chat-menu-ui, image-progress-ui, long-chat, model-library-ui, pets-ui, profile-stats-ui,
+  progress-browser, security-ui, session-list-ui, settings-tabs-ui, update-ui, voice-input,
+  voice-samples-ui). Die zwei zusaetzlich bestandenen sind die neuen Tests.
+- Danach kam auf main eine Zeile in config/Modelfile.template dazu (Commit 6e50b1a6, Version blieb
+  0.7.74). Eingemischt ohne Aenderung; die sieben Tests, die diese Datei lesen, bestehen weiter.
+- GitHub-Pruefungen auf dem PR: alle bestanden.
 
 NICHT GETESTET
 - Die Vorschau auf dem echten Server hinter dem Reverse-Proxy: nach dem Update in einem Projekt mit
