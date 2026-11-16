@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.72. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.7.73. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 This catalog inventories Mara's existing user-facing tools and CoreAI's application functionality. **Built-in** means code is present, **optional** means another installed service, model, permission or license is needed, and **planned** means not yet a delivered feature. An installed source merge is not the same as server deployment or a live end-to-end test.
 
@@ -56,6 +56,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Use the same full composer in a project as in a regular chat: text, attachments, Core, Thinking, tools and voice.
 - Save text files Mara produces within a project into its **Files** tab, with a folder tree, filename/content search and line numbers.
 - Create, edit, rename, delete and download text files; compare revisions, restore earlier versions and export the current project as ZIP.
+- In a project chat, Mara reads a single project file, changes exact passages or writes a new file; every change is all-or-nothing, saved as a revision marked as hers and can be restored.
 - Protect concurrent editor changes and unsaved drafts; files stay account/project scoped and count toward storage limits.
 - Keep project chat history after deleting a project; project files and sources are deleted with that project.
 - Retrieve account-scoped **RAG-Lite knowledge**, maintain long-term memory where supported and generate an account memory summary.

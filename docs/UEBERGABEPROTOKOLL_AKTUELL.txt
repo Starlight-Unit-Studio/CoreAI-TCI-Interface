@@ -1,4 +1,15 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
+Version main: 0.7.72, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.73).
+ZIEL 0.7.73: Roadmap P09 Schritt B. Mara liest und aendert im Projekt-Chat
+einzelne Projektdateien: [DATEI: pfad], [DATEI_AENDERN: pfad] mit
+SUCHEN/ERSETZEN (ganz oder gar nicht), [DATEI_NEU: pfad]. Jede Aenderung ist
+ein Stand "Von Mara geaendert" im Tab Dateien. Migration 045_project_files_mara.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_73.txt.
+Naechster Schritt: P09 Gespraechsverzweigungen, danach P10.
+Nach Merge naechste Version 0.7.74.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
 Basis main 0.7.70, Branch fix/core-variants-in-management-0771, Version 0.7.71.
 Betreiberkorrektur: 0.7.70 nahm Original/Uncensored als grosse Unterkarten
 ins Chat-Dropdown auf. Das war die falsche Schicht. Jetzt rechts im

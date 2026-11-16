@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.72: project files (P09) and the nginx allowlist for every endpoint the interface calls.
+# CoreAI: TCI Interface 0.7.73: Mara reads and changes single project files in a project chat (P09 B).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -223,6 +223,9 @@ UI_FILES=(
   scripts/project-files-selftest.php
   scripts/project-files-ui-selftest.cjs
   scripts/api-allowlist-selftest.cjs
+  database/migrations/045_project_files_mara.sql
+  api/project_file_tools.php
+  scripts/project-file-tools-selftest.php
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1409,12 +1412,20 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Deep-Research-Selbsttest: ${deep_research_test:-Unbekannter Fehler}"
   fi
 
-  # 0.7.72 (P09): project files: paths, revisions, conflicts, search, ZIP, builds in project chats, limits.
+  # 0.7.69 (P09): project files: paths, revisions, conflicts, search, ZIP, builds in project chats, limits.
   project_files_test=''
   if project_files_test="$(compose exec -T php php scripts/project-files-selftest.php 2>&1)"; then
     ok "$project_files_test"
   else
     fail "Projektdateien-Selbsttest: ${project_files_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.7.73 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
+  project_file_tools_test=''
+  if project_file_tools_test="$(compose exec -T php php scripts/project-file-tools-selftest.php 2>&1)"; then
+    ok "$project_file_tools_test"
+  else
+    fail "Datei-Werkzeuge-Selbsttest: ${project_file_tools_test:-Unbekannter Fehler}"
   fi
 
   profile_reference_test=''
@@ -1513,7 +1524,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
     fi
-    # 0.7.72: every endpoint the interface calls is allowed by both nginx templates.
+    # 0.7.69: every endpoint the interface calls is allowed by both nginx templates.
     if node "$PROJECT_ROOT/scripts/api-allowlist-selftest.cjs" >/dev/null 2>&1; then
       ok 'API-Freigabe: alle Endpunkte der Oberflaeche in beiden nginx-Vorlagen erlaubt.'
     else
@@ -1796,7 +1807,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Deep Research: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
-    # 0.7.72 (P09): the tab Dateien on the project page; needs Playwright for Node.
+    # 0.7.69 (P09): the tab Dateien on the project page; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-files-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Projektdateien: Baum, Editor, Verlauf, Vergleich und Konflikt im Browser geprueft.'

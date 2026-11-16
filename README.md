@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.72`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.73`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
@@ -85,6 +85,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Use the same full composer in a project as in a regular chat: text, attachments, Core, Thinking, tools and voice.
 - Save text files Mara produces within a project into its **Files** tab, with a folder tree, filename/content search and line numbers.
 - Create, edit, rename, delete and download text files; compare revisions, restore earlier versions and export the current project as ZIP.
+- In a project chat, Mara reads a single project file, changes exact passages or writes a new file; every change is all-or-nothing, saved as a revision marked as hers and can be restored.
 - Protect concurrent editor changes and unsaved drafts; files stay account/project scoped and count toward storage limits.
 - Keep project chat history after deleting a project; project files and sources are deleted with that project.
 - Retrieve account-scoped **RAG-Lite knowledge**, maintain long-term memory where supported and generate an account memory summary.

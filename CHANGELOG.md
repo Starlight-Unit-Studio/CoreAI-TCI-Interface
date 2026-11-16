@@ -1,5 +1,16 @@
 # CoreAI: TCI Interface
 
+## 0.7.73 - 16.11.2026
+
+- **Mara changes single project files (roadmap P09, step B):** In a chat that belongs to a project, Mara can now read a project file and change it in a targeted way instead of building the whole project again. Three tools in her work loop: `[DATEI: path]` reads a file with line numbers, `[DATEI_AENDERN: path]` changes it with one or more SEARCH/REPLACE blocks (`<<<<<<< SUCHEN` ... `=======` ... `>>>>>>> ERSETZEN`), `[DATEI_NEU: path]` creates a file or replaces it as a whole.
+- **All or nothing:** Every search text has to occur exactly once in the file; if one block does not match, nothing changes and Mara gets told why (missing or ambiguous), so she can read the file again and retry. CRLF files keep their line endings; a code fence around a whole new file is removed.
+- **Traceable:** Every change by Mara is a new revision with the source "Von Mara geändert" in the history of the Files tab and can be compared and restored like every other state. The work view says which file Mara reads or changes, never the code.
+- **Bounded:** The project always comes from the chat on the server, never from the marker; chats outside a project, other projects and other accounts have no file tools. The limits of 0.7.69 apply (text only, 512 KB per file, 200 files, 10 MB per project, account storage).
+- **Prompt:** In a project chat Mara's prompt lists the project's files (up to 40, 15 for small Cores) and the format of the tools. The operator Modelfile and SYSTEM prompts are unchanged. File blocks never reach the chat, also when an answer is cut off.
+- **Database:** Migration `045_project_files_mara` adds the revision source `mara`.
+- **Tests:** New `scripts/project-file-tools-selftest.php` (markers, SEARCH/REPLACE, all or nothing, tools against SQLite and MariaDB, prompt hint, a whole turn with a scripted Core, the safety net). `image-gen-selftest.php` and `skills-selftest.php` follow the extended list of first-step tools.
+- **Version guard test:** `tests/test_version_merge_check.py` follows the README rule from 0.7.72 (the section "Integrations and API connections" is required, the README may be larger than 24 KB) and checks both; before, eight of its cases failed on main.
+
 ## 0.7.72 - 16.11.2026
 
 - **Complete, self-contained product README:** Mara's implemented capabilities are organized across conversation/agentic work, research, coding/files, projects/memory, image/vision, audio/video, personalization, user roles and security. Installation, updating, uninstalling, hardware planning and diagnostics remain directly in the README; [docs/CAPABILITIES.md](docs/CAPABILITIES.md) and [docs/OPERATIONS.md](docs/OPERATIONS.md) add technical detail.
