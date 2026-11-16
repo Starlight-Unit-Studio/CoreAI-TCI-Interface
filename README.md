@@ -6,9 +6,9 @@
 
 [![DOI](https://zenodo.org/badge/1349352973.svg)](https://doi.org/10.5281/zenodo.22201310)
 
-**CoreAI: TCI Interface** is a free, self-hosted AI assistant and working environment by **Starlight Unit Studios**. **Mara Thorne** is the default TCI assistant. **E.M.B.E.R. is already part of CoreAI**, providing its integrated models, tools, memory, research and work infrastructure; it is **not an additional product or software package users need to install**. CoreAI runs primarily on your Linux server with **Ollama**, supports other installed and permitted models alongside the TCI presets, and offers optional external integrations. It is **not a standalone operating system**.
+**CoreAI: TCI Interface** is a free, self-hosted AI assistant and working environment by **Starlight Unit Studios**. **Mara Thorne** is the default TCI assistant. CoreAI brings together its own chat interface, model management, tools, memory, research and working features. It runs primarily on your Linux server with **Ollama**, supports compatible installed and permitted models alongside the TCI presets, and offers optional external integrations. It is **not a standalone operating system**.
 
-**TCI Cores are defaults, not an exclusive model requirement.** CoreAI can use other compatible Ollama models already installed on the server. The owner can select them directly and grant access to individual models for other accounts. Available functions depend on the chosen model and permissions; no separate E.M.B.E.R. installation or TCI-only license is required.
+**TCI Cores are defaults, not an exclusive model requirement.** CoreAI can use other compatible Ollama models installed on the server. The owner can select them and grant access to individual models for other accounts. Available functions depend on the chosen model, installation and permissions. No separate application framework needs to be installed.
 
 **Current source version: `0.7.72`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
@@ -150,7 +150,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 
 ## Integrations and API connections
 
-CoreAI includes the **E.M.B.E.R. framework** and its **own HTTP/SSE application API**, with local inference, research, image and voice pathways. E.M.B.E.R. is internal to CoreAI, **not a separately installed dependency**. The default TCI models are optional choices within a wider selection of compatible Ollama models, with access controlled per account. Optional outside providers can be configured for supported features; the presence of a configuration field alone does not prove an adapter is active.
+CoreAI has its **own HTTP/SSE application API** for local inference, research, images, voice and account features. **TCI models are presets, not the only models supported**: other compatible Ollama models can be selected and individually authorized. Optional external providers can be configured where supported; the presence of a configuration field alone does not prove an adapter is active.
 
 **Status key:** **Integrated** means a corresponding implementation exists; **optional** requires setup, a compatible model or permission; **prepared** means configuration/code scaffolding exists but is **not** a finished selectable service; **planned** means not currently shipped.
 
