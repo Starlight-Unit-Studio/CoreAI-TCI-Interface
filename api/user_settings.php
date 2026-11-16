@@ -11,6 +11,7 @@ require_once __DIR__ . '/ai_context_estimate.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/general_core_controls.php';
+require_once __DIR__ . '/core_tier_variants.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -27,6 +28,7 @@ if ($method === 'GET' && array_key_exists('context_model', $_GET)) {
   $settings = coreui_ai_settings_load($pdo, $uid);
   $model = trim((string)$_GET['context_model']);
   if ($model === '') $model = (string)($settings['model_override'] ?: (defined('STU_EMBER_MODEL') ? STU_EMBER_MODEL : 'ember-coreui:latest'));
+  $model = coreui_tier_variant_effective($pdo, $model);
   if (!coreui_model_name_valid($model)) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
   $policy = coreui_user_policy_load($pdo, (int)$uid);
   stu_json(['ok'=>true, 'context'=>coreui_ai_context_estimate($model, coreui_user_policy_ctx_choices(coreui_ai_num_ctx_choices(), $policy),
@@ -103,7 +105,9 @@ if ($method === 'GET' && array_key_exists('core_manage', $_GET)) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
   }
   $tiers = coreui_core_manage_rows($models);
+  $chosen = coreui_tier_variant_map($pdo, $models);
   foreach ($tiers as &$tier) {
+    if (isset($chosen[(string)($tier['tier'] ?? '')])) $tier['selected_model'] = $chosen[$tier['tier']];
     if (($tier['tier'] ?? '') === 'generator') {
       $tier['license_accepted'] = coreui_generator_license_user_accepted($pdo, (int)$uid);
     }
@@ -196,9 +200,14 @@ if ($method === 'GET') {
   if (coreui_core_is_generator((string)$settings['model_override']) && !coreui_generator_license_user_accepted($pdo, (int)$uid)) {
     $settings['model_override'] = '';
   }
+  // Display the actual operator-configured variant of a tier.
+  if ($settings['model_override'] !== '') {
+    $settings['model_override'] = coreui_tier_variant_effective($pdo, (string)$settings['model_override']);
+  }
   // 0.5.85: a window above the account's limit shows as the limit.
   $settings['num_ctx'] = coreui_user_policy_ctx_clamp($settings['num_ctx'], coreui_user_policy_load($pdo, (int)$uid));
   $defaultModel = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
+  if ($defaultModel !== '') $defaultModel = coreui_tier_variant_effective($pdo, $defaultModel);
   $payload = [
     'ok' => true,
     'settings' => $settings,
@@ -218,7 +227,7 @@ if ($method === 'GET') {
       // 0.6.10: the main language can be stored (migration 024).
       'language_available' => coreui_ai_language_schema_ready($pdo),
     ],
-    'default_model' => defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '',
+    'default_model' => $defaultModel,
     'external' => coreui_ai_external_capability($pdo),
     'csrf_token' => stu_csrf_token(),
     'permission_level' => stu_get_permission_level($pdo),
@@ -326,6 +335,21 @@ if (($body['action'] ?? '') === 'general') {
       $e->getMessage() === 'guest_core_locked' ? 403 : 503);
   }
 }
+// Only the installation operator may change the active tag behind a TCI tier.
+if (($body['action'] ?? '') === 'core_tier_variant') {
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $tier = trim((string)($body['tier'] ?? ''));
+  $name = trim((string)($body['model'] ?? ''));
+  try {
+    $selected = coreui_tier_variant_select($pdo, $tier, $name, coreui_ollama_models());
+    stu_json(['ok'=>true, 'tier'=>$tier, 'model'=>$selected]);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], 400);
+  } catch (RuntimeException $e) {
+    $error = $e->getMessage();
+    stu_json(['ok'=>false, 'error'=>$error], $error === 'model_not_installed' ? 409 : 503);
+  }
+}
 // 0.5.75: the thinking switch lives in the chat and saves only its own value.
 if (($body['action'] ?? '') === 'thinking') {
   $enabled = filter_var($body['thinking_enabled'] ?? null, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
@@ -359,13 +383,15 @@ if (($body['action'] ?? '') === 'core') {
     }
     // 0.5.83: a model outside CoreAI needs the Inhaber's release.
     if (!coreui_model_access_allowed($pdo, $uid, $name)) stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);
+    $name = coreui_tier_variant_effective($pdo, $name);
   }
   try {
     coreui_ai_settings_patch($pdo, $uid, ['model_override'=>$name]);
   } catch (RuntimeException $e) {
     stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
   }
-  $model = $name !== '' ? $name : (defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest');
+  $model = $name !== '' ? $name : coreui_tier_variant_effective($pdo,
+    defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : 'ember-coreui:latest');
   $cloud = preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $model) === 1;
   $loadedNow = coreui_ollama_loaded_names();
   $preload = $cloud ? 'cloud'
