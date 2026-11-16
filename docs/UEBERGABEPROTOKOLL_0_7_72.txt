@@ -1,0 +1,47 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.72
+Datum: 16.11.2026
+Basis: main 0.7.71
+Branch: docs/readme-mara-capabilities-0772
+
+BETREIBERAUFTRAG
+README ueberarbeiten und ALLE aktuellen Funktionen von Mara/CoreAI
+sichtbar und nachvollziehbar aufzuehlen; Installation, Hardware,
+Weiterentwicklung und rechtliche Grenzen nicht verlieren.
+
+UMSETZUNG
+- README.md (englisch gemaess docs/VERSIONING_POLICY.md) fachlich neu
+  gegliedert: klares Produktversprechen, Quick Start, umfangreiche
+  Funktionsliste mit acht Bereichen, mit optionalen Voraussetzungen
+  gekennzeichnete Dienste, Abgrenzung zu Roadmap/noch geplanten
+  Funktionen, Operator-Updater, Hardware, Support und Lizenz.
+- docs/CAPABILITIES.md enthaelt die detaillierte Inventur: echte
+  Werkzeuge und Medien, Suche/Browser/Deep Research, Projektdateien,
+  Skills, Pet/Personalisierung, Konten, Security und Workflows.
+  Statusgrenzen und Links zu den bestehenden Quellmodulen.
+- docs/OPERATIONS.md erhaelt alle vorherigen Detailtexte zur
+  Installation/Update/Uninstall/Server-Hardware sowie Diagnosebefehle,
+  bevor sie im README auf eine sichere Kurzfassung reduziert wurden.
+- README bleibt <24000 Byte; offizielle setup.sh URL, "Quick start:",
+  "Updating CoreAI", aktuelles CHANGELOG und Lizenzlinks bleiben.
+- Dokumentation trennt klar die normale SearXNG-Trefferliste von
+  tatsaechlichem Seitenlesen in Deep Research sowie explizitem
+  Playwright. Kein unbewiesener Anspruch auf vollstaendige GPT-
+  Paritaet oder unbegrenzte Automatisierung.
+- Admin-Core-Variantenwahl aus 0.7.71, serielle Modellwarteschlange,
+  CPU-only als Standard, optionale FLUX/Audio/Browser-Dienste sowie
+  Lizenzpflichten sind aufgenommen.
+- Keine Verhaltensaenderung an Mara oder einem Core; keine DB-
+  Migration, keine neuen Dienste, keine Modell-Downloads.
+- Version 0.7.72; bestehende sechs HTML-Seiten, JS-Bootstrap,
+  Versionschecks und HTML-Cache-Schluessel werden synchronisiert.
+
+PR- UND LIVEABNAHME
+- Versionscheck mit --base-version 0.7.71; README-Umfang und
+  erforderliche Navigationsabschnitte pruefen.
+- Alle neuen lokalen Markdownlinks gegen main/Branch-Pfade abgleichen.
+- Preflights/GitHub CI soweit verfuegbar pruefen; dies ersetzt
+  keine Server-Liveabnahme.
+- Nach Merge: integriertes CoreAI-Update oder offiziellen One-Liner
+  ausfuehren, die README selbst ist unmittelbar auf GitHub sichtbar.
+
+NAECHSTE VERSION NACH MERGE: 0.7.73
