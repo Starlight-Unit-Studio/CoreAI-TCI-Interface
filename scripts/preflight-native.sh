@@ -407,9 +407,11 @@ UI_FILES=(
   scripts/core-install-ui-selftest.cjs
   scripts/model-library-ui-selftest.cjs
   scripts/ollama-library-selftest.php
+  scripts/huggingface-library-selftest.php
   scripts/installed-cores-selftest.php
   api/installed_cores.php
   api/ollama_library.php
+  api/huggingface_library.php
   js/coreui-model-library.js
   scripts/registration-ui-selftest.cjs
   scripts/guest-access-selftest.php
@@ -975,6 +977,13 @@ if command -v php >/dev/null 2>&1; then
     ok 'Ollama-Modellsuche: lokale Varianten, sichere Herkunft und gemeinsamer Installationsstatus geprueft.'
   else
     fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
+  fi
+
+  hf_library_test=''
+  if hf_library_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/huggingface-library-selftest.php" 2>&1)"; then
+    ok 'Hugging-Face-GGUF-Bibliothek: Freigaben, Quantisierungen und sichere lokale Installation geprueft.'
+  else
+    fail "Hugging-Face-Bibliothek-Selbsttest: ${hf_library_test:-Unbekannter Fehler}"
   fi
 
   installed_cores_test=''
