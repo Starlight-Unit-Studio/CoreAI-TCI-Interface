@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.75: the preview of a web project in the tab Dateien (P10 A).
+# CoreAI: TCI Interface 0.7.76: the preview of a web project in the tab Dateien (P10 A).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
