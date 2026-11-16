@@ -46,7 +46,34 @@ UMSETZUNG
   Kopie braeuchte eigene Dateien), Arbeitsweg, Deep-Research-Laeufe, Bewertungen.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer alle geaenderten PHP-Dateien, node --check fuer js/console-app.js, bash -n fuer beide
+  Preflights.
+- scripts/chat-branch-selftest.php ohne Datenbank, gegen SQLite und mit COREUI_SELFTEST_DB=1 gegen
+  MariaDB (Migration 046 eingespielt; Zusammenfassung mit Archiv kommt mit; Ursprung archiviert und
+  geloescht, Zweig, Nachrichten und das gemeinsam genutzte Foto bleiben; Testkonto example.test und
+  Testarchive danach entfernt).
+- scripts/chat-branch-ui-selftest.cjs (Playwright, 360 px breit): Knopf, neuer Chat oben und offen,
+  Hinweise bei Fehlern, kein zweiter Auftrag waehrend des Wartens, Herkunftszeile offen, archiviert
+  und weg, verschachtelte Zeile, nie doppelt, langer Titel ohne seitliches Scrollen, dunkel.
+- Gegenproben (absichtlich eingebaute Fehler, danach zurueckgesetzt), jede laesst einen Test
+  scheitern: Varianten der gewaehlten Frage kopiert, spaetere Zusammenfassung kopiert, spaetere
+  Nachrichten kopiert, gesperrter Ursprung mit Titel, Zweig waehrend Mara schreibt, Zweig an einer
+  Nutzernachricht, doppelter Anhang, reply_to_id nicht umgeschrieben, Herkunftszeile doppelt, Knopf
+  bei archiviertem Ursprung, verschachtelte Zeile verfehlt, neuer Chat nicht geoeffnet (12 von 12).
+- Nachgezogen: scripts/history-render-selftest.cjs kennt placeBranchLine und prueft, dass die Zeile
+  im Entwurf vor dem Umschalten gesetzt wird und ein gescheiterter Aufbau keine setzt.
+- Weiter bestanden: feedback-ui, branding, tci-language, terran-terminology, api-allowlist,
+  project-file-tools, tests/test_version_merge_check.py; Versions-Guard gegen 0.7.73 und
+  Cache-Bust-Verify.
+- Gesamte Selbsttest-Reihe (scripts/*selftest*, model-live-audit, tests/*), nacheinander:
+  Branch 0.7.74 176 bestanden, 15 fehlgeschlagen; main 0.7.73 173 bestanden, 16 fehlgeschlagen.
+  Auf dem Branch genau die bekannten 15 dieser Umgebung (browse-image, browse-live-ui, chat-menu-ui,
+  image-progress-ui, long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser,
+  security-ui, session-list-ui, settings-tabs-ui, update-ui, voice-input, voice-samples-ui). Auf
+  main zusaetzlich storage-ui-selftest.cjs (Dateiliste in anderer Reihenfolge); zweimal wiederholt
+  besteht er auf main und Branch, die Dateien sind auf beiden Seiten gleich. Die drei zusaetzlich
+  bestandenen Tests des Branches sind die zwei neuen und storage-ui.
+- GitHub-Pruefungen auf dem PR (11 Laeufe): alle bestanden.
 
 NICHT GETESTET
 - Ein Zweig auf dem echten Server mit einem lokalen Core: nach dem Update in einem laengeren Chat
