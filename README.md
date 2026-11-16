@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.75`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.76`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
@@ -138,14 +138,14 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Use Lockdown mode, controlled sessions, account-wide sign-out and role-protected endpoints; uploads and generated files are access checked.
 - Configure **Web Push and/or e-mail notifications** for eligible long tasks, security events and owner update alerts.
 - Manage accounts, roles, limits, audit and operator functions through the separate **Admin Core**.
-- Manage **Ollama models**: inspect, install, update and remove eligible models, protect built-in defaults, choose installed TCI variants and grant access to other Ollama models for individual accounts.
+- Manage **Core library models from Ollama and public Hugging Face GGUFs**: search, inspect, install, update and remove eligible models, protect built-in defaults, choose installed TCI variants and grant access to other Ollama models for individual accounts.
 - Control image licensing, optional services, mail settings, backup/update operations, tool permissions and server diagnostics.
 - Update through the owner-only built-in host updater after initial setup, or through the official SSH installer; preserve accounts and user data.
 
 ### Not yet complete (do not advertise as shipped)
 
 - General-purpose third-party **Connectors** and a fully integrated external-app marketplace.
-- Native Hugging Face Hub browsing, authorization and one-click installation **inside** the Core manager. Compatible Hugging Face models already imported into Ollama **can** be used as chat models; the missing feature is the direct Hugging Face repository installer.
+- Installing **gated or private Hugging Face repositories** is not available through the Core library; upstream authorization must be handled separately.
 - An unrestricted Codex/Claude-Code-equivalent coding IDE, general host terminal or unlimited self-executing agent.
 - Unsolicited scheduled conversations and broad background automations outside explicitly implemented events.
 - Fully translated English/German UI, public creator profile, public chat-link sharing, and settings explicitly labeled **In preparation**.
@@ -162,8 +162,8 @@ CoreAI has its **own HTTP/SSE application API** for local inference, research, i
 | Provider / connection | Status | What actually works |
 | --- | --- | --- |
 | **Ollama REST API** | **Integrated (default)** | Local inference with **any installed model compatible with CoreAI's Ollama integration and granted to the account**, not just the bundled Gemma/TCI tiers. The application uses Ollama's model inventory, model details and chat endpoints; model calls share CoreAI's serial queue. |
-| **Ollama model library** | **Integrated (admin)** | Administrators can search the official Ollama registry and install/update eligible **TCI and non-TCI local models**. The owner has access to available models; individual non-TCI models can be granted to other accounts. |
-| **Hugging Face language models (through Ollama)** | **Supported after Ollama installation; direct HF catalog in preparation** | Compatible language models originating from Hugging Face can be imported or pulled into the server's Ollama runtime. Once present in Ollama's installed-model list, they can be selected as regular chat Cores (including independent, non-TCI model names), subject to account permissions and each model's capabilities. The in-app **HUGGING FACE** catalog is still marked **In preparation**: direct Hub searches and one-click installations are not yet implemented. |
+| **Core library (Ollama + Hugging Face)** | **Integrated (admin)** | One catalog searches both the official Ollama registry and public Hugging Face GGUF repositories, with random recent suggestions for empty searches. Admins can install eligible local models via the existing Ollama worker; the installed Core list, management, access controls and progress display remain shared. |
+| **Hugging Face GGUFs (via Ollama)** | **Public GGUF discovery and local install integrated** | One combined Core search lists public Hub GGUF repositories and verified single-file variants. These install locally into Ollama using the established worker; installed models can be authorized and selected as regular chat Cores. Private/gated models need a future protected authorization flow. Repository/model licensing remains the operator's responsibility. |
 | **TCI Original / Uncensored variants** | **Integrated (admin)** | In **Manage Cores**, the operator binds an installed local Ollama tag to each TCI tier. The chat displays one tier entry, not an extra model gallery. |
 | **Ollama Cloud tags** | **Optional** | Available only through a suitable configured Ollama runtime/account, with the remote provider's terms and availability. A cloud model is not equivalent to local/offline processing. |
 | **Generic OpenAI-compatible external API** | **Prepared, not activated** | Admin Core can store an HTTPS endpoint, label and model name, with server-side key configuration. The provider adapter currently reports `adapter_reserved` and is intentionally not available as a working chat model. |
