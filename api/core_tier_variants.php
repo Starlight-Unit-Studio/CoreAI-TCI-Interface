@@ -32,7 +32,9 @@ function coreui_tier_variant_installed(array $models, string $tier): array {
     $name = trim((string)(is_array($item) ? ($item['name'] ?? '') : $item));
     if (!coreui_model_name_valid($name) || !coreui_tier_variant_local($name)
         || coreui_core_tier_of($name) !== $tier) continue;
-    $found[coreui_ollama_model_key($name)] = $name;
+    $key = strtolower($name);
+    if (!str_contains($key, ':')) $key .= ':latest';
+    $found[$key] = $name;
   }
   return array_values($found);
 }
