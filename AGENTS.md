@@ -43,7 +43,7 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 
 ## Grenzen und Sicherheit
 
-- Produktname: **CoreAI: TCI Interface**. E.M.B.E.R. ist das Framework und Mara die TCI.
+- Produktname: **CoreAI: TCI Interface**. Mara ist die TCI. Das **E.M.B.E.R.-Framework gehoert weiterhin zum getrennten Gamechat-System**, nicht als eingebundene CoreAI-Abhaengigkeit bezeichnen. CoreAI entstand aus der kopierten Chat-Basis und ist heute eigenstaendig. Die Produkt-README soll keine unnoetige Projektvorgeschichte enthalten.
 - Historische Runtime-Pfade/Kennungen wie `/opt/ember-coreui` und `COREUI_*` nicht eigenmaechtig umbenennen.
 - Ohne Auftrag keine Modelfile-, Ollama-, Datenbank-, Installer- oder Fremdprojekt-Aenderungen.
 - Keine Secrets, Nutzerdaten, vertrauliche Studio-Lore oder private Uploads in Git committen.
