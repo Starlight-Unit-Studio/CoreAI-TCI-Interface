@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.70 - 16.11.2026
+
+- **Mara changes single project files (roadmap P09, step B):** In a chat that belongs to a project, Mara can now read a project file and change it in a targeted way instead of building the whole project again. Three tools in her work loop: `[DATEI: path]` reads a file with line numbers, `[DATEI_AENDERN: path]` changes it with one or more SEARCH/REPLACE blocks (`<<<<<<< SUCHEN` ... `=======` ... `>>>>>>> ERSETZEN`), `[DATEI_NEU: path]` creates a file or replaces it as a whole.
+- **All or nothing:** Every search text has to occur exactly once in the file; if one block does not match, nothing changes and Mara gets told why (missing or ambiguous), so she can read the file again and retry. CRLF files keep their line endings; a code fence around a whole new file is removed.
+- **Traceable:** Every change by Mara is a new revision with the source "Von Mara geändert" in the history of the Files tab and can be compared and restored like every other state. The work view says which file Mara reads or changes, never the code.
+- **Bounded:** The project always comes from the chat on the server, never from the marker; chats outside a project, other projects and other accounts have no file tools. The limits of 0.7.69 apply (text only, 512 KB per file, 200 files, 10 MB per project, account storage).
+- **Prompt:** In a project chat Mara's prompt lists the project's files (up to 40, 15 for small Cores) and the format of the tools. The operator Modelfile and SYSTEM prompts are unchanged. File blocks never reach the chat, also when an answer is cut off.
+- **Database:** Migration `045_project_files_mara` adds the revision source `mara`.
+- **Tests:** New `scripts/project-file-tools-selftest.php` (markers, SEARCH/REPLACE, all or nothing, tools against SQLite and MariaDB, prompt hint, a whole turn with a scripted Core, the safety net). `image-gen-selftest.php` and `skills-selftest.php` follow the extended list of first-step tools.
+
 ## 0.7.69 - 15.11.2026
 
 - **Project files (roadmap P09, first step):** Every chat project now keeps its files. Text files that Mara builds in a project chat (the loose files and the text files inside the ZIP) are saved to the project automatically. Images and other binary files stay attached to the chat; an incomplete output is not imported.

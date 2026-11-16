@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.69: project files (P09) and the nginx allowlist for every endpoint the interface calls.
+# CoreAI: TCI Interface 0.7.70: Mara reads and changes single project files in a project chat (P09 B).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -206,6 +206,9 @@ UI_FILES=(
   scripts/project-files-selftest.php
   scripts/project-files-ui-selftest.cjs
   scripts/api-allowlist-selftest.cjs
+  database/migrations/045_project_files_mara.sql
+  api/project_file_tools.php
+  scripts/project-file-tools-selftest.php
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1202,6 +1205,14 @@ if command -v php >/dev/null 2>&1; then
     ok "$project_files_test"
   else
     fail "Projektdateien-Selbsttest: ${project_files_test:-Unbekannter Fehler}"
+  fi
+
+  # 0.7.70 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
+  project_file_tools_test=''
+  if project_file_tools_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-file-tools-selftest.php" 2>&1)"; then
+    ok "$project_file_tools_test"
+  else
+    fail "Datei-Werkzeuge-Selbsttest: ${project_file_tools_test:-Unbekannter Fehler}"
   fi
 
   profile_reference_test=''

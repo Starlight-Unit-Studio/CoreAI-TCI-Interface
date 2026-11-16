@@ -834,7 +834,7 @@ img_gen_test(substr_count($chat, 'coreui_image_tool_for_request(') === 2
 foreach (["require_once __DIR__ . '/image_gen.php';", "if (\$sessionId !== '' && ember_image_allowed(\$uid)) \$tools[] = 'image';",
     "if (\$tool['tool'] === 'image') {", "\$imageHint = ember_image_hint(\$channel, \$imageUrl, \$profile['compact'], \$consoleUid);",
     "\$imageHint = ember_image_hint(\$channel, \$imageUrl, \$promptProfile['compact'], \$consoleUid);",
-    "array_intersect(\$loopAllowed, ['web', 'archive', 'skill', 'image'])", "foreach ([\$webHint ?? '', \$browseHint ?? '', \$pyHint ?? '', \$imageHint ?? '', \$intentHint ?? ''] as \$hint) {",
+    "['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write']", "foreach ([\$webHint ?? '', \$browseHint ?? '', \$pyHint ?? '', \$imageHint ?? '', \$intentHint ?? ''] as \$hint) {",
     "coreui_console_attachment_store(\$pdo, \$insertedId, \$uid, coreui_image_pending_take());",
     "\$slot = ember_global_lock_acquire(600);", "coreui_model_queue_mark_long(\$connection, ember_lock_name('global_ollama_image'));",
     "ember_lock_name('global_ollama_image')\n    );", "coreui_image_history_notes(\$pdo, \$consoleUid,",

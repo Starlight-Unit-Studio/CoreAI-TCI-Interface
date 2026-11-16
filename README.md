@@ -10,7 +10,7 @@
 
 CoreAI combines Ollama-based models with private conversations, browser research, personal knowledge, file tools and an administration interface. Its standard deployment runs an isolated Nginx, PHP-FPM, MariaDB and worker stack on a Linux server. CoreAI is an application, **not a standalone operating system**.
 
-**Current source version: `0.7.69`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
+**Current source version: `0.7.70`** | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Documentation policy](docs/VERSIONING_POLICY.md) | [License](LICENSE.md)
 
 > **Development status:** Features reflect the source, not every model or provider. A merge does not prove live deployment.
 
@@ -137,7 +137,7 @@ An existing installation's settings are not silently overwritten. `COREUI_FORCE_
 - **Research:** Websuche continues via `[WEB: WEITER]`. Playwright only via **+ > Research**. Deep Research separate. Weather: WDR / Open-Meteo.
 - **Deep Research:** Hybrid Lead/Workers, parallel web I/O, checkpoints, Citation Agent and safe tools. [Architecture](docs/DEEP_RESEARCH_HYBRID_ARCHITECTURE.md).
 - **Input row (+ menu):** **Attach** Photos, Camera or Files (up to ten). **Tools** Create image, Web search, Research or Deep Research, shown as a chip. Unavailable tools are greyed with the reason; Connectors are **In preparation**.
-- **Projects:** Projects group chats with instructions, sources and files; text files Mara builds there stay in the **Files** tab (tree, search, editor, history with compare and restore, ZIP).
+- **Projects:** Projects group chats with instructions, sources and files. Text files Mara builds stay in the **Files** tab (tree, search, editor, history, restore, ZIP); she edits single files too.
 - **Knowledge and tools:** Account-scoped RAG-Lite, memory, skill selection, file uploads and isolated Python tasks with registered outputs. Media handling depends on the selected Core and tools.
 - **Notifications:** **Settings → Notifications** sends Push (Web Push, also when CoreAI is closed; iPhone/iPad from the Home screen) or E-Mail for long answers, sign-ins and password changes, new features after an installed update, and new CoreAI versions (owner). Planned categories show **In preparation**. The owner sets up E-Mail sending under **Admin Core → Operations → E-Mail sending** (STARTTLS, SSL/TLS, or plain only to a local relay; encrypted password, test mail); SMTP values in `api/config.local.php` or `COREUI_SMTP_*` take precedence.
 - **Sign-in and security:** **Settings → Security** offers passkeys and security keys, an authenticator app, E-Mail codes, ten one-time recovery codes, Lockdown mode (no web or browser), advanced account security (passkey-only sign-in, no reset by E-Mail, 24-hour sessions), sign-out everywhere, security history. Account PIN, push approval and CSP are **In preparation**. Host-side reset: `php scripts/security-reset.php <email> [--passkeys]`.

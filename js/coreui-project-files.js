@@ -34,7 +34,8 @@
     invalid_query: 'Bitte mindestens zwei Zeichen eingeben.',
     csrf_failed: 'Die Sitzung wurde geändert. Bitte die Seite neu laden.'
   };
-  var SOURCE = { build: 'Von Mara gebaut', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt', restore: 'Wiederhergestellt' };
+  var SOURCE = { build: 'Von Mara gebaut', mara: 'Von Mara geändert', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt',
+    restore: 'Wiederhergestellt' };
 
   function message(err) {
     var code = err && err.message || '';

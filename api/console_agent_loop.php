@@ -18,6 +18,8 @@ declare(strict_types=1);
  * (skills.php) as a step, before she goes on with the task.
  * 0.6.39 (P20.5): [BILD: description] makes an image (api/image_gen.php) as a step;
  * it is attached to her answer, and she says in her answer that it is there.
+ * 0.7.70 (P09 B): in a project chat [DATEI: pfad], [DATEI_AENDERN: pfad] and [DATEI_NEU: pfad]
+ * read and change single project files (api/project_file_tools.php).
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
@@ -25,6 +27,10 @@ const COREUI_AGENT_MAX_STEPS = 6;
 /** The tool Mara asks for next (pure), or null when she answers. */
 function coreui_agent_next_tool(string $reply, array $allowed): ?array {
   $checks = [
+    // 0.7.70: project files first; their blocks may contain code that looks like other markers.
+    'pfile_write'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_write') ? coreui_pftools_extract_write($r) : null,
+    'pfile_edit'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_edit') ? coreui_pftools_extract_edit($r) : null,
+    'pfile_read'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_read') ? coreui_pftools_extract_read($r) : null,
     'skill'=>static fn(string $r): ?string => function_exists('coreui_skills_extract_marker') ? coreui_skills_extract_marker($r) : null,
     'browse'=>static fn(string $r): ?string => function_exists('ember_extract_browse_marker') ? ember_extract_browse_marker($r) : null,
     'web'=>static fn(string $r): ?string => function_exists('ember_extract_web_marker') ? ember_extract_web_marker($r) : null,
@@ -84,7 +90,8 @@ function coreui_browse_goal_start_url(string $goal): ?string {
 /** Work view title of a step (pure, ASCII as the work store requires). */
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
-    'skill'=>'Skill geladen', 'image'=>'Bild'];
+    'skill'=>'Skill geladen', 'image'=>'Bild', 'pfile_read'=>'Projektdatei lesen', 'pfile_edit'=>'Projektdatei aendern',
+    'pfile_write'=>'Projektdatei schreiben'];
   return 'Schritt ' . $step . ' von ' . $max . ': ' . ($what[(string)$tool['tool']] ?? 'Werkzeug');
 }
 
@@ -93,9 +100,12 @@ function coreui_agent_step_note(array $tool): ?string {
   $input = trim((string)preg_replace('~\s+~u', ' ', (string)$tool['input']));
   if ($tool['tool'] === 'python' || $input === '') return null;
   $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
-    'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: '];
+    'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: ', 'pfile_read'=>'Ich lese die Datei ',
+    'pfile_edit'=>'Ich ändere die Datei ', 'pfile_write'=>'Ich schreibe die Datei '];
   // An image shows its description without the size word.
   if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^(?:GROSS:\s*)?(?:ICH:\s*)?~u', '', $input));
+  // A file change shows its path only, never the code.
+  if (in_array($tool['tool'], ['pfile_edit', 'pfile_write'], true)) $input = trim(explode("\n", (string)$tool['input'], 2)[0]);
   $note = ($prefix[(string)$tool['tool']] ?? '') . (mb_strlen($input) > 200 ? mb_substr($input, 0, 197) . '...' : $input);
   return strlen($note) >= 12 && strpbrk($note, '<>[]{}`$') === false && preg_match('~https?://~i', $note) !== 1 ? $note : null;
 }
@@ -111,6 +121,9 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'browse' => 'Recherche im Browser: „' . $short . '“',
     'skill' => 'Skill geladen: ' . $short,
     'image' => 'Bild gemalt: „' . $short . '“',
+    'pfile_read' => 'Datei gelesen: „' . $short . '“',
+    'pfile_edit' => 'Datei geändert: „' . trim(explode("\n", $input, 2)[0]) . '“',
+    'pfile_write' => 'Datei geschrieben: „' . trim(explode("\n", $input, 2)[0]) . '“',
     default => 'Werkzeug',
   };
   return $what;
@@ -128,6 +141,11 @@ function coreui_agent_tool_menu(array $allowed): string {
   if (in_array('archive', $allowed, true)) $lines[] = '[ARCHIV: Stichworte] um in der Mitschrift dieses Chats nachzusehen';
   if (in_array('skill', $allowed, true)) $lines[] = '[SKILL: kennung] um eine Arbeitsanleitung aus deiner Skill-Bibliothek zu laden';
   if (in_array('image', $allowed, true)) $lines[] = '[BILD: Bildbeschreibung auf Englisch] fuer normale Bilder; [BILD ICH: Bildbeschreibung auf Englisch] ausschliesslich fuer Bilder von dir selbst (auch im Rollenspiel)';
+  if (in_array('pfile_read', $allowed, true)) {
+    $lines[] = '[DATEI: pfad] um eine Projektdatei mit Zeilennummern zu lesen';
+    $lines[] = '[DATEI_AENDERN: pfad] mit Bloecken <<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN], um eine Projektdatei gezielt zu aendern';
+    $lines[] = '[DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] fuer eine neue oder ganz ersetzte Projektdatei';
+  }
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -301,7 +319,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       }
       // No unverified second tool, no broken marker leaked as public prose.
       if ($final === '' || coreui_agent_next_tool($final,
-          ['web','browse','python','archive','skill','image']) !== null
+          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write']) !== null
           || preg_match('~\\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\\s+GROSS)?(?:\\s+ICH)?):|\\[/?PY\\]~iu', $final) === 1) {
         $final = $result; // Honest, deterministic fallback if the model fails.
         $record('model', 'info', 'Bildabschluss aus Werkzeugergebnis',
