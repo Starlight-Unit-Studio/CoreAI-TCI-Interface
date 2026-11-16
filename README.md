@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.73`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.74`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
@@ -119,6 +119,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Navigate recent, pinned, archived and project chats in a collapsible **mobile/desktop sidebar**, with quick search and switching.
 - Pin/unpin a chat; search its messages; list its uploaded files; export its complete conversation as **Markdown**.
 - Archive, restore, delete, or add a chat to a project; use account data controls for eligible bulk archive/delete/export actions.
+- Branch a chat at one of Mara's replies into a new chat: it keeps the messages up to that reply with their attachments, the project and the summary of older messages when it ends before that reply; downloads stay in the original. The original chat stays unchanged and the branch links back to it.
 - Protect individual chats with a verified **four-digit account PIN**; locked chats do not appear in regular previews or bulk deletion.
 - View assistant/operator identity headers, timestamps, response actions, and the interactive Core/Context/Tools/Project panels.
 - Display a movable, animated **Pet** with working/waiting/idle states. Mara Thorne and other original companions are included.
@@ -204,6 +205,7 @@ CoreAI's web frontend communicates with backend PHP endpoints using **JSON** and
 | `api/auth.php`, `api/account_security.php` | Authentication, sessions, second factors, security management | Session security, rate limits, signed-in controls |
 | `api/console_stream.php` | Streaming conversation, tool activity and source previews | Authenticated conversation and scoped job, SSE |
 | `api/console_sessions.php`, `api/console_messages.php` | Chat list, messages and conversation context | Account ownership, locks and visibility |
+| `api/console_actions.php` | Message actions: feedback, alternative answer, continue, edit, branch into a new chat, compaction | Account ownership, CSRF for writes; refused while Mara is still writing |
 | `api/models.php`, `api/user_settings.php` | Model inventory, Core tier preferences, user settings | Allowed-model filters and privileged variant updates |
 | `api/console_upload.php`, `api/console_media.php` | Uploaded files, generated images and account media | Scoped storage and private media delivery |
 | `api/console_project_store.php`, `api/project_files.php` | Projects, chats, text-file storage and versioning | Project/account ownership, per-file constraints |

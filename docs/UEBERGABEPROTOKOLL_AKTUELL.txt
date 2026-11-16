@@ -1,4 +1,15 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
+Version main: 0.7.73, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.74).
+ZIEL 0.7.74: Roadmap P09 Schritt C, Gespraechszweige. An einer Antwort von
+Mara zweigt ein Chat in einen neuen Chat ab: Nachrichten bis dorthin mit
+Anhaengen, Projekt, passende Zusammenfassung; Ursprung unveraendert,
+Herkunftszeile im Zweig. Migration 046_chat_branches.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_74.txt.
+Naechster Schritt: P10 (Terminal, Laufzeiten, Vorschau).
+Nach Merge naechste Version 0.7.75.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
 Version main: 0.7.72, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.73).
 ZIEL 0.7.73: Roadmap P09 Schritt B. Mara liest und aendert im Projekt-Chat
 einzelne Projektdateien: [DATEI: pfad], [DATEI_AENDERN: pfad] mit

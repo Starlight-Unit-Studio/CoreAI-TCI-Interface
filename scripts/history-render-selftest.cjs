@@ -41,6 +41,9 @@ function fixture(shouldFail, pending) {
       ctx.messagesInner.appendChild(node('new-confirmed-message'));
     },
     appendMessageEl() {},
+    // 0.7.74 (P09 C): the branch line is placed in the draft, before the commit.
+    placeBranchLine() { ctx.branchLines.push(ctx.messagesInner.name); },
+    branchLines: [],
     showTypingIndicator() {
       const typed = node('pending-response');
       ctx.messagesInner.appendChild(typed);
@@ -70,6 +73,8 @@ good.ctx.renderHistory({id:'demo'});
 assert.equal(good.visible.childNodes.length,1);
 assert.equal(good.visible.childNodes[0].name,'new-confirmed-message');
 assert.equal(good.ctx.refreshes,1,'successful rendering commits exactly once');
+assert.deepEqual(good.ctx.branchLines,['detached-history'],'the branch line is placed once, in the draft');
+assert.deepEqual(bad.ctx.branchLines,[],'a failed render places no branch line');
 
 const pending = fixture(false,true);
 pending.ctx.renderHistory({id:'demo'});

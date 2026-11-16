@@ -138,6 +138,7 @@ html[data-coreui-theme="dark"] .session-item,
 html[data-coreui-theme="dark"] .session-archive-toggle,
 html[data-coreui-theme="dark"] .session-action,
 html[data-coreui-theme="dark"] .history-load-older,
+html[data-coreui-theme="dark"] .chat-branch-line-open,
 html[data-coreui-theme="dark"] .history-retry button,
 html[data-coreui-theme="dark"] .hud-button-quiet,
 html[data-coreui-theme="dark"] .hud-button-primary,
@@ -568,4 +569,9 @@ html.pref-reduced-motion *::after {
   animation-iteration-count: 1 !important;
   transition-duration: .01ms !important;
   scroll-behavior: auto !important;
+}
+/* 0.7.74 (P09 C): the branch line in the dark look. */
+html[data-coreui-theme="dark"] .chat-branch-line {
+  color: var(--muted);
+  border-color: var(--line);
 }
