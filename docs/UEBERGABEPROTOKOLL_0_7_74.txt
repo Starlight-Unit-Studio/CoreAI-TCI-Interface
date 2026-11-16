@@ -1,0 +1,59 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.74
+Datum: 16.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.73 nach PR #326
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Roadmap P09, Schritt C: Gespraechsverzweigungen (CF-013). Abnahme laut Feature-Matrix: Eine
+Verzweigung erhaelt den ausgewaehlten Kontext und veraendert das Ursprungsgespraech nicht.
+
+UMSETZUNG
+- database/migrations/046_chat_branches.sql: stu_console_sessions bekommt branch_source_id,
+  branch_source_message_id und branch_point_id (Index user_id + branch_source_id). Bewusst ohne
+  Fremdschluessel: der Ursprung darf spaeter geloescht werden, der Zweig bleibt.
+- api/console_branch_store.php:
+  - coreui_branch_title: "Zweig: " genau einmal, hoechstens 64 Zeichen.
+  - coreui_branch_pick (rein): sichtbare Nachrichten bis zur gewaehlten Antwort von Mara. Andere
+    Antwortvarianten derselben Frage bleiben zurueck; fruehere Fragen behalten alles, was Mara im
+    Ursprung gesehen hat. Eine mit "Weiter" fortgesetzte Antwort (stu_console_generation_requests,
+    mode continue, status done) wird mit ihrer Quelle zu einer Antwort zusammengefuehrt; ein Klick
+    auf die Fortsetzung zweigt an der ganzen Antwort ab. Schutz gegen Schleifen.
+  - coreui_branch_compact_state (rein): die Zusammenfassung aelterer Nachrichten kommt nur mit, wenn
+    sie und ihr Archiv vor der Abzweigstelle enden; die Kennungen werden auf den Zweig umgeschrieben.
+    Sonst faltet die normale Zusammenfassung den Zweig spaeter selbst.
+  - coreui_branch_create: in einer Transaktion. Nur eigene, offene, nicht gesperrte Chats
+    (coreui_console_session_require), nur an Antworten von Mara, abgelehnt solange eine Antwort,
+    ein Browserauftrag oder ein Lauf in diesem Chat aktiv ist (session_busy). Neuer Chat ueber
+    coreui_console_session_create (Grenze 100 aktive Chats gilt), Projekt nur wenn es noch besteht.
+    Nachrichten mit Zeit, Gedanken, Bild-URL und file_uuid; reply_to_id auf die eigenen Fragen des
+    Zweigs umgeschrieben. Anhaenge zeigen auf dieselben Dateien (Positionen 0 bis 9, keine
+    Doppelten). Kein Ungelesen-Zaehler im Zweig. Archivdatei wird kopiert und bei Fehler entfernt.
+  - coreui_branch_info: Herkunft fuer die Zeile im Zweig. Titel nur, solange der Ursprung sichtbar
+    ist; gesperrt oder geloescht heisst "gone" ohne Titel, archiviert ohne Knopf.
+- api/console_actions.php: Aktion "branch" hinter der CSRF-Pruefung; PDOException wird als
+  branch_failed (500) gemeldet und protokolliert, nicht als SQL-Text. session_limit_reached und
+  branch_too_long als 409, branch_migration_required als 503.
+- api/console_messages.php: der Verlauf liefert "branch" (Abzweigstelle, Zustand, Titel, Kennung).
+- js/console-app.js: Knopf "In neuem Chat abzweigen" an jeder Antwort von Mara (eigenes Symbol),
+  branchFromReply (neuer Chat oben in der Liste, wird geoeffnet, Projektliste aktualisiert),
+  Hinweise bei Fehlern, placeBranchLine (Zeile nach der Abzweigstelle, auch nach dem Nachladen
+  aelterer Nachrichten, nie doppelt), state.branchBySession.
+- css/console.css, css/coreui-theme.css: Herkunftszeile hell und dunkel.
+- README (Abschnitt 7 und API-Tabelle), docs/CAPABILITIES.md, ROADMAP.md, Feature-Matrix CF-013.
+- Nicht angefasst: Modelfile, SYSTEM-Prompts, Prompt-Bau, Zusammenfassung, Loeschpfad.
+- Bewusst nicht im Zweig: Downloads (stu_console_artifacts hat eine eindeutige storage_key; eine
+  Kopie braeuchte eigene Dateien), Arbeitsweg, Deep-Research-Laeufe, Bewertungen.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Ein Zweig auf dem echten Server mit einem lokalen Core: nach dem Update in einem laengeren Chat
+  an einer aelteren Antwort von Mara "In neuem Chat abzweigen" waehlen, im Zweig weiterfragen und
+  pruefen, dass der Ursprung unveraendert bleibt. Kein Deployment behauptet.
+
+NAECHSTER SCHRITT
+- P10: Terminal, Laufzeiten und Vorschau.
+
+Version: 0.7.74

@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.74
+Datum: 16.11.2026
+
+GESPRAECHSZWEIGE (ROADMAP P09, SCHRITT C)
+- Jede Antwort von Mara hat die Aktion "In neuem Chat abzweigen". Sie
+  oeffnet einen neuen Chat, der genau an dieser Antwort weitergeht. Der
+  Ursprungschat wird nur gelesen, nie veraendert.
+- Der Zweig uebernimmt die sichtbaren Nachrichten bis zu dieser Antwort mit
+  ihren Anhaengen (Fotos, Stimmsequenzen, Maras Bilder; Mara kennt sie also
+  weiter), das Projekt des Chats und die Zusammenfassung aelterer
+  Nachrichten, wenn sie vor dieser Antwort endet.
+- Andere Antwortvarianten an dieser Stelle bleiben zurueck. Eine mit "Weiter"
+  fortgesetzte Antwort wird im Zweig zu einer Antwort.
+- Downloads, der Arbeitsweg und Deep-Research-Laeufe bleiben im Ursprungschat.
+- Herkunftszeile: Nach der Abzweigstelle steht "Abgezweigt von „Titel“" mit
+  einem Knopf zum Ursprungschat. Ein archivierter Ursprung ist markiert, ein
+  gesperrter oder geloeschter wird nicht genannt.
+- Sicher: nur eigene, offene und nicht gesperrte Chats; nur an Antworten von
+  Mara; abgelehnt, solange Mara noch schreibt; CSRF fuer die Aktion. Wird der
+  Ursprung geloescht, bleiben der Zweig und die gemeinsam genutzten Dateien.
+
+DATENBANK
+- Migration 046_chat_branches: Herkunft eines Zweigs (ohne Fremdschluessel,
+  der Ursprung darf spaeter geloescht werden).
+
+TESTS
+- scripts/chat-branch-selftest.php (SQLite und mit COREUI_SELFTEST_DB=1
+  MariaDB) und scripts/chat-branch-ui-selftest.cjs (Playwright), beide in
+  beiden Preflights.
+- scripts/history-render-selftest.cjs kennt die Herkunftszeile.
+
+NICHT GETESTET
+- Ein Zweig auf dem echten Server mit einem lokalen Core und einem langen,
+  zusammengefassten Chat.

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.74 - 16.11.2026
+
+- **Conversation branches (roadmap P09, step C):** Every reply of Mara has the action "In neuem Chat abzweigen". It opens a new chat that goes on from exactly that reply; the original chat is only read, never changed.
+- **What the branch takes:** The visible messages up to that reply with their attachments (photos, Stimmsequenzen, Mara's images, so she still knows them), the chat's project and the summary of older messages when it ends before that reply. Other answer variants at that point stay behind; a reply continued with "Weiter" becomes one answer. Downloads, the work path and Deep Research runs stay in the original chat.
+- **Origin line:** The branch shows "Abgezweigt von „Titel“" after the branch point with a button to the original chat. An archived original is marked; a locked or deleted one is not named.
+- **Safe:** Only the account's own, open and unlocked chats; only at Mara's replies; refused while Mara is still writing; CSRF for the action. Deleting the original keeps the branch and the files it shares.
+- **Database:** Migration `046_chat_branches` records where a branch came from (no foreign key, the original may be deleted later).
+- **Tests:** New `scripts/chat-branch-selftest.php` (SQLite, and MariaDB with `COREUI_SELFTEST_DB=1`) and `scripts/chat-branch-ui-selftest.cjs` (Playwright), both in both preflights. `scripts/history-render-selftest.cjs` knows the origin line.
+
 ## 0.7.73 - 16.11.2026
 
 - **Mara changes single project files (roadmap P09, step B):** In a chat that belongs to a project, Mara can now read a project file and change it in a targeted way instead of building the whole project again. Three tools in her work loop: `[DATEI: path]` reads a file with line numbers, `[DATEI_AENDERN: path]` changes it with one or more SEARCH/REPLACE blocks (`<<<<<<< SUCHEN` ... `=======` ... `>>>>>>> ERSETZEN`), `[DATEI_NEU: path]` creates a file or replaces it as a whole.

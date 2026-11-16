@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.73: Mara reads and changes single project files in a project chat (P09 B).
+# CoreAI: TCI Interface 0.7.74: a chat branches off at one of Mara's replies into a new chat (P09 C).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
