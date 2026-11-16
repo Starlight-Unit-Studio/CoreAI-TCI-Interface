@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.71 - 16.11.2026
+
+- **Korrektur Core-Verantwortung:** Original/Uncensored gehört in **Cores verwalten**, nicht als aufgeklappte Unterkarten ins Chat-Core-Menü. Das Chat-Menü zeigt wieder nur **einen Core je TCI-Stufe**; die dort aktive Variante bestimmt allein die bestehende Betreiberzuordnung.
+- **Kompakter Variantenwähler:** Rechts in der Verwaltungszeile erscheint bei mehreren installierten lokalen Ollama-Tags eine kleine Auswahl für Original bzw. Uncensored. Keine unnötigen Schalter bei nur einem Modell, kein neues Menü.
+- **Persistente, geschützte Zuordnung:** Admins konfigurieren die tatsächlich installierte lokale Variante einmal pro Stufe in den vorhandenen Anwendungseinstellungen. API, Preload und Chat-Turn nutzen den exakten gewählten Tag, ohne die ursprünglichen Modelfiles oder Konto-Einstellungen zu überschreiben. Generator, Cloud und Fremdmodelle bleiben getrennt; beim Deinstallieren wird eine ungültige Zuordnung bereinigt.
+- **Regression:** Neuer Core-Tier-Variantentest (SQLite und Schnittstellen), angepasste Mobil-/Menü- und Verwaltungs-Tests, eigene CI, Asset-Fingerprints und Release-Metadaten. Live-Abnahme nach dem Betreiber-Update bleibt offen.
+
 ## 0.7.70 - 16.11.2026
 
 - **Original und Uncensored einzeln auswählbar:** Wenn mehrere Ollama-Tags zur gleichen Gemma-4-Stufe gehören, erscheint im Chat-Core-Menü eine echte Variantenauswahl mit vollständigem technischen Tag. Die bisherige Vorzugswahl des Standard- oder Mara-Cores versteckt die anderen installierten Modelle nicht mehr.
