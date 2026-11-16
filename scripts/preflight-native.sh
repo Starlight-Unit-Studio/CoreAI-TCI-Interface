@@ -209,6 +209,10 @@ UI_FILES=(
   database/migrations/045_project_files_mara.sql
   api/project_file_tools.php
   scripts/project-file-tools-selftest.php
+  database/migrations/046_chat_branches.sql
+  api/console_branch_store.php
+  scripts/chat-branch-selftest.php
+  scripts/chat-branch-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1215,6 +1219,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Datei-Werkzeuge-Selbsttest: ${project_file_tools_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.74 (P09 C): a chat branches off at one of Mara's replies; the original stays unchanged.
+  chat_branch_test=''
+  if chat_branch_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/chat-branch-selftest.php" 2>&1)"; then
+    ok "$chat_branch_test"
+  else
+    fail "Gespraechszweig-Selbsttest: ${chat_branch_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1607,6 +1619,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Projektdateien: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.74 (P09 C): the branch button and the line after the branch point; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/chat-branch-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Gespraechszweige: Knopf und Herkunftszeile im Browser geprueft.'
+      else
+        fail 'Gespraechszweige: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Gespraechszweige: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

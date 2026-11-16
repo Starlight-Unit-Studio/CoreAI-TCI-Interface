@@ -113,6 +113,22 @@ try {
     stu_json(['ok'=>true,'run_id'=>$runId] + $result);
   }
 
+  // 0.7.74 (P09 C): branch the chat off at one of Mara's replies into a new chat.
+  // The original chat is only read; the branch takes the messages up to that reply.
+  if ($action === 'branch') {
+    require_once __DIR__ . '/console_branch_store.php';
+    if (!coreui_branch_ready($pdo)) stu_json(['ok'=>false, 'error'=>'branch_migration_required'], 503);
+    try {
+      $branch = coreui_branch_create($pdo, (int)$uid, $sessionId, (int)($body['message_id'] ?? 0));
+    } catch (PDOException $e) {
+      if (function_exists('stu__log_error')) {
+        stu__log_error(['type'=>'console_branch_exception', 'uid'=>(int)$uid, 'message'=>$e->getMessage()]);
+      }
+      stu_json(['ok'=>false, 'error'=>'branch_failed'], 500);
+    }
+    stu_json(['ok'=>true] + $branch, 201);
+  }
+
   if ($action === 'feedback') {
     if (!coreui_feedback_events_ready($pdo)) {
       stu_json(['ok'=>false, 'error'=>'feedback_events_migration_required'], 503);
@@ -213,8 +229,8 @@ try {
 } catch (RuntimeException $e) {
   $error = $e->getMessage();
   $status = str_contains($error, 'not_found') ? 404
-    : (in_array($error, ['generation_busy', 'session_busy'], true) ? 409
-      : (in_array($error, ['message_actions_migration_required', 'message_editing_migration_required', 'agent_runs_migration_required', 'feedback_events_migration_required'], true) ? 503 : 400));
+    : (in_array($error, ['generation_busy', 'session_busy', 'session_limit_reached', 'branch_too_long'], true) ? 409
+      : (in_array($error, ['message_actions_migration_required', 'message_editing_migration_required', 'agent_runs_migration_required', 'feedback_events_migration_required', 'branch_migration_required'], true) ? 503 : 400));
   stu_json(['ok'=>false, 'error'=>$error], $status);
 } catch (Throwable $e) {
   if (function_exists('stu__log_error')) {

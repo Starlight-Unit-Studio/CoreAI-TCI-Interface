@@ -90,6 +90,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Navigate recent, pinned, archived and project chats in a collapsible **mobile/desktop sidebar**, with quick search and switching.
 - Pin/unpin a chat; search its messages; list its uploaded files; export its complete conversation as **Markdown**.
 - Archive, restore, delete, or add a chat to a project; use account data controls for eligible bulk archive/delete/export actions.
+- Branch a chat at one of Mara's replies into a new chat: it keeps the messages up to that reply with their attachments, the project and the summary of older messages when it ends before that reply; downloads stay in the original. The original chat stays unchanged and the branch links back to it.
 - Protect individual chats with a verified **four-digit account PIN**; locked chats do not appear in regular previews or bulk deletion.
 - View assistant/operator identity headers, timestamps, response actions, and the interactive Core/Context/Tools/Project panels.
 - Display a movable, animated **Pet** with working/waiting/idle states. Mara Thorne and other original companions are included.

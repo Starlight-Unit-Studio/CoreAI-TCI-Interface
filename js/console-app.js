@@ -168,6 +168,7 @@
     generationPollTimers: {},
     queuedTurnsBySession: {},
     variantSelectionBySession: {},
+    branchBySession: {},
     editingMessage: null,
     showArchived: false,
     draftProjectId: null
@@ -1161,6 +1162,7 @@
       state.agentStopEl = null;
       appendOlderButton(ses);
       renderConversationRows(ses);
+      placeBranchLine(ses);
       if (!state.messageCacheBySession[ses.id] || !state.messageCacheBySession[ses.id].length) {
         appendMessageEl('system', 'TERRA-NET VERBINDUNG HERGESTELLT. COREUI TERMINAL AKTIV.');
       }
@@ -1240,6 +1242,7 @@
     var fresh = document.createDocumentFragment();
     while (holder.firstChild) fresh.appendChild(holder.firstChild);
     messagesInner.insertBefore(fresh, messagesInner.firstChild);
+    placeBranchLine(ses);
     appendOlderButton(ses);
     if (messagesArea) messagesArea.scrollTop = Math.max(0, messagesArea.scrollHeight - height + top);
     return Date.now() - started;
@@ -1345,6 +1348,7 @@
         state.renderLimitBySession[ses.id] = visibleRecords(ses).length + d.messages.length;
       }
       mergeSessionMessages(ses.id, d.messages);
+      if (!prepend) state.branchBySession[String(ses.id)] = d.branch && typeof d.branch === 'object' ? d.branch : null;
       state.historyFailuresBySession[ses.id] = 0;
       var resumed = !prepend && recoverActiveRun(ses, d);
       state.historyHasMoreBySession[ses.id] = !!d.has_more_before;
@@ -1749,7 +1753,9 @@
       continue: 'M7 4l11 8L7 20z',
       previous: 'M15.5 5 8.5 12l7 7',
       next: 'M8.5 5l7 7-7 7',
-      cancel: 'M5 5l14 14M19 5 5 19'
+      cancel: 'M5 5l14 14M19 5 5 19',
+      // 0.7.74 (P09 C): three points on two lines, a branch.
+      branch: 'M6 2.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z M6 16.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z M18 4.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z M5 7h2v10H5z M17 9h2v1c0 3.3-2.7 5-6 5H9.5c-1.4 0-2.5.6-2.5 1.5H5c0-2.2 2-3.5 4.5-3.5H13c2.2 0 4-1 4-3z'
     };
     return paths[name] || paths.more;
   }
@@ -1895,6 +1901,77 @@
     if (/^guest_(?:limit_reached|network_limit|daily_limit)$/.test(String(error || ''))) guestLimitReached();
     appendMessageEl('system', '\u26a0 ' + (map[error] || 'Nachrichtenaktion fehlgeschlagen.'));
     scrollToBottom();
+  }
+
+  // 0.7.74 (P09 C): branch the chat off at Mara's reply. The server copies the messages up to
+  // this reply into a new chat; the new chat opens, the original one is not changed.
+  function branchError(error) {
+    var map = {
+      session_busy: 'Abzweigen geht, sobald die laufende Antwort fertig ist.',
+      generation_busy: 'Abzweigen geht, sobald die laufende Antwort fertig ist.',
+      session_limit_reached: 'Es gibt schon 100 aktive Chats. Archiviere einen, dann geht das Abzweigen.',
+      branch_too_long: 'Dieser Chat ist zu lang zum Abzweigen.',
+      branch_needs_reply: 'Abzweigen geht nur an einer Antwort von ' + (state.assistantName || 'Mara') + '.',
+      message_not_found: 'Diese Antwort ist nicht mehr verfügbar.',
+      session_not_found: 'Die Sitzung ist nicht mehr aktiv.',
+      branch_migration_required: 'Migration 046 fehlt. Bitte Preflight ausfuehren.',
+      csrf_failed: 'Die Sitzung wurde erneuert. Bitte Seite neu laden.'
+    };
+    appendMessageEl('system', '\u26a0 ' + (map[error] || 'Abzweigen fehlgeschlagen.'));
+    scrollToBottom();
+  }
+
+  function branchFromReply(record, button) {
+    var ses = activeSession();
+    if (!record || !ses || Number(record.id) <= 0 || button.disabled) return;
+    button.disabled = true;
+    postConsoleAction({ action: 'branch', session_id: String(ses.id), message_id: Number(record.id) })
+      .then(function (data) {
+        var branch = data && data.session;
+        if (!branch || !branch.id) throw new Error('branch_failed');
+        state.sessions = [branch].concat(state.sessions.filter(function (s) { return String(s.id) !== String(branch.id); }));
+        if (window.CoreAIProjects && typeof window.CoreAIProjects.refresh === 'function') {
+          window.CoreAIProjects.refresh().catch(function () {});
+        }
+        return selectSession(branch.id);
+      })
+      .catch(function (error) {
+        branchError(error && error.message ? error.message : 'branch_failed');
+      })
+      .finally(function () { button.disabled = false; });
+  }
+
+  // The line after the branch point: where this chat came from.
+  function placeBranchLine(ses) {
+    Array.prototype.slice.call(messagesInner.querySelectorAll(':scope > .chat-branch-line'))
+      .forEach(function (node) { messagesInner.removeChild(node); });
+    var info = ses && state.branchBySession[String(ses.id)];
+    var point = Number(info && info.point_id) || 0;
+    if (point <= 0) return;
+    var row = messagesInner.querySelector('[data-message-id="' + String(point) + '"]');
+    if (!row) return;
+    while (row.parentNode && row.parentNode !== messagesInner) row = row.parentNode;
+    if (row.parentNode !== messagesInner) return;
+    var line = document.createElement('div');
+    line.className = 'chat-branch-line';
+    line.setAttribute('role', 'note');
+    var text = document.createElement('span');
+    text.className = 'chat-branch-line-text';
+    var title = String(info.source_title || '');
+    if (info.source_state === 'active' && title) text.textContent = 'Abgezweigt von \u201e' + title + '\u201c';
+    else if (info.source_state === 'archived' && title) text.textContent = 'Abgezweigt von \u201e' + title + '\u201c (archiviert)';
+    else text.textContent = 'Abgezweigt von einem Chat, der nicht mehr verfügbar ist';
+    line.appendChild(text);
+    var sourceId = String(info.source_id || '');
+    if (info.source_state === 'active' && sourceId && sessionById(sourceId)) {
+      var open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'chat-branch-line-open';
+      open.textContent = 'Ursprungschat öffnen';
+      open.addEventListener('click', function () { selectSession(sourceId); });
+      line.appendChild(open);
+    }
+    messagesInner.insertBefore(line, row.nextSibling);
   }
 
   function startGenerationAction(record, mode, button) {
@@ -2068,6 +2145,12 @@
     var continueButton = createActionButton('continue', 'Unvollstaendige Antwort fortsetzen');
     continueButton.addEventListener('click', function () { startGenerationAction(record, 'continue', continueButton); });
     actions.appendChild(continueButton);
+
+    // 0.7.74 (P09 C): a new chat that goes on from this reply; this chat stays as it is.
+    var branchButton = createActionButton('branch', 'In neuem Chat abzweigen');
+    branchButton.classList.add('is-branch');
+    branchButton.addEventListener('click', function () { branchFromReply(record, branchButton); });
+    actions.appendChild(branchButton);
 
     var variants = record && Array.isArray(record._variantGroup) ? record._variantGroup : [];
     if (variants.length > 1) {

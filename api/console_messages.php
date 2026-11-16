@@ -6,6 +6,7 @@ require __DIR__ . '/chat.php';
 require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/console_action_store.php';
 require_once __DIR__ . '/console_agent_runs.php';
+require_once __DIR__ . '/console_branch_store.php';
 
 $pdo = stu_pdo();
 $uid = stu_require_user_id();
@@ -231,10 +232,19 @@ unset($row);
 
 if ($maxId > 0) coreui_console_session_mark_read($pdo, (int)$uid, $sessionId, $maxId);
 
+// 0.7.74 (P09 C): where this chat branched off (the line after the branch point).
+$branchInfo = null;
+try {
+  $branchInfo = coreui_branch_info($pdo, (int)$uid, $sessionId);
+} catch (Throwable $eBranch) {
+  error_log('[CoreUI] Branch info unavailable: ' . get_class($eBranch));
+}
+
 stu_json([
   'ok' => true,
   'session_id' => $sessionId,
   'session_title' => (string)($session['title'] ?? ''),
+  'branch' => $branchInfo,
   'messages' => $rows,
   'oldest_id' => $oldestId,
   'last_id' => $maxId,
