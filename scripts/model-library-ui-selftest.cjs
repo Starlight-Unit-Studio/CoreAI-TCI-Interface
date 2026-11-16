@@ -34,7 +34,7 @@ assert(html.indexOf('js/coreui-core-install.js') < html.indexOf('js/coreui-model
 assert(css.includes('.core-library-provider--future')
   && css.includes('grid-template-columns: repeat(3, minmax(0, 1fr))')
   && css.includes('@media (max-width: 520px)'),
-  'the three tabs include a responsive mobile layout');
+  'the two shared tabs include a responsive mobile layout');
 
 class Element {
   constructor(tag, id) {
