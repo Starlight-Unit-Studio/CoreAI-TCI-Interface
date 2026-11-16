@@ -1,9 +1,13 @@
-name: CoreAI Exact Model Variant Choice
+name: CoreAI Core Variants in Admin Management
 
 on:
   pull_request:
     paths:
       - 'js/coreui-core-mode.js'
+      - 'js/coreui-core-install.js'
+      - 'api/core_tier_variants.php'
+      - 'scripts/core-tier-variant-selftest.php'
+      - 'scripts/core-install-ui-selftest.cjs'
       - 'css/console.css'
       - 'scripts/thinking-switch-ui-selftest.cjs'
       - 'scripts/core-tiers-selftest.php'
@@ -18,6 +22,8 @@ on:
     paths:
       - 'js/coreui-core-mode.js'
       - 'scripts/thinking-switch-ui-selftest.cjs'
+      - 'scripts/core-install-ui-selftest.cjs'
+      - 'api/core_tier_variants.php'
       - '.github/workflows/core-variant-choice.yml'
 
 permissions:
@@ -40,9 +46,19 @@ jobs:
         run: |
           node --check js/coreui-core-mode.js
           node --check scripts/thinking-switch-ui-selftest.cjs
+          node --check js/coreui-core-install.js
+          node --check scripts/core-install-ui-selftest.cjs
+          php -l api/core_tier_variants.php
+          php -l api/ai_settings.php
+          php -l api/user_settings.php
+          php -l api/models.php
+          php -l api/core_install.php
+          php -l scripts/core-tier-variant-selftest.php
           php -l scripts/core-tiers-selftest.php
           php -l scripts/model-access-selftest.php
           node scripts/thinking-switch-ui-selftest.cjs
+          node scripts/core-install-ui-selftest.cjs
+          php scripts/core-tier-variant-selftest.php
           php scripts/core-tiers-selftest.php
           php scripts/model-access-selftest.php
       - name: Check version, branding and asset fingerprints
