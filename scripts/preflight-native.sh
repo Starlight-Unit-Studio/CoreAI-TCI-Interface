@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.76: the preview of a web project in the tab Dateien (P10 A).
+# CoreAI: TCI Interface 0.7.77: commands and tests of a project in the sandbox, also by Mara (P10 B).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -216,6 +216,12 @@ UI_FILES=(
   api/project_preview_store.php
   scripts/project-preview-selftest.php
   scripts/project-preview-ui-selftest.cjs
+  database/migrations/047_project_runs.sql
+  api/project_runs_store.php
+  tools/ember_project_runs.py
+  scripts/project-runs-selftest.php
+  scripts/project-runs-worker-selftest.py
+  scripts/project-runs-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -579,6 +585,14 @@ if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py
   ok 'Browser-Regeln: geschuetzte Felder, Kaeufe, Logins, Nachrichten, lokales Netz, Core des Nutzers und Herzschlag geprueft.'
 else
   fail 'Browser-Regeln-Selbsttest fehlgeschlagen.'
+fi
+
+# 0.7.77 (P10 B): project runs in the worker; with Docker and ember-py:1 real runs in the sandbox.
+project_runs_worker_test=''
+if project_runs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-runs-worker-selftest.py" 2>&1)"; then
+  ok "$project_runs_worker_test"
+else
+  fail "Projektlaeufe-Worker-Selbsttest: ${project_runs_worker_test:-Unbekannter Fehler}"
 fi
 
 # 0.7.38: Deep Research in the browse worker (search, read, notes, report with only real sources, Stopp).
@@ -1247,6 +1261,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Projektvorschau-Selbsttest: ${project_preview_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.77 (P10 B): commands on project files in the sandbox, and Mara's [AUSFUEHREN:].
+  project_runs_test=''
+  if project_runs_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-runs-selftest.php" 2>&1)"; then
+    ok "$project_runs_test"
+  else
+    fail "Projektlaeufe-Selbsttest: ${project_runs_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1659,6 +1681,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Projektvorschau: Oberflaechentest uebersprungen (Playwright fuer Node oder php nicht installiert).'
+    fi
+    # 0.7.77 (P10 B): the panel Ausfuehren in the tab Dateien; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/project-runs-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Projektlaeufe: Befehl, Ausgabe, Exitcode, Abbrechen und Python-Schalter im Browser geprueft.'
+      else
+        fail 'Projektlaeufe: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Projektlaeufe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

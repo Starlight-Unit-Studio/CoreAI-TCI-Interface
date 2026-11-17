@@ -1,0 +1,55 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.77
+Datum: 17.11.2026
+
+PROJEKT AUSFUEHREN UND TESTEN (ROADMAP P10, SCHRITT B)
+- Im Tab Dateien fuehrt "Ausfuehren" einen Befehl mit den gespeicherten
+  Dateien im Sandbox-Container des Python-Workers aus, zum Beispiel die Tests
+  des Projekts. Der Bereich schlaegt einen Befehl vor (python -m unittest ...
+  oder das Hauptprogramm), zeigt Warten, Laufen, die echte Ausgabe und
+  Fehlerausgabe mit Exitcode und Dauer, behaelt die letzten 20 Laeufe und
+  kann einen laufenden Befehl abbrechen.
+- Mara fuehrt auch aus: Im Projekt-Chat nutzt sie [AUSFUEHREN: befehl] in
+  ihrer Arbeitsschleife und bekommt die echte Ausgabe und den Exitcode. So
+  testet sie, aendert eine Datei mit ihren Datei-Werkzeugen und testet erneut.
+- Abgeschottet: derselbe Wegwerf-Container wie bei Maras Python, kein Mount
+  von CoreAI, keine Host-Dienste, schreibgeschuetztes System, keine
+  Capabilities, unprivilegierter Nutzer, Grenzen fuer Speicher, CPU, Prozesse
+  und 120 Sekunden. Was ein Befehl an Dateien aendert, bleibt im Container;
+  das Projekt in der Datenbank wird von einem Lauf nie geschrieben.
+- Begrenzt: ein Lauf je Projekt gleichzeitig, 60 Laeufe je Konto und Stunde,
+  CSRF fuer Starten und Abbrechen. Laeufe gehoeren zum Python-Werkzeug:
+  Schalter des Inhabers, Kontoregeln und Gast-Schalter gelten. Laeufe ohne
+  Worker enden als Fehler statt ewig zu warten.
+- Sandbox: Image ember-py:1 mit Python 3.12, ohne Node.js. Der Worker nimmt
+  Laeufe nach Maras Python-Auftraegen.
+
+CORE-BEGRIFF IN DER CORE-BIBLIOTHEK
+- Zwei sichtbare Texte der Core-Bibliothek in app.html und ein Hinweis in
+  js/coreui-model-library.js sagten "Modell"; der vorhandene Test
+  scripts/frontend-regression-selftest.php war dadurch schon auf main 0.7.76
+  rot. Jetzt: "Cores in der gemeinsamen Core-Bibliothek entdecken",
+  "Auf der Originalseite ansehen", "Bitte die offizielle Seite des Cores
+  verwenden."
+
+HUGGING-FACE-BIBLIOTHEK
+- coreui_hf_search_parse nimmt ein Repository nicht mehr nur wegen eines
+  Namens auf -GGUF auf; noetig ist das Tag oder die Bibliothek gguf des Hubs.
+  Der vorhandene scripts/huggingface-library-selftest.php laeuft in beiden
+  Preflights und damit bei jedem Update und war deshalb auf main 0.7.76 rot.
+
+DATENBANK
+- Migration 047_project_runs (Laeufe gehen mit ihrem Projekt).
+
+TESTS
+- scripts/project-runs-selftest.php (SQLite; MariaDB mit COREUI_SELFTEST_DB=1;
+  Ende zu Ende mit echtem Worker und Docker mit COREUI_SELFTEST_SANDBOX=1:
+  Test rot, Mara korrigiert die Datei, Test gruen).
+- scripts/project-runs-worker-selftest.py (echte Laeufe in ember-py:1, wenn
+  Docker da ist) und scripts/project-runs-ui-selftest.cjs (Playwright), alle
+  in beiden Preflights.
+- image-gen-selftest.php, skills-selftest.php und
+  project-file-tools-selftest.php kennen das neue Werkzeug.
+
+NICHT GETESTET
+- Ein Lauf auf dem echten Server mit dem laufenden pyworker-Dienst und ein
+  echter Core, der [AUSFUEHREN:] benutzt.

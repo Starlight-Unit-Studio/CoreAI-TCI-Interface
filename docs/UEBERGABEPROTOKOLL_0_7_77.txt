@@ -1,0 +1,99 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.77
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.76 nach PR #332 (zuerst auf main 0.7.75 gebaut, dann per Vorspulen auf 0.7.76 gesetzt;
+keine Ueberschneidung mit den Dateien von PR #332)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Roadmap P10, Schritt B: Befehle und Tests eines Projekts ausfuehren (CF-036, CF-039), im Tab Dateien
+und als Werkzeug fuer Mara. Abnahme von P10 laut Roadmap: ein Beispielprojekt liefert echte
+Testausgaben, ein eingebauter Fehler wird bearbeitet und der Ablauf erneut geprueft.
+
+UMSETZUNG
+- database/migrations/047_project_runs.sql: stu_console_project_runs (Befehl, Status queued, running,
+  done, error, cancelled, Exitcode, stdout, stderr, Fehler, Dauer, Anzahl und Pruefsumme der Dateien,
+  Worker-PID, Abbruchwunsch). Fremdschluessel auf Konto und Projekt mit ON DELETE CASCADE.
+- tools/ember_project_runs.py (neu) und tools/ember_py_worker.py: der vorhandene Python-Worker nimmt
+  einen Projektlauf, wenn kein Python-Auftrag von Mara wartet. Die gespeicherten Dateien werden in ein
+  frisches Arbeitsverzeichnis geschrieben (Pfade ein zweites Mal geprueft), der Befehl laeuft mit
+  "sh -c" im Container mit denselben Mauern wie Maras Python (kein Mount von CoreAI, --read-only,
+  --cap-drop ALL, no-new-privileges, Nutzer 65534, Grenzen fuer Speicher, CPU, Prozesse, tmpfs ohne
+  exec) und hoechstens 120 s (STU_EMBER_PROJECT_RUN_TIMEOUT). Abbruchwunsch wird jede Sekunde geprueft.
+  Ausgaben werden gekuerzt (Anfang und Ende), das Arbeitsverzeichnis danach entfernt. Das Projekt in
+  der Datenbank wird nie geschrieben. Eigenes Image moeglich ueber STU_EMBER_PROJECT_IMAGE, sonst
+  ember-py:1. Ohne Migration 047 bleiben Projektlaeufe im Worker aus.
+- api/project_runs_store.php (neu): Befehl pruefen (eine Zeile, 1 bis 400 Zeichen), Vorschlag
+  (unittest-Entdeckung in tests/ oder oben, sonst main.py oder die erste .py), Warteschlange, ein Lauf
+  je Projekt, 60 je Konto und Stunde, die letzten 20 je Projekt bleiben, Abbrechen (wartend sofort,
+  laufend ueber den Worker), verlorene Laeufe enden als Fehler (worker_lost, no_worker), Saetze fuer
+  Oberflaeche und Mara. Zeiten werden mit der Uhr der Datenbank verglichen.
+- api/project_files.php: GET runs und run, POST run und run_cancel (CSRF). Laeufe gelten als
+  Python-Werkzeug: coreui_ai_runtime_apply plus coreui_runtime_tool_enabled('python') (Inhaber,
+  Kontoregeln, Gast-Schalter); sonst python_disabled (403). Kein neuer Endpunkt, keine nginx-Aenderung.
+- api/project_file_tools.php: [AUSFUEHREN: befehl] (am Zeilenende bis zur letzten Klammer, sonst bis
+  zur ersten), Mara wartet bis 130 s auf das Ergebnis und liest Befehl, Satz, stdout und stderr
+  (je hoechstens 6000 Zeichen). Hinweis im Prompt nur, wenn Ausfuehren erlaubt ist (Python an,
+  Migration da), mit "Python 3.12, kein Node.js".
+- api/console_agent_loop.php, api/chat.php: Werkzeug prun (Titel, Notiz, Bezeichnung, Menue), nur im
+  Projekt-Chat und nur mit ember_py_enabled(); ein nicht ausgefuehrter Marker wird aus der Antwort
+  entfernt.
+- js/coreui-project-files.js, css/coreui-project-files.css: Bereich "Ausfuehren" im Tab Dateien mit
+  Vorschlag, Warten und Laufen (Abfrage jede Sekunde), Ausgabe und Fehlerausgabe, Exitcode und Dauer,
+  Abbrechen, letzte Laeufe ("von Mara" bei Laeufen aus dem Chat), Hinweis bei ausgeschaltetem Python.
+- README (Abschnitt 4, API-Tabelle, "Not yet complete"), docs/CAPABILITIES.md, ROADMAP (M3 und P10),
+  Feature-Matrix CF-036 und CF-039 (jetzt Teilbestand).
+- Nachtrag fuer die CI-Pruefung ui-and-version: zwei sichtbare "Modell"-Texte der Core-Bibliothek in
+  app.html (aus PR #332) und ein Hinweis in js/coreui-model-library.js sagen jetzt "Core" bzw.
+  "Originalseite". scripts/frontend-regression-selftest.php war damit schon auf main 0.7.76 rot.
+- Nachtrag Preflight: api/huggingface_library.php verlangt fuer die Suche das GGUF-Tag oder die
+  GGUF-Bibliothek des Hubs, nicht mehr nur einen Namen auf -GGUF. scripts/huggingface-library-selftest.php
+  (in beiden Preflights, also bei jedem Update) war damit schon auf main 0.7.76 rot.
+- Nicht geaendert: Sandbox-Image (tools/ember_py.Dockerfile), Installer, compose.yaml, Modelfile,
+  SYSTEM-Prompts. Der pyworker-Dienst laedt das neue Modul beim naechsten Start (Update startet ihn neu).
+
+OFFENE BETREIBERFRAGE
+- Node.js im Sandbox-Image: Das Image hat nur Python. Fuer JavaScript-Projekte braeuchte es ein
+  erweitertes Image (Dockerfile, neuer Tag, Bau beim Update, rund 100 bis 150 MB mehr). Das ist eine
+  Installer-Entscheidung des Betreibers und wurde nicht ohne Auftrag umgesetzt.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien, py_compile fuer die Python-Dateien, bash -n fuer beide
+  Preflights: ohne Fehler.
+- scripts/project-runs-selftest.php: OK mit SQLite, mit MariaDB (Migration 047) und Ende zu Ende mit dem
+  echten Worker in Docker (COREUI_SELFTEST_SANDBOX=1): unittest rot mit echter Ausgabe, Mara korrigiert
+  die Datei mit [DATEI_AENDERN:], unittest gruen, Abbruch eines laufenden Befehls.
+- scripts/project-runs-worker-selftest.py: OK mit echten Laeufen in ember-py:1 (bestanden,
+  fehlgeschlagen, Nutzer 65534 und schreibgeschuetztes System, Zeitlimit, Abbruch, Arbeitsverzeichnis
+  entfernt).
+- scripts/project-runs-ui-selftest.cjs (Playwright): OK.
+- scripts/project-file-tools-selftest.php, image-gen-selftest.php, skills-selftest.php: OK.
+- 12 gezielt eingebaute Fehler (Mutationen) in den neuen Dateien: alle von den Tests erkannt.
+- Alle Schritte des CI-Jobs ui-and-version lokal nachgestellt: OK. GitHub-Pruefungen am PR: 11 von 11
+  gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*), Branch gegen main 0.7.76 in derselben Umgebung:
+  Branch 178 bestanden, 19 fehlgeschlagen; main 175 bestanden, 19 fehlgeschlagen; die Liste der
+  Fehlschlaege ist auf beiden gleich, die drei neuen Tests bestehen.
+  - frontend-regression-selftest.php und huggingface-library-selftest.php: auf main rot, in diesem
+    Branch behoben (siehe UMSETZUNG) und danach einzeln bestanden.
+  - storage-ui-selftest.cjs: in der Testreihe auf beiden rot, einzeln wiederholt bestanden (bekannt
+    unruhig in dieser Umgebung).
+  - context-slider-ui-selftest.cjs: auf main und Branch rot mit "two rows on phones". Ursache ist der
+    main-Commit e7506f74 ("two balanced Core library tabs"), der in css/console.css unter
+    @media (max-width: 720px) auch .ctx-stops von repeat(3, ...) auf repeat(2, ...) gesetzt hat. Der
+    Test laeuft in beiden Preflights, wenn Node.js da ist. Nicht geaendert, weil unklar ist, ob das
+    gewollt war (Betreiberentscheidung: CSS zurueck auf drei Spalten oder Test auf zwei).
+  - Die uebrigen 15 sind in dieser Umgebung schon laenger rot und auf main gleich: browse-image
+    (kein Python-Playwright), browse-live-ui, chat-menu-ui, image-progress-ui, long-chat,
+    model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui,
+    settings-tabs-ui, update-ui, voice-input, voice-samples-ui.
+
+NICHT GETESTET
+- Ein Lauf auf dem echten Server mit dem laufenden pyworker-Dienst: nach dem Update in einem Projekt mit
+  einer .py-Datei im Tab Dateien "Ausfuehren" waehlen. Ein echter Core, der [AUSFUEHREN:] im
+  Projekt-Chat benutzt. Kein Deployment behauptet.
+
+NAECHSTER SCHRITT
+- P10 C: Terminal- und Prozesssitzungen und ein Entwicklungsserver mit Vorschau.
+
+Version: 0.7.77

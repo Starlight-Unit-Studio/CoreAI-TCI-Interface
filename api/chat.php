@@ -372,6 +372,8 @@ function ember_strip_stray_tool_markers(string $out): string {
   // 0.7.73: a project file block (closed, or cut off at the end) never reaches the chat.
   $out = (string)preg_replace('~\[\s*(DATEI_(?:AENDERN|NEU))\s*:[^\]\r\n]*\][\s\S]*?(?:\[\s*/\s*\1\s*\]|\z)~u', '', $out);
   $out = (string)preg_replace('~\[\s*DATEI\s*:[^\]\r\n]*\]~u', '', $out);
+  // 0.7.77: a run marker that did not run is no text for the chat (to the end of its line).
+  $out = (string)preg_replace('~\[\s*AUSF(?:UE|Ü)HREN\s*:[^\r\n]*\][ \t]*~u', '', $out);
   return (string)preg_replace_callback(
     '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
@@ -5210,7 +5212,7 @@ function ember_build_chat_prompt(
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
   // 0.7.73 (P09 B): the project's files and Mara's file tools.
   $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
-    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact']) : '';
+    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo)) : '';
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
   $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
@@ -5291,7 +5293,7 @@ function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, 
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
   // 0.7.73 (P09 B): project files; the project comes from this chat, never from the marker.
-  if (in_array($tool['tool'], ['pfile_read', 'pfile_edit', 'pfile_write'], true)) {
+  if (in_array($tool['tool'], ['pfile_read', 'pfile_edit', 'pfile_write', 'prun'], true)) {
     return $channel === 'console' ? coreui_pftools_run($pdo, $uid, $sessionId, $tool) : 'Projektdateien gibt es nur im privaten Chat.';
   }
   if ($tool['tool'] === 'skill') return coreui_skills_tool_result((string)$tool['input']);
@@ -5523,7 +5525,11 @@ function ember_agent_allowed_tools(int $uid, string $sessionId, bool $explicitBr
   if ($sessionId !== '' && ember_image_allowed($uid)) $tools[] = 'image';
   // 0.7.73 (P09 B): in a project chat Mara reads and changes the project's files.
   try {
-    if (coreui_pftools_project(stu_pdo(), $uid, $sessionId) !== '') array_push($tools, 'pfile_read', 'pfile_edit', 'pfile_write');
+    if (coreui_pftools_project(stu_pdo(), $uid, $sessionId) !== '') {
+      array_push($tools, 'pfile_read', 'pfile_edit', 'pfile_write');
+      // 0.7.77 (P10 B): running the project counts as the Python tool.
+      if (ember_py_enabled() && coreui_pruns_ready(stu_pdo())) $tools[] = 'prun';
+    }
   } catch (Throwable $e) {
     error_log('[CoreAI] project file tools unavailable: ' . get_class($e));
   }
@@ -5745,7 +5751,7 @@ function ember_generate_reply(
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
   // 0.7.73 (P09 B): the project's files and Mara's file tools.
   $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
-    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact']) : '';
+    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo)) : '';
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
   $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
@@ -6817,7 +6823,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId,
       coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()));
     $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed,
-      ['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write'])));
+      ['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write', 'prun'])));
     // A natural self-portrait question must use the account's visual reference,
     // even when the local Core emits the legacy generic [BILD: ...] marker.
     if ($loopTool !== null) {

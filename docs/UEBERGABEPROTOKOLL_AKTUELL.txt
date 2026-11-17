@@ -1,3 +1,17 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.76, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.77).
+ZIEL 0.7.77: Roadmap P10 Schritt B, Projekt ausfuehren und testen im
+Sandbox-Container des Python-Workers (Tab Dateien und Mara mit
+[AUSFUEHREN: befehl]; echte Ausgabe, Exitcode, Abbrechen). Migration
+047_project_runs. Kein neues Image, kein Installer.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_77.txt.
+Naechster Schritt: P10 C (Terminal- und Prozesssitzungen, Entwicklungsserver).
+Offene Betreiberfrage: Node.js im Sandbox-Image (neues Image, Installer).
+Offene Betreiberfrage: context-slider-ui-selftest.cjs ist seit e7506f74 auf main rot
+(.ctx-stops auf Telefonen zwei statt drei Spalten); CSS oder Test anpassen?
+Nach Merge naechste Version 0.7.78.
+--- VORHERIGER STAND ---
+
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 16.11.2026
 Version main: 0.7.74, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.75).
 ZIEL 0.7.75: Roadmap P10 Schritt A, Vorschau von Web-Projekten im Tab

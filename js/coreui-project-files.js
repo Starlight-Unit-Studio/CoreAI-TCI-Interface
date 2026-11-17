@@ -1,5 +1,6 @@
 /* CoreAI 0.7.69 (P09): the tab "Dateien" on the project page.
- * 0.7.75 (P10 A): the preview of an HTML page of the project in a sandboxed frame. 
+ * 0.7.75 (P10 A): the preview of an HTML page of the project in a sandboxed frame.
+ * 0.7.77 (P10 B): commands on the saved files in the sandbox container, with their output. 
  * Files of the project as a tree, search in names and content, a text editor
  * for single files, the history of a file with a comparison and restore, new
  * file, rename, delete and the current state as a ZIP. The server owns every
@@ -15,7 +16,8 @@
 
   var state = { project: '', files: [], bytes: 0, limits: null, csrf: '', loaded: false, error: '',
     file: null, draft: '', history: false, compare: null, query: '', results: null, folders: {},
-    form: null, status: '', statusKind: '', conflict: false, busy: false, preview: null };
+    form: null, status: '', statusKind: '', conflict: false, busy: false, preview: null,
+    run: { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false } };
   var searchTimer = 0;
 
   var ERR = {
@@ -33,7 +35,14 @@
     project_not_found: 'Das Projekt wurde nicht gefunden.',
     same_path: 'Der neue Pfad ist derselbe wie der alte.',
     invalid_query: 'Bitte mindestens zwei Zeichen eingeben.',
-    csrf_failed: 'Die Sitzung wurde geändert. Bitte die Seite neu laden.'
+    csrf_failed: 'Die Sitzung wurde geändert. Bitte die Seite neu laden.',
+    invalid_command: 'Bitte einen Befehl in einer Zeile eingeben (höchstens 400 Zeichen).',
+    run_busy: 'In diesem Projekt läuft schon ein Befehl.',
+    run_limit: 'Für diese Stunde sind es genug Läufe. Bitte später noch einmal.',
+    no_files: 'Das Projekt hat noch keine Dateien.',
+    python_disabled: 'Ausführen gehört zum Python-Werkzeug, und das ist für dieses Konto ausgeschaltet.',
+    run_not_found: 'Diesen Lauf gibt es nicht mehr.',
+    project_runs_migration_required: 'Die Datenbank-Migration 047 fehlt. Bitte das Update einspielen.'
   };
   var MAX_PREVIEW_ERRORS = 5;
   var SOURCE = { build: 'Von Mara gebaut', mara: 'Von Mara geändert', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt',
@@ -336,6 +345,145 @@
     frame.src = previewUrl();
     previewBox.appendChild(frame);
   }
+  // --- Runs (0.7.77, P10 B) -------------------------------------------------------------------
+  // A command runs in the sandbox container on a copy of the saved files; its own changes to
+  // files stay there. The output is the real stdout and stderr with the exit code.
+  var runBox = el('section', 'project-run');
+  runBox.hidden = true;
+  runBox.setAttribute('aria-label', 'Ausführen');
+  panel.insertBefore(runBox, previewBox);
+  var runTimer = 0, runInput = null;
+  var RUN_STATE = { queued: 'Wartet auf den Sandbox-Dienst …', running: 'Läuft …', cancelled: 'Abgebrochen' };
+  var RUN_ERROR = {
+    timeout: 'Nach 120 s abgebrochen (Zeitlimit).',
+    no_worker: 'Der Sandbox-Dienst hat den Lauf nicht übernommen. Läuft der Python-Dienst auf dem Server?',
+    worker_lost: 'Der Sandbox-Dienst hat sich während des Laufs nicht mehr gemeldet.',
+    docker_missing: 'Docker ist auf dem Server nicht erreichbar.',
+    sandbox_stop_unconfirmed: 'Der Sandbox-Container ließ sich nicht sicher beenden.',
+    cancelled: 'Abgebrochen.'
+  };
+  function seconds(ms) { return (Math.round((Number(ms) || 0) / 100) / 10).toFixed(1).replace('.', ',') + ' s'; }
+  function runLine(r) {
+    if (!r) return '';
+    if (r.status === 'done') return 'Exitcode ' + r.exit_code + ' · ' + seconds(r.duration_ms) + (r.files_count ? ' · ' + r.files_count + ' Dateien' : '');
+    if (r.status === 'error') return RUN_ERROR[r.error] || ('Fehler: ' + r.error);
+    if (r.status === 'cancelled') return 'Abgebrochen' + (r.duration_ms ? ' nach ' + seconds(r.duration_ms) : '') + '.';
+    return (r.cancel_requested ? 'Wird abgebrochen …' : RUN_STATE[r.status]) || r.status;
+  }
+  function runBadge(r) {
+    if (r.status === 'done') return r.exit_code === 0 ? 'is-ok' : 'is-fail';
+    if (r.status === 'queued' || r.status === 'running') return 'is-active';
+    return 'is-fail';
+  }
+  function stopRunPoll() { if (runTimer) { clearTimeout(runTimer); runTimer = 0; } }
+  function loadRuns() {
+    return getJson({ project_id: state.project, runs: 1 }).then(function (d) {
+      state.run.list = d.runs || []; state.run.ready = d.ready !== false; state.run.allowed = d.allowed !== false;
+      state.run.suggestion = d.suggestion || ''; state.csrf = d.csrf_token || state.csrf;
+      if (!state.run.command) state.run.command = state.run.suggestion;
+      var active = state.run.list.filter(function (r) { return r.status === 'queued' || r.status === 'running'; })[0];
+      if (active && (!state.run.current || state.run.current.id !== active.id)) return showRun(active.id);
+      if (!state.run.current && state.run.list.length) return showRun(state.run.list[0].id);
+    }).catch(function (e) { state.run.error = message(e); });
+  }
+  function showRun(id) {
+    stopRunPoll();
+    return getJson({ project_id: state.project, run: id }).then(function (d) {
+      state.run.current = d.run; state.run.error = '';
+      renderRun();
+      if (d.run.status === 'queued' || d.run.status === 'running') {
+        runTimer = setTimeout(function () { showRun(id); }, 1000);
+      } else {
+        var known = state.run.list.some(function (r) { return r.id === d.run.id && r.status === d.run.status; });
+        if (!known) getJson({ project_id: state.project, runs: 1 }).then(function (x) { state.run.list = x.runs || []; renderRun(); }).catch(function () {});
+      }
+    }).catch(function (e) { state.run.error = message(e); renderRun(); });
+  }
+  function openRuns() {
+    state.run.open = true; state.run.error = '';
+    renderRun();
+    loadRuns().then(renderRun);
+  }
+  function closeRuns() { state.run.open = false; stopRunPoll(); renderRun(); }
+  function startRun(command) {
+    if (state.run.sending) return;
+    state.run.sending = true; state.run.error = ''; state.run.command = command;
+    renderRun();
+    post({ action: 'run', command: command }).then(function (d) {
+      state.run.list = [d.run].concat(state.run.list.filter(function (r) { return r.id !== d.run.id; }));
+      state.run.current = d.run;
+      return showRun(d.run.id);
+    }).catch(function (e) { state.run.error = message(e); })
+      .then(function () { state.run.sending = false; renderRun(); });
+  }
+  function cancelRun() {
+    var r = state.run.current;
+    if (!r) return;
+    post({ action: 'run_cancel', run_id: r.id }).then(function (d) { state.run.current = d.run; renderRun(); })
+      .catch(function (e) { state.run.error = message(e); renderRun(); });
+  }
+  function outputBlock(label, text, cls) {
+    var box = el('div', 'project-run-block ' + cls);
+    box.appendChild(el('strong', '', label));
+    box.appendChild(el('pre', 'project-run-output', text));
+    return box;
+  }
+  function renderRun() {
+    var keep = runInput && document.activeElement === runInput ? { value: runInput.value, start: runInput.selectionStart } : null;
+    runBox.textContent = ''; runInput = null;
+    runBox.hidden = !state.run.open;
+    if (!state.run.open) return;
+    var head = el('div', 'project-run-head');
+    var title = el('div', 'project-preview-title');
+    title.appendChild(el('strong', '', 'Ausführen'));
+    title.appendChild(el('small', '', 'Im Sandbox-Container mit den gespeicherten Dateien. Was der Befehl an Dateien ändert, bleibt dort.'));
+    head.appendChild(title);
+    head.appendChild(button('Schließen', 'project-files-secondary', closeRuns, { id: 'projectRunClose' }));
+    runBox.appendChild(head);
+    var form = el('form', 'project-run-form');
+    runInput = el('input', 'project-run-command');
+    runInput.type = 'text'; runInput.value = keep ? keep.value : state.run.command; runInput.maxLength = 400;
+    runInput.placeholder = state.run.suggestion || 'z. B. python -m unittest -v';
+    runInput.setAttribute('aria-label', 'Befehl'); runInput.spellcheck = false; runInput.autocomplete = 'off';
+    runInput.addEventListener('input', function () { state.run.command = runInput.value; });
+    form.appendChild(runInput);
+    var r = state.run.current, active = !!r && (r.status === 'queued' || r.status === 'running');
+    var go = el('button', 'project-files-primary', 'Ausführen');
+    go.type = 'submit'; go.id = 'projectRunStart';
+    go.disabled = active || state.run.sending || !state.run.allowed || !state.run.ready;
+    form.appendChild(go);
+    if (active) form.appendChild(button('Abbrechen', 'project-files-danger', cancelRun, { id: 'projectRunCancel' }));
+    form.addEventListener('submit', function (e) { e.preventDefault(); var c = runInput.value.trim(); if (c) startRun(c); });
+    runBox.appendChild(form);
+    if (!state.run.ready) runBox.appendChild(el('p', 'project-files-status is-error', ERR.project_runs_migration_required));
+    else if (!state.run.allowed) runBox.appendChild(el('p', 'project-files-status is-error', ERR.python_disabled));
+    if (state.run.error) runBox.appendChild(el('p', 'project-files-status is-error', state.run.error));
+    if (r) {
+      var status = el('p', 'project-run-status ' + runBadge(r));
+      status.setAttribute('role', 'status');
+      status.appendChild(el('code', '', r.command));
+      status.appendChild(el('span', '', ' · ' + runLine(r)));
+      runBox.appendChild(status);
+      if (r.stdout) runBox.appendChild(outputBlock('Ausgabe', r.stdout, 'is-stdout'));
+      if (r.stderr) runBox.appendChild(outputBlock('Fehlerausgabe', r.stderr, 'is-stderr'));
+      if (!active && !r.stdout && !r.stderr && r.status === 'done') runBox.appendChild(el('p', 'project-files-hint', 'Keine Ausgabe.'));
+    }
+    if (state.run.list.length > 1 || (state.run.list.length === 1 && (!r || state.run.list[0].id !== r.id))) {
+      var list = el('div', 'project-run-list');
+      list.setAttribute('aria-label', 'Letzte Läufe');
+      list.appendChild(el('strong', '', 'Letzte Läufe'));
+      state.run.list.forEach(function (item) {
+        var b = button('', 'project-run-item ' + runBadge(item) + (r && r.id === item.id ? ' is-current' : ''), function () { showRun(item.id); },
+          { 'data-run': String(item.id) });
+        b.appendChild(el('code', '', item.command));
+        b.appendChild(el('small', '', runLine(item) + (item.from_chat ? ' · von Mara' : '')));
+        list.appendChild(b);
+      });
+      runBox.appendChild(list);
+    }
+    if (keep) { runInput.focus(); try { runInput.setSelectionRange(keep.start, keep.start); } catch (e) {} }
+  }
+
   window.addEventListener('message', function (event) {
     if (!frame || !state.preview || event.source !== frame.contentWindow) return;
     var data = event.data;
@@ -429,6 +577,9 @@
     if (startPage()) {
       bar.appendChild(button('Vorschau', 'project-files-secondary', function () { openPreview(startPage()); },
         { id: 'projectFilesPreview' }));
+    }
+    if (state.files.length) {
+      bar.appendChild(button('Ausführen', 'project-files-secondary', openRuns, { id: 'projectFilesRun', 'aria-expanded': String(state.run.open) }));
     }
     if (state.files.length) {
       var zip = el('a', 'project-files-secondary project-files-zip', 'Als ZIP herunterladen');
@@ -632,6 +783,9 @@
     state.project = ''; state.files = []; state.file = null; state.draft = ''; state.query = ''; state.results = null;
     state.form = null; state.compare = null; state.loaded = false; state.conflict = false; setStatus('');
     if (state.preview) closePreview();
+    stopRunPoll();
+    state.run = { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false };
+    renderRun();
   }
   function open(projectId) {
     if (projectId !== state.project) { reset(); state.project = projectId || ''; }

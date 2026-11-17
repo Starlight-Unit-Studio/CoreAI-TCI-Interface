@@ -53,6 +53,7 @@ from ember_artifacts import (
     recover_workspace_outputs, recover_stdout_html,
 )
 from ember_inputs import InputError, resolve_inputs, stage_inputs
+import ember_project_runs
 
 try:
     import pymysql
@@ -77,6 +78,9 @@ DEFAULTS = {
     "STU_EMBER_PY_TMPFS_SIZE": "64m",
     "STU_EMBER_PY_STORE_CHARS": "16000",
     "STU_EMBER_PY_WORKDIR": os.path.join(PROJECT_ROOT, "var", "ember_py"),
+    # 0.7.77 (P10 B): commands on project files; the image is the Python sandbox unless set.
+    "STU_EMBER_PROJECT_IMAGE": "",
+    "STU_EMBER_PROJECT_RUN_TIMEOUT": "120",
 }
 
 DEFAULT_CONFIG = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "api", "config.local.php"))
@@ -385,6 +389,10 @@ def main():
           % (cfg.get("STU_EMBER_PY_IMAGE"), cfg.get("STU_DB_NAME"),
              cfg.get("STU_EMBER_PY_EXEC_TIMEOUT")), flush=True)
 
+    runs_ready = ember_project_runs.table_ready(conn)
+    if not runs_ready:
+        print("[worker] Projektlaeufe aus (Migration 047 fehlt).", flush=True)
+
     while not _STOP:
         try:
             job = claim_next_job(conn)
@@ -398,6 +406,28 @@ def main():
             continue
 
         if not job:
+            # 0.7.77 (P10 B): a command on project files, when no Python job waits.
+            run = None
+            if runs_ready:
+                try:
+                    run = ember_project_runs.claim_next_run(conn, os.getpid())
+                except Exception as exc:
+                    print("[worker] Projektlauf nicht abholbar: %s" % exc, flush=True)
+            if run:
+                try:
+                    ember_project_runs.process_run(conn, cfg, run, work_base(cfg), stop_container)
+                except Exception:
+                    tb = traceback.format_exc()
+                    print("[worker] Projektlauf-Fehler:\n%s" % tb, flush=True)
+                    try:
+                        ember_project_runs.finish_run(conn, int(run["id"]), os.getpid(), {
+                            "status": "error", "exit_code": None, "stdout": "", "stderr": "",
+                            "error": "worker_error", "duration_ms": 0, "files_count": 0, "files_sha256": None})
+                    except Exception:
+                        pass
+                if args.once:
+                    return 0
+                continue
             if args.once:
                 print("[worker] kein Job offen.", flush=True)
                 return 0

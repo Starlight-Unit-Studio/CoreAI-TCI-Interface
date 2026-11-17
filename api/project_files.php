@@ -11,17 +11,32 @@ declare(strict_types=1);
  * GET  ?project_id=P&search=Q                paths and lines that contain Q
  * GET  ?project_id=P&zip=1                   the current state as a ZIP
  * GET  ?project_id=P&preview=X               0.7.75 (P10 A): an HTML file as a sandboxed preview
+ * GET  ?project_id=P&runs=1                  0.7.77 (P10 B): the latest runs and a suggested command
+ * GET  ?project_id=P&run=N                   0.7.77 (P10 B): one run with its output
+ * POST {action: run|run_cancel, ...}         0.7.77 (P10 B): a command in the sandbox, or its end
  * POST {action: create|save|rename|delete|restore, project_id, ...} with CSRF
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/project_preview_store.php';
+require_once __DIR__ . '/project_runs_store.php';
 
 $pdo = stu_pdo();
 $uid = (int)stu_require_user_id();
 stu_enforce_maintenance($pdo, $uid);
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+
+/** 0.7.77 (P10 B): runs count as the Python tool (owner switch, account rules, guest switch). */
+function coreui_pruns_allowed(PDO $pdo, int $uid): bool {
+  require_once __DIR__ . '/ai_settings.php';
+  try {
+    coreui_ai_runtime_apply($pdo, $uid);
+  } catch (Throwable $e) {
+    return false;
+  }
+  return coreui_runtime_tool_enabled('python', defined('STU_EMBER_PY_ENABLED') ? (bool)STU_EMBER_PY_ENABLED : true);
+}
 
 function coreui_pfiles_send_download(string $name, string $type, string $path): void {
   header('Content-Type: ' . $type);
@@ -68,6 +83,15 @@ try {
         @unlink($zip['path']);
       }
       exit;
+    }
+    if (isset($_GET['runs'])) {
+      $paths = array_map(static fn(array $f): string => (string)$f['path'], coreui_pfiles_list($pdo, $uid, $projectId)['files'] ?? []);
+      stu_json(['ok'=>true, 'ready'=>coreui_pruns_ready($pdo), 'allowed'=>coreui_pruns_allowed($pdo, $uid),
+        'runs'=>coreui_pruns_ready($pdo) ? coreui_pruns_list($pdo, $uid, $projectId) : [], 'suggestion'=>coreui_pruns_suggest($paths),
+        'csrf_token'=>stu_csrf_token()]);
+    }
+    if (isset($_GET['run'])) {
+      stu_json(['ok'=>true, 'run'=>coreui_pruns_get($pdo, $uid, $projectId, (int)$_GET['run'])]);
     }
     if (isset($_GET['search'])) {
       stu_json(['ok'=>true, 'results'=>coreui_pfiles_search($pdo, $uid, $projectId, (string)$_GET['search'])]);
@@ -116,6 +140,11 @@ try {
     case 'restore':
       $result = coreui_pfiles_restore($pdo, $uid, $projectId, $path, (int)($body['revision'] ?? 0));
       stu_json(['ok'=>true, 'file'=>$result['file'], 'changed'=>$result['changed']]);
+    case 'run':
+      if (!coreui_pruns_allowed($pdo, $uid)) stu_json(['ok'=>false, 'error'=>'python_disabled'], 403);
+      stu_json(['ok'=>true, 'run'=>coreui_pruns_enqueue($pdo, $uid, $projectId, $body['command'] ?? '')], 202);
+    case 'run_cancel':
+      stu_json(['ok'=>true, 'run'=>coreui_pruns_cancel($pdo, $uid, $projectId, (int)($body['run_id'] ?? 0))]);
   }
   stu_json(['ok'=>false, 'error'=>'unknown_action'], 400);
 } catch (InvalidArgumentException $e) {
@@ -127,8 +156,9 @@ try {
     stu_json(['ok'=>false, 'error'=>'project_files_failed'], 500);
   }
   $status = match (true) {
-    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found'], true) => 404,
-    in_array($error, ['file_exists', 'file_changed'], true) => 409,
+    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found', 'run_not_found'], true) => 404,
+    in_array($error, ['file_exists', 'file_changed', 'run_busy', 'no_files'], true) => 409,
+    $error === 'run_limit' => 429,
     in_array($error, ['project_full', 'storage_full'], true) => 413,
     str_contains($error, 'migration') => 503,
     default => 422,

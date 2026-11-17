@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.7.77 - 17.11.2026
+
+- **Run and test a project (roadmap P10, step B):** In the **Files** tab of a project, "Ausführen" runs a command on the saved files in the sandbox container of the Python worker, for example the project's tests. The panel suggests a command (`python -m unittest ...` or the main program), shows waiting, running, the real stdout and stderr with the exit code and the duration, keeps the last 20 runs and can cancel a running command.
+- **Mara runs and tests too:** In a project chat Mara uses `[AUSFUEHREN: befehl]` in her work loop and gets the real output and exit code back, so she can test, change a file with her file tools and test again.
+- **Isolated:** The same throw-away container as Mara's Python: no mount of CoreAI, no host services, read-only system, no capabilities, an unprivileged user, limits for memory, CPU, processes and 120 seconds. Files a command changes stay in the container; the project in the database is never written from a run.
+- **Bounded:** One run at a time per project, 60 runs per account and hour, CSRF for starting and cancelling. Runs count as the Python tool: the owner's switch, the account rules and the guest switch apply. Runs without a worker end as an error instead of waiting for ever.
+- **Sandbox:** The image is `ember-py:1` with Python 3.12; Node.js is not included. The worker takes runs after Mara's Python jobs.
+- **Database:** Migration `047_project_runs` (runs go with their project).
+- **Hugging Face library only lists what the Hub marks as GGUF:** `coreui_hf_search_parse` no longer accepts a repository just because its name ends in `-GGUF`; the Hub tag or library `gguf` is required. The existing `scripts/huggingface-library-selftest.php`, which runs in both preflights and therefore in every update, failed on main 0.7.76 because of that name rule.
+- **Core wording in the Core library:** Two visible texts of the Core library in `app.html` and one hint in `js/coreui-model-library.js` said "Modell" and made the existing check `scripts/frontend-regression-selftest.php` fail on main 0.7.76. They now say "Cores in der gemeinsamen Core-Bibliothek entdecken", "Auf der Originalseite ansehen" and "Bitte die offizielle Seite des Cores verwenden."
+- **Tests:** New `scripts/project-runs-selftest.php` (SQLite; MariaDB with `COREUI_SELFTEST_DB=1`; end to end with the real worker and Docker with `COREUI_SELFTEST_SANDBOX=1`: a failing test, Mara fixes the file, the test passes), `scripts/project-runs-worker-selftest.py` (real runs in `ember-py:1` when Docker is there) and `scripts/project-runs-ui-selftest.cjs` (Playwright), all in both preflights. `image-gen-selftest.php`, `skills-selftest.php` and `project-file-tools-selftest.php` know the new tool.
+
 ## 0.7.76 - 16.11.2026
 
 - **Unified Core library:** One discovery tab combines Ollama registry and public Hugging Face GGUF repositories. Both sources appear in one result list, with source labels and a shared search field.

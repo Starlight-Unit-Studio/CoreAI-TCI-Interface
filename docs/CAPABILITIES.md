@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.75. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.7.77. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 This catalog inventories Mara's existing user-facing tools and CoreAI's application functionality. **Built-in** means code is present, **optional** means another installed service, model, permission or license is needed, and **planned** means not yet a delivered feature. An installed source merge is not the same as server deployment or a live end-to-end test.
 
@@ -57,7 +57,8 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Save text files Mara produces within a project into its **Files** tab, with a folder tree, filename/content search and line numbers.
 - Create, edit, rename, delete and download text files; compare revisions, restore earlier versions and export the current project as ZIP.
 - In a project chat, Mara reads a single project file, changes exact passages or writes a new file; every change is all-or-nothing, saved as a revision marked as hers and can be restored.
-- Preview an HTML page of a project in the **Files** tab: its stylesheets, scripts, SVG pictures and data files come from the project, links open its other pages, and script errors are listed with file and line. The preview shows the saved state, reloads after saving and runs isolated from the account (its own sandboxed origin, no access to cookies, chats or the API). Running commands, tests and development servers are not part of it yet.
+- Preview an HTML page of a project in the **Files** tab: its stylesheets, scripts, SVG pictures and data files come from the project, links open its other pages, and script errors are listed with file and line. The preview shows the saved state, reloads after saving and runs isolated from the account (its own sandboxed origin, no access to cookies, chats or the API).
+- Run a command on a project's saved files in the Python sandbox, from the **Files** tab or by Mara in a project chat (for example the project's tests). It is the same isolated container as Mara's Python: no access to the host or CoreAI, a read-only system, limits for memory, CPU, processes and 120 seconds. The real output and exit code are shown and kept for the last 20 runs; a running command can be cancelled. Mara can test, change a file and test again. The sandbox has Python 3.12, Node.js is not included, and files a command changes stay in the container. Runs count as the Python tool and follow its switches.
 - Protect concurrent editor changes and unsaved drafts; files stay account/project scoped and count toward storage limits.
 - Keep project chat history after deleting a project; project files and sources are deleted with that project.
 - Retrieve account-scoped **RAG-Lite knowledge**, maintain long-term memory where supported and generate an account memory summary.
