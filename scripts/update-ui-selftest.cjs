@@ -92,11 +92,9 @@ async function open(browser, level, viewport, prepare) {
   const page = await browser.newPage({viewport: viewport || {width: 1440, height: 900}, locale: 'de-DE'});
   const errors = [];
   const navigation = {count: 0, baseline: 0};
-  // Track actual browser navigations. A global window marker can be cleared by
-  // page scripts or test-clock internals even when no navigation occurred.
-  page.on('framenavigated', frame => {
-    if (frame === page.mainFrame()) navigation.count += 1;
-  });
+  // Only full page loads count as reloads; URL fragment navigation inside
+  // Settings must not masquerade as an update-driven page reload.
+  page.on('load', () => { navigation.count += 1; });
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.route('http://coreui.test/**', route => srv.route(route));
