@@ -444,7 +444,7 @@ if is_enabled "$INSTALL_SEARXNG"; then
     [[ "$EXISTING_MOUNT" == "$PROJECT_ROOT/var/searxng/config" ]] || die 'A foreign container named ember-coreui-searxng exists. Remove or rename it manually.'
     docker restart ember-coreui-searxng >/dev/null
   else
-    log 'Starte die private SearXNG-Instanz auf 127.0.0.1:8888.'
+    log 'Starting the private SearXNG instance on 127.0.0.1:8888.'
     docker pull docker.io/searxng/searxng:latest
     docker run -d \
       --name ember-coreui-searxng \
