@@ -23,11 +23,11 @@ log() {
 }
 
 warn() {
-  printf '[CoreAI: TCI Interface] WARN: %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface] WARNING: %s\n' "$*" >&2
 }
 
 die() {
-  printf '[CoreAI: TCI Interface] FEHLER: %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface] ERROR: %s\n' "$*" >&2
   exit 1
 }
 
@@ -69,30 +69,30 @@ wait_http() {
   return 1
 }
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte mit sudo oder als root ausfuehren.'
+[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Run this installer with sudo or as root.'
 [[ "${COREUI_NATIVE_CONFIRM:-}" == 'DEDICATED_SERVER' ]] \
-  || die 'Der native Installer ist nur fuer einen dedizierten, leeren Server gedacht. Nutze standardmaessig scripts/install.sh oder bestaetige bewusst mit COREUI_NATIVE_CONFIRM=DEDICATED_SERVER.'
-[[ -f "$PROJECT_ROOT/app.html" ]] || die 'app.html fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/settings.html" ]] || die 'settings.html fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/admin/index.html" ]] || die 'admin/index.html fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/config/nginx.conf.template" ]] || die 'Nginx-Template fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/001_core.sql" ]] || die 'SQL-Basisschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/002_coreui_management.sql" ]] || die 'SQL-Verwaltungsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/003_console_sessions.sql" ]] || die 'SQL-Sitzungsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/004_profiles_knowledge.sql" ]] || die 'SQL-Profil- und Knowledge-Schema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql" ]] || die 'SQL-Thinking- und Anhangschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/006_account_security.sql" ]] || die 'SQL-Kontosicherheitsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/007_remove_private_studio_lore.sql" ]] || die 'SQL-Datenschutzmigration fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/008_message_actions.sql" ]] || die 'SQL-Nachrichtenaktionsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/009_message_editing.sql" ]] || die 'SQL-Nachrichtenbearbeitungsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql" ]] || die 'SQL-Dateiausgabeschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/012_console_work_events.sql" ]] || die 'SQL-Arbeitsereignisse fehlen.'
-[[ -f "$PROJECT_ROOT/database/migrations/013_console_agent_runs.sql" ]] || die 'SQL-Agentenlauf-Schema fehlt.'
-[[ -f "$PROJECT_ROOT/api/console_model_queue.php" ]] || die 'Modellwarteschlangen-Implementierung fehlt.'
-[[ -f "$PROJECT_ROOT/scripts/model-queue-selftest.php" ]] || die 'Modellwarteschlangen-Selbsttest fehlt.'
-[[ "$PROJECT_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'Der Projektpfad darf nur Buchstaben, Zahlen, Punkt, Unterstrich, Bindestrich und Slash enthalten.'
-[[ "$PROJECT_ROOT" != /root/* ]] || die 'Bitte das Paket zuerst nach /opt/ember-coreui verschieben. Nginx darf Verzeichnisse unter /root nicht ausliefern.'
-[[ "$PROJECT_ROOT" != /home/* ]] || die 'Bitte das Paket zuerst nach /opt/ember-coreui verschieben. Der gehaertete Worker kapselt Benutzerverzeichnisse.'
+  || die 'The native installer is intended only for a dedicated, empty server. Use scripts/install.sh by default, or explicitly confirm with COREUI_NATIVE_CONFIRM=DEDICATED_SERVER.'
+[[ -f "$PROJECT_ROOT/app.html" ]] || die 'app.html is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/settings.html" ]] || die 'settings.html is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/admin/index.html" ]] || die 'admin/index.html is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/config/nginx.conf.template" ]] || die 'Nginx-Template is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/001_core.sql" ]] || die 'SQL base schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/002_coreui_management.sql" ]] || die 'SQL management schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/003_console_sessions.sql" ]] || die 'SQL sessions schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/004_profiles_knowledge.sql" ]] || die 'SQL profile and knowledge schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql" ]] || die 'SQL thinking and attachments schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/006_account_security.sql" ]] || die 'SQL account security schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/007_remove_private_studio_lore.sql" ]] || die 'SQL privacy migration is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/008_message_actions.sql" ]] || die 'SQL message actions schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/009_message_editing.sql" ]] || die 'SQL message editing schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql" ]] || die 'SQL artifact output schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/012_console_work_events.sql" ]] || die 'SQL work events are missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/013_console_agent_runs.sql" ]] || die 'SQL agent runs schema is missing.'
+[[ -f "$PROJECT_ROOT/api/console_model_queue.php" ]] || die 'Model queue implementation is missing.'
+[[ -f "$PROJECT_ROOT/scripts/model-queue-selftest.php" ]] || die 'Model queue self-test is missing.'
+[[ "$PROJECT_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'The project path may contain only letters, digits, dots, underscores, hyphens and forward slashes.'
+[[ "$PROJECT_ROOT" != /root/* ]] || die 'Move the package to /opt/ember-coreui first. Nginx must not serve files from /root.'
+[[ "$PROJECT_ROOT" != /home/* ]] || die 'Move the package to /opt/ember-coreui first. The hardened worker isolates home directories.'
 
 rm -f -- \
   "$PROJECT_ROOT/docs/S.U. MASTER BIBEL v10.4.docx" \
@@ -102,11 +102,11 @@ if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   source /etc/os-release
 else
-  die '/etc/os-release fehlt. Unterstuetzt werden Debian und Ubuntu.'
+  die '/etc/os-release is missing. Unterstuetzt werden Debian und Ubuntu.'
 fi
 case "${ID:-}:${ID_LIKE:-}" in
   debian:*|ubuntu:*|*:debian*) ;;
-  *) die "Nicht unterstuetztes System: ${PRETTY_NAME:-unbekannt}. Nutze Debian 12+ oder Ubuntu 24.04+." ;;
+  *) die "Unsupported operating system: ${PRETTY_NAME:-unknown}. Use Debian 12+ or Ubuntu 24.04+." ;;
 esac
 
 SERVER_NAME="${COREUI_SERVER_NAME:-_}"
@@ -120,10 +120,10 @@ MODEL_NAME="${COREUI_MODEL_NAME:-ember-core:e4b}"
 LOCK_NAMESPACE="${COREUI_LOCK_NAMESPACE:-ember_coreui_native}"
 SEARXNG_URL="${COREUI_SEARXNG_URL:-http://127.0.0.1:8888/search}"
 
-[[ "$SERVER_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || die 'COREUI_SERVER_NAME enthaelt ungueltige Zeichen.'
-[[ "$MODEL_NAME" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_MODEL_NAME enthaelt ungueltige Zeichen.'
-[[ -z "$BASE_MODEL" || "$BASE_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_BASE_MODEL enthaelt ungueltige Zeichen.'
-[[ "$LOCK_NAMESPACE" =~ ^[A-Za-z0-9_.:-]{1,40}$ ]] || die 'COREUI_LOCK_NAMESPACE enthaelt ungueltige Zeichen.'
+[[ "$SERVER_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || die 'COREUI_SERVER_NAME contains invalid characters.'
+[[ "$MODEL_NAME" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_MODEL_NAME contains invalid characters.'
+[[ -z "$BASE_MODEL" || "$BASE_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_BASE_MODEL contains invalid characters.'
+[[ "$LOCK_NAMESPACE" =~ ^[A-Za-z0-9_.:-]{1,40}$ ]] || die 'COREUI_LOCK_NAMESPACE contains invalid characters.'
 
 if [[ -z "$PUBLIC_URL" ]]; then
   if [[ "$SERVER_NAME" == '_' ]]; then
@@ -139,21 +139,21 @@ ADMIN_NAME="${COREUI_ADMIN_NAME:-Operator}"
 ADMIN_GENDER="${COREUI_ADMIN_GENDER:-}"
 
 if [[ -z "$ADMIN_EMAIL" ]]; then
-  [[ -t 0 ]] || die 'COREUI_ADMIN_EMAIL fehlt fuer eine nicht-interaktive Installation.'
-  read -r -p 'Admin-E-Mail: ' ADMIN_EMAIL
+  [[ -t 0 ]] || die 'COREUI_ADMIN_EMAIL is required for non-interactive installation.'
+  read -r -p 'Admin email: ' ADMIN_EMAIL
 fi
 if [[ -z "$ADMIN_PASSWORD" ]]; then
-  [[ -t 0 ]] || die 'COREUI_ADMIN_PASSWORD fehlt fuer eine nicht-interaktive Installation.'
-  read -r -s -p 'Admin-Passwort, mindestens 12 Zeichen: ' ADMIN_PASSWORD
+  [[ -t 0 ]] || die 'COREUI_ADMIN_PASSWORD is required for non-interactive installation.'
+  read -r -s -p 'Admin password, at least 12 characters: ' ADMIN_PASSWORD
   printf '\n'
-  read -r -s -p 'Admin-Passwort wiederholen: ' ADMIN_PASSWORD_CONFIRM
+  read -r -s -p 'Repeat admin password: ' ADMIN_PASSWORD_CONFIRM
   printf '\n'
-  [[ "$ADMIN_PASSWORD" == "$ADMIN_PASSWORD_CONFIRM" ]] || die 'Die Passwoerter stimmen nicht ueberein.'
+  [[ "$ADMIN_PASSWORD" == "$ADMIN_PASSWORD_CONFIRM" ]] || die 'Passwords do not match.'
 fi
-[[ ${#ADMIN_PASSWORD} -ge 12 ]] || die 'Das Admin-Passwort muss mindestens 12 Zeichen lang sein.'
-[[ "$ADMIN_GENDER" == '' || "$ADMIN_GENDER" == 'm' || "$ADMIN_GENDER" == 'f' ]] || die 'COREUI_ADMIN_GENDER muss leer, m oder f sein.'
+[[ ${#ADMIN_PASSWORD} -ge 12 ]] || die 'The admin password must be at least 12 characters long.'
+[[ "$ADMIN_GENDER" == '' || "$ADMIN_GENDER" == 'm' || "$ADMIN_GENDER" == 'f' ]] || die 'COREUI_ADMIN_GENDER must be empty, m or f.'
 
-log "Installiere Systempakete fuer CoreAI: TCI Interface $COREUI_VERSION."
+log "Installing system packages for CoreAI: TCI Interface $COREUI_VERSION."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 
@@ -182,34 +182,34 @@ PACKAGES=(
 )
 apt-get install -y "${PACKAGES[@]}"
 
-command -v php >/dev/null || die 'PHP wurde nicht gefunden.'
-command -v mariadb >/dev/null || die 'MariaDB-Client wurde nicht gefunden.'
-command -v nginx >/dev/null || die 'Nginx wurde nicht gefunden.'
+command -v php >/dev/null || die 'PHP was not found.'
+command -v mariadb >/dev/null || die 'MariaDB client was not found.'
+command -v nginx >/dev/null || die 'Nginx was not found.'
 
-log 'Aktualisiere numerische Content-Cache-Schluessel fuer CSS und JavaScript.'
-python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" || die 'Asset-Cache-Buster fehlgeschlagen.'
+log 'Updating numeric content cache fingerprints for CSS and JavaScript.'
+python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" || die 'Asset cache fingerprint update failed.'
 
-log 'Pruefe die paketierten PHP- und Python-Quellen.'
+log 'Checking packaged PHP and Python sources.'
 while IFS= read -r -d '' php_file; do
-  php -l "$php_file" >/dev/null || die "PHP-Syntaxfehler in $php_file"
+  php -l "$php_file" >/dev/null || die "PHP syntax error in $php_file"
 done < <(find "$PROJECT_ROOT/api" "$PROJECT_ROOT/scripts" "$PROJECT_ROOT/tools" -type f -name '*.php' -print0)
 while IFS= read -r -d '' py_file; do
   python3 -c 'import pathlib,sys; p=pathlib.Path(sys.argv[1]); compile(p.read_text(encoding="utf-8"), str(p), "exec")' "$py_file" \
-    || die "Python-Syntaxfehler in $py_file"
+    || die "Python syntax error in $py_file"
 done < <(find "$PROJECT_ROOT/tools" -type f -name '*.py' -print0)
 
 systemctl enable --now mariadb
 
 FPM_UNIT="$(systemctl list-unit-files --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}' | sort -V | tail -n 1)"
-[[ -n "$FPM_UNIT" ]] || die 'Kein PHP-FPM-Dienst gefunden.'
+[[ -n "$FPM_UNIT" ]] || die 'No PHP-FPM service found.'
 systemctl enable --now "$FPM_UNIT"
 
 PHP_SOCKET="$(find /run/php -maxdepth 1 -type s -name 'php*-fpm.sock' -print 2>/dev/null | sort -V | tail -n 1)"
-[[ -n "$PHP_SOCKET" ]] || die 'Kein PHP-FPM-Socket unter /run/php gefunden.'
+[[ -n "$PHP_SOCKET" ]] || die 'No PHP-FPM socket found under /run/php.'
 
 PHP_VERSION_MM="$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')"
 PHP_FPM_INI_DIR="/etc/php/$PHP_VERSION_MM/fpm/conf.d"
-[[ -d "$PHP_FPM_INI_DIR" ]] || die "PHP-FPM-Konfigurationsordner fehlt: $PHP_FPM_INI_DIR"
+[[ -d "$PHP_FPM_INI_DIR" ]] || die "PHP-FPM configuration directory missing: $PHP_FPM_INI_DIR"
 cat > "$PHP_FPM_INI_DIR/99-ember-coreui.ini" <<'INI'
 upload_max_filesize = 256M
 post_max_size = 260M
@@ -241,7 +241,7 @@ install -d -m 0770 -o www-data -g www-data \
 REUSE_CONFIG=0
 if [[ -f "$CONFIG_FILE" ]] && ! is_enabled "$FORCE_CONFIG"; then
   REUSE_CONFIG=1
-  log 'Vorhandene api/config.local.php bleibt unveraendert.'
+  log 'Existing api/config.local.php will remain unchanged.'
   DB_HOST="$(read_constant STU_DB_HOST || true)"
   DB_PORT="$(read_constant STU_DB_PORT || true)"
   DB_NAME="$(read_constant STU_DB_NAME || true)"
@@ -258,12 +258,12 @@ else
   DB_PASS="${COREUI_DB_PASS:-$(openssl rand -hex 24)}"
 fi
 
-[[ "$DB_HOST" == '127.0.0.1' || "$DB_HOST" == 'localhost' ]] || die 'Der automatische Installer unterstuetzt nur eine lokale MariaDB auf 127.0.0.1 oder localhost.'
-[[ "$DB_PORT" =~ ^[0-9]{1,5}$ ]] || die 'Ungueltiger Datenbank-Port.'
-[[ "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]] || die 'Ungueltiger Datenbankname.'
-[[ "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]] || die 'Ungueltiger Datenbanknutzer.'
-[[ -n "$DB_PASS" ]] || die 'Das Datenbankpasswort ist leer.'
-[[ "$DB_PASS" =~ ^[A-Za-z0-9._~!@%+=:-]+$ ]] || die 'Das Datenbankpasswort darf im automatischen Installer nur sichere ASCII-Zeichen ohne Leerzeichen oder Anfuehrungszeichen enthalten.'
+[[ "$DB_HOST" == '127.0.0.1' || "$DB_HOST" == 'localhost' ]] || die 'The automated installer supports only a local MariaDB at 127.0.0.1 or localhost.'
+[[ "$DB_PORT" =~ ^[0-9]{1,5}$ ]] || die 'Invalid database port.'
+[[ "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]] || die 'Invalid database name.'
+[[ "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]] || die 'Invalid database username.'
+[[ -n "$DB_PASS" ]] || die 'The database password is empty.'
+[[ "$DB_PASS" =~ ^[A-Za-z0-9._~!@%+=:-]+$ ]] || die 'The automated installer allows only safe ASCII characters in database passwords, without spaces or quotation marks.'
 
 if (( REUSE_CONFIG == 0 )); then
   DB_HOST_PHP="$(php_escape "$DB_HOST")"
@@ -333,7 +333,7 @@ PHP
   install -m 0640 -o root -g www-data "$CONFIG_TMP" "$CONFIG_FILE"
 fi
 
-log "Lege MariaDB-Datenbank $DB_NAME an und importiere das Schema."
+log "Creating MariaDB database $DB_NAME and importing its schema."
 DB_PASS_SQL="$(printf '%s' "$DB_PASS" | sed "s/'/''/g")"
 mariadb --protocol=socket --user=root <<SQL
 CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -369,7 +369,7 @@ mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/datab
 mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/database/migrations/012_console_work_events.sql"
 mariadb --defaults-extra-file="$DB_CLIENT_TMP" "$DB_NAME" < "$PROJECT_ROOT/database/migrations/013_console_agent_runs.sql"
 
-log 'Initialisiere Ember und das Administratorkonto.'
+log 'Initializing Ember and the administrator account.'
 COREUI_ADMIN_EMAIL="$ADMIN_EMAIL" \
 COREUI_ADMIN_PASSWORD="$ADMIN_PASSWORD" \
 COREUI_ADMIN_NAME="$ADMIN_NAME" \
@@ -378,9 +378,9 @@ php "$PROJECT_ROOT/scripts/bootstrap.php"
 
 if ! command -v ollama >/dev/null 2>&1; then
   if ! is_enabled "$INSTALL_OLLAMA"; then
-    die 'Ollama fehlt. Installiere es oder setze COREUI_INSTALL_OLLAMA=1.'
+    die 'Ollama is missing. Install it or set COREUI_INSTALL_OLLAMA=1.'
   fi
-  log 'Installiere Ollama mit dem offiziellen Linux-Installer.'
+  log 'Installing Ollama using the official Linux installer.'
   OLLAMA_INSTALL_TMP="$(mktemp)"
   curl -fsSL https://ollama.com/install.sh -o "$OLLAMA_INSTALL_TMP"
   sh "$OLLAMA_INSTALL_TMP"
@@ -389,46 +389,46 @@ fi
 if systemctl list-unit-files ollama.service >/dev/null 2>&1; then
   systemctl enable --now ollama
 fi
-wait_http 'http://127.0.0.1:11434/api/tags' 30 || die 'Ollama antwortet nicht auf 127.0.0.1:11434.'
+wait_http 'http://127.0.0.1:11434/api/tags' 30 || die 'Ollama is not responding on 127.0.0.1:11434.'
 
 if [[ -z "$BASE_MODEL" ]]; then
   BASE_MODEL="gemma4:e4b"
 fi
-[[ "$BASE_MODEL" =~ ^gemma4: ]] || warn "Basismodell $BASE_MODEL ist kein gemma4-Tag. Die Installation wird trotzdem fortgesetzt."
+[[ "$BASE_MODEL" =~ ^gemma4: ]] || warn "Basismodell $BASE_MODEL is not a gemma4 tag. Installation will continue anyway."
 
 BASE_MODEL_NEW=0
 if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
-  log "Lade temporaeres Ollama-Basismodell $BASE_MODEL. Das kann je nach Modell laenger dauern."
+  log "Downloading temporary Ollama base model $BASE_MODEL. This may take longer depending on the model."
   ollama pull "$BASE_MODEL"
   BASE_MODEL_NEW=1
 else
-  log "Ollama-Basismodell $BASE_MODEL war bereits vorhanden und bleibt erhalten."
+  log "Ollama-Basismodell $BASE_MODEL already exists and is preserved."
 fi
 
 if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
   MODELFILE_GENERATED="$PROJECT_ROOT/var/Modelfile.generated"
   sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" "$PROJECT_ROOT/config/Modelfile.template" > "$MODELFILE_GENERATED"
-  log "Erzeuge lokales CoreAI: TCI Interface-Modell $MODEL_NAME aus $BASE_MODEL."
+  log "Creating local CoreAI: TCI Interface model $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$MODELFILE_GENERATED"
-  ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "Der TCI Core $MODEL_NAME konnte nicht verifiziert werden. Basismodell bleibt erhalten."
+  ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "TCI Core $MODEL_NAME could not be verified. The base model will be preserved."
   if (( BASE_MODEL_NEW == 1 )) && [[ "$BASE_MODEL" == gemma4:* ]]; then
     if ollama rm "$BASE_MODEL"; then
-      log "Temporaeren Ollama-Basistag $BASE_MODEL nach erfolgreicher Core-Pruefung entfernt."
+      log "Removed temporary Ollama base tag $BASE_MODEL after the Core was successfully verified."
     else
-      warn "Core $MODEL_NAME ist bereit, aber der temporaere Basistag $BASE_MODEL konnte nicht entfernt werden."
+      warn "Core $MODEL_NAME is ready, but temporary base tag $BASE_MODEL could not be removed."
     fi
   fi
 else
-  warn 'COREUI_MODEL_NAME entspricht dem Basismodell. Das eigene Modelfile wird deshalb nicht erzeugt.'
+  warn 'COREUI_MODEL_NAME matches the base model; no custom Modelfile will be created.'
 fi
 
 # Same managed generator as the Compose installer. Safe to rerun during a source update.
 if ! python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --ensure; then
-  warn 'TCI Core Generator konnte nicht erstellt/aktualisiert werden. Preflight meldet den Zustand.'
+  warn 'TCI Core Generator could not be created or updated. Preflight will report its status.'
 fi
 
 if is_enabled "$INSTALL_SEARXNG"; then
-  command -v docker >/dev/null || die 'Docker fehlt fuer SearXNG.'
+  command -v docker >/dev/null || die 'Docker is required for SearXNG.'
   systemctl enable --now docker
   install -d -m 0770 -o www-data -g www-data \
     "$PROJECT_ROOT/var/searxng/config" \
@@ -441,7 +441,7 @@ if is_enabled "$INSTALL_SEARXNG"; then
 
   if docker container inspect ember-coreui-searxng >/dev/null 2>&1; then
     EXISTING_MOUNT="$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/etc/searxng"}}{{.Source}}{{end}}{{end}}' ember-coreui-searxng)"
-    [[ "$EXISTING_MOUNT" == "$PROJECT_ROOT/var/searxng/config" ]] || die 'Ein fremder Container namens ember-coreui-searxng existiert. Entferne oder benenne ihn manuell.'
+    [[ "$EXISTING_MOUNT" == "$PROJECT_ROOT/var/searxng/config" ]] || die 'A foreign container named ember-coreui-searxng exists. Remove or rename it manually.'
     docker restart ember-coreui-searxng >/dev/null
   else
     log 'Starte die private SearXNG-Instanz auf 127.0.0.1:8888.'
@@ -456,14 +456,14 @@ if is_enabled "$INSTALL_SEARXNG"; then
       -v "$PROJECT_ROOT/var/searxng/cache:/var/cache/searxng:rw" \
       docker.io/searxng/searxng:latest >/dev/null
   fi
-  wait_http 'http://127.0.0.1:8888/search?q=ember&format=json' 45 || die 'SearXNG antwortet nicht mit aktivierter JSON-Suche.'
+  wait_http 'http://127.0.0.1:8888/search?q=ember&format=json' 45 || die 'SearXNG is not responding with JSON search enabled.'
 fi
 
 if is_enabled "$INSTALL_BROWSE"; then
   if ! is_enabled "$INSTALL_SEARXNG" && [[ "$SEARXNG_URL" == 'http://127.0.0.1:8888/search' ]]; then
-    die 'Browse ist aktiviert, aber die lokale SearXNG-Installation wurde deaktiviert und keine externe COREUI_SEARXNG_URL gesetzt.'
+    die 'Browser research is enabled, but local SearXNG installation is disabled and no external COREUI_SEARXNG_URL is set.'
   fi
-  log 'Installiere den asynchronen Playwright-Browse-Worker.'
+  log 'Installing the asynchronous Playwright browser worker.'
   python3 -m venv "$PROJECT_ROOT/var/venv"
   "$PROJECT_ROOT/var/venv/bin/python" -m pip install --upgrade pip wheel
   "$PROJECT_ROOT/var/venv/bin/python" -m pip install -r "$PROJECT_ROOT/tools/requirements-browse.txt"
@@ -478,7 +478,7 @@ if is_enabled "$INSTALL_BROWSE"; then
     > /etc/systemd/system/ember-coreui-browse.service
 fi
 
-log 'Baue das isolierte Python-Sandbox-Image (mit Node.js).'
+log 'Building the isolated Python sandbox image (with Node.js).'
 docker build -t ember-py:2 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 sed \
   -e "s|@@COREUI_ROOT@@|$PROJECT_ROOT|g" \
@@ -534,7 +534,7 @@ if is_enabled "$INSTALL_BROWSE"; then
   systemctl restart ember-coreui-browse.service
 fi
 
-log 'Konfiguriere Nginx.'
+log 'Configuring Nginx.'
 sed \
   -e "s|@@COREUI_ROOT@@|$PROJECT_ROOT|g" \
   -e "s|@@SERVER_NAME@@|$SERVER_NAME|g" \
@@ -552,11 +552,11 @@ systemctl reload nginx
 HEALTH_HOST="$SERVER_NAME"
 [[ "$HEALTH_HOST" == '_' ]] && HEALTH_HOST='localhost'
 if curl -fsS --max-time 10 -H "Host: $HEALTH_HOST" 'http://127.0.0.1/api/health.php' >/dev/null; then
-  log "Installation erfolgreich. Oeffne $PUBLIC_URL/"
+  log "Installation successful. Open $PUBLIC_URL/"
 else
-  warn 'Der Nginx-Healthcheck ist noch nicht gruen. Fuehre scripts/preflight.sh aus und pruefe journalctl sowie logs/stu_error.log.'
+  warn 'The Nginx health check is not green yet. Run scripts/preflight.sh and inspect journalctl and logs/stu_error.log.'
 fi
 
-coreui_ensure_host_swap || warn 'Optionale Host-Swap-Einrichtung fehlgeschlagen.'
+coreui_ensure_host_swap || warn 'Optional host swap configuration failed.'
 
-log 'Sicherheitsnotiz: MariaDB, Ollama und SearXNG bleiben auf Loopback. Nach aussen werden nur HTTP und spaeter optional HTTPS benoetigt.'
+log 'Security note: MariaDB, Ollama, and SearXNG remain bound to loopback. Only HTTP and optionally HTTPS are exposed.'
