@@ -22,7 +22,7 @@ warn() {
 }
 
 fail() {
-  printf '[FEHLER] %s\n' "$*" >&2
+  printf '[ERROR] %s\n' "$*" >&2
   FAILURES=$((FAILURES + 1))
 }
 
@@ -53,22 +53,22 @@ check_service() {
   local service="$1"
   local label="$2"
   if service_running "$service"; then
-    ok "$label laeuft im eigenen Compose-Projekt."
+    ok "$label is running in its dedicated Compose project."
   else
-    fail "$label laeuft nicht."
+    fail "$label is not running."
   fi
 }
 
 printf 'CoreAI: TCI Interface Compose-Preflight, Version %s\n\n' "$VERSION"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  fail 'var/compose.env fehlt. Fuehre scripts/install.sh aus.'
+  fail 'var/compose.env is missing. Run scripts/install.sh.'
 fi
 if [[ ! -f "$CONFIG_FILE" ]]; then
-  fail 'api/config.local.php fehlt. Fuehre scripts/install.sh aus.'
+  fail 'api/config.local.php is missing. Run scripts/install.sh.'
 fi
 if [[ ! -f "$COMPOSE_FILE" ]]; then
-  fail 'compose.yaml fehlt.'
+  fail 'compose.yaml is missing.'
 fi
 
 UI_FILES=(
@@ -590,21 +590,21 @@ UI_FILES=(
 )
 for ui_file in "${UI_FILES[@]}"; do
   if [[ ! -s "$PROJECT_ROOT/$ui_file" ]]; then
-    fail "CoreAI: TCI Interface-Oberflaechendatei fehlt oder ist leer: $ui_file"
+    fail "CoreAI: TCI Interface UI file is missing or empty: $ui_file"
   fi
 done
 
 if python3 "$PROJECT_ROOT/scripts/pdo-mysql-installer-selftest.py" >/dev/null 2>&1; then
-  ok 'PHP-PDO-MariaDB: Image-Build, Installer-Recreation und Preflight-Vertrag geprueft.'
+  ok 'PHP PDO MariaDB: image build, installer recreation and preflight contract verified.'
 else
-  fail 'PHP-PDO-MariaDB-Installer-Selbsttest fehlgeschlagen.'
+  fail 'PHP PDO MariaDB installer self-test failed.'
 fi
 
 # 0.5.58: check the installer regression using a temporary, Docker-free fixture.
 if bash "$PROJECT_ROOT/tests/migration-permissions-selftest.sh" >/dev/null 2>&1; then
-  ok 'Migration: Ausfuehrungsrechte und Bash-Aufruf vor dem Datenbankimport geprueft.'
+  ok 'Migration: executable permissions and Bash invocation before database import verified.'
 else
-  fail 'Migration: Berechtigungs-/Aufruf-Selbsttest fehlgeschlagen.'
+  fail 'Migration: permissions and invocation self-test failed.'
 fi
 
 # 0.6.94: syntax is a release blocker. Report the concrete parse error;
@@ -614,33 +614,33 @@ if host_updater_syntax="$(bash -n "$PROJECT_ROOT/scripts/coreai-updater.sh" 2>&1
   if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
     host_updater_test=''
     if host_updater_test="$(bash "$PROJECT_ROOT/tests/update-runner-selftest.sh" 2>&1)"; then
-      ok 'Update-Dienst: Pruefung, Sicherung zuerst, offizielles Setup, Installationsfortschritt, Neustart der Dienste und Fehlerfaelle geprueft.'
+      ok 'Update service: checking, backup-first, official setup, installation progress, service restart and error cases verified.'
     else
-      fail "Update-Dienst: Host-Updater-Selbsttest fehlgeschlagen. Details: $(printf '%s\n' "$host_updater_test" | tail -n 12)"
+      fail "Update service: host updater self-test failed. Details: $(printf '%s\n' "$host_updater_test" | tail -n 12)"
     fi
   fi
 else
-  fail "Update-Dienst: Bash-Syntaxfehler in scripts/coreai-updater.sh: $host_updater_syntax"
+  fail "Update service: Bash syntax error in scripts/coreai-updater.sh: $host_updater_syntax"
 fi
 
 uninstall_runner_test=''
 if uninstall_runner_test="$(bash "$PROJECT_ROOT/tests/uninstall-runner-selftest.sh" 2>&1)"; then
-  ok 'Deinstallation: Preview, Anfragepruefung, isolierter Docker-Stopp und Archiv-Backup geprueft.'
+  ok 'Uninstallation: preview, request validation, isolated Docker stop and archive backup verified.'
 else
-  fail "Deinstallation: Host-Runner-Selbsttest fehlgeschlagen. Details: $uninstall_runner_test"
+  fail "Uninstallation: host runner self-test failed. Details: $uninstall_runner_test"
 fi
 
 # 0.6.93: automatic updates require opt-in, survive page reloads and respect Later.
 if python3 "$PROJECT_ROOT/tests/update-auto-selftest.py" >/dev/null 2>&1; then
-  ok 'Auto-Update: Opt-in, einstuendige Pause, Vorlauf, einmal pro Commit und Preflight-Fehlererkennung geprueft.'
+  ok 'Auto-update: opt-in, one-hour pause, advance notice, once per commit and preflight failure detection verified.'
 else
-  fail 'Auto-Update-/Preflight-Retry-Selbsttest fehlgeschlagen.'
+  fail 'Auto-update / preflight retry self-test failed.'
 fi
 
 if COREAI_BROWSE_LIVE=0 python3 "$PROJECT_ROOT/scripts/browse-worker-selftest.py" >/dev/null 2>&1; then
-  ok 'Browser-Regeln: geschuetzte Felder, Kaeufe, Logins, Nachrichten, lokales Netz, Core des Nutzers und Herzschlag geprueft.'
+  ok 'Browser rules: protected fields, purchases, logins, messages, local network, user-selected Core and heartbeat verified.'
 else
-  fail 'Browser-Regeln-Selbsttest fehlgeschlagen.'
+  fail 'Browser rules self-test failed.'
 fi
 
 # 0.7.77 (P10 B): project runs in the worker; with Docker and the sandbox image real runs in the sandbox.
@@ -674,23 +674,23 @@ if command -v docker >/dev/null 2>&1 && docker image inspect ember-py:2 >/dev/nu
       ember-py:2 sh -c 'python --version && node --version && npm --version' 2>&1)"; then
     ok "Sandbox-Image ember-py:2: $(printf '%s' "$sandbox_tools" | sed -n 1p), Node.js $(printf '%s' "$sandbox_tools" | sed -n 2p), npm $(printf '%s' "$sandbox_tools" | sed -n 3p)."
   else
-    fail "Sandbox-Image ember-py:2: Python oder Node.js startet nicht: ${sandbox_tools:-Unbekannter Fehler}"
+    fail "Sandbox image ember-py:2: Python or Node.js failed to start: ${sandbox_tools:-Unbekannter Fehler}"
   fi
 else
-  warn 'Sandbox-Image ember-py:2 fehlt noch; der Python-Dienst baut es bei seinem naechsten Start.'
+  warn 'Sandbox image ember-py:2 is not built yet; the Python service will build it on its next start.'
 fi
 
 # 0.7.38: Deep Research in the browse worker (search, read, notes, report with only real sources, Stopp).
 if python3 "$PROJECT_ROOT/scripts/deep-research-worker-selftest.py" >/dev/null 2>&1; then
-  ok 'Deep Research: Suche, Seiten, Notizen, Bericht mit Quellen, Stopp und Schutz vor lokalen Adressen geprueft.'
+  ok 'Deep Research: search, pages, notes, cited report, cancellation and protection against local addresses verified.'
 else
-  fail 'Deep-Research-Worker-Selbsttest fehlgeschlagen.'
+  fail 'Deep Research worker self-test failed.'
 fi
 
 # 0.7.42: hybrid Lead/Worker/Citation agent, checkpoints and secure document tools.
 hybrid_research_test=''
 if hybrid_research_test="$(python3 "$PROJECT_ROOT/scripts/deep-research-hybrid-selftest.py" 2>&1)"; then
-  ok 'Hybrid Deep Research: Orchestrator/Worker, Parallel-I/O, Speicher und Citation Agent geprueft.'
+  ok 'Hybrid Deep Research: orchestrator/worker, parallel I/O, storage and citation agent verified.'
 else
   fail "Hybrid-Deep-Research-Selbsttest fehlgeschlagen: ${hybrid_research_test:-Unbekannter Fehler}"
 fi
@@ -698,21 +698,21 @@ fi
 # 0.7.50: broken search backend must never produce a false completed report.
 search_regression=''
 if search_regression="$(python3 "$PROJECT_ROOT/scripts/deep-research-zero-source-selftest.py" 2>&1)"; then
-  ok 'Deep Research: Suchausfall, Null-Quellen und Ersatzsuche geprueft.'
+  ok 'Deep Research: search outage, zero-source handling and fallback search verified.'
 else
   fail "Deep-Research-Suchausfall-Selbsttest fehlgeschlagen: ${search_regression:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
-  ok 'Python-Worker: gerettete HTML/ZIP-Dateien und sichere Ausgabepfade geprueft.'
+  ok 'Python worker: recovered HTML/ZIP files and safe output paths verified.'
 else
-  fail 'Python-Ausgabedatei-Selbsttest fehlgeschlagen.'
+  fail 'Python output file self-test failed.'
 fi
 
 # 0.6.1: read aloud: what is read, parts, the voice service with its probe engine, wiring.
 voice_service_test=''
 if voice_service_test="$(python3 "$PROJECT_ROOT/scripts/voice-service-selftest.py" 2>&1)"; then
-  ok 'Vorlesen: vorlesbarer Text, Saetze, Sprachdienst mit Testton (ein Auftrag gleichzeitig, Zeitlimit, nur lokal) geprueft.'
+  ok 'Read aloud: speakable text, sentences, voice service with test tone (single job, time limit, local-only) verified.'
 else
   fail "Sprachdienst-Selbsttest: ${voice_service_test:-Unbekannter Fehler}"
 fi
@@ -722,7 +722,7 @@ fi
 # 0.5.96: the reason goes into the update log.
 tts_spike_test=''
 if tts_spike_test="$(python3 "$PROJECT_ROOT/scripts/tts-spike-selftest.py" 2>&1)"; then
-  ok 'Stimmtest: Lizenzen je Stimme, feste Versionen, Messen ohne Netz mit Kernlimit, SHA-256-Pruefung und Bericht geprueft.'
+  ok 'Voice test: per-voice licenses, pinned versions, offline benchmarking with Core limits, SHA-256 checks and report verified.'
 else
   fail "Stimmtest-Selbsttest: ${tts_spike_test:-Unbekannter Fehler}"
 fi
@@ -731,7 +731,7 @@ fi
 # resume and SHA-256 against a stand-in Hugging Face, lock check, a run with a stand-in sd-cli, report.
 image_spike_test=''
 if image_spike_test="$(python3 "$PROJECT_ROOT/scripts/image-spike-selftest.py" 2>&1)"; then
-  ok 'Bildtest: Register und Lizenzen (FLUX.2-klein 9B nur zugeschaltet), Laden mit SHA-256, Lock-Pruefung, Messlauf, Gesichtsprompt und Bericht geprueft.'
+  ok 'Image test: registry and licensing (FLUX.2-klein 9B opt-in only), SHA-256 download, lock checks, benchmark, face prompt and report verified.'
 else
   fail "Bildtest-Selbsttest: ${image_spike_test:-Unbekannter Fehler}"
 fi
@@ -752,59 +752,59 @@ for image_name in \
   fi
 done
 if (( mara_missing == 0 )); then
-  ok 'Maras sieben Referenzbilder sind im Repository vorhanden.'
+  ok 'Mara's seven reference images are present in the repository.'
 else
-  printf '[WARN] %s\n' "Maras Bildset noch unvollstaendig ($mara_missing von 7 fehlen); fehlende Bilder werden uebersprungen." >&2
+  printf '[WARN] %s\n' "Mara's image set is incomplete ($mara_missing of 7 missing); missing images will be skipped." >&2
 fi
 
 image_service_test=''
 if image_service_test="$(python3 "$PROJECT_ROOT/scripts/image-service-selftest.py" 2>&1)"; then
-  ok 'Bilddienst: Register, echte Schritte, Gewichte mit festem SHA-256, ein Bild zur Zeit, Abbruch, Zeitlimit und Uebernahme aus dem Bildtest geprueft.'
+  ok 'Image service: registry, real steps, pinned SHA-256 weights, one image at a time, cancellation, timeout and benchmark reuse verified.'
 else
   fail "Bilddienst-Selbsttest: ${image_service_test:-Unbekannter Fehler}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then
-  ok 'Python-Eingaben: Nachrichtenzuordnung, Originaldateien und ZIP-Pruefung getestet.'
+  ok 'Python inputs: message association, original files and ZIP validation tested.'
 else
-  fail 'Python-Eingabedatei-Selbsttest fehlgeschlagen.'
+  fail 'Python input-file self-test failed.'
 fi
 
 if python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" --verify > /dev/null; then
-  ok 'HTML-Assets verwenden aktuelle numerische Content-Cache-Schluessel.'
+  ok 'HTML assets use current numeric content cache fingerprints.'
 else
-  fail 'Veraltete Asset-Cache-Schluessel oder ungueltige VERSION. Installer erneut ausfuehren.'
+  fail 'Stale asset cache fingerprints or invalid VERSION. Run the installer again.'
 fi
 if grep -Fq 'console_artifact|console_artifacts' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
-  ok 'Nginx erlaubt geschuetzte Datei-Downloads und Metadaten-Endpunkt.'
+  ok 'Nginx allows protected file downloads and metadata endpoint.'
 else
-  fail 'Nginx-Routing fuer Chat-Dateiausgaben fehlt.'
+  fail 'Nginx routing for chat-generated files is missing.'
 fi
 if grep -Fq '|console_insights|' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
-  ok 'Nginx erlaubt die Infokaesten (Core, Kontext, Werkzeuge, Projekt).'
+  ok 'Nginx allows the information panels (Core, context, tools and project).'
 else
-  fail 'Nginx-Routing fuer die Infokaesten fehlt.'
+  fail 'Nginx routing for the information panels is missing.'
 fi
 if grep -Fq '|voice_live|' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
-  ok '0.6.31: Nginx erlaubt das Live-Gespraech (api/voice_live.php).'
+  ok '0.6.31: Nginx allows live voice calls (api/voice_live.php).'
 else
-  fail 'Nginx sperrt das Live-Gespraech (voice_live fehlt in der Freigabe).'
+  fail 'Nginx blocks live voice calls (voice_live missing from allowlist).'
 fi
 if grep -Fq '|notifications|' "$PROJECT_ROOT/config/runtime/nginx.conf.template" && grep -Fq 'location = /sw.js' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
-  ok '0.6.81: Nginx erlaubt Benachrichtigungen (api/notifications.php) und den Service Worker (/sw.js).'
+  ok '0.6.81: Nginx allows notifications (api/notifications.php) and the service worker (/sw.js).'
 else
-  fail 'Nginx sperrt Benachrichtigungen oder den Service Worker (notifications oder /sw.js fehlt).'
+  fail 'Nginx blocks notifications or the service worker (notifications or /sw.js missing).'
 fi
 if grep -Fq '|composer_tools|' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
-  ok '0.6.43: Nginx erlaubt die Werkzeug-Freigaben des + Menues (api/composer_tools.php).'
+  ok '0.6.43: Nginx allows tools configured in the + menu (api/composer_tools.php).'
 else
-  fail 'Nginx sperrt das + Menue (composer_tools fehlt in der Freigabe).'
+  fail 'Nginx blocks the + menu (composer_tools missing from allowlist).'
 fi
 if grep -Fq '|voice_input|' "$PROJECT_ROOT/config/runtime/nginx.conf.template" && grep -Fq 'microphone=(self)' "$PROJECT_ROOT/config/runtime/nginx.conf.template" \
    && ! grep -Fq 'microphone=()' "$PROJECT_ROOT/config/runtime/nginx.conf.template"; then
-  ok 'Nginx erlaubt die Spracheingabe (api/voice_input.php und Mikrofon fuer die eigene Seite).'
+  ok 'Nginx allows voice input (api/voice_input.php and microphone permission for the app).'
 else
-  fail 'Nginx sperrt die Spracheingabe (voice_input fehlt oder Mikrofon verboten).'
+  fail 'Nginx blocks voice input (voice_input missing or microphone denied).'
 fi
 
 if (( FAILURES == 0 )); then
@@ -825,15 +825,15 @@ if (( ${#PRIVATE_RELEASE_FILES[@]} > 0 )); then
   private_release_file="${PRIVATE_RELEASE_FILES[0]#"$PROJECT_ROOT"/}"
   fail "Privates Bibel- oder Kompendium-Material ist noch im Release enthalten: $private_release_file"
 else
-  ok 'Das Release enthaelt kein privates Bibel- oder Kompendium-Dokument.'
+  ok 'The release does not contain any private bible or compendium documents.'
 fi
 
 if grep -Fq "action: 'delete_permanently'" "$PROJECT_ROOT/js/console-app.js" \
     && grep -Fq "coreui_console_session_delete_tx" "$PROJECT_ROOT/api/console_session_store.php" \
     && grep -Fq "delete_confirmation_required" "$PROJECT_ROOT/api/console_sessions.php"; then
-  ok 'Archivgeschuetzte, transaktionale Sitzungsloeschung ist paketiert.'
+  ok 'Archive-protected, transactional session deletion is included.'
 else
-  fail 'Die sichere Sitzungsloeschung ist unvollstaendig paketiert.'
+  fail 'Safe session deletion is incomplete in the package.'
 fi
 
 if grep -Fq "sse_send('token'" "$PROJECT_ROOT/api/console_stream.php"; then
@@ -845,9 +845,9 @@ fi
 if grep -Fq "{action: 'core', model_override: value}" "$PROJECT_ROOT/js/coreui-core-mode.js" \
     && grep -Fq "coreui_private_knowledge_block" "$PROJECT_ROOT/api/chat.php" \
     && grep -Fq "user_create" "$PROJECT_ROOT/api/admin.php"; then
-  ok 'Funktionale Modellwahl, privates RAG-Lite und Benutzeranlage sind paketiert.'
+  ok 'Functional model selection, private RAG-Lite and account creation are included.'
 else
-  fail 'Mindestens eine neue 0.4.0-Funktion ist nicht vollstaendig verdrahtet.'
+  fail 'At least one 0.4.0 feature is not fully wired up.'
 fi
 
 # The stream may apply a per-call Thinking override before the account default.
@@ -855,25 +855,25 @@ fi
 # The reply-pipeline selftest verifies the precise runtime contract later.
 if grep -Fq "action: 'thinking'" "$PROJECT_ROOT/js/coreui-core-mode.js" \
     && grep -Fq "coreui_general_think_value(\$model, \$thinkOverride ?? ember_thinking_enabled())" "$PROJECT_ROOT/api/console_stream.php"; then
-  ok 'Denkschalter im Chat und Modellaufruf inklusive kontobezogenem Standardwert sind paketiert.'
+  ok 'Thinking toggle in chat and model calls, including account defaults, are included.'
 else
-  fail 'Thinking-Schalter oder Modell-Payload-Anbindung fehlen.'
+  fail 'Thinking toggle or model payload integration is missing.'
 fi
 
 if grep -Fq 'MAX_MESSAGE_ATTACHMENTS = 10' "$PROJECT_ROOT/js/console-app.js" \
     && grep -Fq 'stu_console_message_attachments' "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql"; then
-  ok 'Bis zu zehn persistente Nachrichtenanhaenge sind paketiert.'
+  ok 'Up to ten persistent message attachments are included.'
 else
-  fail 'Mehrfachanhaenge oder ihre Datenbankmigration fehlen.'
+  fail 'Multiple attachments or their database migration are missing.'
 fi
 
 if grep -Fq 'coreui_ollama_model_exists' "$PROJECT_ROOT/api/user_settings.php" \
     && grep -Fq 'password_change' "$PROJECT_ROOT/api/account_security.php" \
     && grep -Fq 'thinking_content_exported' "$PROJECT_ROOT/api/account_export.php" \
     && grep -Fq 'loadAccountSecurity()' "$PROJECT_ROOT/js/settings.js"; then
-  ok 'Kontosicherheit, sicherer Datenexport und validierte Ollama-Modellwahl sind paketiert.'
+  ok 'Account security, secure data export and validated Ollama model selection are included.'
 else
-  fail 'Mindestens eine neue 0.4.1-Funktion ist nicht vollstaendig verdrahtet.'
+  fail 'At least one 0.4.1 feature is not fully wired up.'
 fi
 
 if (( FAILURES > 0 )); then
@@ -1059,13 +1059,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php scripts/agent-runs-selftest.php >/dev/null 2>&1; then
-    ok 'P05: Agentenlauf-Idempotenz und Kontotrennung offline geprueft.'
+    ok 'P05: agent-run idempotency and account isolation verified offline.'
   else
     fail 'P05-Agentenlauf-Selbsttest fehlgeschlagen.'
   fi
 
   if compose exec -T php php scripts/agent-run-liveness-selftest.php >/dev/null 2>&1; then
-    ok '0.6.9: Verlorene Agentenlaeufe enden (Herzschlag, Abbruch, Loeschen) geprueft.'
+    ok '0.6.9: abandoned agent runs terminate via heartbeat, cancellation and deletion, verified.'
   else
     fail 'Selbsttest fuer verlorene Agentenlaeufe fehlgeschlagen.'
   fi
@@ -1073,40 +1073,40 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.6.97: no production DB writes from language selftests, even after an update.
   account_language_safety=''
   if account_language_safety="$(compose exec -T php php scripts/account-language-safety-selftest.php 2>&1)"; then
-    ok 'KI-Profil: Sprach-Selbsttest isoliert und Testkonto-Bereinigung geprueft.'
+    ok 'AI profile: language self-test is isolated and test-account cleanup verified.'
   else
     fail "KI-Profil: Sicherheitsregression: ${account_language_safety:-Unbekannt}"
   fi
   account_language_output=''
   if account_language_output="$(compose exec -T php env COREUI_SELFTEST_DB=0 php scripts/account-language-selftest.php 2>&1)" && [[ "$account_language_output" == *'live database untouched'* ]]; then
-    ok 'KI-Profil: Hauptsprache, Prompt und Vorlesen ohne produktive Datenbankschreibzugriffe.'
+    ok 'AI profile: primary language, prompt and read-aloud settings without production database writes.'
   else
     fail "KI-Profil: Sprach-Selbsttest beruehrt moeglicherweise Produktivdaten: ${account_language_output:-Unbekannt}"
   fi
 
   time_test=''
   if time_test="$(compose exec -T php php scripts/message-time-selftest.php 2>&1)"; then
-    ok '0.6.29: Zeiten im Chat mit Zeitzone (Nachrichten und Chatliste, Datenbank in UTC und Ortszeit) geprueft.'
+    ok '0.6.29: time zones in chat (messages, list, UTC database and local time) verified.'
   else
     fail "Zeit-Selbsttest: ${time_test:-Unbekannter Fehler}"
   fi
 
   live_test=''
   if live_test="$(compose exec -T php php scripts/voice-live-selftest.php 2>&1)"; then
-    ok '0.6.31: Live-Gespraech (Live-Core, Saetze fuer Eve, gesprochene Antwort, fester Anfang fuer den Cache, Modelfile-SYSTEM bleibt) geprueft.'
+    ok '0.6.31: live voice (live Core, Eve's sentences, spoken reply, stable cache prefix, unchanged Modelfile SYSTEM) verified.'
   else
     fail "Live-Gespraech-Selbsttest: ${live_test:-Unbekannter Fehler}"
   fi
 
   voice_input_test=''
   if voice_input_test="$(compose exec -T php php scripts/voice-input-selftest.php 2>&1)"; then
-    ok '0.6.17: Sprachnachrichten (WAVs bis 60 s in Maras Aufruf, ohne Denken, Mitschrift nach der Antwort, Verlauf, WebM als Audio; 0.6.22 Begriffe und Werkzeuge) geprueft.'
+    ok '0.6.17: voice messages (WAV chunks up to 60 s, thinking disabled, transcript after reply, history, audio WebM; 0.6.22 terms and tools) verified.'
   else
     fail "Spracheingabe-Selbsttest: ${voice_input_test:-Unbekannter Fehler}"
   fi
 
   if compose exec -T php php scripts/model-queue-selftest.php >/dev/null 2>&1; then
-    ok 'P05: Modell-FIFO, Timeout, Abbruch und Sperrenfreigabe offline geprueft.'
+    ok 'P05: model FIFO queue, timeout, cancellation and lock release verified offline.'
   else
     fail 'P05-Modellwarteschlangen-Selbsttest fehlgeschlagen.'
   fi
@@ -1117,17 +1117,17 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
   fi
   if compose exec -T php php scripts/image-ab-diagnostic-selftest.php >/dev/null 2>&1; then
-    ok '4B Qwen/Ponpoke: serielle A/B-Diagnose, PNG und Lizenzen geprueft.'
+    ok '4B Qwen/Ponpoke: serialized A/B diagnostics, PNG and licenses verified.'
   else
     fail '4B A/B-Diagnose-Selbsttest fehlgeschlagen.'
   fi
   if compose exec -T php php scripts/image-work-diagnostic-selftest.php >/dev/null 2>&1; then
-    ok 'Bildfehlerdiagnose: klassifizierte Ursachen ohne private Workerlogs geprueft.'
+    ok 'Image failure diagnostics: classified causes without private worker logs verified.'
   else
     fail 'Bildfehlerdiagnose-Selbsttest fehlgeschlagen.'
   fi
   if compose exec -T php php scripts/work-events-persistence-selftest.php >/dev/null 2>&1; then
-    ok 'P06: Arbeitsweg nach Antwort, Reload, Varianten und Kontotrennung geprueft.'
+    ok 'P06: work timeline across replies, reloads, variants and account isolation verified.'
   else
     fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
   fi
@@ -1267,9 +1267,9 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   uninstall_store_test=''
   if uninstall_store_test="$(compose exec -T php php scripts/uninstall-store-selftest.php 2>&1)"; then
-    ok 'Deinstallation: sichere Eigentumeranfrage, Archiv-Modus und atomare Queue geprueft.'
+    ok 'Uninstallation: secure owner request, archive mode and atomic queue verified.'
   else
-    fail "Deinstallation: Queue-Selbsttest fehlgeschlagen. Details: $uninstall_store_test"
+    fail "Uninstallation: queue self-test failed. Details: $uninstall_store_test"
   fi
 
   installed_cores_test=''
@@ -2190,9 +2190,9 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # grep -q" probe can mistake an early-closing pipe for a missing module.
   for extension_name in curl dom gd mbstring pdo_mysql zip; do
     if compose exec -T php php -r 'exit(extension_loaded($argv[1]) ? 0 : 1);' "$extension_name" 2>/dev/null; then
-      ok "PHP-Erweiterung aktiv: $extension_name"
+      ok "PHP extension enabled: $extension_name"
     else
-      fail "PHP-Erweiterung fehlt: $extension_name"
+      fail "PHP extension missing: $extension_name"
       if [[ "$extension_name" == 'pdo_mysql' ]]; then
         warn 'PDO-Treiber fehlt im LAUFENDEN PHP-Container. Installer erneut starten, damit das Image neu gebaut und PHP neu erstellt wird.'
       fi
@@ -2203,16 +2203,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       find api scripts tools -type f -name "*.php" -exec sh -c '\''
         for file do
           if ! php -l "$file" >/dev/null 2>&1; then
-            printf "[PHP-SYNTAXFEHLER] %s\\n" "$file" >&2
+            printf "[PHP-SYNTAX-ERROR] %s\\n" "$file" >&2
             php -l "$file" >&2 || true
             exit 1
           fi
         done
       '\'' sh {} +
     '; then
-    ok 'Alle paketierten PHP-Dateien bestehen den Syntaxcheck.'
+    ok 'All packaged PHP files pass syntax checking.'
   else
-    fail 'Mindestens eine paketierte PHP-Datei hat einen Syntaxfehler.'
+    fail 'At least one packaged PHP file has a syntax error.'
   fi
 
   thinking_selftest=''
