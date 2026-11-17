@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.86: shared skills, precedence and the skills fixed for a chat (P12 B).
+# CoreAI: TCI Interface 0.7.87: installer and preflight source-contract regression repair.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
