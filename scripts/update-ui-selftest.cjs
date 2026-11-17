@@ -91,10 +91,10 @@ async function open(browser, level, viewport, prepare) {
   if (prepare) prepare(srv);
   const page = await browser.newPage({viewport: viewport || {width: 1440, height: 900}, locale: 'de-DE'});
   const errors = [];
-  const navigation = {count: 0, baseline: 0};
+  const navigation = {count: 0, baseline: 0, urls: []};
   // Only full page loads count as reloads; URL fragment navigation inside
   // Settings must not masquerade as an update-driven page reload.
-  page.on('load', () => { navigation.count += 1; });
+  page.on('load', () => { navigation.count += 1; navigation.urls.push(page.url()); });
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.route('http://coreui.test/**', route => srv.route(route));
@@ -201,7 +201,7 @@ async function advance(page, ms) {
     srv.status = () => 'down';
     await advance(page, 30000);
     assert.equal(await mode(page), 'wait', 'a restart (502) keeps the window waiting');
-    assert.equal(await reloaded(page), false, 'no reload while CoreAI is down');
+    assert.equal(await reloaded(page), false, 'no reload while CoreAI is down: ' + JSON.stringify(navigationState.get(page)));
     assert.equal(await page.textContent('.cu-percent'), '47 %', 'the last progress stays while CoreAI is down');
     assert.match(await page.textContent('.cu-eta'), /CoreAI is restarting/);
     assert.equal(await page.$eval('.cu-bar', b => b.classList.contains('is-moving')), false);
