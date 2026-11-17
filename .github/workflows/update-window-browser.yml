@@ -1,0 +1,39 @@
+name: Update Window Browser Regression
+
+on:
+  pull_request:
+    paths:
+      - 'js/coreui-update.js'
+      - 'settings.html'
+      - 'app.html'
+      - 'css/coreui-update.css'
+      - 'scripts/update-ui-selftest.cjs'
+      - '.github/workflows/update-window-browser.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'js/coreui-update.js'
+      - 'settings.html'
+      - 'app.html'
+      - 'css/coreui-update.css'
+      - 'scripts/update-ui-selftest.cjs'
+      - '.github/workflows/update-window-browser.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  update-window-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install isolated Playwright browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: English owner update and phone layout
+        run: |
+          node --check js/coreui-update.js
+          node --check scripts/update-ui-selftest.cjs
+          node scripts/update-ui-selftest.cjs
