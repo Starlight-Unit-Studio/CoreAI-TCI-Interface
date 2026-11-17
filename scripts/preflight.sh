@@ -808,7 +808,7 @@ else
 fi
 
 if (( FAILURES == 0 )); then
-  ok 'E.M.B.E.R.-CoreUI-Branding, Lizenzunterlagen, KI-Settings und Admin Core sind paketiert.'
+  ok 'E.M.B.E.R. CoreUI branding, license files, AI settings and Admin Core are packaged.'
 fi
 
 PRIVATE_RELEASE_FILES=()
@@ -823,7 +823,7 @@ mapfile -d '' -n 1 PRIVATE_RELEASE_FILES < <(
 )
 if (( ${#PRIVATE_RELEASE_FILES[@]} > 0 )); then
   private_release_file="${PRIVATE_RELEASE_FILES[0]#"$PROJECT_ROOT"/}"
-  fail "Privates Bibel- oder Kompendium-Material ist noch im Release enthalten: $private_release_file"
+  fail "Private bible or compendium material is still included in the release: $private_release_file"
 else
   ok 'The release does not contain any private bible or compendium documents.'
 fi
@@ -837,9 +837,9 @@ else
 fi
 
 if grep -Fq "sse_send('token'" "$PROJECT_ROOT/api/console_stream.php"; then
-  fail 'Der SSE-Endpunkt sendet noch ungepruefte Modell-Tokens an den Browser.'
+  fail 'The SSE endpoint still exposes unverified model tokens to the browser.'
 else
-  ok 'SSE-Ausgaben passieren erst nach der serverseitigen Antwortpruefung.'
+  ok 'SSE output is sent only after server-side response validation.'
 fi
 
 if grep -Fq "{action: 'core', model_override: value}" "$PROJECT_ROOT/js/coreui-core-mode.js" \
@@ -888,26 +888,26 @@ source "$ENV_FILE"
 set +a
 
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-  ok 'Docker-Daemon ist erreichbar.'
+  ok 'Docker daemon is reachable.'
 else
-  fail 'Docker-Daemon ist nicht erreichbar.'
+  fail 'Docker daemon is unreachable.'
 fi
 
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_CMD=(docker compose)
-  ok 'Docker Compose v2 ist vorhanden.'
+  ok 'Docker Compose v2 is available.'
 elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_CMD=(docker-compose)
-  ok 'Docker Compose ist vorhanden.'
+  ok 'Docker Compose is available.'
 else
   fail 'Docker Compose missing.'
 fi
 
 if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if compose config >/dev/null 2>&1; then
-    ok 'Compose-Konfiguration ist gueltig.'
+    ok 'Compose configuration is valid.'
   else
-    fail 'Compose-Konfiguration ist ungueltig.'
+    fail 'Compose configuration is invalid.'
   fi
 
   check_service database 'CoreAI: TCI Interface-MariaDB'
@@ -930,16 +930,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
        >/dev/null 2>&1; then
       ok 'Deep Research: SearXNG liefert im Browse-Container echte Suchtreffer.'
     else
-      warn 'Deep Research: SearXNG liefert keine Suchtreffer oder ist nicht erreichbar. Die Ersatzsuche kann eingreifen.'
+      warn 'Deep Research: SearXNG returns no search results or is unreachable. Fallback search may be used.'
     fi
   fi
 
   if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; echo (int)stu_pdo()->query("SELECT COUNT(*) FROM stu_schema_migrations")->fetchColumn();' \
       >/dev/null 2>&1; then
-    ok 'Eigene MariaDB-Verbindung und CoreAI: TCI Interface-Schema funktionieren.'
+    ok 'Dedicated MariaDB connection and CoreAI: TCI Interface schema work.'
   else
-    fail 'Eigene MariaDB-Verbindung oder CoreAI: TCI Interface-Schema ist fehlerhaft.'
+    fail 'Dedicated MariaDB connection or CoreAI: TCI Interface schema is faulty.'
   fi
 
   if compose exec -T php php -r \
@@ -1053,7 +1053,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if compose exec -T php php -r \
       'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_model_queue.php"; exit(coreui_model_queue_schema_ready(stu_pdo()) ? 0 : 1);' \
       >/dev/null 2>&1; then
-    ok 'Migration 013: globale FIFO-Modellwarteschlange bereit.'
+    ok 'Migration 013: global FIFO model queue ready.'
   else
     fail 'Migration 013: model queue missing.'
   fi
@@ -1112,7 +1112,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
-    ok 'P06-Work eventse und sichere Python-Fehlerklassen geprueft.'
+    ok 'P06: work events und sichere Python-Fehlerklassen geprueft.'
   else
     fail 'P06-Work event-self-test failed.'
   fi
@@ -1260,9 +1260,9 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.6.96: the PHP-FPM user must be able to queue a request on the host.
   if compose exec -T -u 33:33 php php -r 'exit(is_writable("/var/www/coreui/var/uninstall-request") ? 0 : 1);' >/dev/null 2>&1; then
-    ok 'Deinstallation: PHP-Hostanfragen im eigenen beschreibbaren Bind-Mount verfuegbar.'
+    ok 'Uninstallation: PHP host requests available in dedicated writable bind mount.'
   else
-    fail 'Deinstallation: var/uninstall-request fuer PHP (UID 33) nicht beschreibbar.'
+    fail 'Uninstallation: var/uninstall-request is not writable by PHP (UID 33).'
   fi
 
   uninstall_store_test=''
@@ -1407,7 +1407,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.6.84: Profil overview: tokens counted per account, streaks, longest task, raster, tools, insights.
   profile_stats_test=''
   if profile_stats_test="$(compose exec -T php php scripts/profile-stats-selftest.php 2>&1)"; then
-    ok 'Profilee: token counts, streaks, longest task, activity grid, tools and insights verified.'
+    ok 'Profile: token counts, streaks, longest task, activity grid, tools and insights verified.'
   else
     fail "Profile-self-test: ${profile_stats_test:-Unknown error}"
   fi
@@ -1596,7 +1596,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok "$profile_reference_test"
     fi
   else
-    fail "Profilee reference-self-test: ${profile_reference_test:-Unknown error}"
+    fail "Profile reference-self-test: ${profile_reference_test:-Unknown error}"
   fi
 
   # 0.6.59: all image references share identity, subject and style preservation.
@@ -1774,9 +1774,9 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
-      ok 'Profilee: mobile crop, square/portrait, original image and recropping verified.'
+      ok 'Profile: mobile crop, square/portrait, original image and recropping verified.'
     else
-      fail 'Profilee: image cropping-UI test failed.'
+      fail 'Profile: image cropping-UI test failed.'
       printf '%s\n' "$profile_crop_ui" >&2
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
@@ -1849,7 +1849,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     # 0.6.84: Settings > Profil overview (figures, raster, made, tools, insights); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/profile-stats-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Profilee: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
+        ok 'Profile: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
       else
         fail 'Profile: UI test failed.'
       fi
@@ -1881,7 +1881,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       if node "$PROJECT_ROOT/scripts/insights-chat-visibility-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Info panels: four mobile chat buttons, desktop sidebar and empty welcome screen verified.'
       else
-        fail 'Info panels: Chat-/Startseiten-Umschaltung oder mobile Schaltflaechen fehlerhaft.'
+        fail 'Info panels: chat / welcome-screen switch or mobile buttons are faulty.'
       fi
     else
       warn 'Info panels: browser smoke test skipped (Playwright not installed); offline DOM contract still required.'
@@ -2152,10 +2152,10 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       if node "$PROJECT_ROOT/scripts/voice-terms-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Voice-message terms: AI-profile list, save, cleanup, no guest field, day/night and phone verified.'
       else
-        fail 'Begriffe fuer Voice messages: UI test failed.'
+        fail 'Voice-message terms: UI test failed.'
       fi
     else
-      warn 'Begriffe fuer Voice messages: UI test skipped (Playwright for Node.js is not installed).'
+      warn 'Voice-message terms: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
@@ -2194,7 +2194,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail "PHP extension missing: $extension_name"
       if [[ "$extension_name" == 'pdo_mysql' ]]; then
-        warn 'PDO-Treiber fehlt im LAUFENDEN PHP-Container. Installer erneut starten, damit das Image neu gebaut und PHP neu erstellt wird.'
+        warn 'PDO driver is missing in the RUNNING PHP container. Run the installer again to rebuild the image and recreate PHP.'
       fi
     fi
   done
@@ -2369,14 +2369,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if service_running voice; then
       voice_health="$(curl -fsS --max-time 5 "http://127.0.0.1:${COREUI_VOICE_PORT:-18790}/health" 2>/dev/null || true)"
       if [[ "$voice_health" == *'"ready": true'* ]]; then
-        ok 'Voice service bereit: Mara kann mit Eve vorlesen.'
+        ok 'Voice service ready: Mara can read aloud using Eve.'
       elif [[ "$voice_health" == *'"loading": true'* ]]; then
         warn 'Voice service laedt Eve noch (beim ersten Start etwa 0,7 GB); Read aloud folgt von selbst.'
       else
-        warn 'Voice service laeuft, ist aber nicht bereit. Protokoll: scripts/stack.sh logs voice'
+        warn 'Voice service is running but is not ready. Logs: scripts/stack.sh logs voice'
       fi
     else
-      warn 'Voice service laeuft nicht; CoreAI arbeitet ohne Read aloud. Start: scripts/stack.sh up -d voice'
+      warn 'Voice service is not running; CoreAI continues without read-aloud functionality. Start: scripts/stack.sh up -d voice'
     fi
   fi
 
@@ -2404,9 +2404,9 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     /var/www/coreui/assets/profile_photos/pending \
     /var/www/coreui/assets/profile_photos/approved; do
     if compose exec -T -u 33:33 php test -w "$writable_dir" >/dev/null 2>&1; then
-      ok "Container-Schreibpfad bereit: ${writable_dir#/var/www/coreui/}"
+      ok "Container writable directory ready: ${writable_dir#/var/www/coreui/}"
     else
-      fail "Container-Schreibpfad nicht bereit: ${writable_dir#/var/www/coreui/}"
+      fail "Container writable directory is not ready: ${writable_dir#/var/www/coreui/}"
     fi
   done
 
@@ -2415,10 +2415,10 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if systemctl is-active --quiet coreai-update.path && systemctl is-active --quiet coreai-update-check.timer; then
       ok 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update window.'
     else
-      fail 'Update-Dienst nicht aktiv (coreai-update.path oder coreai-update-check.timer). scripts/install.sh erneut ausfuehren.'
+      fail 'Update service is not active (coreai-update.path or coreai-update-check.timer). Run scripts/install.sh again.'
     fi
   else
-    warn 'Kein systemd: das Update window bleibt ohne Host-Dienst.'
+    warn 'systemd unavailable: the Update window will not have a host service.'
   fi
 
   video_selftest=''
@@ -2443,40 +2443,40 @@ fi
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/api/health.php" >/dev/null 2>&1; then
   ok "CoreAI: TCI Interface-Healthcheck antwortet auf Loopback-Port ${COREUI_HTTP_PORT}."
 else
-  fail "CoreAI: TCI Interface-Healthcheck antwortet nicht auf Port ${COREUI_HTTP_PORT}."
+  fail "CoreAI: TCI Interface health check is not responding on port ${COREUI_HTTP_PORT}."
 fi
 
 # Drain each HTTP body completely: grep -q closes early and makes curl fail under pipefail.
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" \
     | grep -F 'EINSTELLUNGEN' >/dev/null; then
-  ok 'CoreAI: TCI Interface-Settings werden vom isolierten Webserver ausgeliefert.'
+  ok 'CoreAI: TCI Interface settings are served by the isolated web server.'
 else
-  fail 'CoreAI: TCI Interface-Settings sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
+  fail 'CoreAI: TCI Interface settings are unreachable. Run scripts/stack.sh refresh-runtime, then scripts/stack.sh restart web.'
 fi
 
 # 0.6.71: Admin Core is a separate page, authorized per account and server-side API.
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminSettingsLink"' >/dev/null \
     && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'id="adminAccessGate"' >/dev/null; then
-  ok 'Settings mit Roles-Link und eigenstaendige, zugangsgeschuetzte Admin-Core-Seite ausgeliefert.'
+  ok 'Settings with Roles link and separate access-protected Admin Core page are served.'
 else
-  fail 'Admin-Core-Seite oder getrennte Settings sind nicht erreichbar.'
+  fail 'Admin Core page or separate Settings are unreachable.'
 fi
 
 SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
   "http://127.0.0.1:${COREUI_HTTP_PORT}/api/console_messages.php" 2>/dev/null || true)"
 if [[ "$SESSION_ROUTE_STATUS" == '401' || "$SESSION_ROUTE_STATUS" == '400' ]]; then
-  ok 'Der authentifizierte Sitzungs-History-Endpunkt wird vom CoreAI: TCI Interface-Webserver erreicht.'
+  ok 'Authenticated session history endpoint is reachable through the CoreAI: TCI Interface web server.'
 else
-  fail "Sitzungs-History-Endpunkt nicht korrekt geroutet (HTTP ${SESSION_ROUTE_STATUS:-000})."
+  fail "Session history endpoint is routed incorrectly (HTTP ${SESSION_ROUTE_STATUS:-000})."
 fi
 
 for private_route in profile knowledge profile_media account_security account_export models; do
   route_status="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
     "http://127.0.0.1:${COREUI_HTTP_PORT}/api/${private_route}.php" 2>/dev/null || true)"
   if [[ "$route_status" == '401' ]]; then
-    ok "Privater CoreAI: TCI Interface-Endpunkt korrekt geroutet: ${private_route}.php"
+    ok "Privater CoreAI: TCI Interface endpoint korrekt geroutet: ${private_route}.php"
   else
-    fail "CoreAI: TCI Interface-Endpunkt ${private_route}.php nicht korrekt geroutet (HTTP ${route_status:-000})."
+    fail "CoreAI: TCI Interface endpoint ${private_route}.php is routed incorrectly (HTTP ${route_status:-000})."
   fi
 done
 
@@ -2510,20 +2510,20 @@ if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
       "http://127.0.0.1:${COREUI_SEARXNG_PORT}/search?q=ember&format=json" >/dev/null 2>&1; then
     ok "Eigene SearXNG-JSON-Suche antwortet auf Port ${COREUI_SEARXNG_PORT}."
   else
-    fail "Eigene SearXNG-JSON-Suche antwortet nicht auf Port ${COREUI_SEARXNG_PORT}."
+    fail "Dedicated SearXNG JSON search is not responding on port ${COREUI_SEARXNG_PORT}."
   fi
 fi
 
 if [[ "${COREUI_BIND_ADDRESS:-127.0.0.1}" == '127.0.0.1' ]]; then
-  ok 'Webzugriff ist standardmaessig auf Loopback begrenzt.'
+  ok 'Web access is restricted to loopback by default.'
 else
-  warn 'CoreAI: TCI Interface lauscht bewusst auf 0.0.0.0. Firewall und TLS muessen separat geprueft werden.'
+  warn 'CoreAI: TCI Interface is deliberately bound to 0.0.0.0. Verify firewall and TLS separately.'
 fi
 
 if [[ -L /etc/nginx/sites-enabled/default || -e /etc/nginx/sites-enabled/default ]]; then
-  ok 'Eine bestehende Nginx-Default-Site wurde nicht entfernt.'
+  ok 'An existing Nginx default site was not removed.'
 else
-  warn 'Keine Nginx-Default-Site gefunden. CoreAI: TCI Interface veraendert diesen Zustand nicht.'
+  warn 'No Nginx default site found. CoreAI: TCI Interface does not change this state.'
 fi
 
 if (( FAILURES > 0 )); then
