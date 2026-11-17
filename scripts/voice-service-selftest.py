@@ -346,7 +346,7 @@ for needle in ('profiles: ["voice"]', 'restart: unless-stopped', 'user: "33:33"'
     check(needle in block, 'compose voice: ' + needle)
 check('- ./var/voice_cache:/var/www/coreui/var/voice_cache' in compose, 'PHP may write the read-aloud cache')
 install = (ROOT / 'scripts' / 'install.sh').read_text(encoding='utf-8')
-check('if compose build voice; then' in install and "warn 'Sprachdienst konnte nicht gebaut werden; CoreAI laeuft ohne Vorlesen weiter.'" in install
+check('if compose build voice; then' in install and "warn 'Voice service could not be built; CoreAI will continue without text-to-speech.'" in install
       and "compose up -d voice || warn" in install, 'installer: optional, CoreAI runs on without the voice')
 check('INSTALL_VOICE="${REQUEST_INSTALL_VOICE:-${SAVED_INSTALL_VOICE:-1}}"' in install and 'COREUI_INSTALL_VOICE=$INSTALL_VOICE' in install, 'on by default, can be switched off')
 stack = (ROOT / 'scripts' / 'stack.sh').read_text(encoding='utf-8')
