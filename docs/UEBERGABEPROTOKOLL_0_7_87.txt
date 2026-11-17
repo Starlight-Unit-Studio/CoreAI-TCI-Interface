@@ -19,6 +19,12 @@ ROOT CAUSES, SOURCE VERIFIED
 
 REPAIRS
 - Aligned both offline selftests with English installer/updater output.
+- Translated the golden update modal, waiting and retry states, progress,
+  and related Settings update card to English (JS/HTML only).
+- Mapped known persisted German 0.7.86 failure messages to English for
+  display only; the raw update log remains unchanged.
+- Extended update browser test expectations and added English UI/cache
+  checks to installer-preflight CI.
 - Added a CI job to actually run these offline selftests on relevant PRs.
 - Updated version and UI asset cache key to 0.7.87.
 - Changelog and README documented.
