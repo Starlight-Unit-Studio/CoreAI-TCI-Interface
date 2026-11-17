@@ -1,0 +1,69 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.78
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.77 nach PR #333
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Roadmap P10, Schritt C: Terminal- und Prozesssitzungen (CF-035) und ein Entwicklungsserver mit
+Vorschau (CF-040). Abnahme von P10 laut Roadmap: ein Beispielprojekt startet, zeigt eine Vorschau
+und liefert echte Testausgaben; ein eingebauter Fehler wird bearbeitet und der Ablauf erneut
+geprueft (Testteil seit 0.7.77).
+
+UMSETZUNG
+- database/migrations/048_project_procs.sql: stu_console_project_procs (Befehl, Port, Status
+  queued, running, exited, stopped, error, Exitcode, Fehler, letzte Ausgabe mit Endposition, Anzahl
+  und Pruefsumme der Dateien, Worker-PID, Herzschlag, letzter Blick, Beendenwunsch),
+  stu_console_project_proc_input (Eingabezeilen) und stu_console_project_proc_fetch (Anfragen der
+  Vorschau an den Server mit Antwort). Fremdschluessel mit ON DELETE CASCADE.
+- tools/ember_project_procs.py (neu): ProcManager in einem eigenen Thread des Workers mit eigener
+  Datenbankverbindung. Start mit "docker run --rm -i --init" und denselben Mauern wie die Laeufe
+  (kein Mount von CoreAI, --read-only, --cap-drop ALL, no-new-privileges, Nutzer 65534, Grenzen
+  fuer Speicher, CPU, Prozesse, tmpfs ohne exec), stdin offen, stdout und stderr zusammen.
+  Ausgabe: die letzten 65536 Zeichen und die Endposition. Eingaben in Reihenfolge. Beenden:
+  docker stop -t 3 (SIGTERM ueber das Init, dann SIGKILL), echter Exitcode. Dateiabgleich alle
+  zwei Sekunden ueber die sha256 der Dateien (geaendert, neu, entfernt; Schreiben in einem
+  Schritt). Serveranfragen: docker exec mit einem kleinen Python-Client gegen 127.0.0.1 im
+  Container, Weiterleitungen auf demselben Server, Antwort bis 2 MB. Ende nach
+  STU_EMBER_PROJECT_PROC_SECONDS (1800), nach STU_EMBER_PROJECT_PROC_IDLE (300) ohne Blick, auf
+  Wunsch und beim Ende des Workers; Container eines frueheren Workers werden beim Start beendet.
+  Hoechstens STU_EMBER_PROJECT_PROCS (3) gleichzeitig je Worker.
+- tools/ember_py_worker.py: startet den Thread, wenn Migration 048 da ist (nicht mit --once),
+  wartet beim Beenden bis 60 s auf das Ende der Prozesse; drei neue Einstellungen mit Standard.
+- api/project_procs_store.php (neu): Port (1024 bis 65535), Serverpfad, Ausgabe ab Position,
+  Vorschlag (python app.py, server.py oder main.py; bei HTML-Seiten python -m http.server 8000 mit
+  Port 8000), Start (ein Prozess je Projekt, zwei je Konto, 30 je Stunde, die letzten 10 bleiben),
+  Eingabe, Beenden, Anfrage an den Server mit Warten bis 15 s, verlorene Prozesse (kein
+  Herzschlag seit 30 s, nicht uebernommen nach 60 s), Seite des Servers fuer die Vorschau, Saetze.
+- api/project_preview_store.php: Servermodus fuer coreui_preview_build (Serverpfade fuer Links,
+  Bilder als data-Adressen, fetch() und GET-Formulare ueber den Elternrahmen); ohne Servermodus
+  unveraendert (P10-A-Tests unveraendert gruen).
+- api/project_files.php: GET procs, proc (mit since) und proc_preview (Sandbox-CSP), POST
+  proc_start (Python-Schalter), proc_input, proc_stop, proc_fetch (CSRF). Fehlercodes 404, 409,
+  429, 502, 504.
+- js/coreui-project-files.js, css/coreui-project-files.css: Bereich "Prozesse" im Tab Dateien
+  (Befehl, Port, Starten, Status, Ausgabe live, Eingabezeile, Beenden, Vorschau, letzte Prozesse),
+  Vorschau im Servermodus mit Weiterleitung von fetch() (Quelle des Rahmens geprueft, hoechstens 6
+  gleichzeitig).
+- README (Abschnitt 4, "Not yet complete", API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3, P10),
+  Feature-Matrix CF-035 (jetzt Teilbestand), CF-036, CF-040.
+- Nicht geaendert: Sandbox-Image, Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts. Der
+  pyworker-Dienst laedt das neue Modul beim naechsten Start (Update startet ihn neu).
+
+OFFENE BETREIBERFRAGEN
+- Node.js im Sandbox-Image (Installer-Entscheidung).
+- context-slider-ui-selftest.cjs ist seit e7506f74 auf main rot (.ctx-stops auf Telefonen zwei statt
+  drei Spalten); CSS oder Test anpassen?
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Ein Prozess auf dem echten Server mit dem laufenden pyworker-Dienst: nach dem Update in einem
+  Projekt mit index.html im Tab Dateien "Prozesse" waehlen, "python -m http.server 8000" mit Port
+  8000 starten, "Vorschau". Kein Deployment behauptet.
+
+NAECHSTER SCHRITT
+- P11: Git, Wiederherstellung und Projektexport.
+
+Version: 0.7.78

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.77: commands and tests of a project in the sandbox, also by Mara (P10 B).
+# CoreAI: TCI Interface 0.7.78: processes, terminal input and a development server preview in the sandbox (P10 C).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -239,6 +239,12 @@ UI_FILES=(
   scripts/project-runs-selftest.php
   scripts/project-runs-worker-selftest.py
   scripts/project-runs-ui-selftest.cjs
+  database/migrations/048_project_procs.sql
+  api/project_procs_store.php
+  tools/ember_project_procs.py
+  scripts/project-procs-selftest.php
+  scripts/project-procs-worker-selftest.py
+  scripts/project-procs-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -619,6 +625,14 @@ if project_runs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-runs-worke
   ok "$project_runs_worker_test"
 else
   fail "Projektlaeufe-Worker-Selbsttest: ${project_runs_worker_test:-Unbekannter Fehler}"
+fi
+
+# 0.7.78 (P10 C): processes in the worker; with Docker and ember-py:1 real processes and a server.
+project_procs_worker_test=''
+if project_procs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-procs-worker-selftest.py" 2>&1)"; then
+  ok "$project_procs_worker_test"
+else
+  fail "Projektprozesse-Worker-Selbsttest: ${project_procs_worker_test:-Unbekannter Fehler}"
 fi
 
 # 0.7.38: Deep Research in the browse worker (search, read, notes, report with only real sources, Stopp).
@@ -1482,6 +1496,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Projektlaeufe-Selbsttest: ${project_runs_test:-Unbekannter Fehler}"
   fi
 
+  project_procs_test=''
+  if project_procs_test="$(compose exec -T php php scripts/project-procs-selftest.php 2>&1)"; then
+    ok "$project_procs_test"
+  else
+    fail "Projektprozesse-Selbsttest: ${project_procs_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1900,6 +1921,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Projektlaeufe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
+    if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/project-procs-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Projektprozesse: Start, Ausgabe, Eingabe, Servervorschau mit fetch, Beenden und Python-Schalter im Browser geprueft.'
+      else
+        fail 'Projektprozesse: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Projektprozesse: Oberflaechentest uebersprungen (Playwright fuer Node oder php nicht installiert).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then

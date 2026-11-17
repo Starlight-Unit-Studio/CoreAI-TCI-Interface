@@ -190,8 +190,25 @@
 .project-run-item.is-active { border-left-color:var(--amber, #c8902f); }
 .project-run-item.is-current { background:var(--panel-cx); }
 
+/* 0.7.78 (P10 C): processes that keep running, with live output and input. */
+.project-proc { margin-top:14px; border:1px solid var(--line-strong); background:var(--panel-solid); }
+.project-proc[hidden] { display:none; }
+.project-proc > .project-files-status { margin:0 10px 8px; }
+.project-proc-port {
+  flex:0 0 92px; min-width:0; padding:8px 10px; border:1px solid var(--line-strong); background:var(--panel-solid); color:var(--txt);
+  font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.project-proc-status { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px; margin-top:10px; }
+.project-proc-status > p { margin:0; min-width:0; overflow-wrap:anywhere; }
+.project-proc-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.project-run-status.is-stopped, .project-run-item.is-stopped { border-left-color:var(--muted); }
+.project-proc-output { margin:0 10px 0; min-height:120px; max-height:46vh; }
+.project-proc-send { padding-top:8px; }
+.project-proc > .project-run-list { margin-top:10px; }
+
 @media (max-width: 640px) {
   .project-files-toolbar > * { flex:1 1 auto; }
+  .project-proc-port { flex:1 1 80px; }
   .project-run-form > * { flex:1 1 auto; }
   .project-preview-actions > * { flex:1 1 auto; }
   .project-preview-frame { height:60vh; }

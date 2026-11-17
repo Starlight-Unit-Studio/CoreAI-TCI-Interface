@@ -46,6 +46,7 @@ import signal
 import argparse
 import subprocess
 import tempfile
+import threading
 import traceback
 
 from ember_artifacts import (
@@ -54,6 +55,7 @@ from ember_artifacts import (
 )
 from ember_inputs import InputError, resolve_inputs, stage_inputs
 import ember_project_runs
+import ember_project_procs
 
 try:
     import pymysql
@@ -81,6 +83,10 @@ DEFAULTS = {
     # 0.7.77 (P10 B): commands on project files; the image is the Python sandbox unless set.
     "STU_EMBER_PROJECT_IMAGE": "",
     "STU_EMBER_PROJECT_RUN_TIMEOUT": "120",
+    # 0.7.78 (P10 C): processes that keep running (programs, shells, development servers).
+    "STU_EMBER_PROJECT_PROCS": "3",
+    "STU_EMBER_PROJECT_PROC_SECONDS": "1800",
+    "STU_EMBER_PROJECT_PROC_IDLE": "300",
 }
 
 DEFAULT_CONFIG = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "api", "config.local.php"))
@@ -393,6 +399,18 @@ def main():
     if not runs_ready:
         print("[worker] Projektlaeufe aus (Migration 047 fehlt).", flush=True)
 
+    # 0.7.78 (P10 C): processes run in a thread of their own with their own connection, so a
+    # long Python job does not hold up their output, input or preview requests.
+    procs = None
+    if args.once:
+        pass
+    elif ember_project_procs.table_ready(conn):
+        manager = ember_project_procs.ProcManager(lambda: db_connect(cfg), cfg, work_base(cfg), stop_container, os.getpid())
+        procs = threading.Thread(target=manager.run, args=(lambda: _STOP,), name="project-procs", daemon=True)
+        procs.start()
+    else:
+        print("[worker] Projektprozesse aus (Migration 048 fehlt).", flush=True)
+
     while not _STOP:
         try:
             job = claim_next_job(conn)
@@ -447,6 +465,9 @@ def main():
         if args.once:
             return 0
 
+    if procs is not None:
+        # The manager ends its processes (exit code, last output) when _STOP is set.
+        procs.join(60)
     return 0
 
 
