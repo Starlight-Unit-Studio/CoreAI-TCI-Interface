@@ -40,7 +40,33 @@ UMSETZUNG
 - Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer alle geaenderten PHP-Dateien (api/admin.php, console_artifact.php, console_artifacts.php,
+  files.php, files_store.php, artifact_lifecycle_store.php, der neue Selbsttest), node --check fuer
+  die geaenderten JavaScript-Dateien, bash -n fuer beide Preflights: ohne Fehler. Version-Guard
+  (0.7.81 auf 0.7.82), Branding-Test, Cache-Fingerabdruecke: OK.
+- scripts/artifact-lifecycle-selftest.php (neu): OK mit SQLite und echten Dateien sowie mit MariaDB
+  (Migration 051 zweimal eingespielt; die Hinweise gehen mit ihrem Chat).
+- scripts/artifact-lifecycle-ui-selftest.cjs (neu, Playwright ueber https, damit der Browser die
+  Pruefsumme selbst nachrechnet): OK, sechsmal hintereinander gruen, auch Telefon und dunkel.
+- Bestehende Tests gruen: storage (PHP und UI), native-tools, markdown-preview, account-delete,
+  usage-page, account-admin, mail-settings, admin-mail-ui, project-files, project-merge,
+  tci-language, terran-terminology. tests/artifacts/browser_offline.py (Python-Playwright in einer
+  eigenen Umgebung im Arbeitsordner, mit dem vorinstallierten Chromium): 17 von 17, wie auf main.
+- 18 gezielt eingebaute Fehler (12 im Speicher, in den Endpunkten und in Speicher-Loeschen, 6 in den
+  Karten: Header nicht verglichen, Pruefsumme nicht nachgerechnet, SVG als Bild, Behalten ohne
+  CSRF, Hinweis ohne Grund, Knoepfe fuer Gaeste): alle erkannt.
+- GitHub-Pruefungen am PR: 11 von 11 gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*), Branch gegen main 0.7.81 in derselben
+  Umgebung: Branch 191 bestanden, 16 fehlgeschlagen; main 190 bestanden, 15 fehlgeschlagen. Die
+  15 von main sind auf dem Branch genau dieselben und schon laenger bekannt (browse-image ohne
+  Python-Playwright, browse-live-ui, chat-menu-ui, image-progress-ui, long-chat, model-library-ui,
+  pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui, settings-tabs-ui,
+  update-ui, voice-input, voice-samples-ui). Zusaetzlich war auf dem Branch einmal
+  voice-settings-ui-selftest.cjs rot: Er misst, ob der Stimmen-Dialog auf dem Telefon in den
+  Bildschirm passt, und hat unter der Last der vollen Testreihe einmal zu frueh gemessen. Danach
+  einzeln 11 von 11 gruen auf dem Branch und 8 von 8 auf main; dieser PR aendert an der Seite nur
+  Versionsnummer, Cache-Schluessel und einen Loeschtext der Speicher-Seite. Die beiden neuen Tests
+  bestehen.
 
 NICHT GETESTET
 - Vorschau, Behalten, Loeschen und Aufbewahrung auf dem echten Server mit echten Dateien von Mara.
