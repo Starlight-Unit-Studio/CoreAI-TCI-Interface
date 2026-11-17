@@ -491,7 +491,7 @@ ensure_ollama_model() {
   if ollama show "$MODEL_NAME" >/dev/null 2>&1 \
       && [[ "$owned_model" != "$MODEL_NAME" ]] \
       && ! is_enabled "$ADOPT_MODEL"; then
-    die "Das Modell $MODEL_NAME already exists but is not marked as owned by CoreAI: TCI Interface. Choose another name or explicitly set COREUI_ADOPT_MODEL=1."
+    die "Model $MODEL_NAME already exists but is not marked as owned by CoreAI: TCI Interface. Choose another name or explicitly set COREUI_ADOPT_MODEL=1."
   fi
 
   if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
@@ -548,7 +548,7 @@ ensure_ollama_model() {
 [[ "$PROJECT_ROOT" != /root/* ]] || die 'Move the package permanently to /opt/ember-coreui.'
 [[ "$PROJECT_ROOT" != /home/* ]] || die 'Move the package permanently to /opt/ember-coreui.'
 
-# Entfernt nur die zwei bekannten Altdateien aus versehentlichen Alpha-Paketen.
+# Remove only the two known legacy files from accidental alpha packages.
 # Andere Betreiber-Dokumente im docs-Verzeichnis bleiben erhalten.
 rm -f -- \
   "$PROJECT_ROOT/docs/S.U. MASTER BIBEL v10.4.docx" \
@@ -883,7 +883,7 @@ else
 fi
 
 if [[ "$IMAGE_READY" == '1' ]]; then
-  # Gewichte, die der Bildtest schon geladen hat, werden uebernommen statt neu geladen
+  # Reuse image weights already loaded by the image test rather than reloading them
   # (etwa 9 GB). Fehlende laedt der Dienst selbst; er prueft jede Datei gegen ihren SHA-256.
   python3 -I "$PROJECT_ROOT/tools/image/adopt_spike.py" "$PROJECT_ROOT/config/image/mara-image.json" \
     "$PROJECT_ROOT/var/image-spike/models" "$PROJECT_ROOT/var/image-models" \
