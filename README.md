@@ -14,7 +14,7 @@
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
-**Installation language:** The official setup one-liner, Docker and native installers, and the installer preflight reports use English for user-facing messages. Existing environment variables and command names are unchanged.
+**Installation language:** The official setup one-liner, Docker and native installers, and the installer preflight reports, and host updater status messages use English for user-facing output. Existing environment variables and command names are unchanged.
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
