@@ -84,21 +84,33 @@ function server(level) {
   return srv;
 }
 
+const navigationState = new WeakMap();
+
 async function open(browser, level, viewport, prepare) {
   const srv = server(level);
   if (prepare) prepare(srv);
   const page = await browser.newPage({viewport: viewport || {width: 1440, height: 900}, locale: 'de-DE'});
   const errors = [];
+  const navigation = {count: 0, baseline: 0};
+  // Track actual browser navigations. A global window marker can be cleared by
+  // page scripts or test-clock internals even when no navigation occurred.
+  page.on('framenavigated', frame => {
+    if (frame === page.mainFrame()) navigation.count += 1;
+  });
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
   await page.route('http://coreui.test/**', route => srv.route(route));
   await page.goto('http://coreui.test/settings.html#system');
-  await page.evaluate(() => { window.__sameDocument = true; });
+  navigation.baseline = navigation.count;
+  navigationState.set(page, navigation);
   return {page, srv, errors};
 }
 
 const mode = page => page.evaluate(() => window.CoreAIUpdate && window.CoreAIUpdate.mode());
-const reloaded = page => page.evaluate(() => window.__sameDocument !== true);
+const reloaded = page => {
+  const nav = navigationState.get(page);
+  return !!nav && nav.count > nav.baseline;
+};
 async function advance(page, ms) {
   await page.clock.runFor(ms);
   await page.waitForTimeout(30);
