@@ -648,7 +648,7 @@ project_runs_worker_test=''
 if project_runs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-runs-worker-selftest.py" 2>&1)"; then
   ok "$project_runs_worker_test"
 else
-  fail "Projektlaeufe-Worker-Selbsttest: ${project_runs_worker_test:-Unbekannter Fehler}"
+  fail "Project runs worker-self-test: ${project_runs_worker_test:-Unknown error}"
 fi
 
 # 0.7.78 (P10 C): processes in the worker; with Docker and the sandbox image real processes and a server.
@@ -656,7 +656,7 @@ project_procs_worker_test=''
 if project_procs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-procs-worker-selftest.py" 2>&1)"; then
   ok "$project_procs_worker_test"
 else
-  fail "Projektprozesse-Worker-Selbsttest: ${project_procs_worker_test:-Unbekannter Fehler}"
+  fail "Project processes worker-self-test: ${project_procs_worker_test:-Unknown error}"
 fi
 
 # 0.7.79: the Dockerfile, one tag everywhere and, with Docker, Node.js tests behind the sandbox walls.
@@ -664,7 +664,7 @@ sandbox_image_test=''
 if sandbox_image_test="$(python3 "$PROJECT_ROOT/scripts/sandbox-image-selftest.py" 2>&1)"; then
   ok "$sandbox_image_test"
 else
-  fail "Sandbox-Image-Selbsttest: ${sandbox_image_test:-Unbekannter Fehler}"
+  fail "Sandbox-Image-self-test: ${sandbox_image_test:-Unknown error}"
 fi
 
 # 0.7.79: the sandbox image of Python jobs, runs and processes has Python and Node.js with npm.
@@ -674,7 +674,7 @@ if command -v docker >/dev/null 2>&1 && docker image inspect ember-py:2 >/dev/nu
       ember-py:2 sh -c 'python --version && node --version && npm --version' 2>&1)"; then
     ok "Sandbox-Image ember-py:2: $(printf '%s' "$sandbox_tools" | sed -n 1p), Node.js $(printf '%s' "$sandbox_tools" | sed -n 2p), npm $(printf '%s' "$sandbox_tools" | sed -n 3p)."
   else
-    fail "Sandbox image ember-py:2: Python or Node.js failed to start: ${sandbox_tools:-Unbekannter Fehler}"
+    fail "Sandbox image ember-py:2: Python or Node.js failed to start: ${sandbox_tools:-Unknown error}"
   fi
 else
   warn 'Sandbox image ember-py:2 is not built yet; the Python service will build it on its next start.'
@@ -692,7 +692,7 @@ hybrid_research_test=''
 if hybrid_research_test="$(python3 "$PROJECT_ROOT/scripts/deep-research-hybrid-selftest.py" 2>&1)"; then
   ok 'Hybrid Deep Research: orchestrator/worker, parallel I/O, storage and citation agent verified.'
 else
-  fail "Hybrid-Deep-Research-Selbsttest fehlgeschlagen: ${hybrid_research_test:-Unbekannter Fehler}"
+  fail "Hybrid-Deep-Research-self-test failed: ${hybrid_research_test:-Unknown error}"
 fi
 
 # 0.7.50: broken search backend must never produce a false completed report.
@@ -700,7 +700,7 @@ search_regression=''
 if search_regression="$(python3 "$PROJECT_ROOT/scripts/deep-research-zero-source-selftest.py" 2>&1)"; then
   ok 'Deep Research: search outage, zero-source handling and fallback search verified.'
 else
-  fail "Deep-Research-Suchausfall-Selbsttest fehlgeschlagen: ${search_regression:-Unbekannter Fehler}"
+  fail "Deep Research search-failure-self-test failed: ${search_regression:-Unknown error}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/workspace-output-selftest.py" >/dev/null 2>&1; then
@@ -714,7 +714,7 @@ voice_service_test=''
 if voice_service_test="$(python3 "$PROJECT_ROOT/scripts/voice-service-selftest.py" 2>&1)"; then
   ok 'Read aloud: speakable text, sentences, voice service with test tone (single job, time limit, local-only) verified.'
 else
-  fail "Sprachdienst-Selbsttest: ${voice_service_test:-Unbekannter Fehler}"
+  fail "Voice service-self-test: ${voice_service_test:-Unknown error}"
 fi
 
 # 0.5.94: voice test (P20.0) with a probe engine: registry and licenses, pinned
@@ -724,7 +724,7 @@ tts_spike_test=''
 if tts_spike_test="$(python3 "$PROJECT_ROOT/scripts/tts-spike-selftest.py" 2>&1)"; then
   ok 'Voice test: per-voice licenses, pinned versions, offline benchmarking with Core limits, SHA-256 checks and report verified.'
 else
-  fail "Stimmtest-Selbsttest: ${tts_spike_test:-Unbekannter Fehler}"
+  fail "Voice test-self-test: ${tts_spike_test:-Unknown error}"
 fi
 
 # 0.6.37 (P20.5 A): image test: registry (Apache 2.0, commit as in the Dockerfile), loading with
@@ -733,7 +733,7 @@ image_spike_test=''
 if image_spike_test="$(python3 "$PROJECT_ROOT/scripts/image-spike-selftest.py" 2>&1)"; then
   ok 'Image test: registry and licensing (FLUX.2-klein 9B opt-in only), SHA-256 download, lock checks, benchmark, face prompt and report verified.'
 else
-  fail "Bildtest-Selbsttest: ${image_spike_test:-Unbekannter Fehler}"
+  fail "Image test-self-test: ${image_spike_test:-Unknown error}"
 fi
 
 # 0.6.39 (P20.5 B): Mara's image service: registry (FLUX.2-klein 4B, pins required), progress
@@ -761,7 +761,7 @@ image_service_test=''
 if image_service_test="$(python3 "$PROJECT_ROOT/scripts/image-service-selftest.py" 2>&1)"; then
   ok 'Image service: registry, real steps, pinned SHA-256 weights, one image at a time, cancellation, timeout and benchmark reuse verified.'
 else
-  fail "Bilddienst-Selbsttest: ${image_service_test:-Unbekannter Fehler}"
+  fail "Image service-self-test: ${image_service_test:-Unknown error}"
 fi
 
 if python3 "$PROJECT_ROOT/scripts/python-input-selftest.py" >/dev/null 2>&1; then
@@ -808,7 +808,7 @@ else
 fi
 
 if (( FAILURES == 0 )); then
-  ok 'E.M.B.E.R.-CoreUI-Branding, Lizenzunterlagen, KI-Einstellungen und Admin Core sind paketiert.'
+  ok 'E.M.B.E.R.-CoreUI-Branding, Lizenzunterlagen, KI-Settings und Admin Core sind paketiert.'
 fi
 
 PRIVATE_RELEASE_FILES=()
@@ -900,7 +900,7 @@ elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_CMD=(docker-compose)
   ok 'Docker Compose ist vorhanden.'
 else
-  fail 'Docker Compose fehlt.'
+  fail 'Docker Compose missing.'
 fi
 
 if (( ${#COMPOSE_CMD[@]} > 0 )); then
@@ -947,7 +947,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 002: user AI settings and admin audit ready.'
   else
-    fail 'Migration 002 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 002 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -955,7 +955,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 003: persistent sessions and turn association ready.'
   else
-    fail 'Migration 003 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 003 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -963,7 +963,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 004: profiles, CoreAI identity and private RAG-Lite ready.'
   else
-    fail 'Migration 004 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 004 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -971,7 +971,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 005: thinking selection and persistent multiple attachments ready.'
   else
-    fail 'Migration 005 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 005 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -979,7 +979,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 006: revocable sign-ins and password timestamps ready.'
   else
-    fail 'Migration 006 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 006 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -987,7 +987,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 007: accidentally imported private studio lore removed.'
   else
-    fail 'Migration 007 fehlt oder privates Studio-Lore liegt noch in der Datenbank.'
+    fail 'Migration 007 missing or private studio lore remains in the database.'
   fi
 
   if compose exec -T php php -r \
@@ -995,7 +995,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 008: feedback, alternatives and continuations ready.'
   else
-    fail 'Migration 008 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 008 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -1003,7 +1003,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 009: message editing and context restart ready.'
   else
-    fail 'Migration 009 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 009 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -1011,7 +1011,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 011: persistent chat-generated files ready.'
   else
-    fail 'Migration 011 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 011 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -1019,7 +1019,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 012: persistent work events ready.'
   else
-    fail 'Migration 012 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 012 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   # Since 0.5.81 skills use the repository library, not per-account DB switches.
@@ -1031,7 +1031,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 015: long chat replies can be stored persistently.'
   else
-    fail 'Migration 015 fehlt: stu_chat_messages.message ist nicht LONGTEXT.'
+    fail 'Migration 015 missing: stu_chat_messages.message is not LONGTEXT.'
   fi
 
   if compose exec -T php php -r \
@@ -1039,7 +1039,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 016: persistent Markdown plans ready.'
   else
-    fail 'Migration 016 fehlt: Markdown-Projektplanung nicht bereit.'
+    fail 'Migration 016 missing: Markdown project planning is not ready.'
   fi
 
   if compose exec -T php php -r \
@@ -1047,7 +1047,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 013: persistent agent runs ready.'
   else
-    fail 'Migration 013 fehlt. Fuehre scripts/stack.sh migrate aus.'
+    fail 'Migration 013 missing. Fuehre scripts/stack.sh migrate aus.'
   fi
 
   if compose exec -T php php -r \
@@ -1055,19 +1055,19 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       >/dev/null 2>&1; then
     ok 'Migration 013: globale FIFO-Modellwarteschlange bereit.'
   else
-    fail 'Migration 013: Modellwarteschlange fehlt.'
+    fail 'Migration 013: model queue missing.'
   fi
 
   if compose exec -T php php scripts/agent-runs-selftest.php >/dev/null 2>&1; then
     ok 'P05: agent-run idempotency and account isolation verified offline.'
   else
-    fail 'P05-Agentenlauf-Selbsttest fehlgeschlagen.'
+    fail 'P05 agent-run self-test failed.'
   fi
 
   if compose exec -T php php scripts/agent-run-liveness-selftest.php >/dev/null 2>&1; then
     ok '0.6.9: abandoned agent runs terminate via heartbeat, cancellation and deletion, verified.'
   else
-    fail 'Selbsttest fuer verlorene Agentenlaeufe fehlgeschlagen.'
+    fail 'Self-test for abandoned agent runs failed.'
   fi
 
   # 0.6.97: no production DB writes from language selftests, even after an update.
@@ -1075,74 +1075,74 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if account_language_safety="$(compose exec -T php php scripts/account-language-safety-selftest.php 2>&1)"; then
     ok 'AI profile: language self-test is isolated and test-account cleanup verified.'
   else
-    fail "KI-Profil: Sicherheitsregression: ${account_language_safety:-Unbekannt}"
+    fail "AI profile: security regression: ${account_language_safety:-Unknown}"
   fi
   account_language_output=''
   if account_language_output="$(compose exec -T php env COREUI_SELFTEST_DB=0 php scripts/account-language-selftest.php 2>&1)" && [[ "$account_language_output" == *'live database untouched'* ]]; then
     ok 'AI profile: primary language, prompt and read-aloud settings without production database writes.'
   else
-    fail "KI-Profil: Sprach-Selbsttest beruehrt moeglicherweise Produktivdaten: ${account_language_output:-Unbekannt}"
+    fail "AI profile: language self-test may touch production data: ${account_language_output:-Unknown}"
   fi
 
   time_test=''
   if time_test="$(compose exec -T php php scripts/message-time-selftest.php 2>&1)"; then
     ok '0.6.29: time zones in chat (messages, list, UTC database and local time) verified.'
   else
-    fail "Zeit-Selbsttest: ${time_test:-Unbekannter Fehler}"
+    fail "Zeit-self-test: ${time_test:-Unknown error}"
   fi
 
   live_test=''
   if live_test="$(compose exec -T php php scripts/voice-live-selftest.php 2>&1)"; then
     ok '0.6.31: live voice (live Core, Eve's sentences, spoken reply, stable cache prefix, unchanged Modelfile SYSTEM) verified.'
   else
-    fail "Live-Gespraech-Selbsttest: ${live_test:-Unbekannter Fehler}"
+    fail "Live voice-self-test: ${live_test:-Unknown error}"
   fi
 
   voice_input_test=''
   if voice_input_test="$(compose exec -T php php scripts/voice-input-selftest.php 2>&1)"; then
     ok '0.6.17: voice messages (WAV chunks up to 60 s, thinking disabled, transcript after reply, history, audio WebM; 0.6.22 terms and tools) verified.'
   else
-    fail "Spracheingabe-Selbsttest: ${voice_input_test:-Unbekannter Fehler}"
+    fail "Voice input-self-test: ${voice_input_test:-Unknown error}"
   fi
 
   if compose exec -T php php scripts/model-queue-selftest.php >/dev/null 2>&1; then
     ok 'P05: model FIFO queue, timeout, cancellation and lock release verified offline.'
   else
-    fail 'P05-Modellwarteschlangen-Selbsttest fehlgeschlagen.'
+    fail 'P05-Model queue-self-test failed.'
   fi
 
   if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
-    ok 'P06-Arbeitsereignisse und sichere Python-Fehlerklassen geprueft.'
+    ok 'P06-Work eventse und sichere Python-Fehlerklassen geprueft.'
   else
-    fail 'P06-Arbeitsereignis-Selbsttest fehlgeschlagen.'
+    fail 'P06-Work event-self-test failed.'
   fi
   if compose exec -T php php scripts/image-ab-diagnostic-selftest.php >/dev/null 2>&1; then
     ok '4B Qwen/Ponpoke: serialized A/B diagnostics, PNG and licenses verified.'
   else
-    fail '4B A/B-Diagnose-Selbsttest fehlgeschlagen.'
+    fail '4B A/B diagnostics-self-test failed.'
   fi
   if compose exec -T php php scripts/image-work-diagnostic-selftest.php >/dev/null 2>&1; then
     ok 'Image failure diagnostics: classified causes without private worker logs verified.'
   else
-    fail 'Bildfehlerdiagnose-Selbsttest fehlgeschlagen.'
+    fail 'Image failure diagnostics-self-test failed.'
   fi
   if compose exec -T php php scripts/work-events-persistence-selftest.php >/dev/null 2>&1; then
     ok 'P06: work timeline across replies, reloads, variants and account isolation verified.'
   else
-    fail 'P06-Arbeitsweg-Persistenz-Selbsttest fehlgeschlagen.'
+    fail 'P06-Work timeline persistence-self-test failed.'
   fi
 
   if compose exec -T php php scripts/model-live-audit.php --selftest >/dev/null 2>&1; then
     ok 'Modelfile audit: SYSTEM and drift checks passed offline.'
   else
-    fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
+    fail 'Modelfile audit: offline self-test failed.'
   fi
 
   gemma_test=''
   if gemma_test="$(compose exec -T php php scripts/gemma-zero-parameters-selftest.php 2>&1)"; then
     ok 'Gemma: active Modelfile, file comparison and no API parameter overrides.'
   else
-    fail "Gemma-Modelfile-/Ollama-Parametervertrag: ${gemma_test:-Unbekannter Fehler}"
+    fail "Gemma Modelfile / Ollama parameter contract: ${gemma_test:-Unknown error}"
   fi
 
   # Node is optional for PHP installations. Run the real JS unit test when
@@ -1157,105 +1157,105 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_intent_test="$(compose exec -T php php scripts/model-project-intent-selftest.php 2>&1)"; then
     ok "$project_intent_test"
   else
-    fail "Modellgesteuerte Projektumsetzung: ${project_intent_test:-Unbekannter Fehler}"
+    fail "Model-driven project implementation: ${project_intent_test:-Unknown error}"
   fi
 
   plan_auto_test=''
   if plan_auto_test="$(compose exec -T php php scripts/plan-autocontinue-selftest.php 2>&1)"; then
     ok "$plan_auto_test"
   else
-    fail "Autonome Markdown-Planung: ${plan_auto_test:-Unbekannter Fehler}"
+    fail "Autonomous Markdown planning: ${plan_auto_test:-Unknown error}"
   fi
 
   project_test=''
   if project_test="$(compose exec -T php php scripts/contextual-project-selftest.php 2>&1)"; then
     ok "$project_test"
   else
-    fail "Modellgesteuerte Projektuebergabe: ${project_test:-Unbekannter Fehler}"
+    fail "Model-driven project handover: ${project_test:-Unknown error}"
   fi
 
   file_test=''
   if file_test="$(compose exec -T php php scripts/local-file-tool-selftest.php 2>&1)"; then
     ok 'Local file tasks: Python fences, multipart projects, ZIP output and completeness verified.'
   else
-    fail "Lokaler Dateiwerkzeug-Selbsttest: ${file_test:-Unbekannter Fehler}"
+    fail "Local file tool-self-test: ${file_test:-Unknown error}"
   fi
 
   context_test=''
   if context_test="$(compose exec -T php php scripts/context-budget-selftest.php 2>&1)"; then
     ok 'Context window: detected window size, file prompt budget and plan extract verified.'
   else
-    fail "Kontextfenster-Selbsttest: ${context_test:-Unbekannter Fehler}"
+    fail "Context window-self-test: ${context_test:-Unknown error}"
   fi
 
   insights_test=''
   if insights_test="$(compose exec -T php php scripts/insights-selftest.php 2>&1)"; then
     ok 'Info panels: Core, context, tools and project are read-only and session-scoped.'
   else
-    fail "Infokaesten-Selbsttest: ${insights_test:-Unbekannter Fehler}"
+    fail "Info panels-self-test: ${insights_test:-Unknown error}"
   fi
 
   ai_context_test=''
   if ai_context_test="$(compose exec -T php php scripts/ai-context-selftest.php 2>&1)"; then
     ok 'AI profile: context window by choice only, never cloud, pinned per run, RAM guidance verified.'
   else
-    fail "KI-Profil-Kontextfenster-Selbsttest: ${ai_context_test:-Unbekannter Fehler}"
+    fail "AI profile-Context window-self-test: ${ai_context_test:-Unknown error}"
   fi
 
   date_test=''
   if date_test="$(compose exec -T php php scripts/date-awareness-selftest.php 2>&1)"; then
     ok 'Date and time: every Core call in a console task receives both.'
   else
-    fail "Datums-Selbsttest: ${date_test:-Unbekannter Fehler}"
+    fail "Date-self-test: ${date_test:-Unknown error}"
   fi
 
   knowledge_test=''
   if knowledge_test="$(compose exec -T php php scripts/knowledge-search-selftest.php 2>&1)"; then
     ok 'RAG-Lite: rare names take precedence over common terms, history-based follow-ups and visible search step.'
   else
-    fail "RAG-Lite-Suche: ${knowledge_test:-Unbekannter Fehler}"
+    fail "RAG-Lite search: ${knowledge_test:-Unknown error}"
   fi
 
   vision_test=''
   if vision_test="$(compose exec -T php php scripts/vision-persona-selftest.php 2>&1)"; then
     ok 'Images and video: same Mara persona as text, no false error and no image claims stored in memory.'
   else
-    fail "Bild-/Video-Persona: ${vision_test:-Unbekannter Fehler}"
+    fail "Image/video persona: ${vision_test:-Unknown error}"
   fi
 
   audio_test=''
   if audio_test="$(compose exec -T php php scripts/audio-wav-selftest.php 2>&1)"; then
     ok 'Audio: WAV checks, audio-call guidance and media test P20.0 verified.'
   else
-    fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
+    fail "Audio-WAV-self-test: ${audio_test:-Unknown error}"
   fi
 
   tiers_test=''
   if tiers_test="$(compose exec -T php php scripts/core-tiers-selftest.php 2>&1)"; then
     ok 'Core tiers: TCI names in chat and Mara's persona for every Core verified.'
   else
-    fail "Core-Stufen-Selbsttest: ${tiers_test:-Unbekannter Fehler}"
+    fail "Core tiers-self-test: ${tiers_test:-Unknown error}"
   fi
 
   install_test=''
   if install_test="$(compose exec -T php php scripts/core-install-selftest.php 2>&1)"; then
     ok 'Core installer: Mara's Core from Modelfile, hardware check, progress, single job, admins only verified.'
   else
-    fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
+    fail "Core-Installer-self-test: ${install_test:-Unknown error}"
   fi
 
   library_test=''
   if library_test="$(compose exec -T php php scripts/ollama-library-selftest.php 2>&1)"; then
     ok 'Ollama model search: local variants, trusted origin and shared installation status verified.'
   else
-    fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
+    fail "Ollama model search-self-test: ${library_test:-Unknown error}"
   fi
 
   hf_library_test=''
   if hf_library_test="$(compose exec -T php php scripts/huggingface-library-selftest.php 2>&1)"; then
     ok 'Hugging Face GGUF library: approvals, quantizations and safe local installation verified.'
   else
-    fail "Hugging-Face-Bibliothek-Selbsttest: ${hf_library_test:-Unbekannter Fehler}"
+    fail "Hugging Face library-self-test: ${hf_library_test:-Unknown error}"
   fi
 
   # 0.6.96: the PHP-FPM user must be able to queue a request on the host.
@@ -1276,35 +1276,35 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if installed_cores_test="$(compose exec -T php php scripts/installed-cores-selftest.php 2>&1)"; then
     ok 'Installed Cores: default and base models protected; individual uninstall and role access verified.'
   else
-    fail "Installierte-Cores-Selbsttest: ${installed_cores_test:-Unbekannter Fehler}"
+    fail "Installed Cores-self-test: ${installed_cores_test:-Unknown error}"
   fi
 
   guest_test=''
   if guest_test="$(compose exec -T php php scripts/guest-access-selftest.php 2>&1)"; then
     ok 'Guest access: quota, count on each reply, private chat only, hourly limit, login and admin verified.'
   else
-    fail "Gast-Zugang-Selbsttest: ${guest_test:-Unbekannter Fehler}"
+    fail "Guest access-self-test: ${guest_test:-Unknown error}"
   fi
 
   abuse_test=''
   if abuse_test="$(compose exec -T php php scripts/abuse-guard-selftest.php 2>&1)"; then
     ok 'Abuse protection: device fingerprint, network quota, daily limit, login throttling and real visitor address verified.'
   else
-    fail "Missbrauchsschutz-Selbsttest: ${abuse_test:-Unbekannter Fehler}"
+    fail "Abuse prevention-self-test: ${abuse_test:-Unknown error}"
   fi
 
   captcha_test=''
   if captcha_test="$(compose exec -T php php scripts/captcha-selftest.php 2>&1)"; then
     ok 'Captcha: signed challenge, single use, tampering, expiration and reuse rejected.'
   else
-    fail "Captcha-Selbsttest: ${captcha_test:-Unbekannter Fehler}"
+    fail "Captcha-self-test: ${captcha_test:-Unknown error}"
   fi
 
   roles_test=''
   if roles_test="$(compose exec -T php php scripts/roles-guest-selftest.php 2>&1)"; then
     ok 'Roles: owner, admin, user and guest; guests use the default Core.'
   else
-    fail "Rollen-Selbsttest: ${roles_test:-Unbekannter Fehler}"
+    fail "Roles-self-test: ${roles_test:-Unknown error}"
   fi
 
   # 0.5.83: models outside CoreAI only for the Inhaber and released accounts.
@@ -1312,7 +1312,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if model_access_test="$(compose exec -T php php scripts/model-access-selftest.php 2>&1)"; then
     ok 'Model permissions: Mara's Cores for everyone; third-party models only for owner and permitted accounts.'
   else
-    fail "Modell-Freigaben-Selbsttest: ${model_access_test:-Unbekannter Fehler}"
+    fail "Model permissions-self-test: ${model_access_test:-Unknown error}"
   fi
 
   # 0.5.83: update window: only a new commit, Inhaber only, waiting for everyone.
@@ -1320,7 +1320,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if update_test="$(compose exec -T php php scripts/update-selftest.php 2>&1)"; then
     ok 'Update window: shown only for new commits, started only by owner, waiting screen for all.'
   else
-    fail "Update-Selbsttest: ${update_test:-Unbekannter Fehler}"
+    fail "Update-self-test: ${update_test:-Unknown error}"
   fi
 
   # 0.5.84: deleting an account (rules, confirmation, files; a full deletion on the database, rolled back).
@@ -1328,7 +1328,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if delete_test="$(compose exec -T php php scripts/account-delete-selftest.php 2>&1)"; then
     ok 'Delete account: permissions, confirmation, files and complete deletion (with rollback) verified.'
   else
-    fail "Konto-Loeschen-Selbsttest: ${delete_test:-Unbekannter Fehler}"
+    fail "Account deletion-self-test: ${delete_test:-Unknown error}"
   fi
 
   # 0.5.85: settings per account (password, signing out, name and e-mail; on the database rolled back).
@@ -1336,7 +1336,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if manage_test="$(compose exec -T php php scripts/account-admin-selftest.php 2>&1)"; then
     ok 'Edit account: permissions, password, sign-out, name and email (with rollback) verified.'
   else
-    fail "Konto-Bearbeiten-Selbsttest: ${manage_test:-Unbekannter Fehler}"
+    fail "Account editing-self-test: ${manage_test:-Unknown error}"
   fi
 
   # 0.5.85: own rules per account (tools blocked per account, global off stays off).
@@ -1344,7 +1344,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if policy_test="$(compose exec -T php php scripts/user-policy-selftest.php 2>&1)"; then
     ok 'Per-account policies: disabled tools, global disable, daily limit and context window (with rollback) verified.'
   else
-    fail "Regeln-pro-Konto-Selbsttest: ${policy_test:-Unbekannter Fehler}"
+    fail "Per-account policies-self-test: ${policy_test:-Unknown error}"
   fi
 
   # 0.5.86: Mara's memories stored and used whole (no cut), budget per window.
@@ -1352,7 +1352,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if memory_length_test="$(compose exec -T php php scripts/memory-length-selftest.php 2>&1)"; then
     ok 'Memory: memories stored and provided in full, budgeted by context-window size verified.'
   else
-    fail "Memory-Laengen-Selbsttest: ${memory_length_test:-Unbekannter Fehler}"
+    fail "Memory length-self-test: ${memory_length_test:-Unknown error}"
   fi
 
   # 0.6.1: read aloud on the PHP side: cache per account, 7 days, guests never, only own answers.
@@ -1360,7 +1360,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if voice_read_test="$(compose exec -T php php scripts/voice-read-selftest.php 2>&1)"; then
     ok 'Read aloud: 7-day per-account cache, no guests, own replies only and AI-profile toggle verified.'
   else
-    fail "Vorlesen-Selbsttest: ${voice_read_test:-Unbekannter Fehler}"
+    fail "Read aloud-self-test: ${voice_read_test:-Unknown error}"
   fi
 
   # 0.5.94: Stimmproben in Admin Core: runs, samples only when listed, Inhaber only.
@@ -1368,7 +1368,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if tts_store_test="$(compose exec -T php php scripts/tts-spike-store-selftest.php 2>&1)"; then
     ok 'Voice samples: test runs, only listed previews from their run, owner access only verified.'
   else
-    fail "Stimmproben-Selbsttest: ${tts_store_test:-Unbekannter Fehler}"
+    fail "Voice previews-self-test: ${tts_store_test:-Unknown error}"
   fi
 
   # 0.6.37 (P20.5 A): Bildproben in Admin Core: runs, images only when listed and real PNGs, Inhaber only.
@@ -1376,7 +1376,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if image_store_test="$(compose exec -T php php scripts/image-spike-store-selftest.php 2>&1)"; then
     ok 'Image samples: test runs, only listed PNG files from their run, owner access only verified.'
   else
-    fail "Bildproben-Selbsttest: ${image_store_test:-Unbekannter Fehler}"
+    fail "Image samples-self-test: ${image_store_test:-Unknown error}"
   fi
 
   # 0.6.39 (P20.5 C): Mara's images in the chat: marker, work loop step, keeping the image for
@@ -1385,7 +1385,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if image_gen_test="$(compose exec -T php php scripts/image-gen-selftest.php 2>&1)"; then
     ok 'Images in chat: markers, work step, per-account storage, cancel, history, delete and toggles verified.'
   else
-    fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
+    fail "Images in chat-self-test: ${image_gen_test:-Unknown error}"
   fi
 
   # 0.6.81: Benachrichtigungen: Web Push (RFC 8291 example, VAPID), saving, dispatch and triggers.
@@ -1393,7 +1393,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if notifications_test="$(compose exec -T php php scripts/notifications-selftest.php 2>&1)"; then
     ok 'Notifications: Web Push encryption (RFC 8291), VAPID, categories, delivery and triggers verified.'
   else
-    fail "Benachrichtigungs-Selbsttest: ${notifications_test:-Unbekannter Fehler}"
+    fail "Notification-self-test: ${notifications_test:-Unknown error}"
   fi
 
   # 0.6.82: E-Mail-Versand (SMTP) in Admin Core: input checks, sealed password, a real SMTP session.
@@ -1401,15 +1401,15 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if mail_settings_test="$(compose exec -T php php scripts/mail-settings-selftest.php 2>&1)"; then
     ok 'Email delivery: inputs, encrypted password, server-configuration precedence and SMTP session verified.'
   else
-    fail "E-Mail-Versand-Selbsttest: ${mail_settings_test:-Unbekannter Fehler}"
+    fail "Email delivery-self-test: ${mail_settings_test:-Unknown error}"
   fi
 
   # 0.6.84: Profil overview: tokens counted per account, streaks, longest task, raster, tools, insights.
   profile_stats_test=''
   if profile_stats_test="$(compose exec -T php php scripts/profile-stats-selftest.php 2>&1)"; then
-    ok 'Profile: token counts, streaks, longest task, activity grid, tools and insights verified.'
+    ok 'Profilee: token counts, streaks, longest task, activity grid, tools and insights verified.'
   else
-    fail "Profil-Selbsttest: ${profile_stats_test:-Unbekannter Fehler}"
+    fail "Profile-self-test: ${profile_stats_test:-Unknown error}"
   fi
 
   # 0.6.85: Sicherheit und Anmeldung: RFC 6238 codes, WebAuthn, lockdown, recovery, advanced account security.
@@ -1417,7 +1417,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if sign_in_security_test="$(compose exec -T php php scripts/sign-in-security-selftest.php 2>&1)"; then
     ok 'Security: authenticator codes (RFC 6238), passkeys (WebAuthn), lockdown, recovery and advanced account security verified.'
   else
-    fail "Sicherheits-Selbsttest: ${sign_in_security_test:-Unbekannter Fehler}"
+    fail "Security-self-test: ${sign_in_security_test:-Unknown error}"
   fi
 
   # 0.6.86: Konto: Benutzername (unique, reserved names), plans Free/Go/Plus/Pro as real rules.
@@ -1425,7 +1425,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if account_page_test="$(compose exec -T php php scripts/account-page-selftest.php 2>&1)"; then
     ok 'Account: unique usernames, reserved names and plans (Free, Go, Plus, Pro with enforced rules) verified.'
   else
-    fail "Konto-Selbsttest: ${account_page_test:-Unbekannter Fehler}"
+    fail "Konto-self-test: ${account_page_test:-Unknown error}"
   fi
 
   # 0.6.87: chat menu and Archivierte Chats: pin order, archive search and filters, files, search, Markdown.
@@ -1433,7 +1433,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if chat_menu_test="$(compose exec -T php php scripts/chat-menu-selftest.php 2>&1)"; then
     ok 'Chat menu: pinning, archive search and filtering, files, in-chat search and Markdown sharing verified.'
   else
-    fail "Chat-Menue-Selbsttest: ${chat_menu_test:-Unbekannter Fehler}"
+    fail "Chat menu-self-test: ${chat_menu_test:-Unknown error}"
   fi
 
   # 0.7.0: Settings > Personalisierung: styles, instructions, reference photos, memory summary, wipe.
@@ -1441,7 +1441,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if personalization_page_test="$(compose exec -T php php scripts/personalization-page-selftest.php 2>&1)"; then
     ok 'Personalization: styles, instructions, reference photos, memory summary and deletion verified.'
   else
-    fail "Personalisierung-Selbsttest: ${personalization_page_test:-Unbekannter Fehler}"
+    fail "Personalization-self-test: ${personalization_page_test:-Unknown error}"
   fi
 
   # 0.7.1: Settings > Pets: built-in sheets, uploads (PNG, WebP), choice, the chat work line.
@@ -1449,7 +1449,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if pets_test="$(compose exec -T php php scripts/pets-selftest.php 2>&1)"; then
     ok 'Pets: original CoreAI pets, sprite sheets, selection and upload verified.'
   else
-    fail "Pets-Selbsttest: ${pets_test:-Unbekannter Fehler}"
+    fail "Pets-self-test: ${pets_test:-Unknown error}"
   fi
 
   # Optional community library assets are NOT shipped unless explicitly
@@ -1458,7 +1458,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if openpet_library_test="$(compose exec -T php php scripts/openpet-library-selftest.php 2>&1)"; then
     ok 'OpenPet: approved default pet library, private storage and rights checks OK.'
   else
-    fail "OpenPet-Bibliothek: ${openpet_library_test:-Unbekannter Fehler}"
+    fail "OpenPet library: ${openpet_library_test:-Unknown error}"
   fi
 
   # 0.7.14: Settings > Stimme: voices to choose (free licenses), the chosen voice in plans and parts, preview, transcript language; 0.7.15 the microphone switch.
@@ -1466,7 +1466,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if voice_settings_test="$(compose exec -T php php scripts/voice-settings-selftest.php 2>&1)"; then
     ok 'Voice: voice selection, previews, language of voice messages and microphone toggle verified.'
   else
-    fail "Stimme-Selbsttest: ${voice_settings_test:-Unbekannter Fehler}"
+    fail "Voice-self-test: ${voice_settings_test:-Unknown error}"
   fi
 
   # 0.7.28: Settings > Speicher: the limit for all accounts and per account, usage, Dateien and Bilder, favourites, deleting.
@@ -1474,7 +1474,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if storage_test="$(compose exec -T php php scripts/storage-selftest.php 2>&1)"; then
     ok "$storage_test"
   else
-    fail "Speicher-Selbsttest: ${storage_test:-Unbekannter Fehler}"
+    fail "Storage-self-test: ${storage_test:-Unknown error}"
   fi
 
   # 0.7.30: Settings > Nutzung: plan and daily limit window, tokens by Core, tools, skills, messages by kind, top chats.
@@ -1482,7 +1482,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if usage_page_test="$(compose exec -T php php scripts/usage-page-selftest.php 2>&1)"; then
     ok "$usage_page_test"
   else
-    fail "Nutzung-Selbsttest: ${usage_page_test:-Unbekannter Fehler}"
+    fail "Usage-self-test: ${usage_page_test:-Unknown error}"
   fi
 
   # 0.7.32: Settings > Datenkontrollen: archive and delete all chats (never locked or busy ones), the page.
@@ -1490,7 +1490,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if data_controls_test="$(compose exec -T php php scripts/data-controls-selftest.php 2>&1)"; then
     ok "$data_controls_test"
   else
-    fail "Datenkontrollen-Selbsttest: ${data_controls_test:-Unbekannter Fehler}"
+    fail "Data controls-self-test: ${data_controls_test:-Unknown error}"
   fi
 
   # 0.7.38: Deep Research runs: plan, Starten, Bearbeiten, Abbrechen, Stopp, sources, chat deletion.
@@ -1498,7 +1498,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if deep_research_test="$(compose exec -T php php scripts/deep-research-selftest.php 2>&1)"; then
     ok "$deep_research_test"
   else
-    fail "Deep-Research-Selbsttest: ${deep_research_test:-Unbekannter Fehler}"
+    fail "Deep-Research-self-test: ${deep_research_test:-Unknown error}"
   fi
 
   # 0.7.69 (P09): project files: paths, revisions, conflicts, search, ZIP, builds in project chats, limits.
@@ -1506,7 +1506,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_files_test="$(compose exec -T php php scripts/project-files-selftest.php 2>&1)"; then
     ok "$project_files_test"
   else
-    fail "Projektdateien-Selbsttest: ${project_files_test:-Unbekannter Fehler}"
+    fail "Project files-self-test: ${project_files_test:-Unknown error}"
   fi
 
   # 0.7.73 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
@@ -1514,7 +1514,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_file_tools_test="$(compose exec -T php php scripts/project-file-tools-selftest.php 2>&1)"; then
     ok "$project_file_tools_test"
   else
-    fail "Datei-Werkzeuge-Selbsttest: ${project_file_tools_test:-Unbekannter Fehler}"
+    fail "File tools-self-test: ${project_file_tools_test:-Unknown error}"
   fi
 
   # 0.7.74 (P09 C): a chat branches off at one of Mara's replies; the original stays unchanged.
@@ -1522,7 +1522,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if chat_branch_test="$(compose exec -T php php scripts/chat-branch-selftest.php 2>&1)"; then
     ok "$chat_branch_test"
   else
-    fail "Gespraechszweig-Selbsttest: ${chat_branch_test:-Unbekannter Fehler}"
+    fail "Chat branch-self-test: ${chat_branch_test:-Unknown error}"
   fi
 
   # 0.7.75 (P10 A): the preview of a web project in an origin of its own.
@@ -1530,7 +1530,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_preview_test="$(compose exec -T php php scripts/project-preview-selftest.php 2>&1)"; then
     ok "$project_preview_test"
   else
-    fail "Projektvorschau-Selbsttest: ${project_preview_test:-Unbekannter Fehler}"
+    fail "Project preview-self-test: ${project_preview_test:-Unknown error}"
   fi
 
   # 0.7.77 (P10 B): commands on project files in the sandbox, and Mara's [AUSFUEHREN:].
@@ -1538,14 +1538,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_runs_test="$(compose exec -T php php scripts/project-runs-selftest.php 2>&1)"; then
     ok "$project_runs_test"
   else
-    fail "Projektlaeufe-Selbsttest: ${project_runs_test:-Unbekannter Fehler}"
+    fail "Project runs-self-test: ${project_runs_test:-Unknown error}"
   fi
 
   project_procs_test=''
   if project_procs_test="$(compose exec -T php php scripts/project-procs-selftest.php 2>&1)"; then
     ok "$project_procs_test"
   else
-    fail "Projektprozesse-Selbsttest: ${project_procs_test:-Unbekannter Fehler}"
+    fail "Project processes-self-test: ${project_procs_test:-Unknown error}"
   fi
 
   # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.
@@ -1553,7 +1553,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_vcs_test="$(compose exec -T php php scripts/project-vcs-selftest.php 2>&1)"; then
     ok "$project_vcs_test"
   else
-    fail "Projektversionen-Selbsttest: ${project_vcs_test:-Unbekannter Fehler}"
+    fail "Project versions-self-test: ${project_vcs_test:-Unknown error}"
   fi
 
   # 0.7.81 (P11 B): merging working states with conflicts, Mara with versions; the Git export with git where it exists.
@@ -1561,7 +1561,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if project_merge_test="$(compose exec -T php php scripts/project-merge-selftest.php 2>&1)"; then
     ok "$project_merge_test"
   else
-    fail "Zusammenfuehren-Selbsttest: ${project_merge_test:-Unbekannter Fehler}"
+    fail "Merge-self-test: ${project_merge_test:-Unknown error}"
   fi
 
   # 0.7.82 (P11 C): the lifetime of the files Mara made: notes of deleted files, the retention, kept files.
@@ -1569,7 +1569,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if artifact_lifecycle_test="$(compose exec -T php php scripts/artifact-lifecycle-selftest.php 2>&1)"; then
     ok "$artifact_lifecycle_test"
   else
-    fail "Lebensdauer-Selbsttest: ${artifact_lifecycle_test:-Unbekannter Fehler}"
+    fail "Retention-self-test: ${artifact_lifecycle_test:-Unknown error}"
   fi
 
   # 0.7.83 (P12 A): the account's own skills: store, companion files, Mara's library and loading.
@@ -1577,7 +1577,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if skill_packages_test="$(compose exec -T php php scripts/skill-packages-selftest.php 2>&1)"; then
     ok "$skill_packages_test"
   else
-    fail "Eigene-Skills-Selbsttest: ${skill_packages_test:-Unbekannter Fehler}"
+    fail "Own skills-self-test: ${skill_packages_test:-Unknown error}"
   fi
 
   # 0.7.84 (P12 B): shared skills, precedence and the skills fixed for a chat.
@@ -1585,7 +1585,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if skill_sharing_test="$(compose exec -T php php scripts/skill-sharing-selftest.php 2>&1)"; then
     ok "$skill_sharing_test"
   else
-    fail "Gemeinsame-Skills-Selbsttest: ${skill_sharing_test:-Unbekannter Fehler}"
+    fail "Shared skills-self-test: ${skill_sharing_test:-Unknown error}"
   fi
 
   profile_reference_test=''
@@ -1596,7 +1596,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       ok "$profile_reference_test"
     fi
   else
-    fail "Profilreferenz-Selbsttest: ${profile_reference_test:-Unbekannter Fehler}"
+    fail "Profilee reference-self-test: ${profile_reference_test:-Unknown error}"
   fi
 
   # 0.6.59: all image references share identity, subject and style preservation.
@@ -1604,7 +1604,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if reference_consistency_test="$(compose exec -T php php scripts/image-reference-consistency-selftest.php 2>&1)"; then
     ok 'Image references: identity, subject fidelity, style reference and multiple sources verified.'
   else
-    fail "Bildreferenz-Konsistenztest: ${reference_consistency_test:-Unbekannter Fehler}"
+    fail "Image reference consistency test: ${reference_consistency_test:-Unknown error}"
   fi
 
   # 0.6.43: the + menu of the input field: marks, Mara's instruction, the tool started with the
@@ -1613,28 +1613,28 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if composer_intent_test="$(compose exec -T php php scripts/composer-intent-selftest.php 2>&1)"; then
     ok '+ menu: tool selection, instructions to Mara, security, permissions and archive verified.'
   else
-    fail "+-Menue-Selbsttest: ${composer_intent_test:-Unbekannter Fehler}"
+    fail "+ menu-self-test: ${composer_intent_test:-Unknown error}"
   fi
 
   compact_test=''
   if compact_test="$(compose exec -T php php scripts/compaction-selftest.php 2>&1)"; then
     ok 'Compress chat: modal, incremental summary, archive-first, search and deletion verified.'
   else
-    fail "Komprimierungs-Selbsttest: ${compact_test:-Unbekannter Fehler}"
+    fail "Compression-self-test: ${compact_test:-Unknown error}"
   fi
 
   loop_test=''
   if loop_test="$(compose exec -T php php scripts/agent-loop-selftest.php 2>&1)"; then
     ok 'Work loop: chained steps, response, browser handoff, six steps and cancellation verified.'
   else
-    fail "Arbeitsschleifen-Selbsttest: ${loop_test:-Unbekannter Fehler}"
+    fail "Work loop-self-test: ${loop_test:-Unknown error}"
   fi
 
   web_test=''
   if web_test="$(compose exec -T php php scripts/web-search-selftest.php 2>&1)"; then
     ok 'Web search: keyword retry, no duplicates, clean snippets and dates verified.'
   else
-    fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
+    fail "Web search-self-test: ${web_test:-Unknown error}"
   fi
 
   if progressive_web_test="$(compose exec -T php php scripts/progressive-web-search-selftest.php 2>&1)"; then
@@ -1647,7 +1647,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if weather_test="$(compose exec -T php php scripts/weather-live-selftest.php 2>&1)"; then
     ok '0.6.22: live weather within web search (WDR for NRW, live data for any location, no stale results) verified.'
   else
-    fail "Wetter-Selbsttest: ${weather_test:-Unbekannter Fehler}"
+    fail "Weather-self-test: ${weather_test:-Unknown error}"
   fi
 
   if is_enabled "${COREUI_INSTALL_BROWSE:-0}" && service_running browse; then
@@ -1655,7 +1655,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if browse_live="$(compose exec -T -e COREAI_BROWSE_LIVE=1 browse python3 scripts/browse-worker-selftest.py 2>&1)"; then
       ok 'Browser (real Chromium run): filled form, thinking screenshots, blocked login/contact and blocked local network.'
     else
-      fail "Browser-Livetest: ${browse_live:-Unbekannter Fehler}"
+      fail "Browser-Livetest: ${browse_live:-Unknown error}"
     fi
   fi
 
@@ -1663,14 +1663,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if mention_test="$(compose exec -T php php scripts/tool-mention-selftest.php 2>&1)"; then
     ok 'Tool mentions: explanations do not launch tools or correction loops.'
   else
-    fail "Werkzeug-Erwaehnungs-Selbsttest: ${mention_test:-Unbekannter Fehler}"
+    fail "Tool mention-self-test: ${mention_test:-Unknown error}"
   fi
 
   think_test=''
   if think_test="$(compose exec -T php php scripts/thinking-switch-selftest.php 2>&1)"; then
     ok 'Thinking toggle and Core selection: no forced thinking in Modelfile, saving, preload, global channel and analysis filter verified.'
   else
-    fail "Denkschalter-Selbsttest: ${think_test:-Unbekannter Fehler}"
+    fail "Thinking toggle-self-test: ${think_test:-Unknown error}"
   fi
 
   if command -v node >/dev/null 2>&1; then
@@ -1682,7 +1682,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if node "$PROJECT_ROOT/scripts/tci-language-selftest.cjs" >/dev/null 2>&1; then
       ok 'Mara-TCI language and voice-message terminology verified.'
     else
-      fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
+      fail 'Mara-TCI language: terminology self-test failed.'
     fi
     # 0.7.69: every endpoint the interface calls is allowed by both nginx templates.
     if node "$PROJECT_ROOT/scripts/api-allowlist-selftest.cjs" >/dev/null 2>&1; then
@@ -1693,7 +1693,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if node "$PROJECT_ROOT/scripts/tci-chat-message-selftest.cjs" >/dev/null 2>&1; then
       ok 'TCI CORE: chat heading, full-width replies and image completion ordering verified.'
     else
-      fail 'TCI CORE: Chat-Kopf-/Bildabschluss-Selbsttest fehlgeschlagen.'
+      fail 'TCI CORE: heading / image completion self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/text-selection-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat: text selection, copying and native context menu are enabled.'
@@ -1733,86 +1733,86 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
       ok 'Response duration: stored total and model time in information display verified.'
     else
-      fail 'Antwortdauer-JavaScript-Selbsttest fehlgeschlagen.'
+      fail 'Response duration-JavaScript-self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/welcome-composer-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat start / composer: greeting draft, first message and stop verified.'
     else
-      fail 'Chat-Start/Composer: Lazy-Sitzung oder Stopp-Schaltflaeche fehlgeschlagen.'
+      fail 'Chat start / composer: lazy session or stop button failed.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-navigation-recovery-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat navigation: ongoing model request restored without regenerating.'
     else
-      fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
+      fail 'Chat navigation: recovery self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/insights-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Info panels: right column, phone buttons and live context verified.'
     else
-      fail 'Infokaesten: JavaScript-Selbsttest fehlgeschlagen.'
+      fail 'Info panels: JavaScript-self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/context-slider-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'AI profile: context-window control with guidance at each step verified.'
     else
-      fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
+      fail 'AI profile: Context window-Regler-self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat: Core chip with TCI names, fixed order, status dots (green, yellow, red), legend, loading, thinking toggle and errors verified.'
     else
-      fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
+      fail 'Chat: Thinking toggle-UI test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/core-install-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat: installation modal with hardware check, confirmation, progress and Use Now verified.'
     else
-      fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
+      fail 'Chat: Install dialog-UI test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/model-library-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Ollama model modal: search, details, download confirmation and progress verified.'
     else
-      fail 'Ollama-Modellfenster: Offline-Oberflaechentest fehlgeschlagen.'
+      fail 'Ollama model dialog: Offline-UI test failed.'
     fi
     # 0.6.59: touch cropper must preserve originals, per-account re-edit and
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
-      ok 'Profile: mobile crop, square/portrait, original image and recropping verified.'
+      ok 'Profilee: mobile crop, square/portrait, original image and recropping verified.'
     else
-      fail 'Profil: Zuschnitt-Oberflaechentest fehlgeschlagen.'
+      fail 'Profilee: image cropping-UI test failed.'
       printf '%s\n' "$profile_crop_ui" >&2
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Login: Register and Chat as Guest only when enabled, validation and error cases verified.'
     else
-      fail 'Login: Registrierungs-Selbsttest fehlgeschlagen.'
+      fail 'Login: Registration-self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/browse-live-ui-selftest.cjs" >/dev/null 2>&1; then
       ok 'Live browser: Mara's thinking timer, smooth cursor, queue and recovery after interruption verified.'
     else
-      fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
+      fail 'Live browser-UI test failed.'
     fi
     # 0.6.67: local Playwright check for viewer -> editor -> FLUX reference handoff.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/image-editor-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Image editor: mobile layout, touch selection, undo/redo and image references verified.'
       else
-        fail 'Bildeditor: mobile UI-Selbsttest fehlgeschlagen.'
+        fail 'Image editor: mobile UI-self-test failed.'
       fi
     else
-      warn 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
+      warn 'Image editor: Playwright is missing. Browser self-test skipped (not live verified).'
     fi
     if node "$PROJECT_ROOT/scripts/settings-navigation-foundation-selftest.cjs" >/dev/null 2>&1; then
       ok 'Settings: 25 categories, expert mode, placeholder sections and admin separation verified.'
     else
-      fail 'Einstellungen: Kategorie- oder Admin-Strukturtest fehlgeschlagen.'
+      fail 'Settings: category or admin structure test failed.'
     fi
     # 0.6.71: category navigation, expert mode and standalone Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Settings: categories, search, expert mode, mobile menu and independent Admin Core verified.'
       else
-        fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
+        fail 'Settings: Tab-UI test failed.'
       fi
     else
-      warn 'Einstellungen: Tab-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Settings: Tab-UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.80: Darstellung (segments, font, hex, Hell/Dunkel getrennt, motif export/import) and
     # smart punctuation in the chat input; needs Playwright for Node.
@@ -1820,10 +1820,10 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       if node "$PROJECT_ROOT/scripts/appearance-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Appearance: theme export/import, hex values, separate light/dark, fonts and punctuation verified in browser.'
       else
-        fail 'Darstellung: Oberflaechentest fehlgeschlagen.'
+        fail 'Appearance: UI test failed.'
       fi
     else
-      warn 'Darstellung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Appearance: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.81: Benachrichtigungen page (Push for this device, E-Mail state, categories) and the
     # service worker; needs Playwright for Node.
@@ -1831,120 +1831,120 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       if node "$PROJECT_ROOT/scripts/notifications-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Notifications: push activation, devices, email status, categories and service worker verified in browser.'
       else
-        fail 'Benachrichtigungen: Oberflaechentest fehlgeschlagen.'
+        fail 'Notifications: UI test failed.'
       fi
     else
-      warn 'Benachrichtigungen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Notifications: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.82: Admin Core > Betrieb > E-Mail-Versand (SMTP); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/admin-mail-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Email delivery: SMTP card (save, retain password, test email, server configuration) verified in browser.'
       else
-        fail 'E-Mail-Versand: Oberflaechentest fehlgeschlagen.'
+        fail 'Email delivery: UI test failed.'
       fi
     else
-      warn 'E-Mail-Versand: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Email delivery: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.84: Settings > Profil overview (figures, raster, made, tools, insights); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/profile-stats-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Profile: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
+        ok 'Profilee: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
       else
-        fail 'Profil: Oberflaechentest fehlgeschlagen.'
+        fail 'Profile: UI test failed.'
       fi
     else
-      warn 'Profil: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Profile: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.85: Sicherheit und Anmeldung and the sign-in with second step and passkey; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/security-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Security: settings page (passkeys, QR authenticator, email codes, sessions, history, lockdown) and sign-in verified in browser.'
       else
-        fail 'Sicherheit: Oberflaechentest fehlgeschlagen.'
+        fail 'Security: UI test failed.'
       fi
     else
-      warn 'Sicherheit: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Security: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.87: chat menu (⋮) and Settings > Archivierte Chats; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/chat-menu-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/archived-chats-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Chat menu and archived chats verified in browser.'
       else
-        fail 'Chat-Menue oder Archivierte Chats: Oberflaechentest fehlgeschlagen.'
+        fail 'Chat menu or archived chats: UI test failed.'
       fi
     else
-      warn 'Chat-Menue: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Chat menu: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.4: four insight panels must exist in saved chats, not on the welcome page.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/insights-chat-visibility-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Info panels: four mobile chat buttons, desktop sidebar and empty welcome screen verified.'
       else
-        fail 'Infokaesten: Chat-/Startseiten-Umschaltung oder mobile Schaltflaechen fehlerhaft.'
+        fail 'Info panels: Chat-/Startseiten-Umschaltung oder mobile Schaltflaechen fehlerhaft.'
       fi
     else
-      warn 'Infokaesten: Browser-Smoke-Test uebersprungen (Playwright nicht installiert); Offline-DOM-Vertrag bleibt Pflicht.'
+      warn 'Info panels: browser smoke test skipped (Playwright not installed); offline DOM contract still required.'
     fi
     # 0.7.4: TCI identity and full-width assistant replies at phone and desktop widths.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/tci-chat-layout-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'TCI CORE: avatar, name lines and full-width replies verified in browser.'
       else
-        fail 'TCI CORE: Responsiver Chat-Layouttest fehlgeschlagen.'
+        fail 'TCI CORE: responsive chat layout test failed.'
       fi
     else
-      warn 'TCI CORE: Layout-Browsertest uebersprungen (Playwright nicht installiert).'
+      warn 'TCI CORE: browser layout test skipped (Playwright not installed).'
     fi
     # 0.7.14/0.7.15: Settings > Stimme, the microphone switch and the recordings; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-settings-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/voice-recordings-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Voice, microphone toggle and recordings verified in browser.'
       else
-        fail 'Stimme: Oberflaechentest fehlgeschlagen.'
+        fail 'Voice: UI test failed.'
       fi
     else
-      warn 'Stimme: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Voice: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.28: Settings > Speicher (overview, Dateien with project folders, Bilder, menu, deleting, full storage); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/storage-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Storage: overview, files, images and deletion verified in browser.'
       else
-        fail 'Speicher: Oberflaechentest fehlgeschlagen.'
+        fail 'Storage: UI test failed.'
       fi
     else
-      warn 'Speicher: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Storage: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.29: Settings > Tastatur (recording, clashes, reset) and the shortcuts in the chat; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/keyboard-shortcuts-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Keyboard: record, test and reset shortcuts, and execute them in chat, verified in browser.'
       else
-        fail 'Tastatur: Oberflaechentest fehlgeschlagen.'
+        fail 'Keyboard: UI test failed.'
       fi
     else
-      warn 'Tastatur: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Keyboard: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.30: Settings > Nutzung (Uebersicht, Analysen, charts); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/usage-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Usage: overview and analytics verified in browser.'
       else
-        fail 'Nutzung: Oberflaechentest fehlgeschlagen.'
+        fail 'Usage: UI test failed.'
       fi
     else
-      warn 'Nutzung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Usage: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.32: Settings > Datenkontrollen (confirmations, typed word, results); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/data-controls-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Data controls: archive, delete and export verified in browser.'
       else
-        fail 'Datenkontrollen: Oberflaechentest fehlgeschlagen.'
+        fail 'Data controls: UI test failed.'
       fi
     else
-      warn 'Datenkontrollen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Data controls: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.33: the CoreAI theme over every settings page, every page in the main column, Allgemein without
     # duplicates, SoftGlass untouched; needs Playwright for Node.
@@ -1952,238 +1952,238 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       if node "$PROJECT_ROOT/scripts/settings-theme-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Settings: CoreAI theme and page layout verified in browser.'
       else
-        fail 'Einstellungen: Theme-Oberflaechentest fehlgeschlagen.'
+        fail 'Settings: Theme-UI test failed.'
       fi
     else
-      warn 'Einstellungen: Theme-Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Settings: Theme-UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.38: Deep Research in the chat (plan card, countdown, running, report view); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/deep-research-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Deep Research: plan, progress and report verified in browser.'
       else
-        fail 'Deep Research: Oberflaechentest fehlgeschlagen.'
+        fail 'Deep Research: UI test failed.'
       fi
     else
-      warn 'Deep Research: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Deep Research: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.69 (P09): the tab Dateien on the project page; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-files-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Project files: tree, editor, history, comparison and conflicts verified in browser.'
       else
-        fail 'Projektdateien: Oberflaechentest fehlgeschlagen.'
+        fail 'Project files: UI test failed.'
       fi
     else
-      warn 'Projektdateien: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Project files: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.74 (P09 C): the branch button and the line after the branch point; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/chat-branch-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Chat branches: button and origin label verified in browser.'
       else
-        fail 'Gespraechszweige: Oberflaechentest fehlgeschlagen.'
+        fail 'Chat branche: UI test failed.'
       fi
     else
-      warn 'Gespraechszweige: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Chat branche: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.75 (P10 A): the preview in the tab Dateien; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-preview-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Project preview: page, scripts, data, line-numbered errors and reload verified in browser.'
       else
-        fail 'Projektvorschau: Oberflaechentest fehlgeschlagen.'
+        fail 'Project preview: UI test failed.'
       fi
     else
-      warn 'Projektvorschau: Oberflaechentest uebersprungen (Playwright fuer Node oder php nicht installiert).'
+      warn 'Project preview: UI test skipped (Playwright for Node.js or PHP is not installed).'
     fi
     # 0.7.77 (P10 B): the panel Ausfuehren in the tab Dateien; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-runs-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Project runs: command, output, exit code, cancellation and Python toggle verified in browser.'
       else
-        fail 'Projektlaeufe: Oberflaechentest fehlgeschlagen.'
+        fail 'Project runs: UI test failed.'
       fi
     else
-      warn 'Projektlaeufe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Project runs: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.80 (P11 A): the panel Versionen in the tab Dateien; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-vcs-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Project versions: save, working states, restore and Git ZIP verified in browser.'
       else
-        fail 'Projektversionen: Oberflaechentest fehlgeschlagen.'
+        fail 'Project versions: UI test failed.'
       fi
     else
-      warn 'Projektversionen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Project versions: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.81 (P11 B): merging with conflicts in the panel Versionen; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-merge-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Merge: preview, conflicts with choices, custom text and two parents verified in browser.'
       else
-        fail 'Zusammenfuehren: Oberflaechentest fehlgeschlagen.'
+        fail 'Merge: UI test failed.'
       fi
     else
-      warn 'Zusammenfuehren: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Merge: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.84 (P12 B): Gemeinsam, precedence, sharing, and "Skills für diesen Chat" in the + menu.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/skill-sharing-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Skills: shared skills, priority, sharing and skills fixed to this chat verified in browser.'
       else
-        fail 'Gemeinsame Skills: Oberflaechentest fehlgeschlagen.'
+        fail 'Shared skills: UI test failed.'
       fi
     else
-      warn 'Gemeinsame Skills: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Shared skills: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.83 (P12 A): Settings > Skills: own skills, companion files, the built-in library.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/skill-packages-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Skills: own skills with companion files, prerequisites, scope and bundled skills verified in browser.'
       else
-        fail 'Skills: Oberflaechentest fehlgeschlagen.'
+        fail 'Skills: UI test failed.'
       fi
     else
-      warn 'Skills: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Skills: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.82 (P11 C): the cards of Mara's files: preview of the same version, Behalten, Loeschen, notes.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/artifact-lifecycle-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Mara's files: version-matched preview, keep, delete with notice and retention verified in browser.'
       else
-        fail 'Maras Dateien: Oberflaechentest fehlgeschlagen.'
+        fail 'Mara's files: UI test failed.'
       fi
     else
-      warn 'Maras Dateien: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Mara's files: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-procs-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Project processes: start, output, input, fetch-based server preview, stop and Python toggle verified in browser.'
       else
-        fail 'Projektprozesse: Oberflaechentest fehlgeschlagen.'
+        fail 'Project processes: UI test failed.'
       fi
     else
-      warn 'Projektprozesse: Oberflaechentest uebersprungen (Playwright fuer Node oder php nicht installiert).'
+      warn 'Project processes: UI test skipped (Playwright for Node.js or PHP is not installed).'
     fi
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/pets-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Pets verified in browser.'
       else
-        fail 'Pets: Oberflaechentest fehlgeschlagen.'
+        fail 'Pets: UI test failed.'
       fi
     else
-      warn 'Pets: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Pets: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.0: Settings > Personalisierung after the reference; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/personalization-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Personalization verified in browser.'
       else
-        fail 'Personalisierung: Oberflaechentest fehlgeschlagen.'
+        fail 'Personalization: UI test failed.'
       fi
     else
-      warn 'Personalisierung: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Personalization: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.86: Konto (name, Benutzername dialog, e-mail, plan page, Erstellerprofil planned); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/account-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Account: name, username, email, plan and creator profile verified in browser.'
       else
-        fail 'Konto: Oberflaechentest fehlgeschlagen.'
+        fail 'Konto: UI test failed.'
       fi
     else
-      warn 'Konto: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Konto: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/update-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Update window: owner's gold dialog, Later, shared progress bar and reload after restart verified.'
       else
-        fail 'Update-Fenster: Oberflaechentest fehlgeschlagen.'
+        fail 'Update window: UI test failed.'
       fi
     else
-      warn 'Update-Fenster: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Update window: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.1: speaker button and auto-read switch; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-read-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Read aloud: button, sentence-by-sentence preloading, stop, auto-read and no guest button verified.'
       else
-        fail 'Vorlesen: Oberflaechentest fehlgeschlagen.'
+        fail 'Read aloud: UI test failed.'
       fi
     else
-      warn 'Vorlesen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Read aloud: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.14: microphone button in the input field; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-input-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Voice messages: microphone button, immediate send, waiting for Mara, silence, transcript line and no guest button verified.'
       else
-        fail 'Spracheingabe: Oberflaechentest fehlgeschlagen.'
+        fail 'Voice input: UI test failed.'
       fi
     else
-      warn 'Spracheingabe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Voice input: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.31: the live conversation (P20.4); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-live-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Live voice: button next to microphone, fullscreen, voice-message rounds, read aloud, mute, interrupt and end verified.'
       else
-        fail 'Live-Gespraech: Oberflaechentest fehlgeschlagen.'
+        fail 'Live voice: UI test failed.'
       fi
     else
-      warn 'Live-Gespraech: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Live voice: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.19: chat list in the drawer, buttons whole and large enough; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/session-list-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Chat list: fully visible, adequately sized buttons (mouse/touch, day/night) verified.'
       else
-        fail 'Chatliste: Oberflaechentest fehlgeschlagen.'
+        fail 'Chat list: UI test failed.'
       fi
     else
-      warn 'Chatliste: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Chat list: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.6.22: names and terms for voice messages in the KI-Profil; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-terms-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Voice-message terms: AI-profile list, save, cleanup, no guest field, day/night and phone verified.'
       else
-        fail 'Begriffe fuer Sprachnachrichten: Oberflaechentest fehlgeschlagen.'
+        fail 'Begriffe fuer Voice messages: UI test failed.'
       fi
     else
-      warn 'Begriffe fuer Sprachnachrichten: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Begriffe fuer Voice messages: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-samples-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Voice previews: licensed voices, sentence playback, test runs, owner-only and phone width verified.'
       else
-        fail 'Stimmproben: Oberflaechentest fehlgeschlagen.'
+        fail 'Voice previews: UI test failed.'
       fi
     else
-      warn 'Stimmproben: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+      warn 'Voice previews: UI test skipped (Playwright for Node.js is not installed).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
       ok 'WebUI: cancellable loading, reconnect without duplicate requests, backoff and long chats verified.'
     else
-      fail 'WebUI: Robustheits-Selbsttest fehlgeschlagen.'
+      fail 'WebUI: resilience self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-follow-selftest.cjs" >/dev/null 2>&1; then
       ok 'Chat scroll: manual reading, work indicators and jump to latest reply verified.'
     else
-      fail 'Chat-Scroll: Leserposition oder Pfeil-Button Regression fehlgeschlagen.'
+      fail 'Chat scroll: reader position or jump button regression detected.'
     fi
     if node "$PROJECT_ROOT/scripts/long-chat-selftest.cjs" >/dev/null 2>&1; then
       ok 'Long texts: Markdown attachment and original bytes verified.'
     else
-      fail 'Lange Texte: automatischer Anhang ist fehlerhaft.'
+      fail 'Long texts: automatic attachment is defective.'
     fi
   else
-    warn 'Node nicht installiert: optionaler Antwortdauer-JavaScript-Test uebersprungen.'
+    warn 'Node.js is not installed: optional response-duration JavaScript test skipped.'
   fi
 
   # Test the actual PHP runtime directly. Under pipefail, a "php -m |
@@ -2314,7 +2314,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if md_preview_test="$(compose exec -T -u 33:33 php php scripts/markdown-preview-selftest.php 2>&1)"; then
     ok "$md_preview_test"
   else
-    fail "Markdown-Vorschau: ${md_preview_test:-Unbekannter Fehler}"
+    fail "Markdown-Vorschau: ${md_preview_test:-Unknown error}"
   fi
 
   message_actions_selftest=''
@@ -2333,14 +2333,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if feedback_ui_selftest="$(compose exec -T -u 33:33 php php scripts/feedback-ui-selftest.php 2>&1)"; then
     ok 'Feedback: thumb colors, persistence and Mara's no-thinking reaction (PHP contract) verified.'
   else
-    fail "Feedback: UI-/Backend-Vertrag (PHP) fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
+    fail "Feedback: UI/backend contract (PHP) failed: ${feedback_ui_selftest:-Unknown error}"
   fi
   if command -v node >/dev/null 2>&1; then
     feedback_node_selftest=''
     if feedback_node_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
       ok 'Feedback: extended Node.js UI/backend contract verified.'
     else
-      fail "Feedback: Node.js-UI-/Backend-Vertrag fehlerhaft: ${feedback_node_selftest:-Unbekannter Fehler}"
+      fail "Feedback: Node.js UI/backend contract failed: ${feedback_node_selftest:-Unknown error}"
     fi
   else
     warn 'Node.js is optional and not installed: Feedback PHP contract verified, extra Node.js test skipped.'
@@ -2360,7 +2360,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if (( frame_table_ready == 1 )); then
       ok 'Private live-browser frame table is ready.'
     else
-      fail 'Private Live-Browser-Frame-Tabelle fehlt. Browse-Worker neu starten.'
+      fail 'Private live-browser frame table missing. Restart the browser worker.'
     fi
   fi
 
@@ -2369,14 +2369,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     if service_running voice; then
       voice_health="$(curl -fsS --max-time 5 "http://127.0.0.1:${COREUI_VOICE_PORT:-18790}/health" 2>/dev/null || true)"
       if [[ "$voice_health" == *'"ready": true'* ]]; then
-        ok 'Sprachdienst bereit: Mara kann mit Eve vorlesen.'
+        ok 'Voice service bereit: Mara kann mit Eve vorlesen.'
       elif [[ "$voice_health" == *'"loading": true'* ]]; then
-        warn 'Sprachdienst laedt Eve noch (beim ersten Start etwa 0,7 GB); Vorlesen folgt von selbst.'
+        warn 'Voice service laedt Eve noch (beim ersten Start etwa 0,7 GB); Read aloud folgt von selbst.'
       else
-        warn 'Sprachdienst laeuft, ist aber nicht bereit. Protokoll: scripts/stack.sh logs voice'
+        warn 'Voice service laeuft, ist aber nicht bereit. Protokoll: scripts/stack.sh logs voice'
       fi
     else
-      warn 'Sprachdienst laeuft nicht; CoreAI arbeitet ohne Vorlesen. Start: scripts/stack.sh up -d voice'
+      warn 'Voice service laeuft nicht; CoreAI arbeitet ohne Read aloud. Start: scripts/stack.sh up -d voice'
     fi
   fi
 
@@ -2413,12 +2413,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.5.83: the update window needs the host units (installed by scripts/install.sh).
   if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
     if systemctl is-active --quiet coreai-update.path && systemctl is-active --quiet coreai-update-check.timer; then
-      ok 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update-Fenster.'
+      ok 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update window.'
     else
       fail 'Update-Dienst nicht aktiv (coreai-update.path oder coreai-update-check.timer). scripts/install.sh erneut ausfuehren.'
     fi
   else
-    warn 'Kein systemd: das Update-Fenster bleibt ohne Host-Dienst.'
+    warn 'Kein systemd: das Update window bleibt ohne Host-Dienst.'
   fi
 
   video_selftest=''
@@ -2449,17 +2449,17 @@ fi
 # Drain each HTTP body completely: grep -q closes early and makes curl fail under pipefail.
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" \
     | grep -F 'EINSTELLUNGEN' >/dev/null; then
-  ok 'CoreAI: TCI Interface-Einstellungen werden vom isolierten Webserver ausgeliefert.'
+  ok 'CoreAI: TCI Interface-Settings werden vom isolierten Webserver ausgeliefert.'
 else
-  fail 'CoreAI: TCI Interface-Einstellungen sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
+  fail 'CoreAI: TCI Interface-Settings sind nicht erreichbar. Fuehre scripts/stack.sh refresh-runtime und danach scripts/stack.sh restart web aus.'
 fi
 
 # 0.6.71: Admin Core is a separate page, authorized per account and server-side API.
 if curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/settings.html" | grep -F 'id="adminSettingsLink"' >/dev/null \
     && curl -fsS --max-time 10 "http://127.0.0.1:${COREUI_HTTP_PORT}/admin/index.html" | grep -F 'id="adminAccessGate"' >/dev/null; then
-  ok 'Einstellungen mit Rollen-Link und eigenstaendige, zugangsgeschuetzte Admin-Core-Seite ausgeliefert.'
+  ok 'Settings mit Roles-Link und eigenstaendige, zugangsgeschuetzte Admin-Core-Seite ausgeliefert.'
 else
-  fail 'Admin-Core-Seite oder getrennte Einstellungen sind nicht erreichbar.'
+  fail 'Admin-Core-Seite oder getrennte Settings sind nicht erreichbar.'
 fi
 
 SESSION_ROUTE_STATUS="$(curl -sS --max-time 10 -o /dev/null -w '%{http_code}' \
@@ -2487,10 +2487,10 @@ if command -v ollama >/dev/null 2>&1 \
   if model_audit="$(compose exec -T php php scripts/model-live-audit.php "${COREUI_MODEL_NAME}" 2>&1)"; then
     ok "$model_audit"
   else
-    fail "${model_audit:-Ollama-Modelfile nicht verifizierbar.}"
+    fail "${model_audit:-Ollama Modelfile could not be verified.}"
   fi
 else
-  fail "CoreAI: TCI Interface-Ollama-Modell fehlt: ${COREUI_MODEL_NAME}"
+  fail "CoreAI: TCI Interface-Ollama-Modell missing: ${COREUI_MODEL_NAME}"
 fi
 
 generator_audit=''
