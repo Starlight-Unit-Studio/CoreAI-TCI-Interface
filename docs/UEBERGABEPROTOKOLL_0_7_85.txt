@@ -1,0 +1,44 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.85
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: 0.7.84, PR #340 (zum Zeitpunkt der Erstellung noch Entwurf)
+Branch: fix/pet-activity-animations-0.7.85
+
+AUFTRAG
+Mara als Chat-Pet zeigt fast ausschliesslich Idle und eine zweite Animation,
+auch wenn sie gerade einen anderen Arbeitszustand hat. Vorhandenes OpenPet-v2-
+Atlasformat mit 11 Zeilen soll in der Anwendung besser genutzt werden.
+
+BEFUND
+- js/coreui-pets.js animierte zwar Framewechsel, aber ohne den Zustand zu
+  wechseln. Nach einer Antwort nur Review und dann Idle, ohne Jump.
+- js/console-app.js schaute bei Statuswechseln nur nach 'ANTWORTET'.
+  Andere Generierungslabels wurden nicht ueber diese Stelle erfasst.
+- In den zwei zusaetzlichen v2-Reihen waren feste Blickposen, aber
+  bislang kein Zugriff aus dem Pet-Dock.
+- Bisheriger UI-Test pruefte nur, ob sich ein Frame veraendert, nicht
+  ob die Sprite-Zeile zum Zustand passt.
+
+UMSETZUNG
+- js/coreui-pets.js: Atlas-Blickrichtungen im Idle; Zustand hat Vorrang,
+  Timer beim Zustandswechsel und bei reduzierter Bewegung sauber behandelt.
+  Die Abschlusssequenz wechselt von Review auf Jump und danach Idle;
+  eine neue Aufgabe / Fehler bricht sie ab.
+- js/coreui-pet-dock.js: Antippen, Doppeltippen, Verschieben sowie
+  Blicksteuerung per Desktop-Zeiger; alte Sprite-Versionen laufen weiter.
+- js/console-app.js: Arbeitsstatus bei 'ANTWORTET', 'VERARBEITET',
+  'ERZEUGT' und 'SETZT FORT'.
+- scripts/pets-ui-selftest.cjs: Test der tatsaechlichen Atlaszeilen
+  fuer Running, Waiting, Review, Jump, Failed und Blicksteuerung.
+- Produktversion und Release-Dokumentation auf 0.7.85.
+- Fuer geaenderte statische Skripte werden Browser-Cache-Schluessel erneuert.
+
+GRENZEN
+- Ein lokaler Live-Test mit echter Mara-Antwort oder auf dem Server wurde
+  nicht vorgenommen. Die im Repo kodierten Animationen / der Browser-Test
+  sind keine Garantie fuer die Aktualisierung des Servers.
+- PR #340 fuer Version 0.7.84 ist noch nicht gemerged. 0.7.85 darf erst
+  danach in main aufgenommen werden. Keine bestaetigten CI-Ergebnisse
+  im Zeitpunkt des Protokolls.
+
+Version: 0.7.85

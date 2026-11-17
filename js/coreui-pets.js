@@ -7,6 +7,7 @@
   var TICK_MS = 45;
   var timer = null;
   var transientTimer = null;
+  var temporaryTimers = new WeakMap();
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
   var still = !!(reducedMotion && reducedMotion.matches);
   var activity = 'idle';
@@ -39,14 +40,18 @@
     return Array(n).fill(LEGACY_FRAME_MS);
   }
   function show(node, frame) {
-    node.setAttribute('data-frame', String(frame));
     var v = version(node);
+    var look = Number(node.getAttribute('data-look'));
+    var looking = v === 2 && stateOf(node) === 'idle' && node.hasAttribute('data-look')
+      && Number.isInteger(look) && look >= 0 && look < 16;
+    var cell = looking ? look % 8 : frame;
+    node.setAttribute('data-frame', String(cell));
     if (v) {
-      var row = STATES[stateOf(node)].row;
-      node.style.backgroundPosition = ((frame / 7) * 100) + '% ' + ((row / ((v === 2 ? 11 : 9) - 1)) * 100) + '%';
+      var row = looking ? 9 + Math.floor(look / 8) : STATES[stateOf(node)].row;
+      node.style.backgroundPosition = ((cell / 7) * 100) + '% ' + ((row / ((v === 2 ? 11 : 9) - 1)) * 100) + '%';
     } else {
       var frames = Math.max(1, Math.min(24, Number(node.getAttribute('data-frames')) || 1));
-      node.style.backgroundPosition = (frames > 1 ? (frame / (frames - 1)) * 100 : 0) + '% 0';
+      node.style.backgroundPosition = (frames > 1 ? (cell / (frames - 1)) * 100 : 0) + '% 0';
     }
   }
   function step() {
@@ -59,6 +64,7 @@
     }
     var now = Date.now();
     Array.prototype.forEach.call(nodes, function (node) {
+      if (version(node) === 2 && node.hasAttribute('data-look') && stateOf(node) === 'idle') return;
       if (now < (Number(node.getAttribute('data-next-frame')) || 0)) return;
       var ms = durations(node);
       var next = ((Number(node.getAttribute('data-frame')) || 0) + 1) % ms.length;
@@ -72,11 +78,41 @@
   function setState(node, desired) {
     if (!node) return;
     var state = STATES[desired] ? desired : 'idle';
+    // Work states and gestures always have precedence over the idle pointer gaze.
+    if (state !== 'idle') node.removeAttribute('data-look');
     if (node.getAttribute('data-state') === state) return;
     node.setAttribute('data-state', state);
     show(node, 0);
     node.setAttribute('data-next-frame', String(Date.now() + durations(node)[0]));
     start();
+  }
+  function clearLook(node) {
+    if (!node || !node.hasAttribute('data-look')) return;
+    node.removeAttribute('data-look');
+    show(node, 0);
+    node.setAttribute('data-next-frame', String(Date.now() + durations(node)[0]));
+  }
+  // OpenPet v2: two additional rows contain 16 fixed gaze directions, not animations.
+  // Only use them while the pet is idle; v1 and legacy strips keep their own behavior.
+  function lookAt(node, clientX, clientY) {
+    if (!node || version(node) !== 2 || stateOf(node) !== 'idle' || still) {
+      clearLook(node);
+      return;
+    }
+    var rect = node.getBoundingClientRect();
+    var dx = clientX - (rect.left + rect.width / 2);
+    var dy = clientY - (rect.top + rect.height / 2);
+    var distance = Math.hypot(dx, dy);
+    if (!rect.width || distance < Math.max(16, rect.width * 0.45)
+        || distance > Math.max(240, rect.width * 4)) {
+      clearLook(node);
+      return;
+    }
+    var degrees = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
+    var index = Math.round(degrees / 22.5) % 16;
+    if (node.hasAttribute('data-look') && Number(node.getAttribute('data-look')) === index) return;
+    node.setAttribute('data-look', String(index));
+    show(node, 0);
   }
 
   /** Build one sprite. Legacy: a strip of square cells. V1/V2: 192x208 atlas cells. */
@@ -110,24 +146,40 @@
     if (transientTimer) window.clearTimeout(transientTimer);
     transientTimer = null;
     document.dispatchEvent(new CustomEvent('coreai:pet-activity', {detail: {state: activity}}));
-    if (next === 'review' || next === 'failed') {
+    // A completed answer is reviewed for a full loop, then gets a short happy
+    // jump. A new task or failure cancels both timers, so the pet never
+    // celebrates over an active job or an error.
+    if (next === 'review') {
       transientTimer = window.setTimeout(function () {
-        if (activity === next) setActivity('idle');
-      }, next === 'review' ? 1500 : 1800);
+        if (activity === 'review') setActivity('jumping');
+      }, 1600);
+    } else if (next === 'jumping') {
+      transientTimer = window.setTimeout(function () {
+        if (activity === 'jumping') setActivity('idle');
+      }, 1000);
+    } else if (next === 'failed') {
+      transientTimer = window.setTimeout(function () {
+        if (activity === 'failed') setActivity('idle');
+      }, 1800);
     }
   }
   function playTemporary(node, state, ms) {
     if (!node) return;
+    var prior = temporaryTimers.get(node);
+    if (prior) window.clearTimeout(prior);
     setState(node, state);
-    window.setTimeout(function () {
+    var timeoutId = window.setTimeout(function () {
+      temporaryTimers.delete(node);
       if (node.isConnected && node.getAttribute('data-state') === state) setState(node, activity);
     }, Math.max(300, Math.min(3000, Number(ms) || 1000)));
+    temporaryTimers.set(node, timeoutId);
   }
   if (reducedMotion && typeof reducedMotion.addEventListener === 'function') {
     reducedMotion.addEventListener('change', function (event) {
       still = event.matches;
       if (still && timer) { window.clearInterval(timer); timer = null; }
       if (still) Array.prototype.forEach.call(document.querySelectorAll('.coreai-pet[data-frames]'), function (node) {
+        clearLook(node);
         show(node, 0);
       });
       else start();
@@ -146,6 +198,8 @@
     current: null,
     make: make,
     setState: setState,
+    lookAt: lookAt,
+    clearLook: clearLook,
     setActivity: setActivity,
     getActivity: function () { return activity; },
     playTemporary: playTemporary,

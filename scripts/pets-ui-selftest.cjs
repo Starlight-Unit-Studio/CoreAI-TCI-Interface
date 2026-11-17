@@ -106,7 +106,7 @@ async function open(browser, srv, viewport, url) {
     assert.equal(await page.textContent('#view-pets h2'), 'Pet auswählen');
     assert.match(await page.textContent('#petUploadOpen'), /Pet hochladen/);
     assert.deepEqual(await page.$$eval('#petRows .pet-row strong', l => l.map(x => x.textContent)), NAMES);
-    assert.equal(await page.$eval('#petRows .coreai-pet', l => l.length), 9);
+    assert.equal(await page.$eval('#petRows .coreai-pet', nodes => nodes.length), 9);
     assert.equal(await page.isChecked('#pet-mara'), true, 'Mara is preselected');
     assert.equal(await page.textContent('#petStatus'), '');
     const first = await page.getAttribute('#petRows .coreai-pet >> nth=0', 'data-frame');
@@ -216,6 +216,37 @@ async function open(browser, srv, viewport, url) {
     if (shots) await dock.screenshot({path: path.join(shots, 'pets-persistent-dock.png')});
     await page.evaluate(() => { window.CoreAIPets.current = null; document.dispatchEvent(new CustomEvent('coreai:pet')); });
     assert.equal(await dock.isVisible(), false, 'pet can be explicitly hidden');
+    // Mara's v2 atlas must actually use its state rows. The old test only
+    // checked one moving frame inside idle, missing the original user bug.
+    await page.evaluate(() => {
+      window.CoreAIPets.current = {id: 'mara', name: 'Mara Thorne',
+        url: './images/pets/mara.webp', frames: 8, frame_px: 192, sprite_version: 2};
+      document.dispatchEvent(new CustomEvent('coreai:pet'));
+      window.CoreAIPets.setActivity('running');
+    });
+    const mara = page.locator('.coreai-pet-dock .coreai-pet');
+    await page.waitForFunction(() => document.querySelector('.coreai-pet-dock .coreai-pet').getAttribute('data-state') === 'running');
+    assert.match(await mara.getAttribute('style'), /background-position:[^;]+70%/);
+    await page.evaluate(() => window.CoreAIPets.setActivity('waiting'));
+    assert.equal(await mara.getAttribute('data-state'), 'waiting');
+    assert.match(await mara.getAttribute('style'), /background-position:[^;]+60%/);
+    await page.evaluate(() => window.CoreAIPets.setActivity('review'));
+    await page.waitForFunction(() => document.querySelector('.coreai-pet-dock .coreai-pet').getAttribute('data-state') === 'jumping', null, {timeout:2700});
+    assert.match(await mara.getAttribute('style'), /background-position:[^;]+40%/);
+    await page.waitForFunction(() => document.querySelector('.coreai-pet-dock .coreai-pet').getAttribute('data-state') === 'idle', null, {timeout:2700});
+    await page.evaluate(() => window.CoreAIPets.setActivity('failed'));
+    assert.equal(await mara.getAttribute('data-state'), 'failed');
+    assert.match(await mara.getAttribute('style'), /background-position:[^;]+50%/);
+    await page.evaluate(() => window.CoreAIPets.setActivity('idle'));
+    await page.evaluate(() => {
+      const el = document.querySelector('.coreai-pet-dock .coreai-pet');
+      const r = el.getBoundingClientRect();
+      window.CoreAIPets.lookAt(el, r.right + 80, r.top + r.height / 2);
+    });
+    assert.notEqual(await mara.getAttribute('data-look'), null, 'v2 gaze uses extra rows');
+    assert.match(await mara.getAttribute('style'), /background-position:[^;]+(?:90|100)%/);
+    await page.evaluate(() => window.CoreAIPets.setActivity('running'));
+    assert.equal(await mara.getAttribute('data-look'), null, 'work state overrides gaze');
     assert.deepEqual(errors, []);
     await context.close();
 

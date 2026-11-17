@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.85
+Datum: 17.11.2026
+
+MARAS PET: ANIMATIONSZUSTAENDE
+- Der Chat steuert auch fuer alternative Generierung und bearbeitete Antworten
+  Maras Arbeitsanimation. Warten auf Tools, Pruefen, Fehler und Abschluss
+  benutzen eigenstaendige Atlaszeilen.
+- Nach einer Antwort folgt auf die Ergebnispruefung eine kurze Sprunganimation.
+  Eine neue Aufgabe oder ein Fehler unterbricht sie sofort.
+- OpenPet v2: 16 feste Blickrichtungen auf den zwei zusaetzlichen Atlaszeilen;
+  nur im Ruhezustand. Kein Eingriff in fremde oder aeltere Sprite-Sheets.
+- Antippen: Winken. Doppeltippen: Springen. Ziehen: Laufen nach links/rechts.
+  Desktop: Mausposition in der Naehe steuert die Blickrichtung.
+- Reduzierte Bewegung wird weiterhin respektiert.
+- Regressionstest prueft die tatsaechlichen Atlaszeilen an Mara, nicht nur
+  wechselnde Idle-Frames.
+
+UNVERAENDERT
+- TCI-Modelle, Bildgenerierung, Pet-Upload, Lizenzen, Einstellungen, Prompt.
+
+TESTS
+- scripts/pets-ui-selftest.cjs: neue Pruefungen der Mara-Zustandswechsel.
+- Browser-/End-to-End-Tests muessen in der CI bestaetigt werden.
+
+Version: 0.7.85

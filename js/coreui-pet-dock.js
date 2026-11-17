@@ -33,6 +33,22 @@
 
   var sprite = null;
   var gesture = null;
+  var lastTapAt = 0;
+  var lastTapX = 0;
+  var lastTapY = 0;
+  function clearTouchLook() {
+    if (sprite && pets.clearLook) pets.clearLook(sprite);
+  }
+  function greet(clientX, clientY) {
+    if (!sprite || !pets.playTemporary) return;
+    var now = Date.now();
+    var repeatTap = now - lastTapAt < 480
+      && Math.hypot(clientX - lastTapX, clientY - lastTapY) < 36;
+    lastTapAt = now;
+    lastTapX = clientX;
+    lastTapY = clientY;
+    pets.playTemporary(sprite, repeatTap ? 'jumping' : 'waving', 1100);
+  }
 
   function areaLimits() {
     var rect = area.getBoundingClientRect();
@@ -70,6 +86,7 @@
     var pet = pets.current;
     if (!pet) {
       dock.hidden = true;
+      clearTouchLook();
       dock.textContent = '';
       sprite = null;
       return;
@@ -99,6 +116,7 @@
       moved: false
     };
     dock.setPointerCapture(event.pointerId);
+    // On a phone a drag and a tap share the same pointer gesture.
     event.preventDefault();
   });
   dock.addEventListener('pointermove', function (event) {
@@ -106,7 +124,13 @@
     var dx = event.clientX - gesture.startX;
     var dy = event.clientY - gesture.startY;
     if (Math.hypot(dx, dy) > 7) gesture.moved = true;
-    if (!gesture.moved) return;
+    if (!gesture.moved) {
+      if (sprite && pets.lookAt && event.pointerType !== 'mouse') {
+        pets.lookAt(sprite, event.clientX, event.clientY);
+      }
+      return;
+    }
+    if (sprite && pets.clearLook) pets.clearLook(sprite);
     dock.classList.add('is-moving');
     if (sprite && pets.setState && Number(sprite.getAttribute('data-sprite-version')) > 0) {
       pets.setState(sprite, dx >= 0 ? 'running-right' : 'running-left');
@@ -120,16 +144,24 @@
     gesture = null;
     dock.classList.remove('is-moving');
     if (dock.hasPointerCapture(event.pointerId)) dock.releasePointerCapture(event.pointerId);
+    clearTouchLook();
     if (moved) {
       savePosition();
       if (sprite && pets.setState) pets.setState(sprite, pets.getActivity ? pets.getActivity() : 'idle');
-    } else if (event.type === 'pointerup' && pets.playTemporary) pets.playTemporary(sprite, 'waving', 1100);
+    } else if (event.type === 'pointerup') greet(event.clientX, event.clientY);
   }
   dock.addEventListener('pointerup', endPointer);
   dock.addEventListener('pointercancel', endPointer);
-  // Keyboard users can greet their pet without needing drag gestures.
+  // Mouse movement (desktop) offers v2's 16 gaze poses while idle.
+  // On touch screens the tap, double tap and drag also expose distinct actions.
+  dock.addEventListener('pointerenter', function (event) {
+    if (event.pointerType === 'mouse' && sprite && pets.lookAt) pets.lookAt(sprite, event.clientX, event.clientY);
+  });
+  dock.addEventListener('pointerleave', function () {
+    if (!gesture) clearTouchLook();
+  });
   dock.addEventListener('click', function (event) {
-    if (event.detail === 0 && pets.playTemporary) pets.playTemporary(sprite, 'waving', 1100);
+    if (event.detail === 0) greet(dock.getBoundingClientRect().left, dock.getBoundingClientRect().top);
   });
 
   document.addEventListener('coreai:pet', render);
@@ -137,6 +169,10 @@
     if (sprite && pets.setState) pets.setState(sprite, pets.getActivity());
     label();
   });
+  window.addEventListener('pointermove', function (event) {
+    if (!sprite || !pets.lookAt || gesture || event.pointerType !== 'mouse') return;
+    pets.lookAt(sprite, event.clientX, event.clientY);
+  }, {passive: true});
   window.addEventListener('resize', render);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', layout);
   if (typeof ResizeObserver === 'function') new ResizeObserver(layout).observe(area);
