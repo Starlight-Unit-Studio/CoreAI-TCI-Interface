@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.7.85 - 17.11.2026
+
+- **Pet animation lifecycle:** Mara's OpenPet v2 companion now uses work, tool-wait, review, completion jump, error, wave and directional drag states instead of effectively staying in idle and running. The full work-status labels (including edited answers and alternative generations) trigger active animation. Review and jump run in sequence, but a new operation or failure cancels the celebration.
+- **Input and gaze:** The two additional v2 atlas rows expose sixteen fixed gaze directions when idle. Touch devices get wave on tap, jump on double tap and directional running while dragging; desktop pointer movement can aim the gaze. Legacy strips and v1 atlases remain supported; reduced-motion settings still stop animation.
+- **Regression:** Extended pet UI test checks actual atlas rows, transitions and gaze, not merely that the idle frame counter changes. No changes to model prompts, external APIs, installed cores or pet licenses.
+
 ## 0.7.84 - 17.11.2026
 
 - **Shared skills (roadmap P12, step B, CF-044):** The owner and admins can share their own skills with every account ("Mit allen Konten teilen" in the skill editor; never a project skill). Every signed-in account sees them under Settings > Skills in the new section "Gemeinsam", with who shared them, their precedence, requirements and files; "Ansehen" shows the instruction and the files as text, and a switch turns a shared skill off for one's own account only. Guests get no shared skills, and a skill disappears for everyone when its owner is no longer owner or admin.
