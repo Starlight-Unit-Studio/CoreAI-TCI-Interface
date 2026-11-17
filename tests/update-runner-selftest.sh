@@ -43,13 +43,13 @@ cat > "$WORK/remote/setup.sh" <<SETUP
 set -Eeuo pipefail
 TARGET_DIR='$APP'
 printf 'setup %s\n' "\${COREUI_SETUP_SOURCE:-}" >> '$LOG'
-printf '[CoreAI: TCI Interface Setup] Lade den neuesten CoreAI: TCI Interface-Entwicklungsstand aus main.\n'
-printf '[CoreAI: TCI Interface] Baue die isolierten PHP-, Python-Worker- und optionalen Browse-Images.\n'
+printf '[CoreAI: TCI Interface Setup] Downloading the latest CoreAI: TCI Interface source from main.\n'
+printf '[CoreAI: TCI Interface] Building isolated PHP, Python worker, and optional browser images.\n'
 printf '#7 [php 3/6] RUN apt-get update\n' >&2
 [[ "\${FAKE_SETUP_FAIL:-}" != 1 ]] || exit 9
-printf '[CoreAI: TCI Interface] Installation erfolgreich. Lokaler Endpunkt: http://127.0.0.1:9080/\n'
+printf '[CoreAI: TCI Interface] Installation successful. Local endpoint: http://127.0.0.1:9080/\n'
 printf '[OK]     Preflight-Zeile\n'
-printf '[CoreAI: TCI Interface Setup] Entwicklerstand erfolgreich installiert: %s\n' '$B'
+printf '[CoreAI: TCI Interface Setup] Development source successfully installed: %s\n' '$B'
 printf '0.5.85\n' > "\$TARGET_DIR/VERSION"
 printf '%s\n' '$B' > "\$TARGET_DIR/var/dev_source_commit"
 SETUP
@@ -188,18 +188,18 @@ FOLLOW=(python3 -I "$APP/scripts/lib/coreai_update_state.py" follow)
 PST="$WORK/progress.json"
 pct() { json "$PST" percent; }
 printf '{"preflight_lines": 10}' > "$PST"
-printf '%s\n' '[CoreAI: TCI Interface] Baue die isolierten PHP-, Python-Worker- und optionalen Browse-Images.' '#7 [php 3/6] RUN apt-get update' \
+printf '%s\n' '[CoreAI: TCI Interface] Building isolated PHP, Python worker, and optional browser images.' '#7 [php 3/6] RUN apt-get update' \
   > "$WORK/t1.txt"
 "${FOLLOW[@]}" "$PST" < "$WORK/t1.txt" > "$WORK/t1.out"
 cmp -s "$WORK/t1.txt" "$WORK/t1.out" || fail 'the installer output is not passed through unchanged'
-[[ "$(pct)" == 32 && "$(json "$PST" step)" == 'Die Images werden gebaut.' ]] || fail "docker build progress: $(cat "$PST")"
+[[ "$(pct)" == 32 && "$(json "$PST" step)" == 'Building container images.' ]] || fail "docker build progress: $(cat "$PST")"
 { cat "$WORK/t1.txt"; printf '#3 [php 1/6] FROM php\n'; } | "${FOLLOW[@]}" "$PST" > /dev/null
 [[ "$(pct)" == 32 ]] || fail 'progress never goes back'
 { printf '%s\n' 'CoreAI: TCI Interface Compose-Preflight, Version 0.5.84'; for i in 1 2 3 4 5; do printf '[OK]     Check %s\n' "$i"; done; } \
   | "${FOLLOW[@]}" "$PST" > /dev/null
-[[ "$(pct)" == 84 && "$(json "$PST" step)" == 'Der Preflight prüft alle Funktionen.' ]] || fail "preflight progress: $(cat "$PST")"
+[[ "$(pct)" == 84 && "$(json "$PST" step)" == 'Checking installed components.' ]] || fail "preflight progress: $(cat "$PST")"
 [[ "$(json "$PST" preflight_lines)" == 5 ]] || fail 'preflight length kept for the next update'
-printf '[CoreAI: TCI Interface Setup] Entwicklerstand erfolgreich installiert: x\n' | "${FOLLOW[@]}" "$PST" > /dev/null
+printf '[CoreAI: TCI Interface Setup] Development source successfully installed: x\n' | "${FOLLOW[@]}" "$PST" > /dev/null
 [[ "$(pct)" == 90 ]] || fail 'installation ends at 90 percent'
 # Garbage and a missing status folder never stop the copy (a broken pipe would stop the installer).
 head -c 20000 /dev/urandom > "$WORK/junk.bin"
@@ -213,7 +213,7 @@ printf '{"action":"update","requested_by":5,"restart_ollama":true}' > "$APP/var/
 [[ "$(json "$ST" state)" == 'done' && "$(json "$ST" phase)" == 'done' ]] || fail "done state: $(cat "$ST")"
 [[ "$(json "$ST" from_version)" == '0.5.83' && "$(json "$ST" to_version)" == '0.5.85' && "$(json "$ST" commit)" == "$B" ]] || fail 'versions in status'
 [[ "$(json "$ST" requested_by)" == '5' && "$(json "$ST" restart_ollama)" == 'True' ]] || fail 'request fields in status'
-[[ "$(json "$ST" percent)" == 100 && "$(json "$ST" step)" == 'Fertig.' ]] || fail 'done at 100 percent'
+[[ "$(json "$ST" percent)" == 100 && "$(json "$ST" step)" == 'Done.' ]] || fail 'done at 100 percent'
 grep -q 'Entwicklerstand erfolgreich installiert' "$APP/var/update/update.log" || fail 'installer output not in the update log'
 grep -q '#7 \[php 3/6\]' "$APP/var/update/update.log" || fail 'installer errors (stderr) not in the update log'
 [[ ! -e "$APP/var/update-request/request.json" ]] || fail 'request not consumed'
