@@ -299,7 +299,11 @@ const smallText = page => page.evaluate(() => {
     assert.deepEqual(await visibleViews(page), ['view-wissen'], 'arrow keys move across advanced tabs');
     await page.keyboard.press('ArrowDown');
     assert.deepEqual(await visibleViews(page), ['view-memory'], 'and on to the next advanced category');
-    assert.equal(await page.locator('#tab-skills').count(), 0, 'no Skills tab: Mara picks her skills herself');
+    // 0.7.83 (P12 A): Skills holds the account's own skills. The built-in library has no switches: Mara still
+    // picks her skills herself.
+    await page.keyboard.press('ArrowDown');
+    assert.deepEqual(await visibleViews(page), ['view-skills'], 'and on to the own skills of the account');
+    assert.equal(await page.locator('#skBuiltin input').count(), 0, 'no switch for the built-in skills: Mara picks them herself');
     await page.keyboard.press('Home');
     assert.deepEqual(await visibleViews(page), ['view-start']);
     await page.click('#tab-wissen');

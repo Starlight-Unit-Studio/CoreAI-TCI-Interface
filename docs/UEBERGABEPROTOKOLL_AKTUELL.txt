@@ -1,4 +1,19 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.82, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.83).
+ZIEL 0.7.83: Roadmap P12 Schritt A (CF-042 bis CF-044), eigene Skills je
+Konto unter Einstellungen > Skills mit Anleitung, Ausloesern,
+Voraussetzungen, Geltungsbereich und Begleitdateien (Referenzen, Vorlagen,
+Skripte nur als Text, Daten); Mara findet und laedt sie wie die
+mitgelieferten und nennt fehlende Werkzeuge und Dateien.
+Migration 052_skill_packages.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_83.txt.
+Naechster Schritt: P12 B (gemeinsame Skills, bestimmte Variante je Chat,
+Prioritaet), auf Auftrag.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.84.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.81, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.82).
 ZIEL 0.7.82: Roadmap P11 Schritt C (CF-031), Maras Dateien mit Version,
 Vorschau aus genau den Bytes des Downloads, Behalten, Loeschen mit Hinweis

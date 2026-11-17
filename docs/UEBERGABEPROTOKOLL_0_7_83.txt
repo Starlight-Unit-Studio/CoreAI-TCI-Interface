@@ -1,0 +1,66 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.83
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.82 nach PR #338
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"gemerged, weiter mit der roadmap": Roadmap P12, Skills laden und anwenden (Feature-Matrix CF-042
+bis CF-044). Betreiberentscheidung zur neuen Einstellungsseite: "Im CoreAI-Stil bauen" (ohne
+Referenz-Screenshot). Aufgeteilt wie P11: Schritt A eigene Skills mit Begleitdateien und
+Voraussetzungen, Maras Nutzung im Chat und die Seite Skills; Schritt B (gemeinsame Skills,
+ausdruecklich bestimmte Variante je Chat, Prioritaet) erst auf Auftrag.
+Abnahme P12: Ein Skill wird in einem neuen Auftrag mit seinen Referenzen und Vorlagen verwendet.
+Fehlende Ressourcen oder Werkzeuge werden erkannt; Ressourcen laden fuehrt nicht automatisch
+Skripte aus.
+
+UMSETZUNG
+- database/migrations/052_skill_packages.sql: stu_skill_packages (id, Konto, Kennung eindeutig je
+  Konto, Name, Beschreibung, Anleitung, Ausloeser, Voraussetzungen, Projekt oder NULL, an/aus,
+  Zeiten; Fremdschluessel auf Konto und Projekt mit ON DELETE CASCADE) und
+  stu_skill_package_files (Pfad, Art reference/template/script/asset, Inhalt, Groesse, SHA-256;
+  geht mit dem Skill).
+- api/skill_packages_store.php (neu): Grenzen (50 Skills, 20 Dateien, Anleitung 4.000 Bytes,
+  Datei 8.000 Bytes, 12 Ausloeser), Pruefung von Kennung (keine mitgelieferte), Ausloesern,
+  Voraussetzungen (web, browse, python, image, files, run), Pfaden (vier Ordner, Name mit Endung,
+  keine Unterordner, kein ".."), fehlende Dateien aus der Anleitung; Liste mit Suche, Holen,
+  Speichern, Loeschen, Datei speichern (mit Umbenennen) und loeschen, immer nur eigene; die Skills
+  eines Chats (an, alle Chats oder das Projekt des Chats) mit Dateien fuer api/skills.php.
+- api/skill_packages.php (neu): GET list und get, POST save, delete, file_save, file_delete mit
+  CSRF; nur angemeldete Konten, nie Gaeste; ohne Migration 052 ready=false.
+- api/skills.php: eigene Skills des Zuges (coreui_skills_own), Eintrag eigen vor mitgeliefert,
+  fehlende Werkzeuge; Auswahl, Bibliothek ("eigener Skill", fehlende Werkzeuge), Laden mit
+  [SKILL: ...] (Hinweis auf fehlende Werkzeuge), Begleitdateien eines eigenen Skills (8.000 Bytes
+  bei grossem Kontextfenster, 4.000 bei kleinerem), Block "EIGENER SKILL" mit fehlender
+  Voraussetzung, fehlenden Dateien und "Begleitdateien bei Bedarf", eigene Bloecke fuer VORLAGE,
+  SKRIPT (nur als Text, laeuft nicht von selbst), DATEI und REFERENZ. coreui_skills_prepare nimmt
+  einen Kontext (Konto, Projekt, Werkzeuge) und setzt jeden Zug zurueck.
+- api/chat.php: ember_skill_context (Konto, Projekt des Chats, Werkzeuge des Chats) fuer beide
+  Prompt-Wege; nur im Konsolenkanal, nie in Game E.M.B.E.R.
+- config/nginx.conf.template, config/runtime/nginx.conf.template: skill_packages erlaubt.
+- settings.html, js/coreui-skills-settings.js, css/coreui-skills-settings.css (neu): Seite Skills
+  bei COREAI // FUNKTIONEN nach Memory: Suche, eigene Skills mit Angaben, mitgelieferte zum
+  Nachschlagen ohne Schalter (zwoelf ohne Suche), Editor (Name, Kennung, Beschreibung, Ausloeser,
+  Voraussetzungen, Gilt fuer, Aktiv, Anleitung mit Bytezaehler, fehlende Dateien, Speichern,
+  Loeschen mit Rueckfrage), Begleitdateien (Ordner, Dateiname, Inhalt; Bearbeiten mit Umbenennen,
+  Loeschen mit Rueckfrage). Namen und Texte immer als Text, nie als HTML.
+- scripts/skills-selftest.php, settings-navigation-foundation-selftest.cjs (25 Kategorien,
+  skills bei den Expertenkategorien), settings-tabs-ui-selftest.cjs: folgen der neuen Seite; die
+  Pruefung, dass die mitgelieferten Skills keine Schalter haben, bleibt.
+- Preflights: neue Dateien in der Pflichtliste, beide neuen Selbsttests.
+- Doku: README und CAPABILITIES (englisch, aktueller Stand), ROADMAP (M4 und P12), Feature-Matrix
+  (CF-042 bis CF-044 Teilbestand), CHANGELOG.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Ollama, mitgelieferter Skill-Katalog und seine Dateien.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Eigene Skills mit einem echten Core auf dem Server.
+
+NAECHSTER SCHRITT
+- P12 B (gemeinsame Skills, ausdruecklich bestimmte Variante je Chat, Prioritaet) auf Auftrag.
+
+Version: 0.7.83

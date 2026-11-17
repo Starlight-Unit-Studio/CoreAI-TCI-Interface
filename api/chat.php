@@ -4,6 +4,8 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/ai_settings.php';
 require_once __DIR__ . '/general_core_controls.php';
 require_once __DIR__ . '/skills.php';
+// 0.7.83 (P12 A): the account's own skills.
+require_once __DIR__ . '/skill_packages_store.php';
 require_once __DIR__ . '/console_attachment_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
 require_once __DIR__ . '/console_work_store.php';
@@ -5134,7 +5136,7 @@ function ember_build_chat_prompt(
     $excludeReplyToId,
     $profile['line']
   );
-  coreui_skills_prepare($pdo, $userMsg, $channel, $profile['skills']);
+  coreui_skills_prepare($pdo, $userMsg, $channel, $profile['skills'], $channel === 'console' ? ember_skill_context($consoleUid, (string)$consoleSessionId) : null);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profileRow = coreui_profile_load($pdo, $uid);
@@ -5514,6 +5516,29 @@ function ember_generated_image_review(PDO $pdo, int $uid, string $model, string 
     $timeout, $options, null, $think, false);
 }
 
+/**
+ * 0.7.83 (P12 A): what the skills of this turn need to know: the account, the chat's project (its
+ * project skills apply) and the tools this chat has, so a skill's missing requirements are named.
+ */
+function ember_skill_context(int $uid, string $sessionId): array {
+  $tools = [];
+  if (ember_web_enabled()) $tools[] = 'web';
+  if (ember_browse_enabled()) $tools[] = 'browse';
+  if (ember_py_enabled()) $tools[] = 'python';
+  if ($sessionId !== '' && ember_image_allowed($uid)) $tools[] = 'image';
+  $project = '';
+  try {
+    $project = (string)(coreui_project_session_scope(stu_pdo(), $uid, $sessionId)['id'] ?? '');
+    if (coreui_pftools_project(stu_pdo(), $uid, $sessionId) !== '') {
+      $tools[] = 'files';
+      if (ember_py_enabled() && coreui_pruns_ready(stu_pdo())) $tools[] = 'run';
+    }
+  } catch (Throwable $e) {
+    error_log('[CoreAI] skill context: ' . get_class($e));
+  }
+  return ['uid'=>$uid, 'project'=>$project, 'tools'=>$tools];
+}
+
 /** Tools of the work loop for this chat. */
 function ember_agent_allowed_tools(int $uid, string $sessionId, bool $explicitBrowse = false): array {
   $tools = [];
@@ -5659,7 +5684,7 @@ function ember_generate_reply(
     $excludeReplyToId,
     $promptProfile['line']
   );
-  coreui_skills_prepare($pdo, $userMsg, $channel, $promptProfile['skills']);
+  coreui_skills_prepare($pdo, $userMsg, $channel, $promptProfile['skills'], $channel === 'console' ? ember_skill_context($consoleUid, (string)$consoleSessionId) : null);
   try {
     if ($uid > 0 && coreui_profile_schema_ready($pdo)) {
       $profile = coreui_profile_load($pdo, $uid);

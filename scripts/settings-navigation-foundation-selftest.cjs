@@ -20,11 +20,11 @@ const sections = {
   integrations: ['plugins','passwoerter','cloud-computer'],
   programming: ['code-review'],
   system: ['system'],
-  expert: ['ki-profil','wissen','memory']
+  expert: ['ki-profil','wissen','memory','skills']
 };
 const entries = Object.values(sections).flat();
-// 0.7.1: Codex Cloud is gone (the chat already covers code work).
-assert.equal(entries.length, 24);
+// 0.7.1: Codex Cloud is gone (the chat already covers code work). 0.7.83 (P12 A): Skills for the own skills.
+assert.equal(entries.length, 25);
 assert.ok(!settings.includes('codex-cloud'), 'no Codex Cloud entry or page');
 const ids = [...settings.matchAll(/\bid="([^"]+)"/g)].map(x => x[1]);
 assert.equal(new Set(ids).size, ids.length, 'no duplicate IDs');
@@ -76,7 +76,7 @@ assert.ok(!section('start').includes('id="generalSendKey"'),
   'the send shortcut is no longer duplicated in General');
 assert.ok(settings.includes('id="cfgCoreGroup"'));
 assert.ok(!settings.includes('id="cfgExpertGroup"'));
-assert.ok(['start','ki-profil','wissen','memory','system'].every(id => settings.includes('id="tab-' + id + '"')),
+assert.ok(['start','ki-profil','wissen','memory','skills','system'].every(id => settings.includes('id="tab-' + id + '"')),
   'advanced categories remain accessible with Expert disabled');
 const expertNodes = [...settings.matchAll(/data-expert hidden/g)];
 assert.equal(expertNodes.length, 7, 'only raw technical controls (6) and the note of the Core path remain Expert-gated, while smart controls stay visible');
@@ -162,4 +162,4 @@ assert.ok(css.includes('cfg-nav-collapsed') && css.includes('cfg-header-expert')
 assert.ok(read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchstart'") &&
   read('js/coreui-settings-menu.js').includes("doc.addEventListener('touchend'"),
   'swipe navigation is implemented alongside keyboard and button access');
-console.log('CoreAI settings: 24 categories, 6 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');
+console.log('CoreAI settings: 25 categories, 6 honest planning pages, migrated live controls, header Expert/Admin, responsive swipe navigation OK');

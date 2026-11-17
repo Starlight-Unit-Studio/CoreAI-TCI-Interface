@@ -1,0 +1,42 @@
+/* CoreAI: TCI Interface 0.7.83 (P12 A): Settings > Skills, in the style of the other settings pages. */
+.sk-main, .sk-edit { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.sk-main[hidden], .sk-edit[hidden] { display: none; }
+.sk-search { max-width: 520px; }
+.sk-list { padding: 4px 0; }
+.sk-row { cursor: pointer; gap: 10px; }
+.sk-row.sk-builtin { cursor: default; }
+.sk-row.is-off .sec-copy strong { opacity: .6; }
+.sk-row .sec-copy { min-width: 0; }
+.sk-row .sec-copy small { overflow-wrap: anywhere; }
+.sk-desc { color: var(--muted, #66728a); }
+.sk-warn { color: var(--amb, #e29b39); font-weight: 600; overflow-wrap: anywhere; }
+.sk-empty { margin: 10px 14px; color: var(--muted, #66728a); font-size: 13px; }
+.sk-edit-title { margin: 4px 0; font-size: 18px; overflow-wrap: anywhere; }
+.sk-form, .sk-files { display: flex; flex-direction: column; gap: 12px; padding: 14px; min-width: 0; }
+.sk-field input, .sk-field select, .sk-body { width: 100%; box-sizing: border-box; }
+.sk-body {
+  min-height: 140px; padding: 8px; resize: vertical; tab-size: 2;
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  border: 1px solid var(--line-strong, rgba(91, 146, 255, .54)); background: var(--panel-solid, #fbfdff); color: var(--txt, #101626);
+}
+.sk-count { color: var(--muted, #66728a); margin-top: -6px; }
+.sk-count.is-over { color: var(--red, #d4505d); font-weight: 600; }
+.sk-requires { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 10px 12px; border: 1px solid var(--line, rgba(91, 146, 255, .25)); }
+.sk-requires legend { font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.sk-requires > small { flex: 1 1 100%; color: var(--muted, #66728a); }
+.sk-check { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.sk-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sk-danger { border-color: var(--red, #d4505d) !important; color: var(--red, #d4505d) !important; }
+.sk-small { padding: 4px 10px; font-size: 11px; }
+.sk-file-list { padding: 0; }
+.sk-file { gap: 8px; }
+.sk-file-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+.sk-file .sec-copy strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+.sk-file-form { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line, rgba(91, 146, 255, .25)); }
+.sk-file-path { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 10px; }
+@media (max-width: 640px) {
+  .sk-file-path { grid-template-columns: 1fr; }
+  .sk-actions > * { flex: 1 1 auto; }
+  .sk-file { flex-wrap: wrap; }
+  .sk-file-actions { margin-left: 0; flex: 1 1 100%; }
+}
