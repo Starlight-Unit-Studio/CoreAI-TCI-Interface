@@ -2413,7 +2413,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.5.83: the update window needs the host units (installed by scripts/install.sh).
   if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
     if systemctl is-active --quiet coreai-update.path && systemctl is-active --quiet coreai-update-check.timer; then
-      ok 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update window.'
+      ok 'Update service active: checks for new merges every 10 minutes, launch from the Update window.'
     else
       fail 'Update service is not active (coreai-update.path or coreai-update-check.timer). Run scripts/install.sh again.'
     fi
