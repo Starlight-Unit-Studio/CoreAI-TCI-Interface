@@ -133,7 +133,9 @@ async function advance(page, ms) {
     assert.equal(await page.isChecked('#updateAutoEnable'), false, 'automatic updates are disabled by default');
     await page.click('.cu-later');
     await page.waitForSelector('#coreaiUpdate', {state:'detached'});
-    await page.check('#updateAutoEnable');
+    // Click the visible custom switch; the checkbox is covered by its styled track.
+    await page.locator('label[for="updateAutoEnable"] .settings-switch i').click();
+    assert.equal(await page.isChecked('#updateAutoEnable'), true, 'custom switch toggles the real checkbox');
     await page.waitForFunction(() => !document.querySelector('#updateAutoEnable').disabled);
     assert(srv.calls.some(c=>c.key==='update.php' && c.action==='auto' && c.post.enabled===true),
       'the opt-in is an authenticated server action');
