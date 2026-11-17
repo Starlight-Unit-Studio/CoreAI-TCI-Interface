@@ -193,7 +193,7 @@ assert_stack_identity() {
   for id in "${ids[@]}"; do
     working_dir="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' "$id" 2>/dev/null || true)"
     [[ "$working_dir" == "$PROJECT_ROOT" ]] \
-      || die "Ein Compose-Projekt namens $COMPOSE_PROJECT belongs to a different directory: ${working_dir:-unknown}"
+      || die "A Compose project named $COMPOSE_PROJECT belongs to a different directory: ${working_dir:-unknown}"
   done
   EXISTING_STACK=1
 }
