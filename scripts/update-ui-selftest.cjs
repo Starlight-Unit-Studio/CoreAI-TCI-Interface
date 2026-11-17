@@ -118,6 +118,12 @@ async function advance(page, ms) {
     assert.match(look.filter, /blur/, 'frosted, so the page shimmers through');
     assert.equal(await page.textContent('.cu-versions'), '0.5.83→0.5.84');
     assert.equal(await page.textContent('#cuTitle'), 'New version available');
+    assert.equal(await page.textContent('#updateCardTitle'), 'CoreAI Update');
+    assert.equal(await page.textContent('.cu-later'), 'Later');
+    assert.equal(await page.textContent('.cu-start'), 'Start update');
+    assert.equal(await page.textContent('.cu-option span'), 'Restart Ollama afterward');
+    assert.match(await page.textContent('.cu-hint'), /database is backed up first/i);
+    assert.equal(await page.textContent('#updateCardCheck'), 'CHECK NOW');
     assert.deepEqual(await page.$$eval('.cu-notes li', l => l.map(x => x.textContent)), ['Neue Stimme: Mara spricht.', 'Tests: voice-selftest.php neu.']);
     assert.equal(await page.$eval('.cu-notes li strong', e => e.textContent), 'Neue Stimme:', 'bold stays bold, no HTML from the changelog');
     assert.equal(await page.isChecked('#cuOllama'), true, 'Ollama restart is preselected');
@@ -219,6 +225,8 @@ async function advance(page, ms) {
     assert.equal(await page.textContent('#cuTitle'), 'Update failed');
     assert.equal(await page.textContent('.cu-window > .cu-error'), 'The installation reported errors. See the update log for details.');
     assert.equal(await page.textContent('.cu-log pre'), '[CoreAI Update] FEHLER in Phase install');
+    assert.equal(await page.textContent('.cu-log summary'), 'Update log (latest lines)');
+    assert.equal(await page.textContent('#updateCardOpen'), 'OPEN UPDATE WINDOW');
     assert.equal(await page.textContent('.cu-start'), 'Retry');
     assert.equal(await page.locator('.cu-start svg.cu-retry-icon').count(), 1,
       'the retry action contains a circular-arrow icon');
