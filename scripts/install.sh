@@ -507,7 +507,7 @@ ensure_ollama_model() {
   chown root:33 "$PROJECT_ROOT/var/Modelfile.generated"
   chmod 0640 "$PROJECT_ROOT/var/Modelfile.generated"
 
-  log "Creating separate Ollama model $MODEL_NAME aus $BASE_MODEL."
+  log "Creating separate Ollama model $MODEL_NAME from $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$PROJECT_ROOT/var/Modelfile.generated"
   ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "The new TCI Core $MODEL_NAME could not be verified. The base model will be preserved."
   log "Custom Ollama Modelfile for $MODEL_NAME contains no PARAMETER overrides."
