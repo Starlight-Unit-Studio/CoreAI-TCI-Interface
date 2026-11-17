@@ -13,6 +13,11 @@ on:
       - 'scripts/voice-service-selftest.py'
       - 'tests/update-runner-selftest.sh'
       - 'tests/update-auto-selftest.py'
+      - 'js/coreui-update.js'
+      - 'settings.html'
+      - 'app.html'
+      - 'scripts/update-ui-selftest.cjs'
+      - 'scripts/update-english-selftest.cjs'
       - '.github/workflows/installer-preflight-contract.yml'
   push:
     branches: [main]
@@ -27,6 +32,11 @@ on:
       - 'scripts/voice-service-selftest.py'
       - 'tests/update-runner-selftest.sh'
       - 'tests/update-auto-selftest.py'
+      - 'js/coreui-update.js'
+      - 'settings.html'
+      - 'app.html'
+      - 'scripts/update-ui-selftest.cjs'
+      - 'scripts/update-english-selftest.cjs'
       - '.github/workflows/installer-preflight-contract.yml'
 
 permissions:
@@ -52,6 +62,12 @@ jobs:
       - name: Verify Python source syntax
         run: |
           python3 -m py_compile scripts/voice-service-selftest.py scripts/lib/coreai_update_state.py tests/update-auto-selftest.py
+      - name: English update window and cache fingerprint
+        run: |
+          node --check js/coreui-update.js
+          node --check scripts/update-ui-selftest.cjs
+          node scripts/update-english-selftest.cjs
+          python3 scripts/cache-bust.py --verify
       - name: Voice service and optional-install contract
         run: python3 scripts/voice-service-selftest.py
       - name: Host updater and installation progress contract
