@@ -79,22 +79,7 @@ function server(level) {
     }
     const file = path.join(root, rel || 'index.html');
     if (!fs.existsSync(file)) return route.fulfill({status: 404, body: ''});
-    let body = fs.readFileSync(file);
-    // Diagnostic: record exactly which reported server state would trigger a
-    // document reload. This overlay runs in the test only, not the product.
-    if (rel === 'js/coreui-update.js') {
-      const original = body.toString('utf8');
-      body = Buffer.from(original
-        .replace('        finish();',
-          '        console.error("TRACE_UPDATE_FINISH", JSON.stringify({state:data.state,version:data.version, waitVersion:wait.version, down:wait.down})); finish();')
-        .replace(/location\.reload\(\);/g,
-          'console.error("TRACE_RELOAD_UPDATE", new Error().stack); location.reload();'));
-      console.log('TRACE_UPDATE_SCRIPT_INJECTED');
-    } else if (rel === 'js/settings.js') {
-      body = Buffer.from(body.toString('utf8').replace(/location\.replace\(/g,
-        'console.error("TRACE_SETTINGS_REPLACE", new Error().stack); location.replace('));
-    }
-    return route.fulfill({contentType: types[path.extname(file)] || 'application/octet-stream', body});
+    return route.fulfill({contentType: types[path.extname(file)] || 'application/octet-stream', body: fs.readFileSync(file)});
   };
   return srv;
 }
@@ -112,12 +97,8 @@ async function open(browser, level, viewport, prepare) {
   page.on('load', () => {
     navigation.count += 1;
     navigation.urls.push(page.url());
-    console.log('TRACE_PAGE_LOAD', navigation.count, page.url());
   });
   page.on('pageerror', error => errors.push(error.message));
-  page.on('console', message => {
-    if (message.text().includes('TRACE_')) console.log(message.text());
-  });
   await page.clock.install();
   await page.route('http://coreui.test/**', route => srv.route(route));
   await page.goto('http://coreui.test/settings.html#system');
@@ -180,6 +161,9 @@ async function advance(page, ms) {
     assert(srv.calls.some(c=>c.key==='update.php' && c.action==='later'),
       'Later uses server-side scheduling, not just a tab flag');
     await page.reload();
+    // This reload is intentional (testing snooze persistence), not an
+    // unexpected reload by the updater. Reset the navigation baseline.
+    navigationState.get(page).baseline = navigationState.get(page).count;
     await advance(page, 61000);
     assert.equal(await page.locator('#coreaiUpdate').count(), 0, 'Später survives a page reload and repeated polling');
     assert.equal(await page.isChecked('#updateAutoEnable'), true, 'the opt-in survives the next page load');
