@@ -37,7 +37,7 @@ log() {
 }
 
 die() {
-  log "FEHLER: $*" >&2
+  log "ERROR: $*" >&2
   exit 1
 }
 
@@ -109,7 +109,7 @@ check_now() {
   local commit version='' notes
   if ! commit="$(remote_main)" || [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
     state available "$AVAILABLE_FILE" '' '' '' 'github_unreachable'
-    log 'GitHub nicht erreichbar; letztes Pruefergebnis bleibt.'
+    log 'GitHub is unreachable; keeping the most recent check result.'
     return 0
   fi
   [[ -n "$TMP_DIR" ]] || TMP_DIR="$(mktemp -d /tmp/coreai-update.XXXXXX)"
@@ -125,9 +125,9 @@ check_now() {
   fi
   state available "$AVAILABLE_FILE" "$commit" "$version" "$notes"
   if [[ "$commit" == "$(local_commit)" ]]; then
-    log "Aktuell: $(local_version), Commit $commit."
+    log "Up to date: $(local_version), commit $commit."
   else
-    log "Neuer Stand auf main: ${version:-unbekannt}, Commit $commit (installiert: $(local_version))."
+    log "New main version: ${version:-unknown}, commit $commit (installed: $(local_version))."
   fi
 }
 
@@ -136,12 +136,12 @@ do_check() {
   # Remove the request first: the path unit would start the check again and again.
   rm -f -- "$CHECK_FILE"
   if ! take_lock; then
-    log 'Ein Update laeuft; die Pruefung folgt spaeter.'
+    log 'An update is running; the next check will run later.'
     return 0
   fi
   if [[ "$(state get "$STATUS_FILE" state)" == 'running' ]]; then
     # Nothing holds the lock, so the last update did not finish (server restart?).
-    state status "$STATUS_FILE" state=failed message='Das Update wurde unterbrochen, etwa durch einen Neustart des Servers. Bitte erneut starten.' \
+    state status "$STATUS_FILE" state=failed message='The update was interrupted, possibly by a server restart. Please try again.' \
       finished_at="$(utc_now)"
   fi
   check_now
@@ -155,7 +155,7 @@ do_check() {
 
 fail_run() {
   local phase="$1" message="$2"
-  log "FEHLER in Phase $phase: $message"
+  log "ERROR in phase $phase: $message"
   state status "$STATUS_FILE" state=failed phase="$phase" message="$message" finished_at="$(utc_now)"
   exit 1
 }
@@ -185,7 +185,7 @@ download_setup() {
   # The setup of main must install exactly this installation.
   grep -qxF "TARGET_DIR='$PROJECT_ROOT'" "$TMP_DIR/setup.sh" || return 2
   bash -n "$TMP_DIR/setup.sh" || return 1
-  log "Setup aus main geladen (Commit $commit)."
+  log "Setup downloaded from main (commit $commit)."
 }
 
 restart_services() {
@@ -196,8 +196,8 @@ restart_services() {
   "$PROJECT_ROOT/scripts/stack.sh" restart "${services[@]}" || return 1
   if [[ "$restart_ollama" == '1' ]]; then
     if systemctl cat ollama.service >/dev/null 2>&1; then
-      log 'Starte Ollama neu.'
-      state status "$STATUS_FILE" percent=94 step='Ollama startet neu.'
+      log 'Restarting Ollama.'
+      state status "$STATUS_FILE" percent=94 step='Restarting Ollama.'
       systemctl restart ollama || return 1
       for attempt in $(seq 1 30); do
         curl -fsS --max-time 4 "$OLLAMA_URL" >/dev/null 2>&1 && return 0
@@ -205,7 +205,7 @@ restart_services() {
       done
       return 1
     fi
-    log 'Kein systemd-Dienst ollama gefunden; Ollama bleibt unveraendert.'
+    log 'No Ollama systemd service found; Ollama remains unchanged.'
   fi
   return 0
 }
@@ -225,12 +225,12 @@ do_run() {
   local request restart_ollama=0 requested_by=0 automatic=0 automatic_commit='' line backup='' result=0 message
   ensure_dirs
   if [[ ! -e "$REQUEST_FILE" && ! -L "$REQUEST_FILE" ]]; then
-    log 'Keine Update-Anfrage vorhanden.'
+    log 'No update request pending.'
     return 0
   fi
   if ! request="$(state request "$REQUEST_FILE")"; then
     rm -f -- "$REQUEST_FILE"
-    log 'Ungueltige Update-Anfrage verworfen.'
+    log 'Invalid update request discarded.'
     return 0
   fi
   while IFS= read -r line; do
@@ -243,12 +243,12 @@ do_run() {
   done <<<"$request"
   if (( automatic == 1 )) && ! state auto-allowed "$REQUEST_DIR/auto.json"; then
     rm -f -- "$REQUEST_FILE"
-    log 'Automatische Update-Anfrage nach Spaeter oder Deaktivieren verworfen.'
+    log 'Automatic update request discarded after snoozing or disabling updates.'
     return 0
   fi
   if ! take_lock; then
     rm -f -- "$REQUEST_FILE"
-    log 'Ein Update laeuft bereits.'
+    log 'An update is already running.'
     return 0
   fi
 
@@ -257,7 +257,7 @@ do_run() {
     if ! state auto-allowed "$REQUEST_DIR/auto.json" \
       || ! state auto-mark "$UPDATE_DIR/auto-attempt.json" "$automatic_commit"; then
       rm -f -- "$REQUEST_FILE"
-      log 'Auto-Update vor dem Start gestoppt; kein Backup oder Installer ausgefuehrt.'
+      log 'Automatic update stopped before starting; no backup or installation was run.'
       return 0
     fi
   fi
@@ -268,56 +268,56 @@ do_run() {
   chmod 0640 "$LOG_FILE"
   exec >>"$LOG_FILE" 2>&1
 
-  log "Update angefordert von Konto $requested_by, Auto-Update: $automatic, Ollama-Neustart: $restart_ollama."
+  log "Update requested by account $requested_by, automatic: $automatic, restart Ollama: $restart_ollama."
   # Progress for the window: backup 0-8, download 8-10, installation 10-90
   # (milestones of the installer, see coreai_update_state.py), restart 90-99.
-  state status "$STATUS_FILE" state=running phase=backup message='Datenbank wird gesichert.' \
+  state status "$STATUS_FILE" state=running phase=backup message='Backing up database.' \
     started_at="$(utc_now)" finished_at='' from_version="$(local_version)" to_version='' commit='' \
     restart_ollama="$restart_ollama" requested_by="$requested_by" automatic="$automatic" backup='' \
     failure_kind='' attempted_commit="${automatic_commit:-$(state get "$AVAILABLE_FILE" latest_commit)}" \
-    percent=2 step='Die Datenbank wird gesichert.'
+    percent=2 step='Backing up database.'
   # Only now: the window never sees "no request" before "running" (no early reload).
   rm -f -- "$REQUEST_FILE"
 
-  backup="$(backup_database)" || fail_run backup 'Die Datenbanksicherung ist fehlgeschlagen. CoreAI bleibt unverändert.'
-  log "Datenbank gesichert: $backup"
-  state status "$STATUS_FILE" phase=download message='Neuer Stand wird geladen.' backup="$backup" \
-    percent=8 step='Das Setup des neuen Stands wird geladen.'
+  backup="$(backup_database)" || fail_run backup 'Database backup failed. CoreAI remains unchanged.'
+  log "Database backup completed: $backup"
+  state status "$STATUS_FILE" phase=download message='Downloading new source.' backup="$backup" \
+    percent=8 step='Downloading setup for new source.'
 
   download_setup || result=$?
   if (( result == 2 )); then
-    fail_run download "Das Setup aus main installiert nicht nach $PROJECT_ROOT. CoreAI bleibt unverändert."
+    fail_run download "Setup from main targets a different directory than $PROJECT_ROOT. CoreAI remains unchanged."
   elif (( result != 0 )); then
-    fail_run download 'GitHub ist nicht erreichbar. CoreAI bleibt unverändert.'
+    fail_run download 'GitHub is unreachable. CoreAI remains unchanged.'
   fi
 
-  state status "$STATUS_FILE" phase=install message='CoreAI wird installiert und neu gestartet.' \
-    percent=10 step='Der Installer startet.'
+  state status "$STATUS_FILE" phase=install message='Installing CoreAI and restarting services.' \
+    percent=10 step='Starting the installer.'
   # The output goes through the follower into the log; it turns the installer's
   # milestones into percent and step. pipefail keeps the installer's exit code.
   if ! (cd "$TMP_DIR" && COREUI_SETUP_SOURCE=main bash ./setup.sh </dev/null 2>&1) | state follow "$STATUS_FILE"; then
     # Bring the stack up with what is there, so the window can show the error.
     "$PROJECT_ROOT/scripts/stack.sh" up -d >/dev/null 2>&1 || true
-    fail_run install 'Die Installation meldet Fehler. Details im Update-Protokoll.'
+    fail_run install 'The installation failed. See the update log for details.'
   fi
 
-  state status "$STATUS_FILE" phase=restart message='Dienste werden neu gestartet.' \
-    percent=91 step='Die Worker starten neu.'
-  restart_services "$restart_ollama" || fail_run restart 'Ein Dienst ließ sich nicht neu starten. Details im Update-Protokoll.'
+  state status "$STATUS_FILE" phase=restart message='Restarting services.' \
+    percent=91 step='Restarting workers.'
+  restart_services "$restart_ollama" || fail_run restart 'A service could not restart. See the update log for details.'
 
-  state status "$STATUS_FILE" percent=97 step='CoreAI wird ein letztes Mal geprüft.'
-  message='Update abgeschlossen.'
-  health_ok || message='Update abgeschlossen; der Health-Check meldet noch Fehler.'
+  state status "$STATUS_FILE" percent=97 step='Performing final CoreAI health check.'
+  message='Update completed.'
+  health_ok || message='Update completed, but the health check still reports errors.'
   state status "$STATUS_FILE" state=done phase=done message="$message" finished_at="$(utc_now)" \
-    to_version="$(local_version)" commit="$(local_commit)" percent=100 step='Fertig.'
+    to_version="$(local_version)" commit="$(local_commit)" percent=100 step='Done.'
   log "$message Version $(local_version), Commit $(local_commit)."
   check_now || true
 }
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte als root ausfuehren (systemd-Dienst coreai-update).'
-[[ -f "$STATE_TOOL" ]] || die 'scripts/lib/coreai_update_state.py fehlt.'
+[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Run as root (coreai-update systemd service).'
+[[ -f "$STATE_TOOL" ]] || die 'scripts/lib/coreai_update_state.py is missing.'
 case "${1:-}" in
   check) do_check ;;
   run) do_run ;;
-  *) die 'Aufruf: coreai-updater.sh check|run' ;;
+  *) die 'Usage: coreai-updater.sh check|run' ;;
 esac
