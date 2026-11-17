@@ -1112,7 +1112,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   fi
 
   if compose exec -T php php scripts/work-events-selftest.php >/dev/null 2>&1; then
-    ok 'P06: work events und sichere Python-Fehlerklassen geprueft.'
+    ok 'P06: work events and safe Python error classes verified.'
   else
     fail 'P06-Work event-self-test failed.'
   fi
