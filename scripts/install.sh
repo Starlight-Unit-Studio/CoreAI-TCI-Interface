@@ -19,11 +19,11 @@ log() {
 }
 
 warn() {
-  printf '[CoreAI: TCI Interface] WARN: %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface] WARNING: %s\n' "$*" >&2
 }
 
 die() {
-  printf '[CoreAI: TCI Interface] FEHLER: %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface] ERROR: %s\n' "$*" >&2
   exit 1
 }
 
@@ -84,8 +84,8 @@ ensure_host_tools() {
 
 ensure_docker() {
   if ! command -v docker >/dev/null 2>&1; then
-    is_enabled "$INSTALL_DOCKER" || die 'Docker fehlt. Installiere Docker oder setze COREUI_INSTALL_DOCKER=1.'
-    log 'Installiere Docker fuer den isolierten CoreAI: TCI Interface-Stack.'
+    is_enabled "$INSTALL_DOCKER" || die 'Docker is missing. Install Docker or set COREUI_INSTALL_DOCKER=1.'
+    log 'Installing Docker for the isolated CoreAI: TCI Interface stack.'
     ensure_apt_updated
     apt-get install -y docker.io
   fi
@@ -93,7 +93,7 @@ ensure_docker() {
   if command -v systemctl >/dev/null 2>&1 && ! systemctl is-active --quiet docker; then
     systemctl enable --now docker
   fi
-  docker info >/dev/null 2>&1 || die 'Docker ist installiert, aber der Daemon ist nicht erreichbar.'
+  docker info >/dev/null 2>&1 || die 'Docker is installed, but the daemon is unreachable.'
 
   if docker compose version >/dev/null 2>&1; then
     COMPOSE_CMD=(docker compose)
@@ -104,7 +104,7 @@ ensure_docker() {
     return
   fi
 
-  is_enabled "$INSTALL_DOCKER" || die 'Docker Compose fehlt. Installiere Compose oder setze COREUI_INSTALL_DOCKER=1.'
+  is_enabled "$INSTALL_DOCKER" || die 'Docker Compose is missing. Install Compose or set COREUI_INSTALL_DOCKER=1.'
   ensure_apt_updated
   if apt-cache show docker-compose-plugin >/dev/null 2>&1; then
     apt-get install -y docker-compose-plugin
@@ -119,7 +119,7 @@ ensure_docker() {
   elif command -v docker-compose >/dev/null 2>&1; then
     COMPOSE_CMD=(docker-compose)
   else
-    die 'Docker Compose konnte nicht eingerichtet werden.'
+    die 'Docker Compose could not be configured.'
   fi
 }
 
@@ -193,7 +193,7 @@ assert_stack_identity() {
   for id in "${ids[@]}"; do
     working_dir="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' "$id" 2>/dev/null || true)"
     [[ "$working_dir" == "$PROJECT_ROOT" ]] \
-      || die "Ein Compose-Projekt namens $COMPOSE_PROJECT gehoert zu einem anderen Pfad: ${working_dir:-unbekannt}"
+      || die "Ein Compose-Projekt namens $COMPOSE_PROJECT belongs to a different directory: ${working_dir:-unknown}"
   done
   EXISTING_STACK=1
 }
@@ -213,13 +213,13 @@ assert_ports_available() {
   fi
 
   for index in "${!ports[@]}"; do
-    [[ "$seen" != *" ${ports[$index]} "* ]] || die "Port ${ports[$index]} wurde im CoreAI: TCI Interface-Stack doppelt vergeben."
+    [[ "$seen" != *" ${ports[$index]} "* ]] || die "Port ${ports[$index]} is assigned twice within the CoreAI: TCI Interface stack."
     seen+="${ports[$index]} "
     if port_is_listening "${ports[$index]}"; then
       if (( EXISTING_STACK == 0 )) \
           || [[ "${ports[$index]}" != "${saved_ports[$index]}" ]] \
           || ! stack_service_running "${services[$index]}"; then
-        die "${labels[$index]}-Port ${ports[$index]} ist bereits belegt. Waehle einen anderen COREUI_*-PORT."
+        die "${labels[$index]}-Port ${ports[$index]} is already in use. Choose a different COREUI_*-PORT."
       fi
     fi
   done
@@ -369,7 +369,7 @@ define('STU_EMBER_PY_ENABLED', true);
 PHP
     install -m 0640 -o root -g 33 "$config_tmp" "$CONFIG_FILE"
   else
-    log 'Vorhandene api/config.local.php bleibt unveraendert.'
+    log 'Existing api/config.local.php will remain unchanged.'
   fi
 
   sed \
@@ -399,7 +399,7 @@ ensure_update_service() {
     coreai-update-check.timer coreai-update-check.path)
   local unit unit_tmp
   if ! command -v systemctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
-    warn 'Kein systemd: das Update-Fenster bleibt ohne Host-Dienst. Updates weiter mit dem Setup-Einzeiler.'
+    warn 'systemd is unavailable: the Update window will not have a host service. Continue updating with the setup one-liner.'
     printf '{"installed": false, "reason": "no_systemd", "version": "%s"}\n' "$COREUI_VERSION" > "$marker"
     chown root:33 "$marker"
     chmod 0640 "$marker"
@@ -414,11 +414,11 @@ ensure_update_service() {
   done
   systemctl daemon-reload
   systemctl enable --now coreai-update.path coreai-update-check.path coreai-update-check.timer >/dev/null 2>&1 \
-    || { warn 'Update-Dienste konnten nicht aktiviert werden.'; return 0; }
+    || { warn 'Update services could not be enabled.'; return 0; }
   printf '{"installed": true, "units": "systemd", "version": "%s"}\n' "$COREUI_VERSION" > "$marker"
   chown root:33 "$marker"
   chmod 0640 "$marker"
-  log 'Update-Dienst aktiv: Pruefung auf neue Merges alle 10 Minuten, Start aus dem Update-Fenster.'
+  log 'Update service active: checks for new merges every 10 minutes and starts from the Update window.'
 }
 
 # 0.6.96: independent owner-only uninstall runner; no PHP shell execution.
@@ -427,20 +427,20 @@ ensure_uninstall_service() {
   local marker="$dir/runner.json"
   local unit tmp
   [[ "$PROJECT_ROOT" == '/opt/ember-coreui' ]] || {
-    warn 'Uninstall-Hostdienst nur fuer den offiziellen Standardpfad unterstuetzt.'; return 0;
+    warn 'The uninstall host service supports only the official default directory.'; return 0;
   }
-  [[ ! -L "$dir" && ! -L "$marker" ]] || die 'Unsicherer Uninstall-Anfragepfad.'
+  [[ ! -L "$dir" && ! -L "$marker" ]] || die 'Unsafe uninstall request path.'
   install -d -m 0770 -o 33 -g 33 "$dir"
   # An old positive marker must never falsely advertise a disabled host service.
   printf '{"installed":false,"version":"%s"}\n' "$COREUI_VERSION" > "$marker"
   chown root:33 "$marker"
   chmod 0640 "$marker"
   if ! command -v systemctl >/dev/null 2>&1 || [[ ! -d /run/systemd/system ]]; then
-    warn 'Kein systemd: CoreAI kann ueber den SSH-Deinstallations-One-Liner entfernt werden.'
+    warn 'systemd is unavailable: CoreAI can be uninstalled using the SSH uninstall one-liner.'
     return 0
   fi
   if [[ -e "$dir/request.json" || -L "$dir/request.json" ]]; then
-    warn 'Alte Deinstallationsanfrage gefunden; Hostdienst aus Sicherheitsgruenden nicht aktiviert.'
+    warn 'An old uninstall request was found; the host service was not enabled for security reasons.'
     return 0
   fi
   chmod 0750 "$PROJECT_ROOT/scripts/uninstall.sh"
@@ -452,13 +452,13 @@ ensure_uninstall_service() {
   done
   systemctl daemon-reload
   if ! systemctl enable --now coreai-uninstall.path >/dev/null 2>&1; then
-    warn 'Uninstall-Hostdienst konnte nicht aktiviert werden; SSH-Fallback bleibt nutzbar.'
+    warn 'The uninstall host service could not be enabled; the SSH fallback remains available.'
     return 0
   fi
   printf '{"installed":true,"version":"%s"}\n' "$COREUI_VERSION" > "$marker"
   chown root:33 "$marker"
   chmod 0640 "$marker"
-  log 'Uninstall-Hostdienst aktiv; nur Inhaber mit CSRF, Passwort und Bestaetigung.'
+  log 'Uninstall host service active; owner-only with CSRF token, password and confirmation.'
 }
 
 ensure_ollama_model() {
@@ -467,8 +467,8 @@ ensure_ollama_model() {
   local base_new=0
 
   if ! command -v ollama >/dev/null 2>&1; then
-    is_enabled "$INSTALL_OLLAMA" || die 'Ollama fehlt. Installiere es oder setze COREUI_INSTALL_OLLAMA=1.'
-    log 'Installiere Ollama mit dem offiziellen Linux-Installer.'
+    is_enabled "$INSTALL_OLLAMA" || die 'Ollama is missing. Install it or set COREUI_INSTALL_OLLAMA=1.'
+    log 'Installing Ollama using the official Linux installer.'
     install_tmp="$(mktemp)"
     TEMP_FILES+=("$install_tmp")
     curl -fsSL https://ollama.com/install.sh -o "$install_tmp"
@@ -479,27 +479,27 @@ ensure_ollama_model() {
   fi
 
   wait_http 'http://127.0.0.1:11434/api/tags' 30 \
-    || die 'Ollama antwortet nicht auf 127.0.0.1:11434. Ein vorhandener Ollama-Dienst wird vom Parallelinstaller nicht umkonfiguriert.'
+    || die 'Ollama is not responding on 127.0.0.1:11434. The parallel installer does not reconfigure an existing Ollama service.'
 
   if [[ -z "$BASE_MODEL" ]]; then
     BASE_MODEL="gemma4:e4b"
   fi
   [[ "$MODEL_NAME" != "$BASE_MODEL" ]] \
-    || die 'COREUI_MODEL_NAME darf im Isolationsmodus nicht dem Basismodell entsprechen.'
+    || die 'COREUI_MODEL_NAME must differ from the base model in isolated mode.'
 
   [[ -f "$MODEL_OWNER_FILE" ]] && owned_model="$(tr -d '\r\n' < "$MODEL_OWNER_FILE")"
   if ollama show "$MODEL_NAME" >/dev/null 2>&1 \
       && [[ "$owned_model" != "$MODEL_NAME" ]] \
       && ! is_enabled "$ADOPT_MODEL"; then
-    die "Das Modell $MODEL_NAME existiert bereits, ist aber nicht als CoreAI: TCI Interface-eigen markiert. Waehle einen anderen Namen oder setze COREUI_ADOPT_MODEL=1 bewusst."
+    die "Das Modell $MODEL_NAME already exists but is not marked as owned by CoreAI: TCI Interface. Choose another name or explicitly set COREUI_ADOPT_MODEL=1."
   fi
 
   if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
-    log "Lade temporaeres Ollama-Basismodell $BASE_MODEL."
+    log "Downloading temporary Ollama base model $BASE_MODEL."
     ollama pull "$BASE_MODEL"
     base_new=1
   else
-    log "Ollama-Basismodell $BASE_MODEL war schon vorhanden und bleibt aus Sicherheitsgruenden erhalten."
+    log "Ollama-Basismodell $BASE_MODEL already exists and is kept for safety."
   fi
 
   sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" \
@@ -507,15 +507,15 @@ ensure_ollama_model() {
   chown root:33 "$PROJECT_ROOT/var/Modelfile.generated"
   chmod 0640 "$PROJECT_ROOT/var/Modelfile.generated"
 
-  log "Erzeuge das getrennte Ollama-Modell $MODEL_NAME aus $BASE_MODEL."
+  log "Creating separate Ollama model $MODEL_NAME aus $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$PROJECT_ROOT/var/Modelfile.generated"
-  ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "Der neue TCI Core $MODEL_NAME konnte nicht verifiziert werden. Basismodell bleibt erhalten."
-  log "Eigene Ollama-Modellvorlage fuer $MODEL_NAME enthaelt keine PARAMETER-Vorgaben."
+  ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "The new TCI Core $MODEL_NAME could not be verified. The base model will be preserved."
+  log "Custom Ollama Modelfile for $MODEL_NAME contains no PARAMETER overrides."
   if (( base_new == 1 )) && [[ "$BASE_MODEL" == gemma4:* ]]; then
     if ollama rm "$BASE_MODEL"; then
-      log "Temporaeren Ollama-Basistag $BASE_MODEL nach erfolgreicher Core-Pruefung entfernt."
+      log "Removed temporary Ollama base tag $BASE_MODEL after the Core was successfully verified."
     else
-      warn "Core $MODEL_NAME ist bereit, aber der temporaere Basistag $BASE_MODEL konnte nicht entfernt werden."
+      warn "Core $MODEL_NAME is ready, but temporary base tag $BASE_MODEL could not be removed."
     fi
   fi
   # The upstream FROM model may itself carry defaults, which Ollama can
@@ -525,28 +525,28 @@ ensure_ollama_model() {
   chmod 0640 "$MODEL_OWNER_FILE"
 }
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte mit sudo oder als root ausfuehren.'
-[[ -f "$PROJECT_ROOT/app.html" ]] || die 'app.html fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/settings.html" ]] || die 'settings.html fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/config/runtime/nginx.conf.template" ]] || die 'Runtime-Nginx-Template fehlt.'
-[[ -f "$PROJECT_ROOT/config/systemd/coreai-update.service.template" ]] || die 'Update-Dienst-Vorlagen fehlen.'
-[[ -f "$PROJECT_ROOT/scripts/coreai-updater.sh" ]] || die 'scripts/coreai-updater.sh fehlt.'
-[[ -f "$COMPOSE_FILE" ]] || die 'compose.yaml fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/scripts/migrate.sh" ]] || die 'scripts/migrate.sh fehlt. Das Installationspaket ist unvollstaendig.'
-[[ -f "$PROJECT_ROOT/database/migrations/001_core.sql" ]] || die 'SQL-Basisschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/002_coreui_management.sql" ]] || die 'SQL-Verwaltungsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/003_console_sessions.sql" ]] || die 'SQL-Sitzungsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/004_profiles_knowledge.sql" ]] || die 'SQL-Profil- und Knowledge-Schema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql" ]] || die 'SQL-Thinking- und Anhangschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/006_account_security.sql" ]] || die 'SQL-Kontosicherheitsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/007_remove_private_studio_lore.sql" ]] || die 'SQL-Datenschutzmigration fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/008_message_actions.sql" ]] || die 'SQL-Nachrichtenaktionsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/009_message_editing.sql" ]] || die 'SQL-Nachrichtenbearbeitungsschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql" ]] || die 'SQL-Dateiausgabeschema fehlt.'
-[[ -f "$PROJECT_ROOT/database/migrations/012_console_work_events.sql" ]] || die 'SQL-Arbeitsereignisse fehlen.'
-[[ "$PROJECT_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'Der Projektpfad enthaelt nicht unterstuetzte Zeichen.'
-[[ "$PROJECT_ROOT" != /root/* ]] || die 'Bitte das Paket dauerhaft nach /opt/ember-coreui verschieben.'
-[[ "$PROJECT_ROOT" != /home/* ]] || die 'Bitte das Paket dauerhaft nach /opt/ember-coreui verschieben.'
+[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Run this installer with sudo or as root.'
+[[ -f "$PROJECT_ROOT/app.html" ]] || die 'app.html is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/settings.html" ]] || die 'settings.html is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/config/runtime/nginx.conf.template" ]] || die 'Runtime Nginx template is missing.'
+[[ -f "$PROJECT_ROOT/config/systemd/coreai-update.service.template" ]] || die 'Update service templates are missing.'
+[[ -f "$PROJECT_ROOT/scripts/coreai-updater.sh" ]] || die 'scripts/coreai-updater.sh is missing.'
+[[ -f "$COMPOSE_FILE" ]] || die 'compose.yaml is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/scripts/migrate.sh" ]] || die 'scripts/migrate.sh is missing. The installation package is incomplete.'
+[[ -f "$PROJECT_ROOT/database/migrations/001_core.sql" ]] || die 'SQL base schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/002_coreui_management.sql" ]] || die 'SQL management schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/003_console_sessions.sql" ]] || die 'SQL sessions schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/004_profiles_knowledge.sql" ]] || die 'SQL profile and knowledge schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/005_thinking_attachments.sql" ]] || die 'SQL thinking and attachments schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/006_account_security.sql" ]] || die 'SQL account security schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/007_remove_private_studio_lore.sql" ]] || die 'SQL privacy migration is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/008_message_actions.sql" ]] || die 'SQL message actions schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/009_message_editing.sql" ]] || die 'SQL message editing schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/011_console_artifacts.sql" ]] || die 'SQL artifact output schema is missing.'
+[[ -f "$PROJECT_ROOT/database/migrations/012_console_work_events.sql" ]] || die 'SQL work events are missing.'
+[[ "$PROJECT_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]] || die 'The project path contains unsupported characters.'
+[[ "$PROJECT_ROOT" != /root/* ]] || die 'Move the package permanently to /opt/ember-coreui.'
+[[ "$PROJECT_ROOT" != /home/* ]] || die 'Move the package permanently to /opt/ember-coreui.'
 
 # Entfernt nur die zwei bekannten Altdateien aus versehentlichen Alpha-Paketen.
 # Andere Betreiber-Dokumente im docs-Verzeichnis bleiben erhalten.
@@ -558,11 +558,11 @@ if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   source /etc/os-release
 else
-  die '/etc/os-release fehlt. Unterstuetzt werden Debian und Ubuntu.'
+  die '/etc/os-release is missing. Unterstuetzt werden Debian und Ubuntu.'
 fi
 case "${ID:-}:${ID_LIKE:-}" in
   debian:*|ubuntu:*|*:debian*) ;;
-  *) die "Nicht unterstuetztes System: ${PRETTY_NAME:-unbekannt}. Nutze Debian 12+ oder Ubuntu 24.04+." ;;
+  *) die "Unsupported operating system: ${PRETTY_NAME:-unknown}. Use Debian 12+ or Ubuntu 24.04+." ;;
 esac
 
 # Muss vor der Erzeugung neuer Zugangsdaten laufen, da minimale Server-Images
@@ -610,7 +610,7 @@ if [[ -e "$PROJECT_ROOT/var/mariadb/ibdata1" || -d "$PROJECT_ROOT/var/mariadb/my
       || -n "$REQUEST_DB_USER" && "$REQUEST_DB_USER" != "$SAVED_DB_USER" \
       || -n "$REQUEST_DB_PASS" && "$REQUEST_DB_PASS" != "$SAVED_DB_PASS" \
       || -n "$REQUEST_DB_ROOT_PASS" && "$REQUEST_DB_ROOT_PASS" != "$SAVED_DB_ROOT_PASS" ]]; then
-    die 'Datenbankname oder Zugangsdaten einer initialisierten Container-Datenbank koennen nicht ueber den Installer rotiert werden. Nutze dafuer eine kontrollierte MariaDB-Migration.'
+    die 'Database names and credentials of an initialized container database cannot be rotated by the installer. Use a controlled MariaDB migration instead.'
   fi
 fi
 
@@ -663,7 +663,7 @@ if [[ -f "$CONFIG_FILE" && -f "$ENV_FILE" && "$FORCE_CONFIG" != '1' ]]; then
       || -n "$REQUEST_INSTALL_IMAGE" \
       || -n "$REQUEST_SEARXNG_URL" \
       || -n "${COREUI_PUBLIC_URL:-}" ]]; then
-    die 'Konfigurationswerte wurden fuer eine bestehende Installation geaendert. Sichere den Stand und wiederhole bewusst mit COREUI_FORCE_CONFIG=1.'
+    die 'Configuration values have changed for an existing installation. Back up the current state and explicitly retry with COREUI_FORCE_CONFIG=1.'
   fi
 fi
 
@@ -691,28 +691,28 @@ if [[ -z "$IMAGE_HF_TOKEN" ]]; then
   unset candidate hf_file
 fi
 if [[ -n "$IMAGE_HF_TOKEN" && ! "$IMAGE_HF_TOKEN" =~ ^[A-Za-z0-9_-]{20,256}$ ]]; then
-  die 'HF_TOKEN ist ungueltig (nur Zeichenformat geprueft).'
+  die 'HF_TOKEN is invalid (character format check only).'
 fi
 
 for port in "$HTTP_PORT" "$PHP_PORT" "$DB_PORT" "$SEARXNG_PORT"; do
-  valid_port "$port" || die "Ungueltiger oder privilegierter Port: $port"
+  valid_port "$port" || die "Invalid or privileged port: $port"
 done
 [[ "$BIND_ADDRESS" == '127.0.0.1' || "$BIND_ADDRESS" == '0.0.0.0' ]] \
-  || die 'COREUI_BIND_ADDRESS muss 127.0.0.1 oder 0.0.0.0 sein.'
-[[ "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]] || die 'Ungueltiger Datenbankname.'
-[[ "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]] || die 'Ungueltiger Datenbanknutzer.'
-[[ "$DB_PASS" =~ ^[A-Za-z0-9._~!@%+=:-]+$ ]] || die 'Ungueltiges Datenbankpasswort fuer den automatischen Installer.'
-[[ "$DB_ROOT_PASS" =~ ^[A-Za-z0-9._~!@%+=:-]+$ ]] || die 'Ungueltiges Datenbank-Root-Passwort fuer den automatischen Installer.'
-[[ "$MODEL_NAME" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_MODEL_NAME enthaelt ungueltige Zeichen.'
-[[ -z "$BASE_MODEL" || "$BASE_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_BASE_MODEL enthaelt ungueltige Zeichen.'
-[[ "$LOCK_NAMESPACE" =~ ^[A-Za-z0-9_.:-]{1,40}$ ]] || die 'COREUI_LOCK_NAMESPACE enthaelt ungueltige Zeichen.'
-[[ "$SEARXNG_URL" != *$'\n'* && "$SEARXNG_URL" != *$'\r'* ]] || die 'Ungueltige SearXNG-URL.'
+  || die 'COREUI_BIND_ADDRESS must be 127.0.0.1 or 0.0.0.0.'
+[[ "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]] || die 'Invalid database name.'
+[[ "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]] || die 'Invalid database username.'
+[[ "$DB_PASS" =~ ^[A-Za-z0-9._~!@%+=:-]+$ ]] || die 'Invalid database password for the automated installer.'
+[[ "$DB_ROOT_PASS" =~ ^[A-Za-z0-9._~!@%+=:-]+$ ]] || die 'Invalid database root password for the automated installer.'
+[[ "$MODEL_NAME" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_MODEL_NAME contains invalid characters.'
+[[ -z "$BASE_MODEL" || "$BASE_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] || die 'COREUI_BASE_MODEL contains invalid characters.'
+[[ "$LOCK_NAMESPACE" =~ ^[A-Za-z0-9_.:-]{1,40}$ ]] || die 'COREUI_LOCK_NAMESPACE contains invalid characters.'
+[[ "$SEARXNG_URL" != *$'\n'* && "$SEARXNG_URL" != *$'\r'* ]] || die 'Invalid SearXNG URL.'
 
 if is_enabled "$INSTALL_BROWSE" && [[ -z "$SEARXNG_URL" ]]; then
-  die 'Der Browse-Worker benoetigt eine lokale oder externe SearXNG-URL.'
+  die 'The browser worker requires a local or external SearXNG URL.'
 fi
 if [[ -f "$CONFIG_FILE" && ! -f "$ENV_FILE" && "$FORCE_CONFIG" != '1' ]]; then
-  die 'Eine nicht zugeordnete api/config.local.php existiert. Nutze COREUI_FORCE_CONFIG=1 nur nach Sicherung und bewusster Pruefung.'
+  die 'An unowned api/config.local.php exists. Use COREUI_FORCE_CONFIG=1 only after backup and explicit review.'
 fi
 
 ADMIN_EMAIL="${COREUI_ADMIN_EMAIL:-}"
@@ -722,46 +722,46 @@ ADMIN_GENDER="${COREUI_ADMIN_GENDER:-}"
 
 if ! is_enabled "$SKIP_BOOTSTRAP"; then
   if [[ -z "$ADMIN_EMAIL" ]]; then
-    [[ -t 0 ]] || die 'COREUI_ADMIN_EMAIL fehlt fuer eine nicht-interaktive Installation.'
-    read -r -p 'Admin-E-Mail: ' ADMIN_EMAIL
+    [[ -t 0 ]] || die 'COREUI_ADMIN_EMAIL is required for non-interactive installation.'
+    read -r -p 'Admin email: ' ADMIN_EMAIL
   fi
   if [[ -z "$ADMIN_PASSWORD" ]]; then
-    [[ -t 0 ]] || die 'COREUI_ADMIN_PASSWORD fehlt fuer eine nicht-interaktive Installation.'
-    read -r -s -p 'Admin-Passwort, mindestens 12 Zeichen: ' ADMIN_PASSWORD
+    [[ -t 0 ]] || die 'COREUI_ADMIN_PASSWORD is required for non-interactive installation.'
+    read -r -s -p 'Admin password, at least 12 characters: ' ADMIN_PASSWORD
     printf '\n'
-    read -r -s -p 'Admin-Passwort wiederholen: ' ADMIN_PASSWORD_CONFIRM
+    read -r -s -p 'Repeat admin password: ' ADMIN_PASSWORD_CONFIRM
     printf '\n'
-    [[ "$ADMIN_PASSWORD" == "$ADMIN_PASSWORD_CONFIRM" ]] || die 'Die Passwoerter stimmen nicht ueberein.'
+    [[ "$ADMIN_PASSWORD" == "$ADMIN_PASSWORD_CONFIRM" ]] || die 'Passwords do not match.'
   fi
-  [[ ${#ADMIN_PASSWORD} -ge 12 ]] || die 'Das Admin-Passwort muss mindestens 12 Zeichen lang sein.'
+  [[ ${#ADMIN_PASSWORD} -ge 12 ]] || die 'The admin password must be at least 12 characters long.'
   [[ "$ADMIN_GENDER" == '' || "$ADMIN_GENDER" == 'm' || "$ADMIN_GENDER" == 'f' ]] \
-    || die 'COREUI_ADMIN_GENDER muss leer, m oder f sein.'
+    || die 'COREUI_ADMIN_GENDER must be empty, m or f.'
 fi
 
-log "Bereite den isolierten Parallelbetrieb fuer CoreAI: TCI Interface $COREUI_VERSION vor."
+log "Preparing isolated parallel operation for CoreAI: TCI Interface $COREUI_VERSION vor."
 ensure_docker
 prepare_permissions
-log 'Aktualisiere numerische Content-Cache-Schluessel fuer CSS und JavaScript.'
-python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" || die 'Asset-Cache-Buster fehlgeschlagen.'
+log 'Updating numeric content cache fingerprints for CSS and JavaScript.'
+python3 "$PROJECT_ROOT/scripts/cache-bust.py" --root "$PROJECT_ROOT" || die 'Asset cache fingerprint update failed.'
 assert_stack_identity
 assert_ports_available
 write_runtime_files
 
-compose config >/dev/null || die 'Die Compose-Konfiguration ist ungueltig.'
+compose config >/dev/null || die 'The Compose configuration is invalid.'
 
-log 'Pruefe die paketierten Python-Quellen.'
+log 'Checking packaged Python sources.'
 while IFS= read -r -d '' py_file; do
   python3 -c 'import pathlib,sys; p=pathlib.Path(sys.argv[1]); compile(p.read_text(encoding="utf-8"), str(p), "exec")' "$py_file" \
-    || die "Python-Syntaxfehler in $py_file"
+    || die "Python syntax error in $py_file"
 done < <(find "$PROJECT_ROOT/tools" -type f -name '*.py' -print0)
 
-log 'Baue die isolierten PHP-, Python-Worker- und optionalen Browse-Images.'
+log 'Building isolated PHP, Python worker, and optional browser images.'
 compose build php pyworker
 # Verify the freshly BUILT image, not only the existing php service.
 # A stale container may still run an older image with missing PDO support.
-log 'Pruefe pdo_mysql im frisch gebauten PHP-Image.'
+log 'Checking pdo_mysql in the newly built PHP image.'
 if ! compose run -T --rm --no-deps php php -r 'exit(extension_loaded("pdo_mysql") ? 0 : 1);'; then
-  die 'pdo_mysql fehlt im frisch gebauten PHP-Image. PHP-Build fehlgeschlagen; bestehende Daten unveraendert.'
+  die 'pdo_mysql is missing from the new PHP image. PHP build failed; existing data is unchanged.'
 fi
 if is_enabled "$INSTALL_BROWSE"; then
   compose build browse
@@ -770,11 +770,11 @@ fi
 # PyTorch-Index), laeuft CoreAI ohne Vorlesen weiter.
 VOICE_READY=0
 if is_enabled "$INSTALL_VOICE"; then
-  log 'Baue den Sprachdienst (Maras Stimme Eve, Pocket TTS auf der CPU).'
+  log 'Building the voice service (Mara's voice Eve, Pocket TTS on CPU).'
   if compose build voice; then
     VOICE_READY=1
   else
-    warn 'Sprachdienst konnte nicht gebaut werden; CoreAI laeuft ohne Vorlesen weiter.'
+    warn 'Voice service could not be built; CoreAI will continue without text-to-speech.'
   fi
 fi
 # 0.6.39: Maras Bilder. Optional: stable-diffusion.cpp wird fuer genau diese CPU gebaut
@@ -782,14 +782,14 @@ fi
 # laeuft CoreAI ohne Bilder weiter.
 IMAGE_READY=0
 if is_enabled "$INSTALL_IMAGE"; then
-  log 'Baue den Bilddienst (stable-diffusion.cpp fuer diese CPU, FLUX.2-klein 4B).'
+  log 'Building the image service (stable-diffusion.cpp for this CPU, FLUX.2-klein 4B).'
   if compose build image; then
     IMAGE_READY=1
   else
-    warn 'Bilddienst konnte nicht gebaut werden; CoreAI laeuft ohne Bilder weiter.'
+    warn 'Image service could not be built; CoreAI will continue without image generation.'
   fi
 fi
-log 'Baue das wegwerfbare Python-Sandbox-Image (mit Node.js) ohne Projekt- oder Geheimnis-Mounts.'
+log 'Building disposable Python sandbox image (with Node.js), without project or secret mounts.'
 docker build -t ember-py:2 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 
 # Same PHP lint stage and order; report exact file and PHP parser failure.
@@ -797,34 +797,34 @@ compose run -T --rm --no-deps php sh -ec '
   find api scripts tools -type f -name "*.php" -exec sh -c '\'' 
     for file do
       if ! php -l "$file" >/dev/null 2>&1; then
-        printf "[PHP-SYNTAXFEHLER] %s\\n" "$file" >&2
+        printf "[PHP-SYNTAX-ERROR] %s\\n" "$file" >&2
         php -l "$file" >&2 || true
         exit 1
       fi
     done
   '\'' sh {} +
-' || die 'PHP-Syntaxpruefung fehlgeschlagen; Dateiname und Fehler stehen oben.'
+' || die 'PHP syntax check failed; see filename and error above.'
 
 ensure_ollama_model
 # The FLUX.2 generator shares the normal installer/update lifecycle (not an admin-only step).
 # An already installed base is adapted automatically. A first download needs license acceptance.
 if ! python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --ensure; then
-  warn 'TCI Core Generator konnte nicht erstellt/aktualisiert werden. Preflight meldet den Zustand.'
+  warn 'TCI Core Generator could not be created or updated. Preflight will report its status.'
 fi
 
-log 'Starte die eigene CoreAI: TCI Interface-Datenbank auf dem geschuetzten Loopback-Port.'
+log 'Starting the dedicated CoreAI: TCI Interface database on its protected loopback port.'
 compose up -d database
 if ! wait_healthy database 75; then
   compose logs --tail=100 database >&2 || true
-  die 'Die isolierte CoreAI: TCI Interface-Datenbank wurde nicht gesund.'
+  die 'The isolated CoreAI: TCI Interface database did not become healthy.'
 fi
 
-log 'Importiere alle CoreAI: TCI Interface-Migrationen in die eigene Container-Datenbank.'
+log 'Applying all CoreAI: TCI Interface migrations to the dedicated container database.'
 # This must work even when older source checkouts have no executable bit.
 bash "$PROJECT_ROOT/scripts/migrate.sh"
 
 if ! is_enabled "$SKIP_BOOTSTRAP"; then
-  log 'Initialisiere Mara CoreAI und das CoreAI: TCI Interface-Administratorkonto.'
+  log 'Initializing Mara CoreAI and the CoreAI: TCI Interface administrator account.'
   compose run -T --rm --no-deps \
     -e "COREUI_ADMIN_EMAIL=$ADMIN_EMAIL" \
     -e "COREUI_ADMIN_PASSWORD=$ADMIN_PASSWORD" \
@@ -832,33 +832,33 @@ if ! is_enabled "$SKIP_BOOTSTRAP"; then
     -e "COREUI_ADMIN_GENDER=$ADMIN_GENDER" \
     php php scripts/bootstrap.php
 else
-  warn 'Account-Bootstrap wurde durch COREUI_SKIP_BOOTSTRAP=1 uebersprungen.'
+  warn 'Account bootstrap was skipped because COREUI_SKIP_BOOTSTRAP=1.'
 fi
 
 if is_enabled "$INSTALL_SEARXNG"; then
-  log "Starte die eigene SearXNG-Instanz auf 127.0.0.1:$SEARXNG_PORT."
+  log "Starting the dedicated SearXNG instance on 127.0.0.1:$SEARXNG_PORT."
   compose up -d searxng
   wait_http "http://127.0.0.1:$SEARXNG_PORT/search?q=ember&format=json" 60 \
-    || die 'Die isolierte SearXNG-Instanz antwortet nicht mit JSON.'
+    || die 'The isolated SearXNG instance is not returning JSON.'
 else
   compose stop searxng >/dev/null 2>&1 || true
 fi
 
-log "Starte CoreAI: TCI Interface-Web und PHP auf $BIND_ADDRESS:$HTTP_PORT."
+log "Starting CoreAI: TCI Interface web and PHP on $BIND_ADDRESS:$HTTP_PORT."
 # Force the running PHP service to use the just validated image. Volumes,
 # MariaDB, uploads and all other Compose stacks are preserved.
 compose up -d --force-recreate php web
 if ! compose exec -T php php -r 'exit(extension_loaded("pdo_mysql") ? 0 : 1);'; then
   compose logs --tail=100 php >&2 || true
-  die 'pdo_mysql fehlt weiterhin im laufenden PHP-Container nach der Aktualisierung.'
+  die 'pdo_mysql is still missing from the running PHP container after update.'
 fi
 if ! wait_healthy php 45; then
   compose logs --tail=100 php >&2 || true
-  die 'Der isolierte CoreAI: TCI Interface-PHP-Dienst wurde nicht gesund.'
+  die 'The isolated CoreAI: TCI Interface PHP service did not become healthy.'
 fi
 if ! wait_http "http://127.0.0.1:$HTTP_PORT/api/health.php" 45; then
   compose logs --tail=100 web php >&2 || true
-  die 'Der CoreAI: TCI Interface-Healthcheck ist fehlgeschlagen.'
+  die 'The CoreAI: TCI Interface health check failed.'
 fi
 
 if is_enabled "$INSTALL_BROWSE"; then
@@ -868,7 +868,7 @@ else
   compose stop browse >/dev/null 2>&1 || true
 fi
 
-log 'Starte den isolierten CoreAI: TCI Interface-Python-Worker.'
+log 'Starting the isolated CoreAI: TCI Interface Python worker.'
 compose up -d pyworker
 # 0.7.79: ember-py:2 replaces ember-py:1 (Node.js added). Only now, with the worker on the new tag,
 # the old image goes; a container that still uses it keeps it (no error).
@@ -876,8 +876,8 @@ docker image rm ember-py:1 >/dev/null 2>&1 || true
 
 if [[ "$VOICE_READY" == '1' ]]; then
   # Beim ersten Start laedt der Dienst Eves Gewichte (etwa 0,7 GB) und prueft jede Datei gegen ihren SHA-256.
-  log 'Starte den Sprachdienst (Maras Stimme).'
-  compose up -d voice || warn 'Sprachdienst startet nicht; CoreAI laeuft ohne Vorlesen weiter.'
+  log 'Starting the voice service (Mara's voice).'
+  compose up -d voice || warn 'Voice service did not start; CoreAI will continue without text-to-speech.'
 else
   compose stop voice >/dev/null 2>&1 || true
 fi
@@ -887,13 +887,13 @@ if [[ "$IMAGE_READY" == '1' ]]; then
   # (etwa 9 GB). Fehlende laedt der Dienst selbst; er prueft jede Datei gegen ihren SHA-256.
   python3 -I "$PROJECT_ROOT/tools/image/adopt_spike.py" "$PROJECT_ROOT/config/image/mara-image.json" \
     "$PROJECT_ROOT/var/image-spike/models" "$PROJECT_ROOT/var/image-models" \
-    || warn 'Gewichte aus dem Bildtest konnten nicht uebernommen werden; der Bilddienst laedt sie selbst.'
+    || warn 'Weights from the image test could not be reused; the image service will load them itself.'
   # Reuse the successful 9B picture-generator benchmark when available.
   # The optional 9B profile is license-bound, SHA-256 checked and hardlinked.
   python3 -I "$PROJECT_ROOT/tools/image/adopt_pgen.py" \
-    || warn 'pGen 9B konnte nicht aus dem Bildtest uebernommen werden; 4B bleibt Standard.'
-  log 'Starte den Bilddienst (Maras Bilder).'
-  compose up -d image || warn 'Bilddienst startet nicht; CoreAI laeuft ohne Bilder weiter.'
+    || warn 'pGen 9B could not be reused from the image test; 4B remains the default.'
+  log 'Starting the image service (Mara's images).'
+  compose up -d image || warn 'Image service did not start; CoreAI will continue without image generation.'
 else
   compose stop image >/dev/null 2>&1 || true
 fi
@@ -906,11 +906,11 @@ chmod 0750 "$PROJECT_ROOT/scripts/install.sh" "$PROJECT_ROOT/scripts/preflight.s
 ensure_update_service
 ensure_uninstall_service
 
-log "Installation erfolgreich. Lokaler Endpunkt: http://127.0.0.1:$HTTP_PORT/"
+log "Installation successful. Local endpoint: http://127.0.0.1:$HTTP_PORT/"
 # Optional host safeguard after successful stack start; no existing swap is changed.
-coreui_ensure_host_swap || warn "Optionale Host-Swap-Einrichtung fehlgeschlagen."
+coreui_ensure_host_swap || warn "Optional host swap configuration failed."
 if [[ "$BIND_ADDRESS" == '127.0.0.1' ]]; then
-  log "Zum sicheren Testen vom eigenen Rechner: ssh -L $HTTP_PORT:127.0.0.1:$HTTP_PORT USER@SERVER"
+  log "To test securely from your own computer: ssh -L $HTTP_PORT:127.0.0.1:$HTTP_PORT USER@SERVER"
 fi
-log 'Bestehende Nginx-, Apache-, PHP-FPM-, MariaDB-, Game-, Ember- und Homepage-Konfigurationen wurden nicht veraendert.'
-log 'Nur der vorhandene Ollama-Dienst wird als lokale Modell-Schnittstelle gemeinsam genutzt.'
+log 'Existing Nginx, Apache, PHP-FPM, MariaDB, Game, Ember, and homepage configurations were not modified.'
+log 'Only the existing Ollama service is shared as a local model interface.'
