@@ -1,0 +1,51 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.82
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.81 nach PR #337
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"alles klar dann go": Roadmap P11 Schritt C, Artefakte und ihre Lebensdauer (Feature-Matrix
+CF-031). Abnahme: Vorschau und Originaldownload beziehen sich auf dieselbe Version; Aufbewahrung
+und Loeschung sind nachvollziehbar und beruecksichtigen bestehende Verweise.
+
+UMSETZUNG
+- database/migrations/051_artifact_lifecycle.sql: stu_console_artifact_tombstones (Hinweise
+  geloeschter Dateien: Name, Typ, Groesse, Pruefsumme, Grund person oder retention, erstellt,
+  geloescht; Fremdschluessel auf Konto, Chat und Nachricht mit ON DELETE CASCADE) und der Index
+  idx_console_artifact_age (user_id, created_at).
+- api/artifact_lifecycle_store.php (neu): Bereitschaft (051, Favoriten 039, Projekte),
+  Aufbewahrung (0, 30, 90, 180, 365 Tage; alles andere 0), Loeschtag, kurze Version, Loeschen
+  mit Hinweis (Eintrag, Favorit und Hinweis in einer Transaktion, die Datei danach),
+  Aufbewahrungs-Lauf (nur alte, nicht behaltene Dateien ausserhalb von Projekt-Chats, hoechstens
+  100, nur mit Favoriten- und Hinweistabelle), Hinweise fuer Nachrichten und die Karten mit
+  Version, behalten, Projekt und Loeschtag.
+- api/console_artifact.php: X-CoreAI-SHA256 und ETag mit der Pruefsumme, nachdem das gesendete
+  Handle geprueft ist.
+- api/console_artifacts.php: erst der Aufbewahrungs-Lauf, dann die Karten mit Hinweisen;
+  can_manage, can_keep und csrf_token nur fuer Konten, nie fuer Gaeste; retention_days.
+- api/files.php, api/files_store.php: Lauf vor Uebersicht und Liste; Maras Dateien mit Version und
+  Loeschtag; Loeschen ueber den Hinweis-Weg.
+- api/admin.php, admin/index.html, js/admin.js: "Maras Dateien aufbewahren" in Admin Core > Betrieb
+  (Standard unbegrenzt), normalisiert gespeichert.
+- js/coreui-artifacts.js, css/artifacts.css: Version und Loeschtag auf der Karte, "Vorschau"
+  (Bilder, Texte; SVG nur als Text; nichts fuer Archive), gepruefte Bytes (Header, Groesse, eigene
+  SHA-256-Rechnung im sicheren Kontext), "Herunterladen" aus der Vorschau, "Behalten" und "Loeschen"
+  ueber api/files.php mit CSRF, danach laedt die Nachricht ihre Dateien neu; Hinweise geloeschter
+  Dateien. Markdown behaelt seinen Betrachter und bekommt Frist und Knoepfe darunter.
+- js/coreui-storage-settings.js: Loeschtag in der Liste; der Loeschtext sagt fuer Maras Dateien, dass
+  im Chat ein Hinweis bleibt (Uploads und Bilder unveraendert).
+- README (Abschnitt Chat-Ausgaben, API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3, P11), Feature-
+  Matrix CF-031 (Teilbestand).
+- Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Vorschau, Behalten, Loeschen und Aufbewahrung auf dem echten Server mit echten Dateien von Mara.
+
+NAECHSTER SCHRITT
+- P11 ist im Selbsttest abgenommen. Weiter mit der Roadmap auf Auftrag.
+
+Version: 0.7.82

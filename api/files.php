@@ -8,6 +8,7 @@ declare(strict_types=1);
  *   GET  ?action=list&view=files|images&tab=..&q=..&type=..&project=..&offset=N
  *   POST ?action=favorite {id, on}             Dateien: Favoriten
  *   POST ?action=delete {id}                   deletes for good; the chat that used it no longer shows it
+ *                                              (a file Mara made leaves a note there, 0.7.82)
  *
  * Uploading goes through api/console_upload.php like in the chat (it checks the limit).
  */
@@ -24,12 +25,22 @@ $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 $action = strtolower(trim((string)($_GET['action'] ?? 'summary')));
 if (coreui_guest_is($pdo, $uid)) stu_json(['ok' => false, 'error' => 'guests_not_allowed'], 403);
 
+// 0.7.82 (P11 C): files whose retention has run out go before anything is shown or counted.
+if ($method === 'GET' && in_array($action, ['summary', 'list'], true)) {
+  try {
+    coreui_artifact_sweep($pdo, $uid);
+  } catch (Throwable $e) {
+    error_log('[CoreAI] artifact retention sweep failed: ' . get_class($e));
+  }
+}
+
 if ($method === 'GET' && $action === 'summary') {
   $usage = coreui_files_usage($pdo, $uid);
   $limit = coreui_files_limit_bytes($pdo, $uid);
   $prefs = coreui_personalization_load($pdo, $uid);
   stu_json(['ok' => true, 'used' => $usage['used'], 'limit' => $limit, 'files' => $usage['files'], 'images' => $usage['images'],
     'disk_free' => $limit === null ? coreui_files_disk_free() : null, 'favorites_ready' => coreui_files_favorites_ready($pdo),
+    'retention_days' => coreui_artifact_retention_days($pdo),
     'references' => coreui_personalization_references_view($pdo, $uid, $prefs), 'csrf_token' => stu_csrf_token()]);
 }
 

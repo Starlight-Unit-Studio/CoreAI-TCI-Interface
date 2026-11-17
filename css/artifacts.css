@@ -33,6 +33,70 @@
   padding: 8px 12px;
   cursor: pointer;
 }
+/* 0.7.82 (P11 C): version, lifetime, buttons, the verified preview and the note of a deleted file. */
+.msg-artifact-life, .msg-artifact-deleted {
+  margin: 5px 0 0;
+  font-size: .8rem;
+  line-height: 1.4;
+  color: var(--muted, #66728a);
+  overflow-wrap: anywhere;
+}
+.msg-artifact.is-deleted {
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px dashed var(--line-strong, rgba(91, 146, 255, .54));
+  border-radius: 10px;
+}
+.msg-artifact-deleted { margin: 0; color: var(--txt, #101626); }
+.msg-artifact-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.msg-artifact-action {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong, rgba(91, 146, 255, .54));
+  border-radius: 8px;
+  background: var(--panel-solid, #fbfdff);
+  color: var(--txt, #101626);
+  font: inherit;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.msg-artifact-action:hover, .msg-artifact-action[aria-pressed="true"], .msg-artifact-action[aria-expanded="true"] {
+  background: var(--panel-cx, rgba(91, 146, 255, .09));
+}
+.msg-artifact-action.is-delete { border-color: var(--red, #d4505d); color: var(--red, #d4505d); }
+.msg-artifact-action:disabled { opacity: .6; cursor: default; }
+.msg-artifact-view {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--line-strong, rgba(91, 146, 255, .54));
+  border-radius: 10px;
+  background: var(--panel-solid, #fbfdff);
+  color: var(--txt, #101626);
+}
+.msg-artifact-view-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.msg-artifact-view-head strong { font-size: .88rem; overflow-wrap: anywhere; }
+.msg-artifact-view-head small { color: var(--muted, #66728a); }
+.msg-artifact-view-image { display: block; max-width: 100%; max-height: 60vh; height: auto; margin: 0 auto; border-radius: 6px; }
+.msg-artifact-view-text {
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: 50vh;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--panel-cx, rgba(91, 146, 255, .09));
+  color: var(--txt, #101626);
+  border-radius: 6px;
+}
+@media (max-width: 640px) {
+  .msg-artifact-action { flex: 1 1 auto; }
+}
 
 
 /* v0.5.50: inline, authenticated Markdown document viewer. */

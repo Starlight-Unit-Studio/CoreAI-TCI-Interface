@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.81: merging working states with conflicts, and Mara with versions (P11 B).
+# CoreAI: TCI Interface 0.7.82: the lifetime of the files Mara made, with a preview of the same version (P11 C).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -236,6 +236,10 @@ UI_FILES=(
   database/migrations/050_project_merges.sql
   scripts/project-merge-selftest.php
   scripts/project-merge-ui-selftest.cjs
+  database/migrations/051_artifact_lifecycle.sql
+  api/artifact_lifecycle_store.php
+  scripts/artifact-lifecycle-selftest.php
+  scripts/artifact-lifecycle-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1335,6 +1339,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Zusammenfuehren-Selbsttest: ${project_merge_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.82 (P11 C): the lifetime of the files Mara made: notes of deleted files, the retention, kept files.
+  artifact_lifecycle_test=''
+  if artifact_lifecycle_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/artifact-lifecycle-selftest.php" 2>&1)"; then
+    ok "$artifact_lifecycle_test"
+  else
+    fail "Lebensdauer-Selbsttest: ${artifact_lifecycle_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1777,6 +1789,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Zusammenfuehren: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.82 (P11 C): the cards of Mara's files: preview of the same version, Behalten, Loeschen, notes.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/artifact-lifecycle-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Maras Dateien: Vorschau derselben Version, Behalten, Loeschen mit Hinweis und Aufbewahrung im Browser geprueft.'
+      else
+        fail 'Maras Dateien: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Maras Dateien: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then

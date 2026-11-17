@@ -98,6 +98,8 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'external_api_model' => '',
     // 0.7.28: storage per account in MiB for all accounts ('' = no limit); Admin Core > Betrieb.
     'storage_limit_mb' => '',
+    // 0.7.82 (P11 C): days until the files Mara made are deleted (0 = never).
+    'artifact_retention_days' => '0',
   ];
   $out = [];
   foreach ($defaults as $key => $default) {
@@ -687,7 +689,7 @@ if ($action === 'settings_save') {
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled', 'tool_image_enabled',
     'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',
-    'storage_limit_mb',
+    'storage_limit_mb', 'artifact_retention_days',
   ];
   $incoming = $body['settings'] ?? [];
   if (!is_array($incoming)) stu_json(['ok' => false, 'error' => 'invalid_settings'], 400);
@@ -702,6 +704,7 @@ if ($action === 'settings_save') {
     if ($key === 'guest_daily_messages') $value = (string)coreui_guest_daily_normalise($value);
     if ($key === 'guest_image_daily_limit') $value = (string)coreui_guest_image_limit_normalise($value);
     if ($key === 'storage_limit_mb') $value = coreui_files_limit_normalise($value);
+    if ($key === 'artifact_retention_days') $value = (string)coreui_artifact_retention_normalise($value);
     if ($key === 'maintenance_message') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);

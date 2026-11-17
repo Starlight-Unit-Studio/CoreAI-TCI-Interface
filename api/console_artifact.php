@@ -38,6 +38,10 @@ $fallback = preg_replace('~[^A-Za-z0-9._-]~', '_', $name) ?: 'download';
 header('Content-Type: application/octet-stream');
 header('Content-Disposition: attachment; filename="' . $fallback . '"; filename*=UTF-8\'\'' . rawurlencode($name));
 header('Content-Length: ' . (string)(int)$row['file_size']);
+// 0.7.82 (P11 C): the checksum of exactly these bytes (checked above on the handle that is streamed),
+// so a preview and a download can show that they are the same version.
+header('X-CoreAI-SHA256: ' . (string)$row['sha256']);
+header('ETag: "' . (string)$row['sha256'] . '"');
 header('Cache-Control: private, no-store');
 header('X-Content-Type-Options: nosniff');
 header("Content-Security-Policy: sandbox; default-src 'none'");

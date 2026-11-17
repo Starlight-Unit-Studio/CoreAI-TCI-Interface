@@ -17,6 +17,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/user_policy.php';
 // 0.7.69: project files count toward the account's storage.
 require_once __DIR__ . '/project_files_store.php';
+// 0.7.82 (P11 C): the lifetime of the files Mara made.
+require_once __DIR__ . '/artifact_lifecycle_store.php';
 
 const COREUI_FILES_MIB = 1048576;
 const COREUI_FILES_PAGE = 60;
@@ -205,13 +207,18 @@ function coreui_files_media_item(array $row, array $chat, bool $favorite): array
     'chat' => $chat ?: null, 'favorite' => $favorite];
 }
 
-function coreui_files_artifact_item(array $row, bool $favorite): array {
+function coreui_files_artifact_item(array $row, bool $favorite, int $retentionDays = 0): array {
   $chat = ['id' => (string)$row['session_id'], 'title' => (string)($row['title'] ?? ''),
     'project_id' => (string)($row['project_id'] ?? ''), 'project' => (string)($row['project'] ?? '')];
+  // 0.7.82 (P11 C): the version and the day the retention deletes it (a favourite or a project file stays).
+  $sha = (string)($row['sha256'] ?? '');
   return ['id' => 'a:' . (string)$row['id'], 'name' => (string)$row['orig_name'], 'kind' => 'mara',
     'mime' => (string)$row['mime_type'], 'size' => (int)$row['file_size'], 'created' => (string)$row['created_at'],
     'source' => 'mara', 'url' => 'api/console_artifact.php?id=' . (string)$row['id'], 'thumb' => '',
-    'chat' => $chat['id'] !== '' ? $chat : null, 'favorite' => $favorite];
+    'chat' => $chat['id'] !== '' ? $chat : null, 'favorite' => $favorite,
+    'version' => preg_match('~^[a-f0-9]{64}$~D', $sha) === 1 ? substr($sha, 0, 12) : '',
+    'expires_at' => function_exists('coreui_artifact_expires_at')
+      ? coreui_artifact_expires_at((string)$row['created_at'], $retentionDays, $favorite, $chat['project_id'] !== '') : null];
 }
 
 /** One item of the account, or null. */
@@ -273,7 +280,7 @@ function coreui_files_list(PDO $pdo, int $uid, array $q): array {
   // Files Mara made.
   if ($view === 'files' && ($type === '' || $type === 'mara') && coreui_files_artifacts_ready($pdo)) {
     $projects = coreui_files_projects_ready($pdo);
-    $sql = 'SELECT a.id, a.orig_name, a.mime_type, a.file_size, a.session_id, a.created_at, s.title'
+    $sql = 'SELECT a.id, a.orig_name, a.mime_type, a.file_size, a.sha256, a.session_id, a.created_at, s.title'
       . ($projects ? ', s.project_id, p.name AS project' : '')
       . ' FROM stu_console_artifacts a LEFT JOIN stu_console_sessions s ON s.id = a.session_id AND s.user_id = a.user_id '
       . ($projects ? 'LEFT JOIN stu_console_projects p ON p.id = s.project_id AND p.user_id = a.user_id ' : '')
@@ -286,12 +293,13 @@ function coreui_files_list(PDO $pdo, int $uid, array $q): array {
 
   $chats = coreui_files_media_chats($pdo, $uid, array_values(array_map(static fn(array $r): string => (string)$r['uuid'],
     array_filter($rows, static fn(array $r): bool => $r['_type'] === 'm'))));
+  $retentionDays = function_exists('coreui_artifact_retention_days') ? coreui_artifact_retention_days($pdo) : 0;
   $items = [];
   foreach ($rows as $row) {
     $key = $row['_type'] === 'm' ? 'm:' . $row['uuid'] : 'a:' . $row['id'];
     $item = $row['_type'] === 'm'
       ? coreui_files_media_item($row, $chats[(string)$row['uuid']] ?? [], isset($favorites[$key]))
-      : coreui_files_artifact_item($row, isset($favorites[$key]));
+      : coreui_files_artifact_item($row, isset($favorites[$key]), $retentionDays);
     if ($view === 'files' && $tab === 'favorites' && !$item['favorite']) continue;
     if ($project !== '' && (($item['chat']['project_id'] ?? '') !== $project)) continue;
     $items[] = $item;
@@ -316,8 +324,9 @@ function coreui_files_list(PDO $pdo, int $uid, array $q): array {
 }
 
 /**
- * Deletes an item for good: the file, its entry and the favourite. A chat that used it no longer
- * shows it. Returns the bytes freed.
+ * Deletes an item for good: the file, its entry and the favourite. A chat that used an image or an
+ * upload no longer shows it; a file Mara made leaves a note in its chat message (0.7.82). Returns
+ * the bytes freed.
  */
 function coreui_files_delete(PDO $pdo, int $uid, string $key): int {
   $row = coreui_files_item($pdo, $uid, $key);
@@ -333,11 +342,12 @@ function coreui_files_delete(PDO $pdo, int $uid, string $key): int {
       @unlink(dirname(__DIR__) . '/var/console_media/images/' . (string)$row['uuid'] . '.json');
     }
   } else {
-    $del = $pdo->prepare('DELETE FROM stu_console_artifacts WHERE id = ? AND user_id = ? LIMIT 1');
-    $del->execute([(string)$row['id'], $uid]);
-    if ($del->rowCount() !== 1) throw new InvalidArgumentException('not_found');
-    require_once __DIR__ . '/console_artifact_store.php';
-    coreui_console_artifact_delete_files([(string)$row['storage_key']]);
+    // 0.7.82 (P11 C): with a note in the chat message (who deleted it and when).
+    try {
+      coreui_artifact_delete($pdo, $uid, (string)$row['id'], 'person');
+    } catch (InvalidArgumentException $e) {
+      throw new InvalidArgumentException('not_found');
+    }
   }
   if (coreui_files_favorites_ready($pdo)) {
     $pdo->prepare('DELETE FROM stu_user_file_favorites WHERE user_id = ? AND item_key = ?')->execute([$uid, $key]);
