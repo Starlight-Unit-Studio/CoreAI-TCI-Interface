@@ -216,6 +216,8 @@ async function route(r) {
 }
 
 const text = (pg, sel) => pg.$eval(sel, el => el.textContent);
+// A number, never an element handle: a failing assertion must not try to print a whole handle.
+const count = (pg, sel) => pg.$$eval(sel, els => els.length);
 const reopen = async pg => {
   await pg.click('#projectVcsClose');
   await pg.click('#projectFilesVcs');
@@ -253,7 +255,7 @@ async function switchTo(pg, name) {
     await pg.fill('#projectVcsBranchName', 'level');
     await pg.click('#projectVcsCreate');
     await pg.waitForFunction(() => /level/.test(document.querySelector('.project-vcs-branch.is-active').textContent));
-    assert.equal(await pg.$('[data-merge]'), null, 'main has nothing new for level: no merge button');
+    assert.equal(await count(pg, '[data-merge]'), 0, 'main has nothing new for level: no merge button');
     m.files['index.html'] = '<h1>Level</h1>\n<p>Text</p>\n';
     m.files['level.js'] = 'const level = 2;\n';
     m.files['style.css'] = 'h1 { color: gold; }\np { margin: 0; }\n';
@@ -272,7 +274,7 @@ async function switchTo(pg, name) {
     const listed = await pg.$$eval('#projectVcsMerge .project-vcs-change', els => els.map(e => e.getAttribute('data-path') + ':' + e.querySelector('small').textContent));
     assert.deepEqual(listed, ['level.js:neu', 'index.html:geändert', 'style.css:geändert'], 'taken over: ' + JSON.stringify(listed));
     assert.match(await text(pg, '#projectVcsMerge'), /Zeilenweise zusammengeführt: style\.css/);
-    assert.equal(await pg.$('.project-vcs-log'), null, 'while a merge is open it is the only thing in the panel');
+    assert.equal(await count(pg, '.project-vcs-log'), 0, 'while a merge is open it is the only thing in the panel');
     assert.equal(JSON.stringify(m.files), before, 'a preview changes nothing');
     await pg.click('#projectVcsMerge .project-vcs-change[data-path="index.html"]');
     await pg.waitForSelector('.project-vcs-view .project-diff-row.is-add');
@@ -290,7 +292,7 @@ async function switchTo(pg, name) {
     assert.deepEqual(await logMessages(pg), ['Zusammengeführt: level', 'Abstand', 'Level', 'Ausgangsstand'], 'the merged versions are in the log, newest first');
     assert.match(await text(pg, '.project-vcs-commit.is-head small'), /Zusammenführung · neueste$/);
     assert.ok(m.lists > listsBefore, 'the file list is loaded again');
-    assert.equal(await pg.$('[data-merge="level"]'), null, 'level is merged: no merge button any more');
+    assert.equal(await count(pg, '[data-merge="level"]'), 0, 'level is merged: no merge button any more');
 
     // Conflicts: the same title on both sides, app.js deleted here and changed there, unsaved work here.
     await switchTo(pg, 'level');
@@ -360,12 +362,12 @@ async function switchTo(pg, name) {
     if (process.env.COREAI_SHOT) await pg.screenshot({path: process.env.COREAI_SHOT, fullPage: true});
     await pg.click('#projectVcsMergeCancel');
     await pg.waitForSelector('.project-vcs-log');
-    assert.equal(await pg.$('#projectVcsMerge'), null);
+    assert.equal(await count(pg, '#projectVcsMerge'), 0);
 
     // Without migration 050 there is no merging.
     m.canMerge = false;
     await reopen(pg);
-    assert.equal(await pg.$('[data-merge]'), null, 'no merge button without migration 050');
+    assert.equal(await count(pg, '[data-merge]'), 0, 'no merge button without migration 050');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
