@@ -770,7 +770,7 @@ fi
 # PyTorch-Index), laeuft CoreAI ohne Vorlesen weiter.
 VOICE_READY=0
 if is_enabled "$INSTALL_VOICE"; then
-  log 'Building the voice service (Mara's voice Eve, Pocket TTS on CPU).'
+  log 'Building the voice service (Mara’s voice Eve, Pocket TTS on CPU).'
   if compose build voice; then
     VOICE_READY=1
   else
@@ -876,7 +876,7 @@ docker image rm ember-py:1 >/dev/null 2>&1 || true
 
 if [[ "$VOICE_READY" == '1' ]]; then
   # Beim ersten Start laedt der Dienst Eves Gewichte (etwa 0,7 GB) und prueft jede Datei gegen ihren SHA-256.
-  log 'Starting the voice service (Mara's voice).'
+  log 'Starting the voice service (Mara’s voice).'
   compose up -d voice || warn 'Voice service did not start; CoreAI will continue without text-to-speech.'
 else
   compose stop voice >/dev/null 2>&1 || true
@@ -892,7 +892,7 @@ if [[ "$IMAGE_READY" == '1' ]]; then
   # The optional 9B profile is license-bound, SHA-256 checked and hardlinked.
   python3 -I "$PROJECT_ROOT/tools/image/adopt_pgen.py" \
     || warn 'pGen 9B could not be reused from the image test; 4B remains the default.'
-  log 'Starting the image service (Mara's images).'
+  log 'Starting the image service (Mara’s images).'
   compose up -d image || warn 'Image service did not start; CoreAI will continue without image generation.'
 else
   compose stop image >/dev/null 2>&1 || true
