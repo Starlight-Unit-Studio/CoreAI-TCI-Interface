@@ -1,0 +1,40 @@
+/* CoreAI: TCI Interface 0.7.84 (P12 B): the skills fixed for a chat, and the window to choose them. */
+.composer-skills {
+  display: flex; flex-wrap: wrap; align-items: center; align-self: flex-start; gap: 6px; max-width: 100%;
+  margin: 2px 0 4px; font-size: 13px; color: var(--muted, #66728a);
+}
+.composer-skills[hidden] { display: none; }
+.composer-skills-label { font-weight: 600; }
+.composer-skill {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 2px 4px 2px 8px;
+  border: 1px solid var(--line-strong, rgba(91, 146, 255, .54)); background: var(--panel-cx, rgba(91, 146, 255, .08));
+  color: var(--cx, #356fdc);
+}
+.composer-skill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.composer-skill-remove {
+  width: 22px; height: 22px; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 16px; line-height: 1;
+}
+.cs-box { width: min(560px, 100%); }
+.cs-lead { font-size: 15px !important; }
+.cs-gone { color: var(--amb, #e29b39) !important; font-size: 14px !important; }
+.cs-search {
+  width: 100%; box-sizing: border-box; min-height: 42px; padding: 8px 12px; border: 1px solid var(--line-strong, rgba(91, 146, 255, .54));
+  border-radius: 12px; background: var(--panel-solid, #ffffff); color: var(--txt, #101626); font: inherit;
+}
+.cs-count { font-size: 14px !important; }
+.cs-list { display: grid; gap: 12px; max-height: min(52vh, 460px); overflow-y: auto; padding-right: 2px; }
+.cs-group { display: grid; gap: 4px; }
+.cs-group-title { margin: 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted, #66728a); }
+.cs-option {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 8px 10px;
+  border: 1px solid var(--line, rgba(91, 146, 255, .25)); border-radius: 12px; cursor: pointer;
+}
+.cs-option input { margin-top: 3px; }
+.cs-copy { display: grid; gap: 2px; min-width: 0; }
+.cs-copy strong { color: var(--txt, #101626); overflow-wrap: anywhere; }
+.cs-copy small { color: var(--muted, #66728a); font-size: 13px; overflow-wrap: anywhere; }
+.cs-empty { font-size: 14px !important; }
+@media (max-width: 640px) {
+  .cs-box { padding: 20px 16px 16px; }
+  .cs-list { max-height: 48vh; }
+}

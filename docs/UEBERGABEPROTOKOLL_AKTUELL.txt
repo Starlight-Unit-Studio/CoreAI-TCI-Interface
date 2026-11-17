@@ -1,4 +1,17 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.83, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.84).
+ZIEL 0.7.84: Roadmap P12 Schritt B (CF-044), gemeinsame Skills von
+Inhaber und Admins (je Konto abschaltbar, keine fuer Gaeste), Vorrang je
+Skill, Reihenfolge bei gleicher Kennung und bis zu drei fuer einen Chat
+festgelegte Skills ueber das Plus-Menue, die Mara dort in genau dieser
+Fassung nutzt. Migration 053_skill_sharing.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_84.txt.
+Naechster Schritt: P12 ist im Selbsttest abgenommen; P13 auf Auftrag.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.85.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.82, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.83).
 ZIEL 0.7.83: Roadmap P12 Schritt A (CF-042 bis CF-044), eigene Skills je
 Konto unter Einstellungen > Skills mit Anleitung, Ausloesern,

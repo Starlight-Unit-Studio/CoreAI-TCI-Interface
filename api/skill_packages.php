@@ -10,11 +10,17 @@ declare(strict_types=1);
  *   POST ?action=delete {id}
  *   POST ?action=file_save {id, path, content, old_path?}
  *   POST ?action=file_delete {id, path}
+ * 0.7.84 (P12 B):
+ *   GET  ?action=view&id=..         a shared skill of another account, read only
+ *   POST ?action=use {id, on}       use a shared skill or switch it off for this account
+ *   GET  ?action=chat&session=..    the skills a chat can fix and the ones it fixed
+ *   POST ?action=chat_set {session, refs}   fixes up to three skills for a chat ([] lets Mara choose)
  */
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/skill_packages_store.php';
+require_once __DIR__ . '/console_session_store.php';
 
 $pdo = stu_pdo();
 $uid = (int)stu_require_user_id();
@@ -39,14 +45,25 @@ try {
     } catch (Throwable $e) {
       $projects = [];
     }
-    stu_json(['ok'=>true, 'ready'=>true, 'skills'=>coreui_skillpkg_list($pdo, $uid, (string)($_GET['q'] ?? '')), 'builtin'=>$builtin,
+    $query = (string)($_GET['q'] ?? '');
+    stu_json(['ok'=>true, 'ready'=>true, 'skills'=>coreui_skillpkg_list($pdo, $uid, $query), 'builtin'=>$builtin,
       'projects'=>$projects, 'tools'=>COREUI_SKILLPKG_TOOLS,
+      'sharing'=>coreui_skillpkg_sharing_ready($pdo), 'can_share'=>coreui_skillpkg_can_share($pdo, $uid),
+      'shared'=>coreui_skillpkg_shared_list($pdo, $uid, $query),
       'limits'=>['skills'=>COREUI_SKILLPKG_MAX, 'files'=>COREUI_SKILLPKG_FILES, 'body_bytes'=>COREUI_SKILLPKG_BODY_BYTES,
         'file_bytes'=>COREUI_SKILLPKG_FILE_BYTES, 'triggers'=>COREUI_SKILLPKG_TRIGGERS],
       'csrf_token'=>stu_csrf_token()]);
   }
   if ($method === 'GET' && $action === 'get') {
     stu_json(['ok'=>true, 'skill'=>coreui_skillpkg_get($pdo, $uid, (string)($_GET['id'] ?? ''))]);
+  }
+  if ($method === 'GET' && $action === 'view') {
+    stu_json(['ok'=>true, 'skill'=>coreui_skillpkg_shared_get($pdo, $uid, (string)($_GET['id'] ?? ''))]);
+  }
+  if ($method === 'GET' && $action === 'chat') {
+    // A locked or foreign chat is refused like everywhere else in the console.
+    $session = (string)coreui_console_session_require($pdo, $uid, (string)($_GET['session'] ?? ''))['id'];
+    stu_json(['ok'=>true, 'csrf_token'=>stu_csrf_token()] + coreui_skillpkg_chat_options($pdo, $uid, $session));
   }
   if ($method !== 'POST') stu_json(['ok'=>false, 'error'=>'method_not_allowed'], 405);
   stu_require_csrf();
@@ -62,6 +79,12 @@ try {
       stu_json(['ok'=>true, 'skill'=>coreui_skillpkg_file_save($pdo, $uid, $id, $body['path'] ?? '', $body['content'] ?? null, $body['old_path'] ?? '')]);
     case 'file_delete':
       stu_json(['ok'=>true, 'skill'=>coreui_skillpkg_file_delete($pdo, $uid, $id, $body['path'] ?? '')]);
+    case 'use':
+      coreui_skillpkg_use_shared($pdo, $uid, $id, !empty($body['on']));
+      stu_json(['ok'=>true, 'shared'=>coreui_skillpkg_shared_list($pdo, $uid)]);
+    case 'chat_set':
+      $session = (string)coreui_console_session_require($pdo, $uid, (string)($body['session'] ?? ''))['id'];
+      stu_json(['ok'=>true] + coreui_skillpkg_chat_set($pdo, $uid, $session, $body['refs'] ?? null));
   }
   stu_json(['ok'=>false, 'error'=>'unknown_action'], 404);
 } catch (InvalidArgumentException $e) {
@@ -73,7 +96,8 @@ try {
   }
   $error = $e->getMessage();
   $status = match (true) {
-    in_array($error, ['skill_not_found', 'skill_file_not_found', 'project_not_found'], true) => 404,
+    in_array($error, ['skill_not_found', 'skill_file_not_found', 'project_not_found', 'session_not_found'], true) => 404,
+    $error === 'skill_share_forbidden' => 403,
     in_array($error, ['skill_exists', 'skill_file_exists', 'skill_limit', 'skill_files_limit'], true) => 409,
     str_contains($error, 'migration') => 503,
     default => 422,

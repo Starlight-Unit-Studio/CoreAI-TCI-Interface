@@ -5536,7 +5536,8 @@ function ember_skill_context(int $uid, string $sessionId): array {
   } catch (Throwable $e) {
     error_log('[CoreAI] skill context: ' . get_class($e));
   }
-  return ['uid'=>$uid, 'project'=>$project, 'tools'=>$tools];
+  // 0.7.84 (P12 B): the chat, for the skills it fixed.
+  return ['uid'=>$uid, 'project'=>$project, 'tools'=>$tools, 'session'=>$sessionId];
 }
 
 /** Tools of the work loop for this chat. */

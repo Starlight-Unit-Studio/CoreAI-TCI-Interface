@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.83: the account's own skills with companion files, used by Mara (P12 A).
+# CoreAI: TCI Interface 0.7.84: shared skills, precedence and the skills fixed for a chat (P12 B).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -264,6 +264,11 @@ UI_FILES=(
   css/coreui-skills-settings.css
   scripts/skill-packages-selftest.php
   scripts/skill-packages-ui-selftest.cjs
+  database/migrations/053_skill_sharing.sql
+  js/coreui-chat-skills.js
+  css/coreui-chat-skills.css
+  scripts/skill-sharing-selftest.php
+  scripts/skill-sharing-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1575,6 +1580,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Eigene-Skills-Selbsttest: ${skill_packages_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.84 (P12 B): shared skills, precedence and the skills fixed for a chat.
+  skill_sharing_test=''
+  if skill_sharing_test="$(compose exec -T php php scripts/skill-sharing-selftest.php 2>&1)"; then
+    ok "$skill_sharing_test"
+  else
+    fail "Gemeinsame-Skills-Selbsttest: ${skill_sharing_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -2013,6 +2026,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Zusammenfuehren: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.84 (P12 B): Gemeinsam, precedence, sharing, and "Skills für diesen Chat" in the + menu.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/skill-sharing-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Skills: Gemeinsam, Vorrang, Teilen und Skills fuer diesen Chat im Browser geprueft.'
+      else
+        fail 'Gemeinsame Skills: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Gemeinsame Skills: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.83 (P12 A): Settings > Skills: own skills, companion files, the built-in library.
     if node -e "require('playwright')" >/dev/null 2>&1; then
