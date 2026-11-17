@@ -1741,7 +1741,7 @@ if command -v php >/dev/null 2>&1; then
     # duplicates, SoftGlass untouched; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/settings-theme-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Einstellungen: CoreAI-Theme und Seitenaufbau im Browser geprueft.'
+        ok 'Settings: CoreAI theme and page layout verified in browser.'
       else
         fail 'Einstellungen: Theme-Oberflaechentest fehlgeschlagen.'
       fi
@@ -1751,7 +1751,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.38: Deep Research in the chat (plan card, countdown, running, report view); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/deep-research-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Deep Research: Plan, Fortschritt und Bericht im Browser geprueft.'
+        ok 'Deep Research: plan, progress and report verified in browser.'
       else
         fail 'Deep Research: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1761,7 +1761,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.69 (P09): the tab Dateien on the project page; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-files-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Projektdateien: Baum, Editor, Verlauf, Vergleich und Konflikt im Browser geprueft.'
+        ok 'Project files: tree, editor, history, comparison and conflicts verified in browser.'
       else
         fail 'Projektdateien: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1771,7 +1771,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.74 (P09 C): the branch button and the line after the branch point; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/chat-branch-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Gespraechszweige: Knopf und Herkunftszeile im Browser geprueft.'
+        ok 'Chat branches: button and origin label verified in browser.'
       else
         fail 'Gespraechszweige: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1781,7 +1781,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.75 (P10 A): the preview in the tab Dateien; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-preview-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Projektvorschau: Seite, Skripte, Daten, Fehler mit Zeile und Aktualisieren im Browser geprueft.'
+        ok 'Project preview: page, scripts, data, line-numbered errors and reload verified in browser.'
       else
         fail 'Projektvorschau: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1791,7 +1791,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.77 (P10 B): the panel Ausfuehren in the tab Dateien; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-runs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Projektlaeufe: Befehl, Ausgabe, Exitcode, Abbrechen und Python-Schalter im Browser geprueft.'
+        ok 'Project runs: command, output, exit code, cancellation and Python toggle verified in browser.'
       else
         fail 'Projektlaeufe: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1801,7 +1801,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.80 (P11 A): the panel Versionen in the tab Dateien; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-vcs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Projektversionen: Sichern, Arbeitsstaende, Wiederherstellen und Git-ZIP im Browser geprueft.'
+        ok 'Project versions: save, working states, restore and Git ZIP verified in browser.'
       else
         fail 'Projektversionen: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1811,7 +1811,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.81 (P11 B): merging with conflicts in the panel Versionen; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-merge-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Zusammenfuehren: Vorschau, Konflikte mit Wahl, eigener Text und zwei Eltern im Browser geprueft.'
+        ok 'Merge: preview, conflicts with choices, custom text and two parents verified in browser.'
       else
         fail 'Zusammenfuehren: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1821,7 +1821,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.84 (P12 B): Gemeinsam, precedence, sharing, and "Skills für diesen Chat" in the + menu.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/skill-sharing-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Skills: Gemeinsam, Vorrang, Teilen und Skills fuer diesen Chat im Browser geprueft.'
+        ok 'Skills: shared skills, priority, sharing and skills fixed to this chat verified in browser.'
       else
         fail 'Gemeinsame Skills: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1831,7 +1831,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.83 (P12 A): Settings > Skills: own skills, companion files, the built-in library.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/skill-packages-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Skills: eigene Skills mit Begleitdateien, Voraussetzungen, Geltungsbereich und die mitgelieferten im Browser geprueft.'
+        ok 'Skills: own skills with companion files, prerequisites, scope and bundled skills verified in browser.'
       else
         fail 'Skills: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1841,7 +1841,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.82 (P11 C): the cards of Mara's files: preview of the same version, Behalten, Loeschen, notes.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/artifact-lifecycle-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Maras Dateien: Vorschau derselben Version, Behalten, Loeschen mit Hinweis und Aufbewahrung im Browser geprueft.'
+        ok 'Mara's files: version-matched preview, keep, delete with notice and retention verified in browser.'
       else
         fail 'Maras Dateien: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1851,7 +1851,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/project-procs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Projektprozesse: Start, Ausgabe, Eingabe, Servervorschau mit fetch, Beenden und Python-Schalter im Browser geprueft.'
+        ok 'Project processes: start, output, input, fetch-based server preview, stop and Python toggle verified in browser.'
       else
         fail 'Projektprozesse: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1861,7 +1861,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/pets-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Pets im Browser geprueft.'
+        ok 'Pets verified in browser.'
       else
         fail 'Pets: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1871,7 +1871,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.0: Settings > Personalisierung after the reference; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/personalization-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Personalisierung im Browser geprueft.'
+        ok 'Personalization verified in browser.'
       else
         fail 'Personalisierung: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1881,7 +1881,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.86: Konto (name, Benutzername dialog, e-mail, plan page, Erstellerprofil planned); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/account-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Konto: Name, Benutzername, E-Mail, Plan und Erstellerprofil im Browser geprueft.'
+        ok 'Account: name, username, email, plan and creator profile verified in browser.'
       else
         fail 'Konto: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1891,7 +1891,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/update-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Update-Fenster: goldenes Fenster fuer den Inhaber, Spaeter, Fortschrittsbalken fuer alle, Neuladen nach dem Neustart geprueft.'
+        ok 'Update window: owner's gold dialog, Later, shared progress bar and reload after restart verified.'
       else
         fail 'Update-Fenster: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1901,7 +1901,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.1: speaker button and auto-read switch; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-read-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Vorlesen: Knopf, Satz fuer Satz mit Vorladen, Stopp, automatisch vorlesen, Gaeste ohne Knopf geprueft.'
+        ok 'Read aloud: button, sentence-by-sentence preloading, stop, auto-read and no guest button verified.'
       else
         fail 'Vorlesen: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1911,7 +1911,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.14: microphone button in the input field; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-input-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Sprachnachrichten: Mikrofon-Knopf, sofort senden, Warten auf Mara, Stille, Mitschrift-Zeile, Gaeste ohne Knopf geprueft.'
+        ok 'Voice messages: microphone button, immediate send, waiting for Mara, silence, transcript line and no guest button verified.'
       else
         fail 'Spracheingabe: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1921,7 +1921,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.31: the live conversation (P20.4); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-live-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Live-Gespraech: Knopf neben dem Mikrofon, Vollbild, Runden als Stimmsequenz, Vorlesen, Stummschalten, Unterbrechen, Beenden geprueft.'
+        ok 'Live voice: button next to microphone, fullscreen, voice-message rounds, read aloud, mute, interrupt and end verified.'
       else
         fail 'Live-Gespraech: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1931,7 +1931,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.19: chat list in the drawer, buttons whole and large enough; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/session-list-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Chatliste: Knoepfe ganz sichtbar und gross genug (Maus und Touch, Tag und Nacht) geprueft.'
+        ok 'Chat list: fully visible, adequately sized buttons (mouse/touch, day/night) verified.'
       else
         fail 'Chatliste: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1941,7 +1941,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.22: names and terms for voice messages in the KI-Profil; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-terms-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Begriffe fuer Sprachnachrichten: Liste im KI-Profil, Speichern, Bereinigung, Gaeste ohne Feld, Tag und Nacht, Handy geprueft.'
+        ok 'Voice-message terms: AI-profile list, save, cleanup, no guest field, day/night and phone verified.'
       else
         fail 'Begriffe fuer Sprachnachrichten: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1951,7 +1951,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-samples-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Stimmproben: Stimmen mit Lizenz, Abspielen je Satz, Testlaeufe, nur Inhaber und Handy-Breite geprueft.'
+        ok 'Voice previews: licensed voices, sentence playback, test runs, owner-only and phone width verified.'
       else
         fail 'Stimmproben: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1959,17 +1959,17 @@ if command -v php >/dev/null 2>&1; then
       ok 'Stimmproben: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     if node "$PROJECT_ROOT/scripts/webui-resilience-selftest.cjs" >/dev/null 2>&1; then
-      ok 'WebUI: abbrechbares Laden, Reconnect ohne Doppelauftrag, Backoff und lange Chats geprueft.'
+      ok 'WebUI: cancellable loading, reconnect without duplicate requests, backoff and long chats verified.'
     else
       fail 'WebUI: Robustheits-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-follow-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat-Scroll: manuelles Lesen, Arbeits-Punkte und Sprung zur aktuellen Antwort geprueft.'
+      ok 'Chat scroll: manual reading, work indicators and jump to latest reply verified.'
     else
       fail 'Chat-Scroll: Leserposition oder Pfeil-Button Regression fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/long-chat-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Lange Texte: Markdown-Dateianhang und Originalbytes geprueft.'
+      ok 'Long texts: Markdown attachment and original bytes verified.'
     else
       fail 'Lange Texte: automatischer Anhang ist fehlerhaft.'
     fi
@@ -2093,42 +2093,42 @@ if command -v php >/dev/null 2>&1; then
   # contract as well whenever the optional Node toolchain is available.
   feedback_ui_selftest=''
   if feedback_ui_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/feedback-ui-selftest.php" 2>&1)"; then
-    ok 'Feedback: Daumenfarben, Speicherung, Mara-Reaktion ohne Thinking (PHP-Vertrag) geprueft.'
+    ok 'Feedback: thumb colors, persistence and Mara's no-thinking reaction (PHP contract) verified.'
   else
     fail "Feedback: UI-/Backend-Vertrag (PHP) fehlerhaft: ${feedback_ui_selftest:-Unbekannter Fehler}"
   fi
   if command -v node >/dev/null 2>&1; then
     feedback_node_selftest=''
     if feedback_node_selftest="$(node "$PROJECT_ROOT/scripts/feedback-ui-selftest.cjs" 2>&1)"; then
-      ok 'Feedback: erweiterter Node.js-UI-/Backend-Vertrag geprueft.'
+      ok 'Feedback: extended Node.js UI/backend contract verified.'
     else
       fail "Feedback: Node.js-UI-/Backend-Vertrag fehlerhaft: ${feedback_node_selftest:-Unbekannter Fehler}"
     fi
   else
-    warn 'Node.js optional und nicht installiert: Feedback-PHP-Vertrag geprueft, Node.js-Zusatztest uebersprungen.'
+    warn 'Node.js is optional and not installed: Feedback PHP contract verified, extra Node.js test skipped.'
   fi
 
   if [[ -f "$CONFIG_FILE" ]]; then
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_plan_store.php'; exit(coreui_plan_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 016: dauerhafte Markdown-Planungen bereit.'
+      ok 'Migration 016: persistent Markdown plans ready.'
     else
       fail 'Migration 016 fehlt: Markdown-Projektplanung nicht bereit.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_agent_runs.php'; exit(coreui_agent_run_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 013: dauerhafte Agentenlaeufe bereit.'
+      ok 'Migration 013: persistent agent runs ready.'
     else
       fail 'Migration 013: Agentenlauf-Tabelle fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_model_queue.php'; exit(coreui_model_queue_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 013: FIFO-Modellwarteschlange bereit.'
+      ok 'Migration 013: FIFO model queue ready.'
     else
       fail 'Migration 013: Modellwarteschlange fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_work_store.php'; exit(coreui_work_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 012: persistente Arbeitsereignisse bereit.'
+      ok 'Migration 012: persistent work events ready.'
     else
       fail 'Migration 012: Ereignistabelle fehlt.'
     fi
@@ -2141,80 +2141,80 @@ if command -v php >/dev/null 2>&1; then
       $p=stu_pdo();
       $t=$p->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=\"stu_chat_messages\" AND COLUMN_NAME=\"message\"")->fetchColumn();
       exit(strtolower((string)$t)==="longtext" ? 0 : 1);' >/dev/null 2>&1; then
-      ok 'Migration 015: lange Chat-Antworten dauerhaft speicherbar.'
+      ok 'Migration 015: long chat replies can be stored persistently.'
     else
       fail 'Migration 015 fehlt: stu_chat_messages.message ist nicht LONGTEXT.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; echo (int)stu_pdo()->query('SELECT COUNT(*) FROM stu_schema_migrations')->fetchColumn();" >/dev/null 2>&1; then
-      ok 'MariaDB-Verbindung und Core-Schema funktionieren.'
+      ok 'MariaDB connection and Core schema work.'
     else
       fail 'MariaDB-Verbindung oder Core-Schema fehlgeschlagen.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT user_id FROM stu_user_ai_settings LIMIT 1'); \$p->query('SELECT id FROM stu_admin_audit LIMIT 1');" >/dev/null 2>&1; then
-      ok 'Migration 002: Nutzer-KI-Einstellungen und Admin-Audit sind bereit.'
+      ok 'Migration 002: user AI settings and admin audit ready.'
     else
       fail 'Migration 002 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT last_message_id,last_read_message_id,archived_at FROM stu_console_sessions LIMIT 0'); \$p->query('SELECT session_id,reply_to_id FROM stu_chat_messages LIMIT 0'); \$p->query('SELECT session_id,trigger_message_id FROM stu_ember_browse_jobs LIMIT 0');" >/dev/null 2>&1; then
-      ok 'Migration 003: echte Sitzungen und Turn-Zuordnung sind bereit.'
+      ok 'Migration 003: persistent sessions and turn association ready.'
     else
       fail 'Migration 003 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT user_id,display_name,assistant_name FROM stu_coreui_profiles LIMIT 0'); \$p->query('SELECT user_id,slot FROM stu_coreui_profile_media LIMIT 0'); \$p->query('SELECT uuid,user_id,status FROM stu_user_knowledge_sources LIMIT 0'); \$p->query('SELECT source_uuid,user_id,chunk_text FROM stu_user_knowledge_chunks LIMIT 0');" >/dev/null 2>&1; then
-      ok 'Migration 004: Profile, CoreAI-Identitaet und privates RAG-Lite sind bereit.'
+      ok 'Migration 004: profiles, CoreAI identity and private RAG-Lite ready.'
     else
       fail 'Migration 004 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT thinking_enabled FROM stu_user_ai_settings LIMIT 0'); \$p->query('SELECT message_id,media_uuid,user_id,position FROM stu_console_message_attachments LIMIT 0');" >/dev/null 2>&1; then
-      ok 'Migration 005: Thinking-Wahl und persistente Mehrfachanhaenge sind bereit.'
+      ok 'Migration 005: thinking selection and persistent multiple attachments ready.'
     else
       fail 'Migration 005 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT password_changed_at,last_login_at FROM stu_users LIMIT 0'); \$p->query('SELECT token_hash,expires_at,revoked_at FROM stu_auth_sessions LIMIT 0');" >/dev/null 2>&1; then
-      ok 'Migration 006: widerrufbare Anmeldungen und Passwortzeitpunkte sind bereit.'
+      ok 'Migration 006: revocable sign-ins and password timestamps ready.'
     else
       fail 'Migration 006 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$s=\$p->prepare('SELECT COUNT(*) FROM ember_knowledge_chunks WHERE source IN (?,?)'); \$s->execute(['bibel_v10_4','kompendium_v6']); exit((int)\$s->fetchColumn() === 0 ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 007: versehentlich importiertes privates Studio-Lore ist entfernt.'
+      ok 'Migration 007: accidentally imported private studio lore removed.'
     else
       fail 'Migration 007 fehlt oder privates Studio-Lore liegt noch in der Datenbank.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT response_floor_id,mode,status,response_message_id,browse_job_id FROM stu_console_generation_requests LIMIT 0');" >/dev/null 2>&1; then
-      ok 'Migration 008: Feedback, Alternativen und Fortsetzungen sind bereit.'
+      ok 'Migration 008: feedback, alternatives and continuations ready.'
     else
       fail 'Migration 008 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; \$p=stu_pdo(); \$p->query('SELECT revision_no,superseded_message_count FROM stu_console_message_revisions LIMIT 0'); \$m=\$p->query(\"SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='stu_console_generation_requests' AND COLUMN_NAME='mode'\")->fetchColumn(); exit(str_contains((string)\$m,\"'edit'\") ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 009: echte Nachrichtenbearbeitung und Kontext-Neustart sind bereit.'
+      ok 'Migration 009: message editing and context restart ready.'
     else
       fail 'Migration 009 fehlt.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_artifact_store.php'; exit(coreui_console_artifact_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
-      ok 'Migration 011: dauerhafte Chat-Dateiausgaben sind bereit.'
+      ok 'Migration 011: persistent chat-generated files ready.'
     else
       fail 'Migration 011 fehlt.'
     fi
 
     if systemctl is-active --quiet ember-coreui-python.service; then
-      ok 'CoreAI: TCI Interface-Python-Worker ist aktiv.'
+      ok 'CoreAI: TCI Interface Python worker is active.'
     else
       fail 'CoreAI: TCI Interface-Python-Worker ist nicht aktiv.'
     fi
 
     MODEL_NAME="$(read_constant STU_EMBER_MODEL || true)"
     if [[ -n "$MODEL_NAME" ]] && command -v ollama >/dev/null 2>&1 && ollama show "$MODEL_NAME" >/dev/null 2>&1; then
-      ok "Ollama-Modell vorhanden: $MODEL_NAME"
+      ok "Ollama model available: $MODEL_NAME"
       model_audit=''
       if model_audit="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" "$MODEL_NAME" 2>&1)"; then
         ok "$model_audit"
@@ -2247,7 +2247,7 @@ if command -v php >/dev/null 2>&1; then
         WEB_TEST_URL+='?q=ember&format=json'
       fi
       if curl -fsS --max-time 8 "$WEB_TEST_URL" >/dev/null; then
-        ok 'SearXNG JSON-Suche erreichbar.'
+        ok 'SearXNG JSON search is reachable.'
       else
         fail 'SearXNG JSON-Suche nicht erreichbar.'
       fi
@@ -2256,7 +2256,7 @@ if command -v php >/dev/null 2>&1; then
     BROWSE_ENABLED="$(read_constant STU_EMBER_BROWSE_ENABLED || printf '0')"
     if [[ "$BROWSE_ENABLED" == '1' ]]; then
       if systemctl is-active --quiet ember-coreui-browse.service; then
-        ok 'Browse-Worker ist aktiv.'
+        ok 'Browser worker is active.'
       else
         fail 'Browse-Worker ist nicht aktiv.'
       fi
@@ -2269,7 +2269,7 @@ if command -v php >/dev/null 2>&1; then
         sleep 1
       done
       if (( frame_table_ready == 1 )); then
-        ok 'Private Live-Browser-Frame-Tabelle ist bereit.'
+        ok 'Private live-browser frame table is ready.'
       else
         fail 'Private Live-Browser-Frame-Tabelle fehlt. Browse-Worker neu starten.'
       fi
@@ -2278,7 +2278,7 @@ if command -v php >/dev/null 2>&1; then
         if browse_live="$(runuser -u www-data -- env COREAI_BROWSE_LIVE=1 TMPDIR=/tmp \
             PLAYWRIGHT_BROWSERS_PATH="$PROJECT_ROOT/var/playwright" HOME="$PROJECT_ROOT/var/worker-home" \
             "$PROJECT_ROOT/var/venv/bin/python" "$PROJECT_ROOT/scripts/browse-worker-selftest.py" 2>&1)"; then
-          ok 'Browser (echter Chromium-Lauf): Formular ausgefuellt, Bilder beim Ueberlegen, Login und Kontakt blockiert, lokales Netz gesperrt.'
+          ok 'Browser (real Chromium run): filled form, thinking screenshots, blocked login/contact and blocked local network.'
         else
           fail "Browser-Livetest: ${browse_live:-Unbekannter Fehler}"
         fi
@@ -2288,7 +2288,7 @@ if command -v php >/dev/null 2>&1; then
 fi
 
 if nginx -t >/dev/null 2>&1; then
-  ok 'Nginx-Konfiguration ist gueltig.'
+  ok 'Nginx configuration is valid.'
 else
   fail 'Nginx-Konfiguration ist ungueltig.'
 fi
@@ -2306,7 +2306,7 @@ for writable_dir in \
   "$PROJECT_ROOT/assets/profile_photos/pending" \
   "$PROJECT_ROOT/assets/profile_photos/approved"; do
   if [[ -d "$writable_dir" ]] && runuser -u www-data -- test -w "$writable_dir"; then
-    ok "PHP-Schreibpfad bereit: ${writable_dir#"$PROJECT_ROOT"/}"
+    ok "PHP writable directory ready: ${writable_dir#"$PROJECT_ROOT"/}"
   else
     fail "PHP-Schreibpfad nicht bereit: ${writable_dir#"$PROJECT_ROOT"/}"
   fi
@@ -2324,8 +2324,8 @@ if command -v php >/dev/null 2>&1; then
 fi
 
 if (( FAILURES > 0 )); then
-  printf '\nPreflight fehlgeschlagen: %d Problem(e).\n' "$FAILURES" >&2
+  printf '\nPreflight failed: %d issue(s).\n' "$FAILURES" >&2
   exit 1
 fi
 
-printf '\nPreflight erfolgreich. CoreAI: TCI Interface ist betriebsbereit.\n'
+printf '\nPreflight successful. CoreAI: TCI Interface is ready.\n'
