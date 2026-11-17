@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.87 - 17.11.2026
+
+- **Installer regression hotfix:** Fixed the offline voice-service self-test still expecting the old German optional-build warning after the 0.7.86 installer translated it to English. The test now recognizes the actual English warning without changing optional voice behavior.
+- **Host updater regression hotfix:** Fixed the update-runner self-test still expecting a German account audit line after the updater switched to English. The test now verifies the English log entry, while backup, restart, progress, and access safeguards remain unchanged.
+- **CI coverage gap closed:** Added a required offline regression workflow for the voice service, host updater and automatic-update contracts whenever installer/preflight or updater files change. Previously the 12 existing checks passed without executing these two tests that the deployed preflight later ran.
+- **Version:** Advanced to 0.7.87 so a failed 0.7.86 host can install the fix as a newer update. No database, model or chat feature changes.
+
 ## 0.7.86 - 17.11.2026
 
 - **English installation output:** The official `setup.sh` one-liner, Docker installer, native installer, and both preflight scripts report progress, validation, prompts, errors, and warnings in English. CLI operations, environment names, service behavior, permissions, and default installation modes remain unchanged. Archived historical release ZIPs are not rewritten.
