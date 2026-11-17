@@ -79,7 +79,15 @@ function server(level) {
     }
     const file = path.join(root, rel || 'index.html');
     if (!fs.existsSync(file)) return route.fulfill({status: 404, body: ''});
-    return route.fulfill({contentType: types[path.extname(file)] || 'application/octet-stream', body: fs.readFileSync(file)});
+    let body = fs.readFileSync(file);
+    // Diagnostic: record exactly which reported server state would trigger a
+    // document reload. This overlay runs in the test only, not the product.
+    if (rel === 'js/coreui-update.js') {
+      const original = body.toString('utf8');
+      body = Buffer.from(original.replace('        finish();',
+        '        console.error("TRACE_UPDATE_FINISH", JSON.stringify({state:data.state,version:data.version, waitVersion:wait.version, down:wait.down})); finish();'));
+    }
+    return route.fulfill({contentType: types[path.extname(file)] || 'application/octet-stream', body});
   };
   return srv;
 }
@@ -96,6 +104,9 @@ async function open(browser, level, viewport, prepare) {
   // Settings must not masquerade as an update-driven page reload.
   page.on('load', () => { navigation.count += 1; navigation.urls.push(page.url()); });
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.text().includes('TRACE_UPDATE_FINISH')) console.log(message.text());
+  });
   await page.clock.install();
   await page.route('http://coreui.test/**', route => srv.route(route));
   await page.goto('http://coreui.test/settings.html#system');
