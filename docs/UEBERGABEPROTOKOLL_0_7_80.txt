@@ -44,7 +44,30 @@ UMSETZUNG
 - Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer api/project_files.php, api/project_files_store.php, api/project_vcs_store.php und
+  scripts/project-vcs-selftest.php, node --check fuer die geaenderten JavaScript-Dateien, bash -n
+  fuer beide Preflights: ohne Fehler. Version-Guard (0.7.79 auf 0.7.80), Branding-Test,
+  Cache-Fingerabdruecke: OK.
+- scripts/project-vcs-selftest.php (neu): OK mit SQLite und MariaDB (Migration 049). Der
+  Git-Export wird mit echtem git geprueft: fsck ohne Fehler, log, status (sauber), branch und show
+  liefern Versionen, Arbeitsstaende und Inhalte wie gespeichert, auch mit Ordnern und Namen wie
+  "9" und "10" in Git-Sortierung.
+- scripts/project-vcs-ui-selftest.cjs (neu): OK (erste Version, Zeilenvergleich, Sichern, eigener
+  Arbeitsstand, Wiederherstellen, Git-ZIP, abgelehnter Name, Loeschen, fehlende Migration, Telefon,
+  dunkel).
+- 11 gezielt eingebaute Fehler (8 im Versionsspeicher, einer in der Speicherberechnung, zwei in
+  der Oberflaeche): alle erkannt; die Sortierung zahlenartiger Namen erst, nachdem der Test dafuer
+  ergaenzt wurde.
+- Der erste Lauf der gesamten Testreihe zeigte project-vcs-ui-selftest.cjs einmal rot: Beim
+  erneuten Oeffnen konnte der Bereich kurz den alten Stand zeigen. Behoben (der Bereich leert seine
+  Daten beim Oeffnen); danach 10 parallele Laeufe und zwei Runden aller Projekt-Tests gruen.
+- GitHub-Pruefungen am PR: 11 von 11 gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*), Branch gegen main 0.7.79 in derselben Umgebung:
+  Branch 188 bestanden, 15 fehlgeschlagen; main 186 bestanden, 15 fehlgeschlagen. Die 15 sind auf
+  beiden genau dieselben und in dieser Umgebung schon laenger bekannt (browse-image ohne
+  Python-Playwright, browse-live-ui, chat-menu-ui, image-progress-ui, long-chat, model-library-ui,
+  pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui, settings-tabs-ui,
+  update-ui, voice-input, voice-samples-ui). Die beiden neuen Tests bestehen.
 
 NICHT GETESTET
 - Der Bereich auf dem echten Server mit echten Projekten (nach dem Update im Tab Dateien
