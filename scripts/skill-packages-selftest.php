@@ -47,9 +47,10 @@ skp_test(coreui_skillpkg_missing("Nutze templates/bericht.md und references/fehl
 // --- Wiring (static) ---------------------------------------------------------------------------------
 $read = static fn(string $file): string => (string)file_get_contents($root . '/' . $file);
 $endpoint = $read('api/skill_packages.php');
-skp_test(strpos($endpoint, "if (coreui_guest_is(\$pdo, \$uid)) stu_json(['ok'=>false, 'error'=>'guests_not_allowed'], 403);")
-  < strpos($endpoint, "if (\$method === 'GET' && \$action === 'list') {")
-  && strpos($endpoint, 'stu_require_csrf();') < strpos($endpoint, "case 'save':")
+$guestAt = strpos($endpoint, "if (coreui_guest_is(\$pdo, \$uid)) stu_json(['ok'=>false, 'error'=>'guests_not_allowed'], 403);");
+$csrfAt = strpos($endpoint, 'stu_require_csrf();');
+skp_test($guestAt !== false && $csrfAt !== false && $guestAt < strpos($endpoint, "if (\$method === 'GET' && \$action === 'list') {")
+  && $csrfAt < strpos($endpoint, "case 'save':")
   && str_contains($endpoint, "'tools'=>COREUI_SKILLPKG_TOOLS"), 'endpoint: accounts only, every change with CSRF');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $conf) {
   skp_test(str_contains($read($conf), '|files|project_files|skill_packages|'), 'nginx allows the endpoint: ' . $conf);
