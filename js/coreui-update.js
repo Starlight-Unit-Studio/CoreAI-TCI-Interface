@@ -397,8 +397,9 @@
         renderCard();
         return;
       }
-      // Done, or back on another version, or down and up again: reload.
-      if (data.state === 'done' || wait.down || (wait.version && data.version !== wait.version)) {
+      // A failed connection alone does not prove the update completed.
+      // Reload only after the host reports "done" or a genuinely new version.
+      if (data.state === 'done' || (wait.version && data.version && data.version !== wait.version)) {
         finish();
         return;
       }
