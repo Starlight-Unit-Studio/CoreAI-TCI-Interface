@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.80: versions, working states and a Git export of project files (P11 A).
+# CoreAI: TCI Interface 0.7.81: merging working states with conflicts, and Mara with versions (P11 B).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -233,6 +233,9 @@ UI_FILES=(
   api/project_vcs_store.php
   scripts/project-vcs-selftest.php
   scripts/project-vcs-ui-selftest.cjs
+  database/migrations/050_project_merges.sql
+  scripts/project-merge-selftest.php
+  scripts/project-merge-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1324,6 +1327,14 @@ if command -v php >/dev/null 2>&1; then
     fail "Projektversionen-Selbsttest: ${project_vcs_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.81 (P11 B): merging working states with conflicts, Mara with versions; the Git export with git where it exists.
+  project_merge_test=''
+  if project_merge_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-merge-selftest.php" 2>&1)"; then
+    ok "$project_merge_test"
+  else
+    fail "Zusammenfuehren-Selbsttest: ${project_merge_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-reference-selftest.php" 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1756,6 +1767,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Projektversionen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.81 (P11 B): merging with conflicts in the panel Versionen; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/project-merge-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Zusammenfuehren: Vorschau, Konflikte mit Wahl, eigener Text und zwei Eltern im Browser geprueft.'
+      else
+        fail 'Zusammenfuehren: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      ok 'Zusammenfuehren: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then

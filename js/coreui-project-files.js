@@ -5,6 +5,8 @@
  *   with live output, input and Beenden, and the preview of a development server.
  * 0.7.80 (P11 A): versions and working states (Sichern, Verlauf, Änderungen, Wiederherstellen,
  *   Arbeitsstände with their own files) and the ZIP with a Git repository.
+ * 0.7.81 (P11 B): merging another working state into the active one, with a preview and a
+ *   choice for every conflict (my version, the other one, or a text of one's own).
  * Files of the project as a tree, search in names and content, a text editor
  * for single files, the history of a file with a comparison and restore, new
  * file, rename, delete and the current state as a ZIP. The server owns every
@@ -24,7 +26,7 @@
     run: { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false },
     proc: freshProc(), vcs: freshVcs() };
   function freshVcs() {
-    return { open: false, ready: true, data: null, error: '', busy: false, message: '', view: null, form: null };
+    return { open: false, ready: true, data: null, error: '', busy: false, message: '', view: null, form: null, merge: null };
   }
   function freshProc() {
     return { open: false, list: [], current: null, since: 0, command: '', port: '', suggestion: { command: '', port: null },
@@ -75,11 +77,18 @@
     commit_not_found: 'Diese Version gibt es nicht mehr.',
     history_full: 'Der Verlauf ist voll (200 Versionen). Lösche einen Arbeitsstand, den du nicht mehr brauchst.',
     already_current: 'Genau dieser Stand ist schon da.',
-    project_vcs_migration_required: 'Die Datenbank-Migration 049 fehlt. Bitte das Update einspielen.'
+    project_vcs_migration_required: 'Die Datenbank-Migration 049 fehlt. Bitte das Update einspielen.',
+    already_merged: 'Dieser Arbeitsstand ist schon ganz enthalten. Es gibt nichts zusammenzuführen.',
+    merge_same: 'Ein Arbeitsstand kann nicht mit sich selbst zusammengeführt werden.',
+    merge_changed: 'Inzwischen hat sich etwas geändert. Bitte die Zusammenführung noch einmal prüfen.',
+    merge_unresolved: 'Bitte für jeden Konflikt eine Lösung wählen.',
+    conflict_markers: 'Im Text stehen noch Konfliktmarker (<<<<<<< oder >>>>>>>). Bitte die Stelle fertig zusammenführen.',
+    invalid_resolution: 'Diese Lösung passt nicht zu den Konflikten. Bitte die Zusammenführung neu öffnen.',
+    project_merge_migration_required: 'Die Datenbank-Migration 050 fehlt. Bitte das Update einspielen.'
   };
   var MAX_PREVIEW_ERRORS = 5;
   var SOURCE = { build: 'Von Mara gebaut', mara: 'Von Mara geändert', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt',
-    restore: 'Wiederhergestellt', branch: 'Arbeitsstand gewechselt' };
+    restore: 'Wiederhergestellt', branch: 'Arbeitsstand gewechselt', merge: 'Zusammengeführt' };
 
   function message(err) {
     var code = err && err.message || '';
@@ -784,7 +793,7 @@
   }
   function openVcs() {
     // Never show an old state: files may have changed meanwhile (another tab, Mara, a build).
-    state.vcs.open = true; state.vcs.error = ''; state.vcs.view = null; state.vcs.data = null;
+    state.vcs.open = true; state.vcs.error = ''; state.vcs.view = null; state.vcs.data = null; state.vcs.merge = null;
     renderVcs();
     vcsLoad().then(renderVcs);
   }
@@ -824,6 +833,46 @@
     if (!window.confirm('„' + commit.message + '“ wiederherstellen?' + note)) return;
     vcsAction({ action: 'vcs_restore', commit_id: commit.id }, true);
   }
+  // 0.7.81 (P11 B): merging another working state into the active one. The preview shows what
+  // comes over and every conflict; nothing changes before "Zusammenführen", and every conflict
+  // needs a choice: my version, the other one, or a text of one's own.
+  function vcsMergeOpen(branch, note) {
+    if (state.vcs.busy) return;
+    state.vcs.busy = true; state.vcs.error = '';
+    renderVcs();
+    getJson({ project_id: state.project, vcs_merge: branch.id }).then(function (d) {
+      state.vcs.merge = { branch: branch, data: d.merge, choices: {}, texts: {}, message: d.merge.message, note: note || '' };
+      state.vcs.view = null;
+    }).catch(function (e) { state.vcs.merge = null; state.vcs.error = message(e); })
+      .then(function () { state.vcs.busy = false; renderVcs(); });
+  }
+  function vcsMergeGo() {
+    var mg = state.vcs.merge;
+    if (!mg || state.vcs.busy) return;
+    var resolutions = {};
+    var open = mg.data.conflicts.filter(function (c) {
+      var choice = mg.choices[c.path];
+      if (!choice) return true;
+      resolutions[c.path] = choice === 'text' ? { choice: 'text', text: mg.texts[c.path] } : { choice: choice };
+      return false;
+    });
+    if (open.length) { state.vcs.error = ERR.merge_unresolved; renderVcs(); return; }
+    if (!leave()) return;
+    state.vcs.busy = true; state.vcs.error = '';
+    renderVcs();
+    post({ action: 'vcs_merge', branch_id: mg.branch.id, ours_tree: mg.data.ours_tree, theirs_head: mg.data.theirs_head,
+      resolutions: resolutions, message: (mg.message || '').trim() }).then(function (d) {
+      state.vcs.data = Object.assign({ ready: true }, d.state);
+      state.vcs.merge = null; state.vcs.view = null;
+      return vcsFilesChanged().then(function () { state.vcs.busy = false; renderVcs(); });
+    }).catch(function (e) {
+      state.vcs.busy = false;
+      // Something changed since the preview: show the merge again as it is now, choices start anew.
+      if (e && e.message === 'merge_changed') { vcsMergeOpen(mg.branch, ERR.merge_changed); return; }
+      state.vcs.error = message(e);
+      renderVcs();
+    });
+  }
   function vcsCreate(name, carry) { vcsAction({ action: 'vcs_branch', name: name, carry: carry }, true, function () { state.vcs.form = null; }); }
   function vcsShowCommit(commit) {
     getJson({ project_id: state.project, vcs_commit: commit.id }).then(function (d) {
@@ -841,6 +890,115 @@
       state.vcs.view = { kind: 'file', path: path, title: title, before: both[0], after: both[1], back: state.vcs.view };
       renderVcs();
     }).catch(function (e) { state.vcs.error = message(e); renderVcs(); });
+  }
+  var KIND = { content: 'beide haben dieselben Stellen geändert', added: 'auf beiden Seiten neu angelegt',
+    deleted_ours: 'hier gelöscht, dort geändert', deleted_theirs: 'hier geändert, dort gelöscht' };
+  function vcsFileView(v) {
+    var fbox = el('div', 'project-vcs-view project-file-compare');
+    var fhead = el('div', 'project-file-compare-head');
+    fhead.appendChild(el('strong', '', v.path + ' · ' + v.title));
+    var ops = diffLines(lines(v.before.content), lines(v.after.content));
+    if (ops) {
+      fhead.appendChild(el('span', 'project-diff-count', '+' + ops.filter(function (o) { return o.t === '+'; }).length
+        + ' −' + ops.filter(function (o) { return o.t === '-'; }).length));
+    }
+    fhead.appendChild(button(v.back ? 'Zurück' : 'Schließen', 'project-files-secondary', function () { state.vcs.view = v.back || null; renderVcs(); }));
+    fbox.appendChild(fhead);
+    fbox.appendChild(diffBody(ops));
+    return fbox;
+  }
+  function renderMerge(s) {
+    var mg = s.merge;
+    var md = mg.data;
+    var box = el('div', 'project-vcs-merge');
+    box.id = 'projectVcsMerge';
+    var head = el('div', 'project-file-compare-head');
+    head.appendChild(el('strong', '', '„' + md.from.name + '“ in „' + md.into.name + '“ zusammenführen'));
+    head.appendChild(button('Abbrechen', 'project-files-secondary', function () { s.merge = null; s.view = null; s.error = ''; renderVcs(); },
+      { id: 'projectVcsMergeCancel' }));
+    box.appendChild(head);
+    if (mg.note) box.appendChild(el('p', 'project-files-status', mg.note));
+    if (md.unsaved) box.appendChild(el('p', 'project-files-hint', 'Deine ungesicherten Änderungen werden vorher als eigene Version gesichert.'));
+    if (md.from.unsaved) {
+      box.appendChild(el('p', 'project-files-hint', 'Ungesicherte Änderungen von „' + md.from.name + '“ kommen nicht mit, nur seine gesicherten Versionen.'));
+    }
+    if (md.changes.clean && !md.conflicts.length) {
+      box.appendChild(el('p', 'project-files-hint', 'An den Dateien ändert sich nichts; die Versionen von „' + md.from.name + '“ kommen trotzdem dazu.'));
+    }
+    if (!md.changes.clean) {
+      box.appendChild(el('strong', '', 'Wird übernommen'));
+      box.appendChild(changeList(md.changes, function (path, kind) {
+        vcsShowFile(path, md.base_commit_id, kind === 'deleted' ? null : md.theirs_head, 'Änderung in „' + md.from.name + '“');
+      }));
+      if (md.merged.length) box.appendChild(el('p', 'project-files-hint', 'Zeilenweise zusammengeführt: ' + md.merged.join(', ')));
+    }
+    var unresolved = 0;
+    if (md.conflicts.length) {
+      box.appendChild(el('strong', '', md.conflicts.length === 1 ? '1 Konflikt' : md.conflicts.length + ' Konflikte'));
+      md.conflicts.forEach(function (c, i) {
+        var choice = mg.choices[c.path] || '';
+        if (!choice) unresolved++;
+        var item = el('div', 'project-vcs-conflict' + (choice ? ' is-solved' : ''));
+        item.setAttribute('data-conflict', c.path);
+        var top = el('div', 'project-vcs-conflict-head');
+        top.appendChild(el('code', '', c.path));
+        top.appendChild(el('small', '', KIND[c.kind] + (c.count > 1 ? ' (' + c.count + ' Stellen)' : '')));
+        if (c.ours !== null && c.theirs !== null) {
+          top.appendChild(button('Vergleichen', 'project-files-secondary', function () {
+            s.view = { kind: 'file', path: c.path, title: '„' + md.into.name + '“ gegenüber „' + md.from.name + '“',
+              before: { exists: true, content: c.ours }, after: { exists: true, content: c.theirs }, back: null };
+            renderVcs();
+          }, { 'data-compare': c.path }));
+        }
+        item.appendChild(top);
+        var options = [['ours', c.ours === null ? 'Gelöscht lassen' : 'Meine Fassung („' + md.into.name + '“)'],
+          ['theirs', c.theirs === null ? 'Löschen wie in „' + md.from.name + '“' : 'Fassung von „' + md.from.name + '“']];
+        if (c.merged !== null) options.push(['text', 'Selbst zusammenführen']);
+        var group = el('div', 'project-vcs-choices');
+        group.setAttribute('role', 'radiogroup');
+        group.setAttribute('aria-label', 'Lösung für ' + c.path);
+        options.forEach(function (o) {
+          var label = el('label', 'project-vcs-choice');
+          var radio = el('input');
+          radio.type = 'radio'; radio.name = 'projectVcsConflict' + i; radio.value = o[0]; radio.checked = choice === o[0];
+          radio.addEventListener('change', function () {
+            mg.choices[c.path] = o[0];
+            if (o[0] === 'text' && mg.texts[c.path] === undefined) mg.texts[c.path] = c.merged;
+            s.error = '';
+            renderVcs();
+          });
+          label.appendChild(radio);
+          label.appendChild(el('span', '', o[1]));
+          group.appendChild(label);
+        });
+        item.appendChild(group);
+        if (choice === 'text') {
+          var area = el('textarea', 'project-vcs-conflict-text');
+          area.value = mg.texts[c.path];
+          area.spellcheck = false;
+          area.rows = Math.min(18, Math.max(6, area.value.split('\n').length + 1));
+          area.setAttribute('aria-label', 'Zusammengeführter Inhalt von ' + c.path);
+          area.addEventListener('input', function () { mg.texts[c.path] = area.value; });
+          item.appendChild(area);
+          item.appendChild(el('small', 'project-files-hint', 'Zwischen <<<<<<< und ======= steht deine Fassung, darunter bis >>>>>>> die andere. '
+            + 'Lass stehen, was bleiben soll, und lösche die Markerzeilen.'));
+        }
+        box.appendChild(item);
+      });
+    }
+    var form = el('form', 'project-run-form project-vcs-merge-go');
+    var msg = el('input', 'project-run-command');
+    msg.type = 'text'; msg.maxLength = 200; msg.value = mg.message; msg.id = 'projectVcsMergeMessage'; msg.autocomplete = 'off';
+    msg.setAttribute('aria-label', 'Beschreibung der Zusammenführung');
+    msg.addEventListener('input', function () { mg.message = msg.value; });
+    form.appendChild(msg);
+    var go = el('button', 'project-files-primary', 'Zusammenführen');
+    go.type = 'submit'; go.id = 'projectVcsMergeGo'; go.disabled = s.busy || unresolved > 0;
+    form.appendChild(go);
+    form.addEventListener('submit', function (e) { e.preventDefault(); vcsMergeGo(); });
+    box.appendChild(form);
+    if (unresolved) box.appendChild(el('p', 'project-files-hint', unresolved === 1 ? 'Noch 1 Konflikt ohne Lösung.' : 'Noch ' + unresolved + ' Konflikte ohne Lösung.'));
+    return box;
   }
   function changeList(changes, onPick) {
     var list = el('ul', 'project-vcs-changes');
@@ -882,6 +1040,12 @@
     if (s.error) vcsBox.appendChild(el('p', 'project-files-status is-error', s.error));
     var d = s.data;
     if (!d) { vcsBox.appendChild(el('p', 'project-files-hint', 'Lädt …')); return; }
+    // 0.7.81: while a merge is open it is the only thing here (and a file it compares).
+    if (s.merge) {
+      vcsBox.appendChild(renderMerge(s));
+      if (s.view && s.view.kind === 'file') vcsBox.appendChild(vcsFileView(s.view));
+      return;
+    }
 
     // Working states.
     var branches = el('div', 'project-vcs-branches');
@@ -896,6 +1060,12 @@
         var sw = button('Wechseln', 'project-files-secondary', function () { vcsSwitch(b); }, { 'data-switch': b.name });
         sw.disabled = s.busy;
         row.appendChild(sw);
+        if (d.can_merge && !b.merged) {
+          var mergeButton = button('Zusammenführen', 'project-files-secondary', function () { vcsMergeOpen(b); },
+            { 'data-merge': b.name, title: 'In „' + d.active.name + '“ zusammenführen' });
+          mergeButton.disabled = s.busy;
+          row.appendChild(mergeButton);
+        }
         row.appendChild(button('Löschen', 'project-files-danger', function () { vcsDelete(b); }, { 'data-delete': b.name }));
       }
       branches.appendChild(row);
@@ -962,18 +1132,7 @@
       }));
       vcsBox.appendChild(cbox);
     } else if (v && v.kind === 'file') {
-      var fbox = el('div', 'project-vcs-view project-file-compare');
-      var fhead = el('div', 'project-file-compare-head');
-      fhead.appendChild(el('strong', '', v.path + ' · ' + v.title));
-      var ops = diffLines(lines(v.before.content), lines(v.after.content));
-      if (ops) {
-        fhead.appendChild(el('span', 'project-diff-count', '+' + ops.filter(function (o) { return o.t === '+'; }).length
-          + ' −' + ops.filter(function (o) { return o.t === '-'; }).length));
-      }
-      fhead.appendChild(button(v.back ? 'Zurück' : 'Schließen', 'project-files-secondary', function () { s.view = v.back || null; renderVcs(); }));
-      fbox.appendChild(fhead);
-      fbox.appendChild(diffBody(ops));
-      vcsBox.appendChild(fbox);
+      vcsBox.appendChild(vcsFileView(v));
     }
 
     // The versions of the active working state.
@@ -987,7 +1146,7 @@
       var text = el('div', 'project-vcs-commit-text');
       text.appendChild(el('span', '', c.message));
       text.appendChild(el('small', '', AUTHOR[c.author] + ' · ' + when(c.created_at) + ' · ' + (c.files_count === 1 ? '1 Datei' : c.files_count + ' Dateien')
-        + (i === 0 ? ' · neueste' : '')));
+        + (c.merge_parent_id ? ' · Zusammenführung' : '') + (i === 0 ? ' · neueste' : '')));
       row.appendChild(text);
       var acts = el('div', 'project-vcs-commit-actions');
       acts.appendChild(button('Änderungen', 'project-files-secondary', function () { vcsShowCommit(c); }, { 'data-show': String(c.id) }));

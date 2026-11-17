@@ -23,6 +23,8 @@ declare(strict_types=1);
  * GET  ?project_id=P&vcs_file=N|work&path=X  0.7.80: a file in a version or now
  * GET  ?project_id=P&vcs_zip=1               0.7.80: ZIP with a Git repository of the versions
  * POST {action: vcs_commit|vcs_branch|vcs_switch|vcs_restore|vcs_branch_delete, ...}  0.7.80
+ * GET  ?project_id=P&vcs_merge=B             0.7.81 (P11 B): what merging working state B would change
+ * POST {action: vcs_merge, branch_id, ours_tree, theirs_head, resolutions, message}  0.7.81
  * POST {action: create|save|rename|delete|restore, project_id, ...} with CSRF
  */
 require_once __DIR__ . '/helpers.php';
@@ -168,6 +170,9 @@ try {
     if (isset($_GET['vcs_commit'])) {
       stu_json(['ok'=>true] + coreui_pvcs_commit_changes($pdo, $uid, $projectId, (int)$_GET['vcs_commit']));
     }
+    if (isset($_GET['vcs_merge'])) {
+      stu_json(['ok'=>true, 'merge'=>coreui_pvcs_merge_preview($pdo, $uid, $projectId, (int)$_GET['vcs_merge'])]);
+    }
     if (isset($_GET['vcs_file'])) {
       $which = (string)$_GET['vcs_file'] === 'work' ? 'work' : (int)$_GET['vcs_file'];
       stu_json(['ok'=>true, 'file'=>coreui_pvcs_file($pdo, $uid, $projectId, $which, $path)]);
@@ -243,6 +248,12 @@ try {
       stu_json(['ok'=>true, 'state'=>coreui_pvcs_restore($pdo, $uid, $projectId, (int)($body['commit_id'] ?? 0))]);
     case 'vcs_branch_delete':
       stu_json(['ok'=>true, 'state'=>coreui_pvcs_branch_delete($pdo, $uid, $projectId, (int)($body['branch_id'] ?? 0))]);
+    case 'vcs_merge':
+      $merge = ['resolutions'=>$body['resolutions'] ?? [], 'message'=>$body['message'] ?? ''];
+      // What the person saw in the preview; anything that changed since then is asked again.
+      if (isset($body['ours_tree'])) $merge['ours_tree'] = (string)$body['ours_tree'];
+      if (isset($body['theirs_head'])) $merge['theirs_head'] = (int)$body['theirs_head'];
+      stu_json(['ok'=>true] + coreui_pvcs_merge($pdo, $uid, $projectId, (int)($body['branch_id'] ?? 0), $merge), 201);
     case 'proc_fetch':
       $sent = $body['body'] ?? null;
       if ($sent !== null && !is_string($sent)) throw new InvalidArgumentException('invalid_body');
@@ -264,7 +275,7 @@ try {
       'branch_not_found', 'commit_not_found'], true) => 404,
     in_array($error, ['file_exists', 'file_changed', 'run_busy', 'no_files', 'proc_busy', 'proc_not_running', 'proc_no_port',
       'input_busy', 'fetch_busy', 'nothing_to_commit', 'branch_exists', 'branch_active', 'branch_limit', 'history_full',
-      'already_current'], true) => 409,
+      'already_current', 'already_merged', 'merge_same', 'merge_changed', 'merge_unresolved'], true) => 409,
     in_array($error, ['run_limit', 'proc_limit', 'proc_active_limit'], true) => 429,
     in_array($error, ['server_unreachable', 'fetch_failed'], true) => 502,
     $error === 'fetch_timeout' => 504,

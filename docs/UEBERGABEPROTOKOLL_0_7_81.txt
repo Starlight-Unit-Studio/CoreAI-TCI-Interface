@@ -1,0 +1,82 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.81
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.80 nach PR #336
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"weiter mit P11 b": Roadmap P11 Schritt B. Zusammenfuehren von Arbeitsstaenden mit
+Konfliktbearbeitung; Mara sichert Versionen und arbeitet auf einem eigenen Arbeitsstand.
+Abnahme der Feature-Matrix CF-037: Konflikte werden ohne Verlust fremder Arbeit behandelt.
+
+UMSETZUNG
+- database/migrations/050_project_merges.sql: stu_console_project_commits.merge_parent_id
+  (ADD COLUMN IF NOT EXISTS, zweiter Eltern-Teil einer Version), Revisionsart "merge".
+- api/project_vcs_store.php: coreui_pvcs_merge_ready; Graph ueber beide Eltern
+  (coreui_pvcs_graph, _ancestors, _merge_base: hoechste gemeinsame Nummer, weil Versionen immer
+  juenger als ihre Eltern sind); Verlauf, Aufraeumen und Git-Export ueber beide Eltern;
+  Zeilenvergleich (_lines, _myers mit hoechstens 600 Schritten, _common_lines mit gleichem Anfang
+  und Ende zuerst); Dreiwege-Merge einer Datei (_merge3, benachbarte Aenderungen sind wie in Git
+  ein Konflikt, Marker mit den Namen der Arbeitsstaende, CRLF bleibt), Entscheidung je Datei
+  (_merge_trees: eine Seite geaendert, beide geaendert, geloescht gegen geaendert);
+  _merge_plan, _merge_preview (liest nur) und _merge (unter der Sperre: alles neu gerechnet,
+  ours_tree und theirs_head muessen stimmen, sonst merge_changed; jede Loesung pflicht,
+  sonst merge_unresolved; Text mit Markern dieser Zusammenfuehrung: conflict_markers;
+  ungesicherte Aenderungen zuerst als Version; Grenzen 200 Dateien, 10 MB, Speicher;
+  Version mit zwei Eltern). Zustand: can_merge, je Arbeitsstand merged.
+- api/project_files.php: GET vcs_merge, POST vcs_merge (CSRF); 409 fuer already_merged,
+  merge_same, merge_changed, merge_unresolved; 400 fuer conflict_markers, invalid_resolution.
+- api/project_file_tools.php: [VERSION_SICHERN: ...], [ARBEITSSTAND: name] (wechseln oder neu
+  mit Uebernahme), [ZUSAMMENFUEHREN: name] (nur ohne Konflikte; sonst nichts geaendert und die
+  Dateien genannt); Hinweis mit aktivem Arbeitsstand (liest nur, legt nichts an).
+- api/console_agent_loop.php, api/chat.php: Werkzeuge pvcs_commit, pvcs_branch (mit Migration
+  049) und pvcs_merge (mit 050), Arbeitsweg, Menue, nicht gelaufene Marker werden entfernt.
+- js/coreui-project-files.js, css/coreui-project-files.css: Knopf "Zusammenfuehren" nur, wo es
+  etwas gibt; Vorschau (wird uebernommen mit Zeilenvergleich der anderen Seite, zeilenweise
+  zusammengefuehrt), Konflikte mit Wahl (Meine Fassung, Fassung von X, Selbst zusammenfuehren
+  mit Textfeld), Vergleichen, Beschreibung, "Zusammenfuehren" erst mit allen Loesungen; bei
+  merge_changed kommt die Vorschau neu mit Hinweis. Im Verlauf ist eine Zusammenfuehrung
+  markiert; im Dateiverlauf heisst die Revisionsart "Zusammengefuehrt".
+- Tests mit woertlichen Werkzeuglisten nachgezogen (project-runs, project-file-tools, skills,
+  image-gen), keine Pruefung entfernt.
+- README (Abschnitt 4, "Not yet complete", API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3, P11),
+  Feature-Matrix CF-037 und CF-038.
+- Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien (api/chat.php, console_agent_loop.php,
+  project_file_tools.php, project_files.php, project_vcs_store.php und fuenf Selbsttests),
+  node --check fuer die geaenderten JavaScript-Dateien, bash -n fuer beide Preflights: ohne Fehler.
+  Version-Guard (0.7.80 auf 0.7.81), Branding-Test, Cache-Fingerabdruecke: OK.
+- scripts/project-merge-selftest.php (neu): OK mit SQLite und MariaDB (Migrationen 049 und 050,
+  050 zweimal eingespielt). Darin: Myers gegen eine einfache LCS mit 300 Zufallspaaren,
+  Dreiwege-Merge mit 200 Zufallsfaellen (eine Seite oder beide gleich: unveraendert uebernommen;
+  sauber ohne Marker, sonst markiert). Der Git-Export mit echtem git: fsck --strict, zwei Eltern
+  (rev-list --parents), merge-base gleich dem zusammengefuehrten Arbeitsstand,
+  branch --merged, log --merges, status sauber.
+- scripts/project-merge-ui-selftest.cjs (neu, Playwright): OK, auch Telefon und dunkel.
+- Bestehende Tests mit woertlichen Werkzeuglisten nachgezogen und gruen: project-runs,
+  project-file-tools, skills, image-gen; ausserdem project-vcs (PHP und UI), project-files (PHP und
+  UI), project-procs, terran-terminology, tci-language.
+- 15 gezielt eingebaute Fehler (gemeinsame Version, Dreiwege-Merge, Konflikte, geaendert
+  inzwischen, Sicherung vorher, zweiter Eltern-Teil, Marker, Aufraeumen, Git-Export, Mara mit
+  Konflikten, Marker im Chat, drei in der Oberflaeche): alle erkannt. Dabei fiel auf, dass der
+  UI-Test bei einem Fehler ein Playwright-Element in die Fehlermeldung schreiben wollte und am
+  Speicher scheiterte; er vergleicht jetzt Anzahlen und meldet den Fehler sauber.
+- GitHub-Pruefungen am PR: 11 von 11 gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*), Branch gegen main 0.7.80 in derselben
+  Umgebung: Branch 190 bestanden, 15 fehlgeschlagen; main 188 bestanden, 15 fehlgeschlagen. Die 15
+  sind auf beiden genau dieselben und in dieser Umgebung schon laenger bekannt (browse-image ohne
+  Python-Playwright, browse-live-ui, chat-menu-ui, image-progress-ui, long-chat, model-library-ui,
+  pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui, settings-tabs-ui,
+  update-ui, voice-input, voice-samples-ui). Die beiden neuen Tests bestehen.
+
+NICHT GETESTET
+- Zusammenfuehren auf dem echten Server mit echten Projekten.
+- Maras Versions-Werkzeuge mit einem echten Core (Marker, Arbeitsweg und Werkzeuge sind im
+  Selbsttest geprueft, nicht die Entscheidungen eines Cores).
+
+NAECHSTER SCHRITT
+- P11 C: Artefakte und ihre Lebensdauer (CF-031), auf Auftrag.
+
+Version: 0.7.81

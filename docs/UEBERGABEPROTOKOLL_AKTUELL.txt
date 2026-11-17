@@ -1,4 +1,17 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.80, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.81).
+ZIEL 0.7.81: Roadmap P11 Schritt B, Arbeitsstaende zusammenfuehren mit
+Vorschau, Dreiwege-Merge und Konflikten mit Wahl (eigene Fassung, andere
+Fassung, eigener Text); Version mit zwei Eltern, auch im Git-Export.
+Mara sichert Versionen, arbeitet auf einem eigenen Arbeitsstand und fuehrt
+nur ohne Konflikte zusammen. Migration 050_project_merges.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_81.txt.
+Naechster Schritt: P11 C (Artefakte und ihre Lebensdauer, CF-031), auf Auftrag.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.82.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.79, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.80).
 ZIEL 0.7.80: Roadmap P11 Schritt A, Versionen und Arbeitsstaende der
 Projektdateien (Sichern, Verlauf, Aenderungen, eigene Dateien je
