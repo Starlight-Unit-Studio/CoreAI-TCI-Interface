@@ -123,20 +123,23 @@ try {
       }
       exit;
     }
-    if (isset($_GET['runs'])) {
+    if (isset($_GET['runs']) || isset($_GET['procs'])) {
       $paths = array_map(static fn(array $f): string => (string)$f['path'], coreui_pfiles_list($pdo, $uid, $projectId)['files'] ?? []);
+      // 0.7.79: the scripts of a package.json decide the suggestion for a JavaScript project.
+      $packageJson = in_array('package.json', $paths, true) ? (string)coreui_pfiles_get($pdo, $uid, $projectId, 'package.json')['content'] : null;
+    }
+    if (isset($_GET['runs'])) {
       stu_json(['ok'=>true, 'ready'=>coreui_pruns_ready($pdo), 'allowed'=>coreui_pruns_allowed($pdo, $uid),
-        'runs'=>coreui_pruns_ready($pdo) ? coreui_pruns_list($pdo, $uid, $projectId) : [], 'suggestion'=>coreui_pruns_suggest($paths),
+        'runs'=>coreui_pruns_ready($pdo) ? coreui_pruns_list($pdo, $uid, $projectId) : [], 'suggestion'=>coreui_pruns_suggest($paths, $packageJson),
         'csrf_token'=>stu_csrf_token()]);
     }
     if (isset($_GET['run'])) {
       stu_json(['ok'=>true, 'run'=>coreui_pruns_get($pdo, $uid, $projectId, (int)$_GET['run'])]);
     }
     if (isset($_GET['procs'])) {
-      $paths = array_map(static fn(array $f): string => (string)$f['path'], coreui_pfiles_list($pdo, $uid, $projectId)['files'] ?? []);
       $ready = coreui_pprocs_ready($pdo);
       stu_json(['ok'=>true, 'ready'=>$ready, 'allowed'=>coreui_pruns_allowed($pdo, $uid),
-        'procs'=>$ready ? coreui_pprocs_list($pdo, $uid, $projectId) : [], 'suggestion'=>coreui_pprocs_suggest($paths),
+        'procs'=>$ready ? coreui_pprocs_list($pdo, $uid, $projectId) : [], 'suggestion'=>coreui_pprocs_suggest($paths, $packageJson),
         'csrf_token'=>stu_csrf_token()]);
     }
     if (isset($_GET['proc'])) {

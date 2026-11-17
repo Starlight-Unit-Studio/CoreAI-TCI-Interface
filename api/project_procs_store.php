@@ -77,11 +77,22 @@ function coreui_pprocs_slice(string $output, int $end, int $since): array {
   return ['text'=>mb_substr($output, $since - $start, null, 'UTF-8'), 'from'=>$since, 'cut'=>false];
 }
 
-/** A command and port that fit the project (pure): a web server for pages, else the program. */
-function coreui_pprocs_suggest(array $paths): array {
+/**
+ * A command and port that fit the project (pure): its server program (Python, or since 0.7.79
+ * the start or dev script of a package.json, or a Node.js server file), a web server for pages,
+ * else the program. A port is only suggested where it is known.
+ */
+function coreui_pprocs_suggest(array $paths, ?string $packageJson = null): array {
   $python = array_values(array_filter($paths, static fn($p): bool => preg_match('~^[^/]+\.py$~', (string)$p) === 1));
   foreach (['app.py', 'server.py', 'main.py'] as $name) {
     if (in_array($name, $python, true)) return ['command'=>'python ' . $name, 'port'=>null];
+  }
+  $package = coreui_pruns_package(in_array('package.json', $paths, true) ? $packageJson : null);
+  $install = $package['deps'] !== [] ? 'npm install && ' : '';
+  if (isset($package['scripts']['dev'])) return ['command'=>$install . 'npm run dev', 'port'=>null];
+  if (isset($package['scripts']['start'])) return ['command'=>$install . 'npm start', 'port'=>null];
+  foreach (['server.js', 'app.js', 'index.js'] as $name) {
+    if (in_array($name, $paths, true)) return ['command'=>'node ' . $name, 'port'=>null];
   }
   $pages = array_filter($paths, static fn($p): bool => coreui_preview_is_page((string)$p));
   if ($pages !== []) return ['command'=>'python -m http.server 8000', 'port'=>8000];

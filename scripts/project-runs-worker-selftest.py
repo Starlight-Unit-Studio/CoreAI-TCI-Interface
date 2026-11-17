@@ -6,7 +6,7 @@
 
 Offline: safe paths, the file digest, clipping, the docker line (the same walls as Mara's
 Python), staging into a work directory, and the hook in tools/ember_py_worker.py.
-With Docker and the image ember-py:1 present, real runs: passing and failing unittest with the
+With Docker and the image ember-py:2 present, real runs: passing and failing unittest with the
 real output and exit code, a timeout, a cancel, no writes outside the work directory, and the
 work directory removed afterwards. Without Docker those runs are skipped and named.
 """
@@ -39,11 +39,11 @@ check(d1 == runs.files_digest({"a.py": "1", "b.py": "2"}) and d1 != runs.files_d
 check(runs.clip("abc", 10) == "abc" and "[... gekuerzt ...]" in runs.clip("x" * 100, 20)
       and runs.clip("A" * 50 + "B" * 50, 20).endswith("B" * 12), "clip keeps start and end")
 
-cfg = {"STU_EMBER_PY_IMAGE": "ember-py:1", "STU_EMBER_PY_MEMORY": "512m"}
+cfg = {"STU_EMBER_PY_IMAGE": "ember-py:2", "STU_EMBER_PY_MEMORY": "512m"}
 line = runs.docker_command(cfg, "ember-run-1-x", "/var/w", "python -m unittest -v")
 for flag in ["--read-only", "--cap-drop", "ALL", "no-new-privileges", "65534:65534", "--pids-limit", "--memory"]:
     check(flag in line, "docker line has " + flag)
-check(line[-4:] == ["ember-py:1", "sh", "-c", "python -m unittest -v"] and "/var/w:/work:rw" in line,
+check(line[-4:] == ["ember-py:2", "sh", "-c", "python -m unittest -v"] and "/var/w:/work:rw" in line,
       "docker line: image, sh -c and the work directory only: " + repr(line[-6:]))
 check(not any(":/opt" in x or "docker.sock" in x or "config.local" in x for x in line), "no CoreAI mount, no socket")
 check(runs.docker_command(dict(cfg, STU_EMBER_PROJECT_IMAGE="ember-dev:1"), "c", "/w", "true")[-4] == "ember-dev:1",
@@ -68,10 +68,10 @@ check("import ember_project_runs" in worker and "ember_project_runs.claim_next_r
       "the worker takes project runs after Python jobs")
 
 
-# --- Real runs in the sandbox (Docker and ember-py:1) ------------------------------------------
+# --- Real runs in the sandbox (Docker and ember-py:2) ------------------------------------------
 def docker_ready():
     try:
-        return subprocess.run(["docker", "image", "inspect", "ember-py:1"], stdout=subprocess.DEVNULL,
+        return subprocess.run(["docker", "image", "inspect", "ember-py:2"], stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL, timeout=20).returncode == 0
     except Exception:
         return False
@@ -82,7 +82,7 @@ def stop(container):
     return r.returncode == 0 or b"No such container" in r.stderr
 
 
-sandbox = "Sandbox-Laeufe uebersprungen (Docker oder ember-py:1 fehlt)"
+sandbox = "Sandbox-Laeufe uebersprungen (Docker oder ember-py:2 fehlt)"
 if docker_ready():
     base = tempfile.mkdtemp(prefix="coreai-runs-")
     os.chmod(base, 0o777)
@@ -92,7 +92,7 @@ if docker_ready():
         "tests/test_game.py": "import unittest\nfrom game import add\n\nclass T(unittest.TestCase):\n"
                               "    def test_add(self):\n        self.assertEqual(add(2, 3), 5)\n",
     }
-    cfg = {"STU_EMBER_PY_IMAGE": "ember-py:1", "STU_EMBER_PROJECT_RUN_TIMEOUT": "60"}
+    cfg = {"STU_EMBER_PY_IMAGE": "ember-py:2", "STU_EMBER_PROJECT_RUN_TIMEOUT": "60"}
     ok = runs.run_command(cfg, 9001, project, "python -m unittest -v", base, stop=stop)
     check(ok["status"] == "done" and ok["exit_code"] == 0 and "test_add" in ok["stderr"] and "OK" in ok["stderr"]
           and ok["files_count"] == 3 and ok["files_sha256"] == runs.files_digest(project), "a passing test run: %r" % ok)
@@ -111,6 +111,6 @@ if docker_ready():
     check(stopped["status"] == "cancelled" and stopped["duration_ms"] < 15000, "a cancelled run stops: %r" % stopped)
     check(os.listdir(base) == [], "work directories are removed: %r" % os.listdir(base))
     shutil.rmtree(base, ignore_errors=True)
-    sandbox = "echte Laeufe in ember-py:1 (bestanden, fehlgeschlagen, Grenzen, Zeitlimit, Abbruch)"
+    sandbox = "echte Laeufe in ember-py:2 (bestanden, fehlgeschlagen, Grenzen, Zeitlimit, Abbruch)"
 
 print("CoreAI Projektlaeufe (Worker): Pfade, Pruefsumme, Kuerzen, Docker-Zeile, Bereitstellung, Anbindung OK; " + sandbox)

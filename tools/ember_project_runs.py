@@ -96,7 +96,7 @@ def docker_command(cfg, container, workdir, command):
         "-v", "%s:/work:rw" % workdir,
         "-w", "/work", "-e", "HOME=/tmp", "-e", "PYTHONUNBUFFERED=1", "-e", "PYTHONDONTWRITEBYTECODE=1",
         "-e", "MPLBACKEND=Agg",
-        str(cfg.get("STU_EMBER_PROJECT_IMAGE") or cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),
+        str(cfg.get("STU_EMBER_PROJECT_IMAGE") or cfg.get("STU_EMBER_PY_IMAGE", "ember-py:2")),
         "sh", "-c", command,
     ]
 

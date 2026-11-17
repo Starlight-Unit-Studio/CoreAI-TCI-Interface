@@ -1,0 +1,50 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.79
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.78 nach PR #334
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG (Betreiber, 17.11.2026)
+- "den test anpassen": context-slider-ui-selftest.cjs an die zwei Spalten auf Telefonen (e7506f74)
+  anpassen.
+- "mach was notwendig ist wegen node": Node.js ins Sandbox-Image mit allem, was dazugehoert
+  (Installer-Aenderung damit beauftragt).
+
+UMSETZUNG
+- tools/ember_py.Dockerfile: zweite Stufe aus node:24-bookworm-slim; node, npm und npx nach
+  /usr/local; NPM_CONFIG_CACHE=/work/.npm-cache (tmpfs /tmp ist noexec, npx startet aus dem
+  Cache), keine Update-, Spenden- und Audit-Abfragen. Kein NODE_ENV (Projekte entscheiden selbst).
+  Nutzer 65534 und CMD unveraendert.
+- Neuer Tag ember-py:2 in compose.yaml (STU_EMBER_PY_IMAGE), docker/pyworker/entrypoint.sh (baut bei
+  Fehlen), tools/ember_py_worker.py (Standard), tools/ember_project_runs.py und
+  tools/ember_project_procs.py (Rueckfall), scripts/install.sh und scripts/install-native.sh (bauen
+  ember-py:2 und entfernen danach ember-py:1 mit "|| true", falls es noch benutzt wird).
+- Preflights: Pflichtdatei und Lauf von scripts/sandbox-image-selftest.py; Pruefung, dass Python,
+  Node.js und npm im Image starten (ohne Netz, schreibgeschuetzt, Nutzer 65534); fehlt das Image,
+  nur eine Warnung (der pyworker baut es beim Start).
+- api/project_runs_store.php: coreui_pruns_package liest die package.json; Vorschlag npm test (mit
+  npm install, wenn Pakete), node --test, node index.js oder main.js. Python-Tests haben Vorrang.
+- api/project_procs_store.php: Vorschlag npm run dev, npm start oder node server.js, app.js,
+  index.js; Port nur, wo er bekannt ist (Python-Server 8000).
+- api/project_files.php: liest die package.json einmal fuer beide Vorschlaege.
+- api/project_file_tools.php: Maras Hinweis "Python 3.12 und Node.js 24 mit npm" mit Beispiel
+  [AUSFUEHREN: npm test].
+- tools/ember_project_procs.py: die Serveranfrage im Container versucht nach 127.0.0.1 auch ::1
+  (Server auf localhost, die nur IPv6 hoeren).
+- scripts/context-slider-ui-selftest.cjs: erwartet repeat(2 auf Telefonen ("three rows of two
+  stops"); keine Pruefung abgeschaltet.
+- README (Abschnitt 4, "Not yet complete", Sandbox-Image bei den Hardware-Hinweisen),
+  docs/CAPABILITIES.md, ROADMAP (P10), Feature-Matrix CF-036 und CF-040.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Der Bau von ember-py:2 auf dem echten Server (Basis-Images von Docker Hub) und npm install dort.
+  Hier wurde das Image ueber einen Mirror mit dem Zertifikat des Test-Proxys gebaut; npm install und
+  npx liefen nur mit diesem Zertifikat (NODE_EXTRA_CA_CERTS), das im Repository nicht vorkommt.
+
+NAECHSTER SCHRITT
+- P11: Git, Wiederherstellung und Projektexport (auf Auftrag).
+
+Version: 0.7.79

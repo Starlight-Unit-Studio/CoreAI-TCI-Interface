@@ -271,8 +271,9 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
     . "=======\nneue Zeilen\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]\n"
     . "  Mehrere SUCHEN/ERSETZEN-Bloecke sind erlaubt; jeder SUCHEN-Text muss genau einmal vorkommen.\n"
     . "- [DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] legt eine Datei an oder ersetzt sie ganz.\n"
-    . ($canRun ? "- [AUSFUEHREN: befehl] fuehrt einen Befehl mit den gespeicherten Dateien im Sandbox-Container aus (Python 3.12, "
-      . "kein Node.js), zum Beispiel [AUSFUEHREN: python -m unittest -v]; du bekommst die echte Ausgabe und den Exitcode. "
+    . ($canRun ? "- [AUSFUEHREN: befehl] fuehrt einen Befehl mit den gespeicherten Dateien im Sandbox-Container aus (Python 3.12 und "
+      . "Node.js 24 mit npm), zum Beispiel [AUSFUEHREN: python -m unittest -v] oder [AUSFUEHREN: npm test]; du bekommst die echte "
+      . "Ausgabe und den Exitcode. "
       . "Nach einer Aenderung fuehrst du die Tests erneut aus. Was der Befehl an Dateien aendert, bleibt nicht erhalten.\n" : '')
     . "Aendere nur, was die Person moechte. Fuer kleine Aenderungen an vorhandenen Dateien nimm DATEI_AENDERN statt eines neuen Baus. "
     . "Jeder vorige Stand bleibt im Tab Dateien wiederherstellbar. Sag danach kurz, was du geaendert hast.";

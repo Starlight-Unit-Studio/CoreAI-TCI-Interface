@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.7.79 - 17.11.2026
+
+- **Node.js in the sandbox (operator decision):** The sandbox image is now `ember-py:2`: Python 3.12 as before plus Node.js 24 (LTS) with npm and npx, copied from the official `node:24-bookworm-slim` image. Runs, processes and Mara's Python jobs use it behind the same walls (read-only system, no capabilities, user 65534, limits). The npm cache lives in the work folder (`NPM_CONFIG_CACHE=/work/.npm-cache`) because `/tmp` does not allow running programs, which `npx` needs; npm asks for no updates, funding or audits.
+- **Image change on update:** The installers build `ember-py:2` and then remove `ember-py:1` when nothing uses it any more; the pyworker builds `ember-py:2` itself on start if it is missing. Compose, the pyworker, the worker defaults and the run and process modules all use the new tag. The image grows by about 200 MB (about 750 MB in all).
+- **JavaScript projects:** "Ausführen" suggests `npm test` (with `npm install &&` when the `package.json` has packages), `node --test` for test files, or `node index.js`; "Prozesse" suggests `npm run dev`, `npm start` or `node server.js`. Mara's hint names Node.js 24 with npm and the example `[AUSFUEHREN: npm test]`. The preview reaches a Node.js server on `localhost` too (IPv6 `::1` as a fallback).
+- **Preflight:** Both preflights start Python, Node.js and npm inside `ember-py:2` and run the new `scripts/sandbox-image-selftest.py`.
+- **Context slider test:** `scripts/context-slider-ui-selftest.cjs` now expects two columns of stops on phones (three rows), as decided by the operator for e7506f74.
+- **Not yet:** the live module reloading of development servers such as Vite in the preview (their built output works).
+- **Tests:** New `scripts/sandbox-image-selftest.py` (Dockerfile, one tag everywhere, the old tag removed; with Docker: Python 3.12, Node.js 24, npm, `node --test` passing and failing, `npm test`, programs from the npm cache run, `/tmp` stays noexec). `scripts/project-procs-worker-selftest.py` adds a Node.js server; `scripts/project-runs-selftest.php` and `scripts/project-procs-selftest.php` check the JavaScript suggestions; the worker and end-to-end tests run on `ember-py:2`.
+
 ## 0.7.78 - 17.11.2026
 
 - **Processes and a development server (roadmap P10, step C):** In the **Files** tab of a project, "Prozesse" keeps a command running on the saved files in the sandbox container of the Python worker: a program, an interactive shell or a development server. The output arrives every second (only what is new), lines typed there go to the program's stdin, "Beenden" sends SIGTERM through an init and shows the program's real exit code. Files saved meanwhile reach the running process within about two seconds (changed, new and removed files).

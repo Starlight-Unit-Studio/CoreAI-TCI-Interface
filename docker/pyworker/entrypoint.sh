@@ -3,7 +3,7 @@ set -eu
 
 project_root="${COREUI_PROJECT_ROOT:-/opt/ember-coreui}"
 config_file="${STU_CONFIG:-$project_root/api/config.local.php}"
-sandbox_image="${STU_EMBER_PY_IMAGE:-ember-py:1}"
+sandbox_image="${STU_EMBER_PY_IMAGE:-ember-py:2}"
 
 test -S /var/run/docker.sock || {
   echo '[E.M.B.E.R. CoreUI Python] Docker-Socket fehlt.' >&2

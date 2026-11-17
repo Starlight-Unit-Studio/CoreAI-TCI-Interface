@@ -1,4 +1,16 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.78, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.79).
+ZIEL 0.7.79 (Betreiberauftrag): Node.js 24 mit npm und npx im Sandbox-Image
+(neuer Tag ember-py:2, Installer bauen es und entfernen ember-py:1), Vorschlaege
+fuer JavaScript-Projekte, Maras Hinweis, Preflight-Pruefung; Kontextregler-Test
+auf zwei Spalten auf Telefonen angepasst.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_79.txt.
+Naechster Schritt: P11 (Git, Wiederherstellung, Projektexport), auf Auftrag.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.80.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.77, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.78).
 ZIEL 0.7.78: Roadmap P10 Schritt C, Prozesse im Sandbox-Container des
 Python-Workers (Programm, Shell, Entwicklungsserver; Ausgabe live, Eingabe,

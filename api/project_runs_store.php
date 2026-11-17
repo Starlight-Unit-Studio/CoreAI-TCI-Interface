@@ -44,19 +44,48 @@ function coreui_pruns_command($value): string {
 }
 
 /**
- * A command that fits the project (pure): its tests, else its main program, else ''.
- * The sandbox has Python; "python -m" puts the project folder on the import path.
+ * 0.7.79: what a package.json says (pure): its scripts and whether it has packages to install.
+ * Anything that is not a JSON object counts as an empty package.
  */
-function coreui_pruns_suggest(array $paths): string {
+function coreui_pruns_package(?string $json): array {
+  $data = $json === null ? null : json_decode($json, true);
+  if (!is_array($data)) return ['scripts'=>[], 'deps'=>[]];
+  $scripts = [];
+  foreach ((array)($data['scripts'] ?? []) as $name => $script) {
+    if (is_string($name) && is_string($script) && trim($script) !== '') $scripts[$name] = $script;
+  }
+  // "npm init" writes a test script that only fails; it is no test.
+  if (isset($scripts['test']) && str_contains($scripts['test'], 'no test specified')) unset($scripts['test']);
+  $deps = [];
+  foreach (['dependencies', 'devDependencies'] as $key) {
+    foreach ((array)($data[$key] ?? []) as $name => $version) if (is_string($name)) $deps[] = $name;
+  }
+  return ['scripts'=>$scripts, 'deps'=>$deps];
+}
+
+/**
+ * A command that fits the project (pure): its tests, else its main program, else ''.
+ * The sandbox has Python 3.12 and, since 0.7.79, Node.js 24 with npm; "python -m" puts the
+ * project folder on the import path, packages of a package.json are installed first.
+ */
+function coreui_pruns_suggest(array $paths, ?string $packageJson = null): string {
   $tests = array_values(array_filter($paths, static fn($p): bool => preg_match('~(^|/)(test_[^/]*|[^/]*_test)\.py$~', (string)$p) === 1));
   if ($tests !== []) {
     $inTests = array_filter($tests, static fn($p): bool => str_starts_with((string)$p, 'tests/'));
     return count($inTests) === count($tests) ? 'python -m unittest discover -v -s tests' : 'python -m unittest -v';
   }
+  $package = coreui_pruns_package(in_array('package.json', $paths, true) ? $packageJson : null);
+  $install = $package['deps'] !== [] ? 'npm install && ' : '';
+  if (isset($package['scripts']['test'])) return $install . 'npm test';
+  if (array_filter($paths, static fn($p): bool => preg_match('~((^|/)[^/]+\.test|^tests?/[^/]+)\.[cm]?js$~', (string)$p) === 1) !== []) {
+    return 'node --test';
+  }
   if (in_array('main.py', $paths, true)) return 'python main.py';
   $python = array_values(array_filter($paths, static fn($p): bool => preg_match('~^[^/]+\.py$~', (string)$p) === 1));
   sort($python);
-  return $python !== [] ? 'python ' . $python[0] : '';
+  if ($python !== []) return 'python ' . $python[0];
+  foreach (['index.js', 'main.js'] as $name) if (in_array($name, $paths, true)) return 'node ' . $name;
+  return '';
 }
 
 function coreui_pruns_public(array $row, bool $output = true): array {

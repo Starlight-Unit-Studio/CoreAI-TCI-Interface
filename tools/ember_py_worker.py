@@ -72,7 +72,7 @@ DEFAULTS = {
     "STU_DB_NAME": "ember_coreui",
     "STU_DB_USER": "ember_coreui",
     "STU_DB_PASS": "",
-    "STU_EMBER_PY_IMAGE": "ember-py:1",
+    "STU_EMBER_PY_IMAGE": "ember-py:2",
     "STU_EMBER_PY_EXEC_TIMEOUT": "60",
     "STU_EMBER_PY_MEMORY": "512m",
     "STU_EMBER_PY_CPUS": "1.0",
@@ -278,7 +278,7 @@ def run_in_container(cfg, job_id, code, *, publish_outputs=False, inputs=(), ver
             "-w", "/work", "-e", "HOME=/tmp", "-e", "MPLBACKEND=Agg",
             "-e", "PYTHONUNBUFFERED=1", "-e", "EMBER_OUTPUT_DIR=/work/output",
             "-e", "EMBER_INPUT_MANIFEST=/work/input/manifest.json",
-            str(cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),
+            str(cfg.get("STU_EMBER_PY_IMAGE", "ember-py:2")),
             "python", "-I", "/work/main.py",
         ]
         started = time.monotonic()
