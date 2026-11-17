@@ -10,9 +10,11 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.86`**
+**Current source version: `0.7.86`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
-**Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported. | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
+
+**Installation language:** The official setup one-liner, Docker and native installers, and the installer preflight reports use English for user-facing messages. Existing environment variables and command names are unchanged.
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
