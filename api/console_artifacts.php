@@ -4,6 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/console_artifact_store.php';
+// 0.7.82 (P11 C): versions, kept files, the retention and notes of deleted files.
+require_once __DIR__ . '/artifact_lifecycle_store.php';
+require_once __DIR__ . '/guest_access.php';
 
 $pdo = stu_pdo();
 $uid = (int)stu_require_user_id();
@@ -23,6 +26,14 @@ $ids = array_values(array_unique(array_map('intval', explode(',', $raw))));
 if (!coreui_console_artifact_schema_ready($pdo)) {
     stu_json(['ok'=>false, 'error'=>'artifact_migration_required'], 503);
 }
+// Files whose retention has run out go first (and leave their notes).
+try {
+    coreui_artifact_sweep($pdo, $uid);
+} catch (Throwable $e) {
+    error_log('[CoreAI] artifact retention sweep failed: ' . get_class($e));
+}
 // Shared selection enforces owner, session, response, trigger and revision.
-$map = coreui_console_artifact_map($pdo, $uid, $ids);
-stu_json(['ok'=>true, 'artifacts'=>(object)$map, 'schema_ready'=>true]);
+$map = coreui_artifact_cards($pdo, $uid, $ids);
+$manage = !coreui_guest_is($pdo, $uid);
+stu_json(['ok'=>true, 'artifacts'=>(object)$map, 'schema_ready'=>true, 'retention_days'=>coreui_artifact_retention_days($pdo),
+    'can_manage'=>$manage, 'can_keep'=>$manage && coreui_artifact_keep_ready($pdo), 'csrf_token'=>$manage ? stu_csrf_token() : '']);

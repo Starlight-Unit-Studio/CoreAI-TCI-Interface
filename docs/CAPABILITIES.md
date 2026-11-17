@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.81. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.7.82. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 This catalog inventories Mara's existing user-facing tools and CoreAI's application functionality. **Built-in** means code is present, **optional** means another installed service, model, permission or license is needed, and **planned** means not yet a delivered feature. An installed source merge is not the same as server deployment or a live end-to-end test.
 
@@ -45,6 +45,8 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Use an isolated **Python** tool for allowed calculations and data tasks, with real results and errors.
 - Produce named source/text files and validated **multi-file ZIP** downloads for suitable code-generation requests.
 - Register completed output artifacts to the account/session and provide verified downloads; do not fabricate files or serve executable HTML as an in-origin preview.
+- Show each file Mara made with its version (the first characters of its SHA-256 checksum). **Preview** shows pictures (PNG, JPEG, GIF, WebP) and text files (including CSV, JSON, code, HTML and SVG as source text) from exactly the bytes the download gives: the server checks the stored checksum before it sends the file, the browser compares it with the card (and computes it itself where it can), and **Download** in the preview saves those same bytes. A changed or different version is refused. HTML and SVG never run in the application.
+- Keep or delete Mara's files from the chat: **Keep** marks a file (the same as a favourite under **Settings > Storage**), **Delete** removes it for good and leaves a note in the chat message saying when and why it was deleted, so the message that pointed at the file keeps saying what happened. The owner can let Mara's files be deleted automatically after 30, 90, 180 or 365 days (**Admin Core > Operations**, unlimited by default); kept files and files in project chats are never deleted that way, every other file shows the day it will go, in the chat and under **Settings > Storage**.
 - Write and revise Markdown plans, inspect source snippets and structure coding tasks; an unrestricted remote shell or complete IDE is **not** provided.
 - Use a curated **Skills** catalog (research, software development, writing, documents and more) as task instructions and referenced knowledge, subject to tool permissions.
 - Use observable plan, build and work-event steps without pretending that a named Skill automatically installs its own executable program.

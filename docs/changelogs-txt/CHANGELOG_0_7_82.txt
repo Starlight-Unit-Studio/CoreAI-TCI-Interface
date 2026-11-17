@@ -1,0 +1,56 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.82
+Datum: 17.11.2026
+
+VORSCHAU DERSELBEN VERSION (ROADMAP P11, SCHRITT C, CF-031)
+- Jede Datei, die Mara erstellt, zeigt im Chat ihre Version (die ersten
+  Zeichen ihrer SHA-256-Pruefsumme).
+- "Vorschau" zeigt Bilder (PNG, JPEG, GIF, WebP) und Textdateien (CSV,
+  JSON, Code, Markdown, HTML und SVG als Quelltext) aus genau den Bytes des
+  Downloads: Der Server prueft die gespeicherte Pruefsumme an dem Handle,
+  das er sendet, und nennt sie (X-CoreAI-SHA256, ETag); der Browser
+  vergleicht sie mit der Karte und rechnet sie in einer sicheren Umgebung
+  selbst nach. "Herunterladen" in der Vorschau speichert dieselben Bytes.
+- Eine andere Version oder veraenderte Bytes werden mit Meldung abgelehnt,
+  bei der Vorschau wie beim Download. HTML und SVG laufen nie in der
+  Anwendung; ein SVG erscheint nie als Bild.
+
+BEHALTEN UND LOESCHEN MIT HINWEIS
+- Im Chat markiert "Behalten" eine Datei (wie ein Favorit unter
+  Einstellungen > Speicher), "Loeschen" loescht sie endgueltig.
+- Eine geloeschte Datei hinterlaesst in ihrer Chatnachricht einen Hinweis
+  mit Datum, Grund (von dir oder Aufbewahrungsfrist) und Version. Die
+  Nachricht, die auf die Datei zeigte, sagt so weiter, was passiert ist.
+- Einstellungen > Speicher loescht Maras Dateien genauso und sagt es vorher;
+  die Liste zeigt den Tag, an dem eine Datei geloescht wird.
+
+AUFBEWAHRUNG
+- Admin Core > Betrieb: "Maras Dateien aufbewahren": unbegrenzt (Standard,
+  das Update aendert nichts), 30, 90, 180 oder 365 Tage.
+- Behaltene Dateien und Dateien in Projekt-Chats loescht die Aufbewahrung
+  nie; jede andere Datei zeigt ihren Loeschtag im Chat und unter
+  Einstellungen > Speicher.
+- Die Aufbewahrung laeuft, wenn ein Konto seine Dateien ansieht
+  (Chatkarten, Einstellungen > Speicher), hoechstens 100 Dateien auf
+  einmal und nur mit der Favoriten-Tabelle, damit niemand eine Datei
+  verliert, die er nicht haette behalten koennen.
+
+DATENBANK
+- Migration 051_artifact_lifecycle (Hinweise geloeschter Dateien, die mit
+  Konto, Chat und Nachricht gehen; ein Index fuer die aeltesten Dateien
+  eines Kontos).
+
+NOCH NICHT
+- Vorschau von PDF und weiteren Formaten, ein eigener Dateibrowser ueber
+  alle Chats hinaus (heute listet Einstellungen > Speicher die Dateien).
+
+TESTS
+- scripts/artifact-lifecycle-selftest.php (SQLite mit echten Dateien;
+  MariaDB mit COREUI_SELFTEST_DB=1, Migration 051 zweimal, Hinweise gehen
+  mit ihrem Chat) und scripts/artifact-lifecycle-ui-selftest.cjs
+  (Playwright ueber https, damit der Browser die Pruefsumme selbst
+  nachrechnet), in beiden Preflights.
+- tests/artifacts/browser_offline.py (17 Pruefungen) besteht weiter.
+
+NICHT GETESTET
+- Vorschau, Behalten, Loeschen und Aufbewahrung auf dem echten Server mit
+  echten Dateien von Mara.

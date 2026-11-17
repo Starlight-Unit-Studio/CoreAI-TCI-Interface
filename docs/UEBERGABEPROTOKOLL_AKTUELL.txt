@@ -1,4 +1,16 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.81, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.82).
+ZIEL 0.7.82: Roadmap P11 Schritt C (CF-031), Maras Dateien mit Version,
+Vorschau aus genau den Bytes des Downloads, Behalten, Loeschen mit Hinweis
+im Chat und einer Aufbewahrung in Admin Core > Betrieb (Standard
+unbegrenzt). Migration 051_artifact_lifecycle.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_82.txt.
+Naechster Schritt: P11 ist im Selbsttest abgenommen; weiter auf Auftrag.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.83.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.80, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.81).
 ZIEL 0.7.81: Roadmap P11 Schritt B, Arbeitsstaende zusammenfuehren mit
 Vorschau, Dreiwege-Merge und Konflikten mit Wahl (eigene Fassung, andere

@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.81`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.82`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Read this first:** CoreAI includes chat, multiple local Ollama models, bounded multi-step tools, web search, research, projects, files, memory and multimodal functions. **The TCI tier menu does not exclude other installed, permitted Ollama models.** Actual features depend on the selected model, enabled services, account rights and hardware. A merged GitHub change is not an installed or live-verified server update.
 
@@ -74,6 +74,8 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Use an isolated **Python** tool for allowed calculations and data tasks, with real results and errors.
 - Produce named source/text files and validated **multi-file ZIP** downloads for suitable code-generation requests.
 - Register completed output artifacts to the account/session and provide verified downloads; do not fabricate files or serve executable HTML as an in-origin preview.
+- Show each file Mara made with its version (the first characters of its SHA-256 checksum). **Preview** shows pictures (PNG, JPEG, GIF, WebP) and text files (including CSV, JSON, code, HTML and SVG as source text) from exactly the bytes the download gives: the server checks the stored checksum before it sends the file, the browser compares it with the card (and computes it itself where it can), and **Download** in the preview saves those same bytes. A changed or different version is refused. HTML and SVG never run in the application.
+- Keep or delete Mara's files from the chat: **Keep** marks a file (the same as a favourite under **Settings > Storage**), **Delete** removes it for good and leaves a note in the chat message saying when and why it was deleted, so the message that pointed at the file keeps saying what happened. The owner can let Mara's files be deleted automatically after 30, 90, 180 or 365 days (**Admin Core > Operations**, unlimited by default); kept files and files in project chats are never deleted that way, every other file shows the day it will go, in the chat and under **Settings > Storage**.
 - Write and revise Markdown plans, inspect source snippets and structure coding tasks; an unrestricted remote shell or complete IDE is **not** provided.
 - Use a curated **Skills** catalog (research, software development, writing, documents and more) as task instructions and referenced knowledge, subject to tool permissions.
 - Use observable plan, build and work-event steps without pretending that a named Skill automatically installs its own executable program.
@@ -214,7 +216,7 @@ CoreAI's web frontend communicates with backend PHP endpoints using **JSON** and
 | `api/models.php`, `api/user_settings.php` | Model inventory, Core tier preferences, user settings | Allowed-model filters and privileged variant updates |
 | `api/console_upload.php`, `api/console_media.php` | Uploaded files, generated images and account media | Scoped storage and private media delivery |
 | `api/console_project_store.php`, `api/project_files.php` | Projects, chats, text-file storage, versioning, versions and working states with merging and a Git export, the page preview, runs and long-running processes in the sandbox, and the preview of a development server | Project/account ownership, per-file constraints; previews are sent with a sandbox CSP; runs and processes need CSRF and the Python tool |
-| `api/console_artifacts.php`, `api/console_artifact.php` | Generated files, ZIP outputs and download links | Real registered artifacts and guarded downloads |
+| `api/console_artifacts.php`, `api/console_artifact.php` | Generated files, ZIP outputs and download links, with their version, lifetime and notes of deleted files | Real registered artifacts and guarded downloads; the checksum of the verified bytes comes with every download |
 | `api/skills.php`, `api/console_native_tools.php` | Curated Skills and controlled tool orchestration | Server-authorized tools, bounded actions |
 | `api/deep_research.php` | Research plan, status, cancellation and report download | Signed-in run ownership; CSRF for writes |
 | `api/console_browse_stream.php` | Browser frames and step events | Account-scoped browser-job SSE |

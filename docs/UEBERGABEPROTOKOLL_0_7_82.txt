@@ -1,0 +1,77 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.82
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.81 nach PR #337
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"alles klar dann go": Roadmap P11 Schritt C, Artefakte und ihre Lebensdauer (Feature-Matrix
+CF-031). Abnahme: Vorschau und Originaldownload beziehen sich auf dieselbe Version; Aufbewahrung
+und Loeschung sind nachvollziehbar und beruecksichtigen bestehende Verweise.
+
+UMSETZUNG
+- database/migrations/051_artifact_lifecycle.sql: stu_console_artifact_tombstones (Hinweise
+  geloeschter Dateien: Name, Typ, Groesse, Pruefsumme, Grund person oder retention, erstellt,
+  geloescht; Fremdschluessel auf Konto, Chat und Nachricht mit ON DELETE CASCADE) und der Index
+  idx_console_artifact_age (user_id, created_at).
+- api/artifact_lifecycle_store.php (neu): Bereitschaft (051, Favoriten 039, Projekte),
+  Aufbewahrung (0, 30, 90, 180, 365 Tage; alles andere 0), Loeschtag, kurze Version, Loeschen
+  mit Hinweis (Eintrag, Favorit und Hinweis in einer Transaktion, die Datei danach),
+  Aufbewahrungs-Lauf (nur alte, nicht behaltene Dateien ausserhalb von Projekt-Chats, hoechstens
+  100, nur mit Favoriten- und Hinweistabelle), Hinweise fuer Nachrichten und die Karten mit
+  Version, behalten, Projekt und Loeschtag.
+- api/console_artifact.php: X-CoreAI-SHA256 und ETag mit der Pruefsumme, nachdem das gesendete
+  Handle geprueft ist.
+- api/console_artifacts.php: erst der Aufbewahrungs-Lauf, dann die Karten mit Hinweisen;
+  can_manage, can_keep und csrf_token nur fuer Konten, nie fuer Gaeste; retention_days.
+- api/files.php, api/files_store.php: Lauf vor Uebersicht und Liste; Maras Dateien mit Version und
+  Loeschtag; Loeschen ueber den Hinweis-Weg.
+- api/admin.php, admin/index.html, js/admin.js: "Maras Dateien aufbewahren" in Admin Core > Betrieb
+  (Standard unbegrenzt), normalisiert gespeichert.
+- js/coreui-artifacts.js, css/artifacts.css: Version und Loeschtag auf der Karte, "Vorschau"
+  (Bilder, Texte; SVG nur als Text; nichts fuer Archive), gepruefte Bytes (Header, Groesse, eigene
+  SHA-256-Rechnung im sicheren Kontext), "Herunterladen" aus der Vorschau, "Behalten" und "Loeschen"
+  ueber api/files.php mit CSRF, danach laedt die Nachricht ihre Dateien neu; Hinweise geloeschter
+  Dateien. Markdown behaelt seinen Betrachter und bekommt Frist und Knoepfe darunter.
+- js/coreui-storage-settings.js: Loeschtag in der Liste; der Loeschtext sagt fuer Maras Dateien, dass
+  im Chat ein Hinweis bleibt (Uploads und Bilder unveraendert).
+- README (Abschnitt Chat-Ausgaben, API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3, P11), Feature-
+  Matrix CF-031 (Teilbestand).
+- Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien (api/admin.php, console_artifact.php, console_artifacts.php,
+  files.php, files_store.php, artifact_lifecycle_store.php, der neue Selbsttest), node --check fuer
+  die geaenderten JavaScript-Dateien, bash -n fuer beide Preflights: ohne Fehler. Version-Guard
+  (0.7.81 auf 0.7.82), Branding-Test, Cache-Fingerabdruecke: OK.
+- scripts/artifact-lifecycle-selftest.php (neu): OK mit SQLite und echten Dateien sowie mit MariaDB
+  (Migration 051 zweimal eingespielt; die Hinweise gehen mit ihrem Chat).
+- scripts/artifact-lifecycle-ui-selftest.cjs (neu, Playwright ueber https, damit der Browser die
+  Pruefsumme selbst nachrechnet): OK, sechsmal hintereinander gruen, auch Telefon und dunkel.
+- Bestehende Tests gruen: storage (PHP und UI), native-tools, markdown-preview, account-delete,
+  usage-page, account-admin, mail-settings, admin-mail-ui, project-files, project-merge,
+  tci-language, terran-terminology. tests/artifacts/browser_offline.py (Python-Playwright in einer
+  eigenen Umgebung im Arbeitsordner, mit dem vorinstallierten Chromium): 17 von 17, wie auf main.
+- 18 gezielt eingebaute Fehler (12 im Speicher, in den Endpunkten und in Speicher-Loeschen, 6 in den
+  Karten: Header nicht verglichen, Pruefsumme nicht nachgerechnet, SVG als Bild, Behalten ohne
+  CSRF, Hinweis ohne Grund, Knoepfe fuer Gaeste): alle erkannt.
+- GitHub-Pruefungen am PR: 11 von 11 gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*), Branch gegen main 0.7.81 in derselben
+  Umgebung: Branch 191 bestanden, 16 fehlgeschlagen; main 190 bestanden, 15 fehlgeschlagen. Die
+  15 von main sind auf dem Branch genau dieselben und schon laenger bekannt (browse-image ohne
+  Python-Playwright, browse-live-ui, chat-menu-ui, image-progress-ui, long-chat, model-library-ui,
+  pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui, settings-tabs-ui,
+  update-ui, voice-input, voice-samples-ui). Zusaetzlich war auf dem Branch einmal
+  voice-settings-ui-selftest.cjs rot: Er misst, ob der Stimmen-Dialog auf dem Telefon in den
+  Bildschirm passt, und hat unter der Last der vollen Testreihe einmal zu frueh gemessen. Danach
+  einzeln 11 von 11 gruen auf dem Branch und 8 von 8 auf main; dieser PR aendert an der Seite nur
+  Versionsnummer, Cache-Schluessel und einen Loeschtext der Speicher-Seite. Die beiden neuen Tests
+  bestehen.
+
+NICHT GETESTET
+- Vorschau, Behalten, Loeschen und Aufbewahrung auf dem echten Server mit echten Dateien von Mara.
+
+NAECHSTER SCHRITT
+- P11 ist im Selbsttest abgenommen. Weiter mit der Roadmap auf Auftrag.
+
+Version: 0.7.82

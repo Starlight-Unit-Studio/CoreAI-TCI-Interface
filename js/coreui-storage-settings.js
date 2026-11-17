@@ -275,7 +275,9 @@
     if (item.favorite) name.insertAdjacentHTML('beforeend', '<svg class="st-fav" aria-label="Favorit" role="img"><use href="#i-star" /></svg>');
     var meta = document.createElement('small');
     var where = item.chat ? (item.chat.project ? item.chat.project + ' · ' : '') + (item.chat.title || 'Chat') : '';
-    meta.textContent = [size(item.size), date(item.created), item.kind === 'mara' ? 'von Mara' : '', where].filter(Boolean).join(' · ');
+    // 0.7.82: a file Mara made shows the day the retention deletes it (a favourite or a project file stays).
+    var expires = item.kind === 'mara' && item.expires_at ? 'wird am ' + date(item.expires_at) + ' gelöscht' : '';
+    meta.textContent = [size(item.size), date(item.created), item.kind === 'mara' ? 'von Mara' : '', where, expires].filter(Boolean).join(' · ');
     copy.appendChild(name);
     copy.appendChild(meta);
     main.appendChild(copy);
@@ -410,7 +412,9 @@
     state.deleting = item;
     $('stDeleteTitle').textContent = item.kind === 'image' ? 'Bild löschen?' : 'Datei löschen?';
     $('stDeleteText').textContent = '„' + item.name + '“ (' + size(item.size) + ') wird endgültig gelöscht.'
-      + (item.chat ? ' Im Chat „' + (item.chat.title || 'Chat') + '“ ist ' + (item.kind === 'image' ? 'das Bild' : 'die Datei') + ' danach nicht mehr zu sehen.' : '');
+      + (item.chat ? (item.kind === 'mara'
+        ? ' Im Chat „' + (item.chat.title || 'Chat') + '“ bleibt ein Hinweis, dass die Datei gelöscht wurde.'
+        : ' Im Chat „' + (item.chat.title || 'Chat') + '“ ist ' + (item.kind === 'image' ? 'das Bild' : 'die Datei') + ' danach nicht mehr zu sehen.') : '');
     $('stDeleteError').textContent = '';
     confirmBox.hidden = false;
     $('stDeleteCancel').focus();

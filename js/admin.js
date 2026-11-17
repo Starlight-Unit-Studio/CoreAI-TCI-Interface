@@ -888,6 +888,9 @@
     // 0.7.28: storage for all accounts, kept in MiB, shown in GB.
     var storageMb = Number(settings.storage_limit_mb || 0);
     document.getElementById('storageLimitGb').value = storageMb > 0 ? String(Math.round(storageMb / 1024 * 100) / 100) : '';
+    // 0.7.82: how long the files Mara made are kept (0 = always).
+    var retention = String(settings.artifact_retention_days || '0');
+    document.getElementById('artifactRetentionDays').value = ['0', '30', '90', '180', '365'].indexOf(retention) >= 0 ? retention : '0';
     document.getElementById('maintenanceMessage').value = settings.maintenance_message || '';
     document.getElementById('toolWebEnabled').checked = boolSetting(settings.tool_web_enabled);
     document.getElementById('toolBrowseEnabled').checked = boolSetting(settings.tool_browse_enabled);
@@ -916,6 +919,7 @@
       memory_default_enabled: document.getElementById('memoryDefaultEnabled').checked ? '1' : '0',
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,
       storage_limit_mb: gbToMb(document.getElementById('storageLimitGb').value),
+      artifact_retention_days: document.getElementById('artifactRetentionDays').value,
       maintenance_message: document.getElementById('maintenanceMessage').value,
       tool_web_enabled: document.getElementById('toolWebEnabled').checked ? '1' : '0',
       tool_browse_enabled: document.getElementById('toolBrowseEnabled').checked ? '1' : '0',
