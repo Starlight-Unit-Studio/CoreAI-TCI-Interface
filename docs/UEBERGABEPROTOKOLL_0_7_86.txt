@@ -22,6 +22,10 @@ CHANGES
   messages and administrator prompts to English.
 - scripts/preflight.sh and scripts/preflight-native.sh: translate output from
   the existing checks to English. The checks and skip conditions remain intact.
+- scripts/coreai-updater.sh and scripts/lib/coreai_update_state.py: English
+  update logs, milestones and progress; failure detection accepts English
+  and older German preflight errors. Offline updater regression fixtures and
+  image-service/feedback text checks follow the translated source.
 - Update 0.7.86 versions, changelog, README and browser cache fingerprint.
 
 UNCHANGED
@@ -31,7 +35,8 @@ UNCHANGED
 
 VALIDATION
 - Static source inspection and targeted syntax checks required.
-- CI must pass before merge.
+- On the implementation commit, all 12 GitHub Actions workflows passed.
+- No full live server installation or voice-session end-to-end test was run.
 - A real server installation/upgrade and the operator's live voice test are
   not represented by CI passing.
 
