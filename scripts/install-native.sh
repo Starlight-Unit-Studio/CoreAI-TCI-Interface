@@ -408,7 +408,7 @@ fi
 if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
   MODELFILE_GENERATED="$PROJECT_ROOT/var/Modelfile.generated"
   sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" "$PROJECT_ROOT/config/Modelfile.template" > "$MODELFILE_GENERATED"
-  log "Creating local CoreAI: TCI Interface model $MODEL_NAME aus $BASE_MODEL."
+  log "Creating local CoreAI: TCI Interface model $MODEL_NAME from $BASE_MODEL."
   ollama create "$MODEL_NAME" -f "$MODELFILE_GENERATED"
   ollama show "$MODEL_NAME" >/dev/null 2>&1 || die "TCI Core $MODEL_NAME could not be verified. The base model will be preserved."
   if (( BASE_MODEL_NEW == 1 )) && [[ "$BASE_MODEL" == gemma4:* ]]; then
