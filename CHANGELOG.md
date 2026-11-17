@@ -8,6 +8,7 @@
 - **Bounded:** One run at a time per project, 60 runs per account and hour, CSRF for starting and cancelling. Runs count as the Python tool: the owner's switch, the account rules and the guest switch apply. Runs without a worker end as an error instead of waiting for ever.
 - **Sandbox:** The image is `ember-py:1` with Python 3.12; Node.js is not included. The worker takes runs after Mara's Python jobs.
 - **Database:** Migration `047_project_runs` (runs go with their project).
+- **Core wording in the Core library:** Two visible texts of the Core library in `app.html` and one hint in `js/coreui-model-library.js` said "Modell" and made the existing check `scripts/frontend-regression-selftest.php` fail on main 0.7.76. They now say "Cores in der gemeinsamen Core-Bibliothek entdecken", "Auf der Originalseite ansehen" and "Bitte die offizielle Seite des Cores verwenden."
 - **Tests:** New `scripts/project-runs-selftest.php` (SQLite; MariaDB with `COREUI_SELFTEST_DB=1`; end to end with the real worker and Docker with `COREUI_SELFTEST_SANDBOX=1`: a failing test, Mara fixes the file, the test passes), `scripts/project-runs-worker-selftest.py` (real runs in `ember-py:1` when Docker is there) and `scripts/project-runs-ui-selftest.cjs` (Playwright), all in both preflights. `image-gen-selftest.php`, `skills-selftest.php` and `project-file-tools-selftest.php` know the new tool.
 
 ## 0.7.76 - 16.11.2026

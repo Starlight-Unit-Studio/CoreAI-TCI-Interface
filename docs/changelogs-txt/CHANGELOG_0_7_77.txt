@@ -23,6 +23,14 @@ PROJEKT AUSFUEHREN UND TESTEN (ROADMAP P10, SCHRITT B)
 - Sandbox: Image ember-py:1 mit Python 3.12, ohne Node.js. Der Worker nimmt
   Laeufe nach Maras Python-Auftraegen.
 
+CORE-BEGRIFF IN DER CORE-BIBLIOTHEK
+- Zwei sichtbare Texte der Core-Bibliothek in app.html und ein Hinweis in
+  js/coreui-model-library.js sagten "Modell"; der vorhandene Test
+  scripts/frontend-regression-selftest.php war dadurch schon auf main 0.7.76
+  rot. Jetzt: "Cores in der gemeinsamen Core-Bibliothek entdecken",
+  "Auf der Originalseite ansehen", "Bitte die offizielle Seite des Cores
+  verwenden."
+
 DATENBANK
 - Migration 047_project_runs (Laeufe gehen mit ihrem Projekt).
 

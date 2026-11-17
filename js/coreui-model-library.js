@@ -250,7 +250,7 @@
         if (!state.open || sequence !== state.request) return;
         fail(error.code === 'hf_access_required'
           ? 'Dieses Repository ist zugriffsbeschränkt. Bitte die Lizenz und den Zugang bei Hugging Face prüfen.'
-          : 'Core-Details konnten nicht geladen werden. Bitte die offizielle Modellseite verwenden.');
+          : 'Core-Details konnten nicht geladen werden. Bitte die offizielle Seite des Cores verwenden.');
       });
     }
     function renderSearch(models) {
