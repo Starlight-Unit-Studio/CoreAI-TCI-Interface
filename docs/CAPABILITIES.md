@@ -1,8 +1,10 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.85. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.7.86. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 Mara's OpenPet v2 chat Pet uses separate animation states for working, tool-waiting, reviewing, completing, errors, waving and dragging, plus idle gaze poses. Touch controls support tapping, double-tapping and dragging; legacy Pets remain compatible.
+
+Installation output from setup, both installers and their preflights is in English, regardless of the selected chat UI language. This does not change the app's DE/EN interface settings or Mara's response language.
 
 This catalog inventories Mara's existing user-facing tools and CoreAI's application functionality. **Built-in** means code is present, **optional** means another installed service, model, permission or license is needed, and **planned** means not yet a delivered feature. An installed source merge is not the same as server deployment or a live end-to-end test.
 

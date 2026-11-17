@@ -4,9 +4,9 @@ IFS=$'\n\t'
 umask 027
 
 REPOSITORY='Starlight-Unit-Studio/CoreAI-TCI-Interface'
-# Ein und derselbe One-Liner installiert und aktualisiert den jeweils gemergten
-# Entwicklungsstand. Das letzte veroeffentlichte und gepruefte ZIP bleibt ueber
-# COREUI_SETUP_SOURCE=release explizit verfuegbar.
+# The same one-liner installs and updates to the latest merged source.
+# The last published and verified ZIP remains accessible with
+# COREUI_SETUP_SOURCE=release when explicitly requested.
 SOURCE_MODE="${COREUI_SETUP_SOURCE:-main}"
 ARCHIVED_RELEASE_VERSION='0.5.3-alpha'
 TAG="v${ARCHIVED_RELEASE_VERSION}"
@@ -24,7 +24,7 @@ log() {
 }
 
 die() {
-  printf '[CoreAI: TCI Interface Setup] FEHLER: %s\n' "$*" >&2
+  printf '[CoreAI: TCI Interface Setup] ERROR: %s\n' "$*" >&2
   exit 1
 }
 
@@ -43,32 +43,32 @@ cleanup_legacy_release_dirs() {
   while IFS= read -r -d '' legacy_dir; do
     legacy_name="${legacy_dir##*/}"
     [[ "$legacy_name" =~ ^EMBER_COREUI_[0-9]+_[0-9]+_[0-9]+_ALPHA$ ]] || continue
-    [[ ! -L "$legacy_dir" ]] || die "Unsicherer symbolischer Altversionspfad erkannt: $legacy_dir"
+    [[ ! -L "$legacy_dir" ]] || die "Unsafe symbolic link in legacy release path: $legacy_dir"
     [[ "$legacy_dir" == "$TARGET_DIR"/EMBER_COREUI_*_ALPHA ]] \
-      || die "Unsicherer Altversionspfad erkannt: $legacy_dir"
+      || die "Unsafe legacy release path: $legacy_dir"
     if [[ ! -f "$legacy_dir/VERSION" || ! -f "$legacy_dir/scripts/install.sh" ]]; then
-      log "WARN: $legacy_name sieht nur dem Namen nach wie eine Altversion aus und bleibt deshalb erhalten."
+      log "WARN: $legacy_name only resembles an older release by name; it will be kept."
       continue
     fi
     if command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$legacy_dir"; then
-      die "Altversionsordner ist ein Einhaengepunkt und wird nicht automatisch entfernt: $legacy_dir"
+      die "Legacy release directory is a mount point and will not be removed automatically: $legacy_dir"
     fi
 
-    log "Entferne vollstaendig entpackte Altversion: $legacy_name"
+    log "Removing fully extracted legacy release: $legacy_name"
     rm -rf -- "$legacy_dir"
-    [[ ! -e "$legacy_dir" ]] || die "Altversionsordner konnte nicht entfernt werden: $legacy_dir"
+    [[ ! -e "$legacy_dir" ]] || die "Could not remove legacy release directory: $legacy_dir"
     removed=$((removed + 1))
   done < <(find -P "$TARGET_DIR" -mindepth 1 -maxdepth 1 -type d -name 'EMBER_COREUI_*_ALPHA' -print0)
 
   if (( removed > 0 )); then
-    log "$removed entpackte Altversionsordner wurden entfernt. Persistente Daten blieben unangetastet."
+    log "$removed extracted legacy release directories removed. Persistent data was preserved."
   fi
 }
 
-[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte das heruntergeladene Setup mit sudo bash ausfuehren.'
+[[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Run the downloaded setup using sudo bash.'
 case "$SOURCE_MODE" in
   main|release) ;;
-  *) die 'COREUI_SETUP_SOURCE muss main oder release sein.' ;;
+  *) die 'COREUI_SETUP_SOURCE must be main or release.' ;;
 esac
 
 packages=()
@@ -80,7 +80,7 @@ if [[ "$SOURCE_MODE" == 'main' ]]; then
   command -v git >/dev/null 2>&1 || packages+=(git)
 fi
 if (( ${#packages[@]} > 0 )); then
-  command -v apt-get >/dev/null 2>&1 || die 'Benötigte Installationswerkzeuge fehlen und apt-get ist nicht verfuegbar.'
+  command -v apt-get >/dev/null 2>&1 || die 'Required installation tools are missing and apt-get is unavailable.'
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
   apt-get install -y "${packages[@]}"
@@ -88,26 +88,26 @@ fi
 
 TEMP_DIR="$(mktemp -d /tmp/ember-coreui-setup.XXXXXX)"
 if [[ "$SOURCE_MODE" == 'main' ]]; then
-  log 'Lade den neuesten CoreAI: TCI Interface-Entwicklungsstand aus main.'
-  # Das globale umask 027 schuetzt lokale Zugangsdaten, ist fuer den
-  # oeffentlichen Git-Checkout aber zu strikt: rsync -a uebernimmt 750/640
-  # root:root und der Webserver (UID 33) kann api/health.php nicht lesen.
-  # Nur beim Checkout 022 benutzen, niemals beim Schreiben lokaler Secrets.
+  log 'Downloading the latest CoreAI: TCI Interface source from main.'
+  # The global umask 027 protects local credentials, but is too strict for
+  # a public Git checkout: rsync -a preserves 750/640 permissions for root:root,
+  # so the web server (UID 33) cannot read api/health.php.
+  # Use 022 for checkout only, never when writing local secrets.
   ( umask 022
     git clone --quiet --depth 1 --single-branch --branch main -- \
       "https://github.com/${REPOSITORY}.git" "$TEMP_DIR/source"
-  ) || die 'GitHub-Quellstand konnte nicht geladen werden; die Installation bleibt unveraendert.'
+  ) || die 'Unable to download GitHub source; the current installation remains unchanged.'
   SOURCE_DIR="$TEMP_DIR/source"
   SOURCE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse --verify HEAD)" \
-    || die 'Der Quellstand enthaelt keinen gueltigen Commit.'
-  [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || die 'Ungueltiger Git-Commit.'
+    || die 'Source checkout contains no valid commit.'
+  [[ "$SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || die 'Invalid Git commit.'
   for required in api/console_artifact.php api/console_artifacts.php \
       database/migrations/011_console_artifacts.sql; do
-    [[ -s "$SOURCE_DIR/$required" ]] || die "Unvollstaendiger main-Quellstand: $required fehlt."
+    [[ -s "$SOURCE_DIR/$required" ]] || die "Incomplete main branch source: $required is missing."
   done
-  log "Aktueller GitHub-Commit: $SOURCE_COMMIT"
+  log "Current GitHub commit: $SOURCE_COMMIT"
 else
-  log "Lade das unveraenderte historische E.M.B.E.R. CoreUI-Release ${ARCHIVED_RELEASE_VERSION}."
+  log "Downloading the unchanged historical E.M.B.E.R. CoreUI release ${ARCHIVED_RELEASE_VERSION}."
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
     --output "$TEMP_DIR/$ARCHIVE" "$DOWNLOAD_BASE/$ARCHIVE"
   curl --fail --location --show-error --silent --retry 3 --retry-all-errors \
@@ -119,27 +119,27 @@ else
   unzip -q "$TEMP_DIR/$ARCHIVE" -d "$TEMP_DIR/unpacked"
   SOURCE_DIR="$TEMP_DIR/unpacked/$PACKAGE_ROOT"
   [[ "$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")" == "$ARCHIVED_RELEASE_VERSION" ]] \
-    || die 'Paketversion und Setup-Version stimmen nicht ueberein.'
+    || die 'Package version does not match the setup version.'
 fi
 
 for required in VERSION README.md compose.yaml scripts/install.sh scripts/stack.sh scripts/preflight.sh; do
-  [[ -s "$SOURCE_DIR/$required" ]] || die "Der Quellstand ist unvollstaendig: $required fehlt."
+  [[ -s "$SOURCE_DIR/$required" ]] || die "Source checkout is incomplete: $required is missing."
 done
 SOURCE_VERSION="$(tr -d '[:space:]' < "$SOURCE_DIR/VERSION")"
 if [[ "$SOURCE_MODE" == 'main' ]]; then
-  [[ "$SOURCE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die 'VERSION muss rein numerisch sein: Major.Minor.Patch.'
-  [[ -s "$SOURCE_DIR/scripts/cache-bust.py" ]] || die 'Cache-Buster-Installer fehlt.'
+  [[ "$SOURCE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die 'VERSION must be numeric: Major.Minor.Patch.'
+  [[ -s "$SOURCE_DIR/scripts/cache-bust.py" ]] || die 'The cache-busting installer is missing.'
 fi
 
 if find "$SOURCE_DIR" -type f \
     \( -iname '*master*bibel*' -o -iname '*kompendium*v6*' \) -print -quit | grep -q .; then
-  die 'Das Installationspaket enthaelt gesperrtes privates Studio-Material.'
+  die 'The installation package contains prohibited private studio material.'
 fi
 
 existing=0
 if [[ -f "$TARGET_DIR/api/config.local.php" && -f "$TARGET_DIR/var/compose.env" ]]; then
   existing=1
-  log 'Bestehende Installation erkannt. Konten, Datenbank, Uploads und lokale Konfiguration bleiben erhalten.'
+  log 'Existing installation detected. Accounts, database, uploads, and local configuration will be preserved.'
 fi
 
 install -d -m 0750 "$TARGET_DIR"
@@ -168,8 +168,8 @@ for obsolete in api/user_skills.php js/skills-settings.js \
   fi
 done
 
-# Exakte Altlasten aus versehentlichen Alpha-Paketen entfernen. Andere Dateien
-# im docs-Verzeichnis bleiben unangetastet.
+# Remove only specific legacy files from accidental alpha packages. Other
+# documents inside docs remain untouched.
 rm -f -- \
   "$TARGET_DIR/docs/S.U. MASTER BIBEL v10.4.docx" \
   "$TARGET_DIR/docs/STU_KOMPENDIUM_V6.docx"
@@ -187,21 +187,21 @@ elif [[ -t 0 && -r /dev/tty && -w /dev/tty ]]; then
   ./scripts/install.sh </dev/tty
 else
   [[ -n "${COREUI_ADMIN_EMAIL:-}" && -n "${COREUI_ADMIN_PASSWORD:-}" ]] \
-    || die 'Fuer eine nicht-interaktive Erstinstallation muessen COREUI_ADMIN_EMAIL und COREUI_ADMIN_PASSWORD gesetzt sein.'
+    || die 'For a non-interactive first installation, set COREUI_ADMIN_EMAIL and COREUI_ADMIN_PASSWORD.'
   ./scripts/install.sh
 fi
 
 ./scripts/preflight.sh
 if [[ "$SOURCE_MODE" == 'main' ]]; then
-  [[ ! -L "$TARGET_DIR/var/dev_source_commit" ]] || die 'Unsicherer Entwicklerstand-Markierungspfad.'
+  [[ ! -L "$TARGET_DIR/var/dev_source_commit" ]] || die 'Unsafe development commit marker path.'
   printf '%s\n' "$SOURCE_COMMIT" > "$TARGET_DIR/var/dev_source_commit"
   # 0.5.83: the update window (web server, group 33) compares it with main.
   chgrp 33 "$TARGET_DIR/var/dev_source_commit" 2>/dev/null || true
   chmod 0640 "$TARGET_DIR/var/dev_source_commit"
-  log "Entwicklerstand erfolgreich installiert: $SOURCE_COMMIT"
+  log "Development source successfully installed: $SOURCE_COMMIT"
   log "CoreAI: TCI Interface $SOURCE_VERSION, GitHub-Commit $SOURCE_COMMIT."
 else
   rm -f -- "$TARGET_DIR/var/dev_source_commit"
-  log "Archiviertes historisches E.M.B.E.R. CoreUI Release ${ARCHIVED_RELEASE_VERSION} wurde geprueft installiert."
+  log "Archived historical E.M.B.E.R. CoreUI release ${ARCHIVED_RELEASE_VERSION} was installed and verified."
 fi
 

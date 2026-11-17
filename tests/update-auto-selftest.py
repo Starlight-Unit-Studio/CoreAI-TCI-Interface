@@ -81,7 +81,7 @@ with tempfile.TemporaryDirectory(prefix="coreai-update-auto-test-") as tmp:
     # The progress follower retains the installer output and tags a real
     # preflight failure independently of a generic install/build error.
     put(status, {"state": "running", "phase": "install", "percent": 79})
-    lines = b"Compose-Preflight, Version 0.6.93\n[OK] Core-Status\nPreflight fehlgeschlagen: 1 Problem(e).\n"
+    lines = b"Compose-Preflight, Version 0.6.93\n[OK] Core-Status\nPreflight failed: 1 issue(s).\n"
     stdin = SimpleNamespace(buffer=io.BytesIO(lines))
     stdout = SimpleNamespace(buffer=io.BytesIO())
     with patch.object(state.sys, "stdin", stdin), patch.object(state.sys, "stdout", stdout):
@@ -90,7 +90,7 @@ with tempfile.TemporaryDirectory(prefix="coreai-update-auto-test-") as tmp:
     check(json.loads(status.read_text()).get("failure_kind") == "preflight",
           "Preflight failure has its own machine-readable kind")
     put(status, {"state": "running", "phase": "install", "failure_kind": ""})
-    stdin = SimpleNamespace(buffer=io.BytesIO(b"Die Installation fehlgeschlagen: Docker-Image\n"))
+    stdin = SimpleNamespace(buffer=io.BytesIO(b"Installation failed: Docker image\n"))
     with patch.object(state.sys, "stdin", stdin), patch.object(state.sys, "stdout", SimpleNamespace(buffer=io.BytesIO())):
         state.cmd_follow(str(status))
     check(json.loads(status.read_text()).get("failure_kind") != "preflight",

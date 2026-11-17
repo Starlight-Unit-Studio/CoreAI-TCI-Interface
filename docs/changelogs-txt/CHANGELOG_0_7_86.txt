@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.86
+Date: 17 November 2026
+
+INSTALLATION OUTPUT IN ENGLISH
+- Official one-liner setup.sh: progress, preserved-data notices, validation
+  errors and final messages translated into English.
+- Docker installer scripts/install.sh and native scripts/install-native.sh:
+  logs, warnings, errors and interactive administrator prompts translated.
+- Docker and native preflights: user-facing verification messages,
+  statuses, errors and warnings translated.
+- Commands, API names, environment variables, database migrations,
+  model parameters and security guards are unchanged.
+- Historical archived release ZIPs remain byte-for-byte unchanged.
+- Host updater logs and progress labels now use English; the parser maps
+  current English installer milestones and recognizes older failure output.
+- Regression checks for image service, feedback and updater are updated.
+
+VOICE-INPUT PREFLIGHT
+- Updated the tool-after-voice-message source check for the current
+  ember_agent_allowed_tools(user, session, explicit_browse) signature.
+- The test still checks permitted tools, tool loop before voice cleanup,
+  and proper browse handoff. No runtime guard was removed.
+
+VERIFICATION
+- All 12 GitHub Actions workflows passed on the implementation commit.
+- A live server upgrade and voice test are still required for end-to-end sign-off.
+- The repository change alone does not update any already installed host.
+
+Version: 0.7.86

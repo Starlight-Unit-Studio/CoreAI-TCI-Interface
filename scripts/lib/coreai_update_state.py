@@ -47,33 +47,33 @@ STATUS_KEYS = {
 # checks that every one of them still exists in those scripts.
 INSTALL_FROM, INSTALL_TO = 10, 90
 MILESTONES = [
-    ('Lade den neuesten CoreAI: TCI Interface-Entwicklungsstand aus main.', 12, 'Der neue Stand wird von GitHub geladen.'),
-    ('Aktueller GitHub-Commit:', 14, 'Der neue Stand ist geladen.'),
-    ('Bestehende Installation erkannt.', 15, 'Die Dateien werden ersetzt, alle Daten bleiben erhalten.'),
-    ('Bereite den isolierten Parallelbetrieb', 18, 'Die Installation wird vorbereitet.'),
-    ('Aktualisiere numerische Content-Cache-Schluessel', 20, 'Die Cache-Schlüssel werden erneuert.'),
-    ('Pruefe die paketierten Python-Quellen.', 22, 'Die Python-Quellen werden geprüft.'),
-    ('Baue die isolierten PHP-, Python-Worker- und optionalen Browse-Images.', 24, 'Die Images werden gebaut.'),
-    ('Pruefe pdo_mysql im frisch gebauten PHP-Image.', 40, 'Das PHP-Image wird geprüft.'),
-    ('Baue den Bilddienst', 41, 'Der Bilddienst wird gebaut; beim ersten Mal dauert das 10 bis 20 Minuten.'),
-    ('Baue das wegwerfbare Python-Sandbox-Image', 42, 'Die Python-Sandbox wird gebaut.'),
-    ('Ollama-Basismodell', 50, 'Die Cores werden geprüft.'),
-    ('Erzeuge das getrennte Ollama-Modell', 53, 'Maras Core wird erzeugt.'),
-    ('Starte die eigene CoreAI: TCI Interface-Datenbank', 57, 'Die Datenbank startet.'),
-    ('Importiere alle CoreAI: TCI Interface-Migrationen', 60, 'Die Datenbank-Migrationen laufen.'),
-    ('Starte die eigene SearXNG-Instanz', 64, 'Die Websuche startet.'),
-    ('Starte CoreAI: TCI Interface-Web und PHP auf', 67, 'Web und PHP starten neu.'),
-    ('Starte den isolierten CoreAI: TCI Interface-Python-Worker.', 73, 'Der Python-Worker startet.'),
-    ('Update-Dienst aktiv:', 75, 'Der Update-Dienst ist eingerichtet.'),
-    ('Installation erfolgreich.', 77, 'Die Installation ist abgeschlossen.'),
-    ('Compose-Preflight, Version', 79, 'Der Preflight prüft alle Funktionen.'),
-    ('Entwicklerstand erfolgreich installiert:', 90, 'Die Installation ist geprüft.'),
+    ('Downloading the latest CoreAI: TCI Interface source from main.', 12, 'Downloading new source from GitHub.'),
+    ('Current GitHub commit:', 14, 'New source downloaded.'),
+    ('Existing installation detected.', 15, 'Replacing source files; preserving persistent data.'),
+    ('Preparing isolated parallel operation', 18, 'Preparing the installation.'),
+    ('Updating numeric content cache fingerprints', 20, 'Refreshing cache fingerprints.'),
+    ('Checking packaged Python sources.', 22, 'Checking Python sources.'),
+    ('Building isolated PHP, Python worker, and optional browser images.', 24, 'Building container images.'),
+    ('Checking pdo_mysql in the newly built PHP image.', 40, 'Checking the PHP image.'),
+    ('Building the image service', 41, 'Building the image service.'),
+    ('Building disposable Python sandbox image', 42, 'Building the Python sandbox.'),
+    ('Ollama base model', 50, 'Checking installed Cores.'),
+    ('Creating separate Ollama model', 53, 'Creating Mara’s Core.'),
+    ('Starting the dedicated CoreAI: TCI Interface database', 57, 'Starting the database.'),
+    ('Applying all CoreAI: TCI Interface migrations', 60, 'Applying database migrations.'),
+    ('Starting the dedicated SearXNG instance', 64, 'Starting web search.'),
+    ('Starting CoreAI: TCI Interface web and PHP on', 67, 'Starting web and PHP services.'),
+    ('Starting the isolated CoreAI: TCI Interface Python worker.', 73, 'Starting the Python worker.'),
+    ('Update service active:', 75, 'Update service configured.'),
+    ('Installation successful.', 77, 'Installation finished.'),
+    ('Compose-Preflight, Version', 79, 'Checking installed components.'),
+    ('Development source successfully installed:', 90, 'Installation verified.'),
 ]
 # Docker builds print "[php 3/7]" or "[ 2/4]": they fill their stretch of the bar.
 BUILD_STRETCHES = {24: 40, 42: 50}
 BUILD_RE = re.compile(r'\[(?:[\w.-]+ +)?(\d+)/(\d+)\]')
 PREFLIGHT_FROM, PREFLIGHT_TO = 79, 89
-PREFLIGHT_RE = re.compile(r'^\[(?:OK|WARN|FEHLER)\]')
+PREFLIGHT_RE = re.compile(r'^\[(?:OK|WARN|ERROR|FEHLER)\]')
 PREFLIGHT_DEFAULT_LINES = 170
 STATES = {'idle', 'running', 'done', 'failed'}
 
@@ -356,7 +356,7 @@ def cmd_follow(path):
         try:
             line = raw.decode('utf-8', 'replace').strip()
             text = re.sub(r'^\[[^\]]*\]\s*', '', line)
-            if 'Preflight fehlgeschlagen:' in text:
+            if 'Preflight failed:' in text or 'Preflight fehlgeschlagen:' in text:
                 data = read_json(path)
                 data['failure_kind'] = 'preflight'
                 data['updated_at'] = now()

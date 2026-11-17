@@ -52,7 +52,7 @@ jobs:
               assert 'if command -v node >/dev/null 2>&1; then' in block, name
               assert 'feedback-ui-selftest.cjs' in block, name
               assert block.index('feedback-ui-selftest.php') < block.index('if command -v node'), name
-              assert 'Node.js optional und nicht installiert' in block, name
+              assert 'Node.js is optional and not installed' in block, name
           print('Node is optional, the PHP feedback contract is mandatory in both modes')
           PY
       - name: Mandatory version gate
