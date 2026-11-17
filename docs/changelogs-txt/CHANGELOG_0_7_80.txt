@@ -1,0 +1,60 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.80
+Datum: 17.11.2026
+
+VERSIONEN UND ARBEITSSTAENDE (ROADMAP P11, SCHRITT A)
+- Im Tab Dateien haelt "Versionen" Staende aller Dateien fest. "Sichern"
+  speichert den aktuellen Stand mit einer kurzen Beschreibung; der Bereich
+  zeigt ungesicherte Aenderungen (neu, geaendert, geloescht), alle Versionen
+  des aktiven Arbeitsstands mit Herkunft und was eine Version geaendert hat,
+  bis zum Zeilenvergleich einer Datei.
+- Arbeitsstaende (Branches) mit eigenen Dateien: "Neuer Arbeitsstand"
+  beginnt bei der neuesten Version und kann ungesicherte Aenderungen
+  mitnehmen; sonst bleiben sie beim Arbeitsstand, in dem sie entstanden.
+  "Wechseln" bringt die Dateien des anderen Arbeitsstands ins Projekt
+  (Editor, Vorschau, Laeufe, Prozesse und Mara folgen) und behaelt die
+  ungesicherten Dateien des verlassenen. Zwei Arbeitsstaende veraendern
+  einander nie. Ein nicht aktiver Arbeitsstand laesst sich loeschen;
+  Versionen, die nur er erreicht, gehen mit.
+- Eine Datei, die ein Wechsel anlegt oder aendert, bekommt im Dateiverlauf
+  den Eintrag "Arbeitsstand gewechselt". Eine Datei, die ein Wechsel
+  entfernt, verliert ihren Dateiverlauf (ihr Inhalt bleibt in den
+  Versionen); beim Zurueckwechseln beginnt er neu.
+- Kontrolliert zuruecknehmen: "Wiederherstellen" holt eine Version auf den
+  aktiven Arbeitsstand. Ungesicherte Aenderungen werden vorher als eigene
+  Version gesichert ("Automatisch gesichert vor dem Wiederherstellen"), der
+  alte Stand kommt als neue Version dazu ("Wiederhergestellt: ..."), keine
+  fruehere Version geht verloren.
+- ZIP mit Git: "Als ZIP mit Git" laedt die Dateien des aktiven
+  Arbeitsstands mit einem echten Git-Repository aller Arbeitsstaende und
+  Versionen herunter, in PHP gebaut (Objekte, Baeume, Commits, Branches,
+  HEAD, Index). git log, git status, git checkout und git fsck gehen nach
+  dem Entpacken; auf dem Server ist kein Git-Programm noetig. Autoren sind
+  allgemein (keine persoenlichen Daten).
+- Begrenzt: 10 Arbeitsstaende und 200 Versionen je Projekt; jeder Inhalt
+  wird je Projekt einmal gespeichert und zaehlt zum Speicher des Kontos.
+  Alles geht mit seinem Projekt.
+
+DATENBANK
+- Migration 049_project_versions (Inhalte, Arbeitsstaende, Versionen mit
+  ihren Dateien, aufbewahrte Dateien nicht aktiver Arbeitsstaende, aktiver
+  Arbeitsstand; Revisionsart "branch" fuer Dateien, die ein Wechsel
+  aendert).
+
+ABNAHME VON P11 IM SELBSTTEST
+- Eine Aenderung wird auf einem eigenen Arbeitsstand gesichert, kontrolliert
+  zurueckgenommen und als nutzbares ZIP exportiert (mit git geprueft); der
+  andere Arbeitsstand bleibt erhalten.
+
+NOCH NICHT
+- Zusammenfuehren mit Konfliktbearbeitung, Mara sichert und arbeitet auf
+  einem eigenen Arbeitsstand, Import eines Git-Repositorys.
+
+TESTS
+- scripts/project-vcs-selftest.php (SQLite; MariaDB mit
+  COREUI_SELFTEST_DB=1; der Git-Export mit git fsck --strict, git log,
+  git status, git branch und git show, wo git vorhanden ist) und
+  scripts/project-vcs-ui-selftest.cjs (Playwright), in beiden Preflights.
+- Der Zeilenvergleich des Editors wird mit dem Bereich Versionen geteilt.
+
+NICHT GETESTET
+- Der Bereich auf dem echten Server mit echten Projekten.

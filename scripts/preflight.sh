@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.79: Node.js 24 with npm in the sandbox image (ember-py:2) next to Python.
+# CoreAI: TCI Interface 0.7.80: versions, working states and a Git export of project files (P11 A).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -246,6 +246,10 @@ UI_FILES=(
   scripts/project-procs-worker-selftest.py
   scripts/project-procs-ui-selftest.cjs
   scripts/sandbox-image-selftest.py
+  database/migrations/049_project_versions.sql
+  api/project_vcs_store.php
+  scripts/project-vcs-selftest.php
+  scripts/project-vcs-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1525,6 +1529,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Projektprozesse-Selbsttest: ${project_procs_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.
+  project_vcs_test=''
+  if project_vcs_test="$(compose exec -T php php scripts/project-vcs-selftest.php 2>&1)"; then
+    ok "$project_vcs_test"
+  else
+    fail "Projektversionen-Selbsttest: ${project_vcs_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1943,6 +1955,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Projektlaeufe: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.80 (P11 A): the panel Versionen in the tab Dateien; needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/project-vcs-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Projektversionen: Sichern, Arbeitsstaende, Wiederherstellen und Git-ZIP im Browser geprueft.'
+      else
+        fail 'Projektversionen: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Projektversionen: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
