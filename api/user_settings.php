@@ -142,6 +142,71 @@ if ($method === 'GET' && array_key_exists('core_cloud', $_GET)) {
   stu_json(['ok'=>true, 'cloud'=>coreui_ollama_cloud_status()]);
 }
 
+// A single Core library merges official Ollama and public Hugging Face GGUFs.
+// Independent upstream failures never make the other catalog unavailable.
+if ($method === 'GET' && array_key_exists('core_library_search', $_GET)) {
+  require_once __DIR__ . '/huggingface_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  $query = trim((string)$_GET['core_library_search']);
+  if (mb_strlen($query) > 80 || preg_match('~[\x00-\x1f\x7f]~', $query) === 1) {
+    stu_json(['ok'=>false, 'error'=>'invalid_search'], 400);
+  }
+  $rows = [];
+  $failed = [];
+  foreach (['ollama', 'huggingface'] as $source) {
+    try {
+      $found = $source === 'ollama' ? coreui_library_search($query) : coreui_hf_search($query);
+      foreach ($found as $entry) {
+        $entry['source'] = $source;
+        $rows[] = $entry;
+      }
+    } catch (Throwable $e) {
+      $failed[] = $source;
+    }
+  }
+  if (count($failed) === 2) stu_json(['ok'=>false, 'error'=>'registry_unavailable'], 503);
+  if ($query === '') shuffle($rows);
+  stu_json(['ok'=>true, 'models'=>$rows, 'unavailable_sources'=>$failed, 'csrf_token'=>$csrf]);
+}
+
+// Hugging Face public GGUF discovery: same Core library, same local Ollama runtime.
+if ($method === 'GET' && (array_key_exists('hf_search', $_GET) || array_key_exists('hf_detail', $_GET))) {
+  require_once __DIR__ . '/huggingface_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $csrf = stu_csrf_token();
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    if (array_key_exists('hf_search', $_GET)) {
+      $query = trim((string)$_GET['hf_search']);
+      stu_json(['ok'=>true, 'models'=>coreui_hf_search($query), 'csrf_token'=>$csrf]);
+    }
+    $repo = trim((string)$_GET['hf_detail']);
+    $detail = coreui_hf_detail($repo);
+    try {
+      $local = array_column(coreui_ollama_models(), 'name');
+    } catch (RuntimeException $e) {
+      $local = [];
+    }
+    foreach ($detail['tags'] as &$variant) {
+      $variant['installed'] = false;
+      foreach ($local as $installedModel) {
+        if (coreui_core_same((string)$variant['name'], (string)$installedModel)) {
+          $variant['installed'] = true;
+          break;
+        }
+      }
+    }
+    unset($variant);
+    stu_json(['ok'=>true, 'detail'=>$detail, 'csrf_token'=>$csrf]);
+  } catch (RuntimeException $e) {
+    $invalid = in_array($e->getMessage(), ['invalid_model_name', 'invalid_search'], true);
+    $denied = $e->getMessage() === 'hf_access_required';
+    stu_json(['ok'=>false, 'error'=>$e->getMessage()], $invalid ? 400 : ($denied ? 403 : 503));
+  }
+}
+
 // 0.6.89: optional official Ollama registry browser, owner/admin only.
 // No public registry search endpoint is assumed: the server parses Ollama's
 // official HTML and never accepts a user-supplied URL or network host.
@@ -417,6 +482,35 @@ if (($body['action'] ?? '') === 'core') {
   } catch (Throwable $e) {
     if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_preload_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
   }
+  exit;
+}
+// Install a verified public GGUF via the same serialized local Ollama worker.
+// No browser-supplied URL, arbitrary model tag, token or Modelfile is accepted.
+if (($body['action'] ?? '') === 'huggingface_library_install') {
+  require_once __DIR__ . '/huggingface_library.php';
+  stu_require_permission_at_most(COREUI_CORE_INSTALL_PERMISSION_MAX, $pdo);
+  $model = trim((string)($body['model'] ?? ''));
+  $repo = coreui_hf_model_repo($model);
+  if ($repo === null) stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+  if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+  try {
+    $detail = coreui_hf_detail($repo);
+    if (!coreui_hf_install_allowed($model, $detail)) {
+      stu_json(['ok'=>false, 'error'=>'hf_no_gguf'], 400);
+    }
+    if (coreui_ollama_model_exists($model)) stu_json(['ok'=>false, 'error'=>'already_installed'], 409);
+    $lock = coreui_core_install_lock();
+  } catch (RuntimeException $e) {
+    $code = $e->getMessage();
+    stu_json(['ok'=>false, 'error'=>$code],
+      $code === 'invalid_model_name' ? 400 : ($code === 'hf_access_required' ? 403 : 503));
+  }
+  if ($lock === false) {
+    stu_json(['ok'=>false, 'error'=>'install_running', 'install'=>coreui_core_install_status()], 409);
+  }
+  $state = coreui_library_begin($model);
+  coreui_core_job_detach(['ok'=>true, 'install'=>['running'=>true] + array_diff_key($state, ['layers'=>true])]);
+  coreui_core_job_run($lock, 'coreui_library_run', $state, $uid);
   exit;
 }
 // 0.6.89: install an explicitly selected local variant from Ollama's official

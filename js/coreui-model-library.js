@@ -214,7 +214,8 @@
         return;
       }
       text(el.Hint, tag.installed ? 'Bereits lokal installiert.' : tag.size
-        + ' Downloadgröße laut Ollama. Stelle vor dem Herunterladen genügend freien Speicher bereit.');
+        + ' Downloadgröße laut ' + (state.detail.source === 'huggingface' ? 'Hugging Face' : 'Ollama')
+        + '. Stelle vor dem Herunterladen genügend freien Speicher bereit.');
       el.Install.disabled = !!tag.installed || !!state.installing;
       text(el.Install, tag.installed ? 'Installiert' : state.installing ? 'Installation läuft' : 'Installieren');
     }
@@ -223,7 +224,8 @@
       state.confirming = '';
       show(el.Detail, true);
       text(el.ModelTitle, detail.name);
-      text(el.ModelDescription, detail.description || 'Details aus der offiziellen Ollama-Bibliothek.');
+      text(el.ModelDescription, (detail.description || 'Details aus der Core-Bibliothek.')
+        + (detail.license ? ' Lizenz: ' + detail.license : ''));
       el.ModelLink.href = detail.url;
       clear(el.Tag);
       (detail.tags || []).forEach(function (tag) {
@@ -235,14 +237,20 @@
     }
     function loadDetail(name) {
       var sequence = ++state.request;
-      fail('Lädt die Ollama-Details …');
-      return request('ollama_detail=' + encodeURIComponent(name)).then(function (data) {
+      var origin = name && name.source === 'huggingface' ? 'huggingface' : 'ollama';
+      var modelName = typeof name === 'string' ? name : name.name;
+      fail('Lädt die Core-Details …');
+      return request((origin === 'huggingface' ? 'hf_detail=' : 'ollama_detail=') + encodeURIComponent(modelName)).then(function (data) {
         if (!state.open || sequence !== state.request) return;
-        renderDetail(data.detail || {name: name, tags: []});
-        sourceStatus('Lokale Varianten und Downloadgrößen werden von Ollama angezeigt.');
-      }).catch(function () {
+        var detail = data.detail || {name: modelName, tags: []};
+        detail.source = origin;
+        renderDetail(detail);
+        sourceStatus('Die verfügbaren lokalen Core-Varianten werden angezeigt.');
+      }).catch(function (error) {
         if (!state.open || sequence !== state.request) return;
-        fail('Ollama-Details konnten nicht geladen werden. Bitte die offizielle Ollama-Seite verwenden.');
+        fail(error.code === 'hf_access_required'
+          ? 'Dieses Repository ist zugriffsbeschränkt. Bitte die Lizenz und den Zugang bei Hugging Face prüfen.'
+          : 'Core-Details konnten nicht geladen werden. Bitte die offizielle Modellseite verwenden.');
       });
     }
     function renderSearch(models) {
@@ -256,8 +264,9 @@
         card.type = 'button';
         card.setAttribute('role', 'listitem');
         item(card, 'strong', '', model.name);
-        item(card, 'small', '', model.summary || '');
-        card.addEventListener('click', function () { loadDetail(model.name); });
+        item(card, 'small', '', (model.source === 'huggingface' ? 'Hugging Face' : 'Ollama')
+          + ' · ' + (model.summary || ''));
+        card.addEventListener('click', function () { loadDetail(model); });
       });
     }
     function search() {
@@ -265,23 +274,24 @@
       var sequence = ++state.request;
       state.loading = true;
       show(el.Detail, false);
-      fail('Sucht in Ollamas offizieller Bibliothek …');
-      return request('ollama_search=' + encodeURIComponent(query)).then(function (data) {
+      fail(query ? 'Durchsucht die Core-Bibliothek …' : 'Lädt wechselnde aktuelle Cores …');
+      return request('core_library_search=' + encodeURIComponent(query)).then(function (data) {
         if (!state.open || sequence !== state.request) return;
         var models = Array.isArray(data.models) ? data.models : [];
         renderSearch(models);
-        sourceStatus(models.length + ' Einträge aus Ollamas offizieller Suche. Es werden nur lokale Varianten angeboten.');
+        var sources = Array.isArray(data.unavailable_sources) ? data.unavailable_sources : [];
+        if (sources.length) {
+          fail(models.length + ' Cores gefunden. Eine Quelle ist derzeit nicht erreichbar: '
+            + sources.join(', ') + '.');
+        } else {
+          sourceStatus(models.length + (query
+            ? ' Treffer aus der Core-Bibliothek. Es werden nur lokale Varianten angeboten.'
+            : ' wechselnde aktuelle Core-Vorschläge aus Ollama und Hugging Face.'));
+        }
       }).catch(function () {
         if (!state.open || sequence !== state.request) return;
         clear(el.Results);
-        fail('Ollamas Suchseite konnte nicht eingelesen werden. Öffne die offizielle Suche oder gib den exakten Core-Namen ein.');
-        // If parsing the public search page fails, individual detail pages
-        // can still be loaded safely from a typed official model ID.
-        if (/^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9][A-Za-z0-9._-]*)?$/.test(query)) {
-          var direct = item(el.Results, 'button', 'core-library-result', 'Details zu ' + query + ' direkt öffnen');
-          direct.type = 'button';
-          direct.addEventListener('click', function () { loadDetail(query); });
-        }
+        fail('Beide Core-Bibliotheken sind derzeit nicht erreichbar. Bitte erneut versuchen.');
       }).then(function () { state.loading = false; });
     }
     function renderProgress(job) {
@@ -336,7 +346,7 @@
             sourceStatus('Update für ' + updatedName + ' abgeschlossen.');
           } else {
             sourceStatus('Der Core ' + job.core + ' ist jetzt lokal installiert.');
-            if (state.detail) return loadDetail(state.detail.name);
+            if (state.detail) return loadDetail({name: state.detail.name, source: state.detail.source});
           }
         } else if (isUpdate) {
           text(el.InstalledStatus, job.message || 'Das Update ist fehlgeschlagen.');
@@ -356,8 +366,10 @@
       if (state.confirming !== tag.name) {
         state.confirming = tag.name;
         text(el.Install, 'Wirklich installieren?');
-        text(el.Hint, tag.name + ' benötigt laut Ollama etwa ' + tag.size
-          + ' für den Download. Der Server lädt den Core lokal herunter.');
+        text(el.Hint, tag.name + ' benötigt laut '
+          + (state.detail.source === 'huggingface' ? 'Hugging Face' : 'Ollama')
+          + ' etwa ' + tag.size + ' für den Download. Prüfe die Modelllizenz.'
+          + ' Der Server lädt den Core lokal herunter.');
         return;
       }
       state.confirming = '';
@@ -366,7 +378,8 @@
       el.Install.disabled = true;
       text(el.Install, 'Startet …');
       fail('Startet die lokale Installation von ' + tag.name + ' …');
-      request('', {action: 'ollama_library_install', model: tag.name}).then(function (data) {
+      request('', {action: state.detail.source === 'huggingface'
+        ? 'huggingface_library_install' : 'ollama_library_install', model: tag.name}).then(function (data) {
         state.polling = true;
         show(el.Progress, true);
         renderProgress(data.install || {step: 'Installiert …', percent: 0});
@@ -379,7 +392,9 @@
         var messages = {already_installed: 'Dieser Core ist bereits installiert.',
           install_running: 'Eine andere Installation oder ein Core-Update läuft bereits.',
           not_local_model: 'Ollama bestätigt keine lokal installierbare Variante.',
-          registry_unavailable: 'Die offizielle Ollama-Seite ist derzeit nicht erreichbar.'};
+          registry_unavailable: 'Die offizielle Modellquelle ist derzeit nicht erreichbar.',
+          hf_access_required: 'Für dieses Hugging-Face-Repository ist eine eigene Freigabe erforderlich.',
+          hf_no_gguf: 'Diese GGUF-Variante ist nicht zur lokalen Installation freigegeben.'};
         fail(messages[error.code] || 'Die Installation konnte nicht gestartet werden (' + error.message + ').');
       });
     }

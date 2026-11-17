@@ -7331,7 +7331,7 @@ a.core-install-btn {
 
 @media (max-width: 720px) {
   .ctx-stops {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ctx-stop-button {
@@ -7516,7 +7516,7 @@ a.core-install-btn {
 
 .knowledge-totals {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 13px;
 }
@@ -9852,7 +9852,7 @@ a.insight-file-name:hover { text-decoration: underline; }
 }
 .core-library-providers {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 14px 0;
 }
@@ -9871,7 +9871,6 @@ a.insight-file-name:hover { text-decoration: underline; }
 .core-library-provider strong { font-size: 13px; letter-spacing: .08em; }
 .core-library-provider span { font-size: 12px; color: var(--muted); }
 .core-library-provider--active { border-color: var(--green); }
-.core-library-provider--future { opacity: .55; border-style: dashed; cursor: not-allowed; }
 .core-library-provider:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 /* pGen Core: own model management, not part of the Ollama text Core list. */
 .core-install-pgen {
@@ -10054,7 +10053,7 @@ a.insight-file-name:hover { text-decoration: underline; }
     padding: 12px;
   }
   .core-library-head h2 { font-size: 18px; }
-  .core-library-providers { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+  .core-library-providers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
   .core-library-provider { padding: 8px; }
   .core-library-provider strong { font-size: 10px; }
   .core-library-provider span { font-size: 10px; line-height: 1.35; }

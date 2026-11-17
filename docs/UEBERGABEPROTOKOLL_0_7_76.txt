@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.76
+Datum: 16.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.75
+Branch: feature/huggingface-gguf-library-0776
+
+AUFTRAG
+Core-Bibliothek von Ollama und Hugging Face zu EINER gemeinsamen Suche zusammenfuehren.
+Ohne Suchbegriff zufaellige aktuelle Modellvorschlaege von beiden Quellen anzeigen.
+
+UMSETZUNG
+- api/huggingface_library.php: Nur oeffentliche GGUF-Repositories; offizielle HF-API, sichere GGUF-Einzeldateien und Lizenzkennzeichnung.
+- api/user_settings.php: Gemeinsame Suchroute und eigenstaendige, verifizierte HF-Installfreigabe.
+- api/ollama_library.php: Wechselnde Vorschlaege bei leerer Suche.
+- js/coreui-model-library.js + app.html: Eine Core-Bibliothek und eine gemeinsame Suchliste, Quellenkennung je Treffer.
+- Vorhandene Ollama-Installation, Fortschrittsanzeige, Installationssperre, Inventar, Update- und Loeschwege bleiben massgeblich.
+- Private und gated HF-Modelle bleiben bis zur gesonderten sicheren Autorisierung gesperrt.
+- Keine TCI-Modelfiles oder Seriendurchlaeufe aendern.
+
+PR nicht selbst mergen; Betreiber uebernimmt Merge und anschliessende Liveabnahme.
+Naechste Version nach Merge: 0.7.77.

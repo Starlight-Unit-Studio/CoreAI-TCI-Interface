@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.75: the preview of a web project in the tab Dateien (P10 A).
+# CoreAI: TCI Interface 0.7.76: the preview of a web project in the tab Dateien (P10 A).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -437,9 +437,11 @@ UI_FILES=(
   scripts/core-install-ui-selftest.cjs
   scripts/model-library-ui-selftest.cjs
   scripts/ollama-library-selftest.php
+  scripts/huggingface-library-selftest.php
   scripts/installed-cores-selftest.php
   api/installed_cores.php
   api/ollama_library.php
+  api/huggingface_library.php
   js/coreui-model-library.js
   scripts/registration-ui-selftest.cjs
   scripts/guest-access-selftest.php
@@ -1174,6 +1176,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Ollama-Modellsuche: lokale Varianten, sichere Herkunft und gemeinsamer Installationsstatus geprueft.'
   else
     fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
+  fi
+
+  hf_library_test=''
+  if hf_library_test="$(compose exec -T php php scripts/huggingface-library-selftest.php 2>&1)"; then
+    ok 'Hugging-Face-GGUF-Bibliothek: Freigaben, Quantisierungen und sichere lokale Installation geprueft.'
+  else
+    fail "Hugging-Face-Bibliothek-Selbsttest: ${hf_library_test:-Unbekannter Fehler}"
   fi
 
   # 0.6.96: the PHP-FPM user must be able to queue a request on the host.

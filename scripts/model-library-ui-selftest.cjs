@@ -26,14 +26,15 @@ assert(html.includes('id="coreLibraryInstalledProvider"')
   && html.includes('id="coreLibraryInstalled"') && html.includes('role="tablist"'),
   'three proper source/inventory tabs are present');
 assert(html.includes('id="coreLibrary"') && html.includes('id="coreLibraryDetail"'), 'search and overlay exist');
-assert(html.includes('HUGGING FACE') && html.includes('In Vorbereitung'), 'unfinished source is clearly marked');
+assert(html.includes('CORE-BIBLIOTHEK') && html.includes('Ollama + Hugging Face')
+  && !html.includes('In Vorbereitung'), 'both catalogs are shown together');
 assert(html.includes('href="https://ollama.com/search"'), 'official fallback link is retained');
 assert(html.indexOf('js/coreui-core-install.js') < html.indexOf('js/coreui-model-library.js'),
   'library controller starts after the TCI install controller');
 assert(css.includes('.core-library-provider--future')
   && css.includes('grid-template-columns: repeat(3, minmax(0, 1fr))')
   && css.includes('@media (max-width: 520px)'),
-  'the three tabs include a responsive mobile layout');
+  'the two shared tabs include a responsive mobile layout');
 
 class Element {
   constructor(tag, id) {
@@ -80,11 +81,15 @@ let requestedUpdate = '', updateKind = '';
 const reply = json => Promise.resolve({ok:true, status:200, json: () => Promise.resolve(json)});
 function server(url, init) {
   calls.push({url, method:init.method, body:init.body || '', token:init.headers['X-CoreUI-CSRF']});
-  if (url.includes('ollama_search=')) return reply({ok:true, models:[
-    {name:'qwen3.5', summary:'Open weights, 4b 9b'}], csrf_token:'csrf1'});
+  if (url.includes('core_library_search=')) return reply({ok:true, models:[
+    {name:'qwen3.5', source:'ollama', summary:'Open weights, 4b 9b'},
+    {name:'example/GGUF-test', source:'huggingface', summary:'GGUF · Lizenz: apache-2.0'}], csrf_token:'csrf1'});
   if (url.includes('ollama_detail=')) return reply({ok:true, detail:{name:'qwen3.5',
     description:'Official local model page', url:'https://ollama.com/library/qwen3.5',
     tags:[{name:'qwen3.5:4b',size:'3.3GB',installed}]}, csrf_token:'csrf1'});
+  if (url.includes('hf_detail=')) return reply({ok:true, detail:{name:'example/GGUF-test',
+    description:'Public GGUF model', url:'https://huggingface.co/example/GGUF-test', license:'apache-2.0',
+    tags:[{name:'hf.co/example/GGUF-test:model-Q4_K_M.gguf',size:'2.5 GB',installed:false}]}, csrf_token:'csrf1'});
   if (url.includes('core_install_status=1') && requestedUpdate) return reply({ok:true, install:{
     kind:updateKind, core:updateKind==='library' ? requestedUpdate : '',
     phase:'done', step:'Update fertig.', percent:100, running:false
@@ -136,7 +141,9 @@ const flush = async () => { for(let i=0;i<24;i++) await Promise.resolve(); };
   ui.open();
   await flush();
   assert.equal(els.coreLibrary.hidden, false);
-  assert.equal(els.coreLibraryResults.children.length, 1, 'the official search results are listed');
+  assert.equal(els.coreLibraryResults.children.length, 2, 'both sources appear in one result list');
+  assert.match(els.coreLibraryResults.children[1].textContent, /Hugging Face/,
+    'Hugging Face sources have a clear label');
   els.coreLibraryResults.children[0].handlers.click();
   await flush();
   assert.equal(els.coreLibraryDetail.hidden, false, 'selected model opens overlay');
@@ -231,6 +238,19 @@ const flush = async () => { for(let i=0;i<24;i++) await Promise.resolve(); };
   await flush();
   assert.equal(els.coreLibraryInstalled.hidden, true);
   assert.equal(els.coreLibraryBrowser.hidden, false);
+  els.coreLibraryResults.children[1].handlers.click();
+  await flush();
+  assert.equal(els.coreLibraryModelTitle.textContent, 'example/GGUF-test');
+  assert.equal(els.coreLibraryTag.value, 'hf.co/example/GGUF-test:model-Q4_K_M.gguf');
+  assert.match(els.coreLibraryModelDescription.textContent, /apache-2.0/,
+    'model license is shown before installing');
+  els.coreLibraryInstall.handlers.click();
+  els.coreLibraryInstall.handlers.click();
+  await flush();
+  const hfInstall = calls.filter(c => c.method === 'POST').map(c => JSON.parse(c.body))
+    .find(c => c.action === 'huggingface_library_install');
+  assert(hfInstall && hfInstall.model === 'hf.co/example/GGUF-test:model-Q4_K_M.gguf',
+    'Hugging Face install reuses shared worker with exact verified GGUF file');
   ui.close();
   assert.equal(els.coreLibrary.hidden, true);
   assert.equal(els.coreInstallLibraryOpen.focused, true, 'focus returns to prior dialog');

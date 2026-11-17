@@ -176,7 +176,14 @@ function coreui_library_search(string $query): array {
   if (mb_strlen($query) > 80 || preg_match('~[\x00-\x1f\x7f]~', $query) === 1) {
     throw new RuntimeException('invalid_search');
   }
-  return coreui_library_search_parse(coreui_library_fetch('https://ollama.com/search?q=' . rawurlencode(trim($query))));
+  $query = trim($query);
+  $rows = coreui_library_search_parse(coreui_library_fetch('https://ollama.com/search?q=' . rawurlencode($query)));
+  if ($query === '') {
+    // Fresh picks from today's official Ollama listings, not a fixed model list.
+    shuffle($rows);
+    $rows = array_slice($rows, 0, 12);
+  }
+  return $rows;
 }
 
 function coreui_library_detail(string $name): array {

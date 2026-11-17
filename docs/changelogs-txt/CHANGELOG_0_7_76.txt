@@ -1,0 +1,4 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.76
+16.11.2026
+
+Gemeinsame Core-Bibliothek: Ollama + Hugging Face GGUF, gemeinsame Suche, wechselnde aktuelle Vorschlaege ohne Suchbegriff. Quellkennzeichnung, GGUF-Dateiauswahl, Lizenzanzeige und lokaler Download ueber den vorhandenen Ollama-Worker. Nur oeffentliche, nicht zugriffsgesperrte GGUF-Repositories; keine automatische Installation. Installierte Cores weiter gemeinsam verwaltbar. Keine Modelfile-, Queue- oder Fremdprojekt-Aenderung. Server-Liveabnahme ausstehend.
