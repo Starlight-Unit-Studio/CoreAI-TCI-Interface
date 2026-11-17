@@ -499,7 +499,7 @@ ensure_ollama_model() {
     ollama pull "$BASE_MODEL"
     base_new=1
   else
-    log "Ollama-Basismodell $BASE_MODEL already exists and is kept for safety."
+    log "Ollama base model $BASE_MODEL already exists and is kept for safety."
   fi
 
   sed "s|^FROM gemma4:e4b$|FROM $BASE_MODEL|" \
@@ -558,7 +558,7 @@ if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   source /etc/os-release
 else
-  die '/etc/os-release is missing. Unterstuetzt werden Debian und Ubuntu.'
+  die '/etc/os-release is missing. Supported distributions: Debian and Ubuntu.'
 fi
 case "${ID:-}:${ID_LIKE:-}" in
   debian:*|ubuntu:*|*:debian*) ;;
