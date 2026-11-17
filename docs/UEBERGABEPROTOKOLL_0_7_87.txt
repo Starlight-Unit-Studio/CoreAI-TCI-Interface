@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE // HANDOVER 0.7.87
+Date: 17 November 2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Baseline: main 0.7.86, merge of PR #343
+Branch: fix/english-installer-selftests-0.7.87
+
+OPERATOR REPORT
+Update window showed 0.7.86 -> 0.7.86 and failure during preflight.
+The screenshots showed two errors:
+1. Voice service FAIL: installer: optional, CoreAI runs on without the voice
+2. Update service: host updater self-test failed, FAIL: update log
+
+ROOT CAUSES, SOURCE VERIFIED
+1. scripts/voice-service-selftest.py asserted the old German install.sh
+   warning, even though install.sh now prints the English warning.
+2. tests/update-runner-selftest.sh searched for 'Update angefordert von Konto 5'
+   in update.log, although scripts/coreai-updater.sh now writes
+   'Update requested by account 5'.
+
+REPAIRS
+- Aligned both offline selftests with English installer/updater output.
+- Added a CI job to actually run these offline selftests on relevant PRs.
+- Updated version and UI asset cache key to 0.7.87.
+- Changelog and README documented.
+
+SCOPE AND SAFETY
+- No removal of preflight checks.
+- No model, queue, database, permissions, or runtime voice changes.
+- The findings are stale source/test assertions, not proven outages of
+  the live voice service.
+- GitHub CI is an offline contract test, not a live server acceptance test.
+- Existing failed 0.7.86 installations can upgrade to 0.7.87.
+
+VERIFICATION
+Run new GitHub Actions installer-preflight-contract job, then standard
+workflows. Deployment preflight on the operator host is still required.
