@@ -736,7 +736,7 @@ else
   fail "Image test-self-test: ${image_spike_test:-Unknown error}"
 fi
 
-# 0.6.39 (P20.5 B): Mara's image service: registry (FLUX.2-klein 4B, pins required), progress
+# 0.6.39 (P20.5 B): Mara’s image service: registry (FLUX.2-klein 4B, pins required), progress
 # from sd-cli, weights at their pinned revision and SHA-256, one job at a time, cancel, time
 # limit, adopting the image test's weights, compose and installer.
 # 0.6.59: Optional gallery assets may be uploaded after this code PR.
@@ -752,9 +752,9 @@ for image_name in \
   fi
 done
 if (( mara_missing == 0 )); then
-  ok 'Mara's seven reference images are present in the repository.'
+  ok 'Mara’s seven reference images are present in the repository.'
 else
-  printf '[WARN] %s\n' "Mara's image set is incomplete ($mara_missing of 7 missing); missing images will be skipped." >&2
+  printf '[WARN] %s\n' "Mara’s image set is incomplete ($mara_missing of 7 missing); missing images will be skipped." >&2
 fi
 
 image_service_test=''
@@ -1093,7 +1093,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   live_test=''
   if live_test="$(compose exec -T php php scripts/voice-live-selftest.php 2>&1)"; then
-    ok '0.6.31: live voice (live Core, Eve's sentences, spoken reply, stable cache prefix, unchanged Modelfile SYSTEM) verified.'
+    ok '0.6.31: live voice (live Core, Eve’s sentences, spoken reply, stable cache prefix, unchanged Modelfile SYSTEM) verified.'
   else
     fail "Live voice-self-test: ${live_test:-Unknown error}"
   fi
@@ -1232,14 +1232,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   tiers_test=''
   if tiers_test="$(compose exec -T php php scripts/core-tiers-selftest.php 2>&1)"; then
-    ok 'Core tiers: TCI names in chat and Mara's persona for every Core verified.'
+    ok 'Core tiers: TCI names in chat and Mara’s persona for every Core verified.'
   else
     fail "Core tiers-self-test: ${tiers_test:-Unknown error}"
   fi
 
   install_test=''
   if install_test="$(compose exec -T php php scripts/core-install-selftest.php 2>&1)"; then
-    ok 'Core installer: Mara's Core from Modelfile, hardware check, progress, single job, admins only verified.'
+    ok 'Core installer: Mara’s Core from Modelfile, hardware check, progress, single job, admins only verified.'
   else
     fail "Core-Installer-self-test: ${install_test:-Unknown error}"
   fi
@@ -1310,7 +1310,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.5.83: models outside CoreAI only for the Inhaber and released accounts.
   model_access_test=''
   if model_access_test="$(compose exec -T php php scripts/model-access-selftest.php 2>&1)"; then
-    ok 'Model permissions: Mara's Cores for everyone; third-party models only for owner and permitted accounts.'
+    ok 'Model permissions: Mara’s Cores for everyone; third-party models only for owner and permitted accounts.'
   else
     fail "Model permissions-self-test: ${model_access_test:-Unknown error}"
   fi
@@ -1347,7 +1347,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Per-account policies-self-test: ${policy_test:-Unknown error}"
   fi
 
-  # 0.5.86: Mara's memories stored and used whole (no cut), budget per window.
+  # 0.5.86: Mara’s memories stored and used whole (no cut), budget per window.
   memory_length_test=''
   if memory_length_test="$(compose exec -T php php scripts/memory-length-selftest.php 2>&1)"; then
     ok 'Memory: memories stored and provided in full, budgeted by context-window size verified.'
@@ -1379,7 +1379,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Image samples-self-test: ${image_store_test:-Unknown error}"
   fi
 
-  # 0.6.39 (P20.5 C): Mara's images in the chat: marker, work loop step, keeping the image for
+  # 0.6.39 (P20.5 C): Mara’s images in the chat: marker, work loop step, keeping the image for
   # the account, cancel, history, deletion with the chat, switches under Betrieb and per account.
   image_gen_test=''
   if image_gen_test="$(compose exec -T php php scripts/image-gen-selftest.php 2>&1)"; then
@@ -1517,7 +1517,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "File tools-self-test: ${project_file_tools_test:-Unknown error}"
   fi
 
-  # 0.7.74 (P09 C): a chat branches off at one of Mara's replies; the original stays unchanged.
+  # 0.7.74 (P09 C): a chat branches off at one of Mara’s replies; the original stays unchanged.
   chat_branch_test=''
   if chat_branch_test="$(compose exec -T php php scripts/chat-branch-selftest.php 2>&1)"; then
     ok "$chat_branch_test"
@@ -1533,7 +1533,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Project preview-self-test: ${project_preview_test:-Unknown error}"
   fi
 
-  # 0.7.77 (P10 B): commands on project files in the sandbox, and Mara's [AUSFUEHREN:].
+  # 0.7.77 (P10 B): commands on project files in the sandbox, and Mara’s [AUSFUEHREN:].
   project_runs_test=''
   if project_runs_test="$(compose exec -T php php scripts/project-runs-selftest.php 2>&1)"; then
     ok "$project_runs_test"
@@ -1572,7 +1572,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Retention-self-test: ${artifact_lifecycle_test:-Unknown error}"
   fi
 
-  # 0.7.83 (P12 A): the account's own skills: store, companion files, Mara's library and loading.
+  # 0.7.83 (P12 A): the account's own skills: store, companion files, Mara’s library and loading.
   skill_packages_test=''
   if skill_packages_test="$(compose exec -T php php scripts/skill-packages-selftest.php 2>&1)"; then
     ok "$skill_packages_test"
@@ -1607,7 +1607,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Image reference consistency test: ${reference_consistency_test:-Unknown error}"
   fi
 
-  # 0.6.43: the + menu of the input field: marks, Mara's instruction, the tool started with the
+  # 0.6.43: the + menu of the input field: marks, Mara’s instruction, the tool started with the
   # person's own words, the endpoint's answer for accounts and guests, the readable archive.
   composer_intent_test=''
   if composer_intent_test="$(compose exec -T php php scripts/composer-intent-selftest.php 2>&1)"; then
@@ -1785,7 +1785,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail 'Login: Registration-self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/browse-live-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Live browser: Mara's thinking timer, smooth cursor, queue and recovery after interruption verified.'
+      ok 'Live browser: Mara’s thinking timer, smooth cursor, queue and recovery after interruption verified.'
     else
       fail 'Live browser-UI test failed.'
     fi
@@ -2047,15 +2047,15 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Skills: UI test skipped (Playwright for Node.js is not installed).'
     fi
-    # 0.7.82 (P11 C): the cards of Mara's files: preview of the same version, Behalten, Loeschen, notes.
+    # 0.7.82 (P11 C): the cards of Mara’s files: preview of the same version, Behalten, Loeschen, notes.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/artifact-lifecycle-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Mara's files: version-matched preview, keep, delete with notice and retention verified in browser.'
+        ok 'Mara’s files: version-matched preview, keep, delete with notice and retention verified in browser.'
       else
-        fail 'Mara's files: UI test failed.'
+        fail 'Mara’s files: UI test failed.'
       fi
     else
-      warn 'Mara's files: UI test skipped (Playwright for Node.js is not installed).'
+      warn 'Mara’s files: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.78 (P10 C): the panel Prozesse and the server preview; needs Playwright for Node and php.
     if node -e "require('playwright')" >/dev/null 2>&1 && command -v php >/dev/null 2>&1; then
@@ -2067,7 +2067,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Project processes: UI test skipped (Playwright for Node.js or PHP is not installed).'
     fi
-    # 0.7.1: Settings > Pets and the pet in Mara's work line; needs Playwright for Node.
+    # 0.7.1: Settings > Pets and the pet in Mara’s work line; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/pets-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Pets verified in browser.'
@@ -2100,7 +2100,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/update-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Update window: owner's gold dialog, Later, shared progress bar and reload after restart verified.'
+        ok 'Update window: owner’s gold dialog, Later, shared progress bar and reload after restart verified.'
       else
         fail 'Update window: UI test failed.'
       fi
@@ -2331,7 +2331,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # contract as well whenever the optional Node toolchain is available.
   feedback_ui_selftest=''
   if feedback_ui_selftest="$(compose exec -T -u 33:33 php php scripts/feedback-ui-selftest.php 2>&1)"; then
-    ok 'Feedback: thumb colors, persistence and Mara's no-thinking reaction (PHP contract) verified.'
+    ok 'Feedback: thumb colors, persistence and Mara’s no-thinking reaction (PHP contract) verified.'
   else
     fail "Feedback: UI/backend contract (PHP) failed: ${feedback_ui_selftest:-Unknown error}"
   fi
@@ -2364,7 +2364,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fi
   fi
 
-  # 0.6.1: Mara's voice. Optional: missing or still loading is a hint, never a failure.
+  # 0.6.1: Mara’s voice. Optional: missing or still loading is a hint, never a failure.
   if is_enabled "${COREUI_INSTALL_VOICE:-1}"; then
     if service_running voice; then
       voice_health="$(curl -fsS --max-time 5 "http://127.0.0.1:${COREUI_VOICE_PORT:-18790}/health" 2>/dev/null || true)"
