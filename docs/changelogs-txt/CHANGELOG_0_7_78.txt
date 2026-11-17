@@ -1,0 +1,55 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.78
+Datum: 17.11.2026
+
+PROZESSE UND ENTWICKLUNGSSERVER (ROADMAP P10, SCHRITT C)
+- Im Tab Dateien haelt "Prozesse" einen Befehl mit den gespeicherten
+  Dateien im Sandbox-Container des Python-Workers am Laufen: ein Programm,
+  eine interaktive Shell oder einen Entwicklungsserver. Die Ausgabe kommt
+  jede Sekunde (nur Neues), eingegebene Zeilen gehen an stdin des Programms,
+  "Beenden" schickt SIGTERM ueber ein Init und zeigt den echten Exitcode.
+  Inzwischen gespeicherte Dateien kommen nach etwa zwei Sekunden im
+  laufenden Prozess an (geaendert, neu, entfernt).
+- Vorschau des Entwicklungsservers: Mit Port zeigt "Vorschau" die Seiten
+  des Servers. Der Worker fragt den Server aus seinem Container heraus
+  (docker exec auf 127.0.0.1); kein Port wird veroeffentlicht, von aussen
+  erreicht niemand den Server. Der Seitenbauer der Vorschau aus P10 A hat
+  einen Servermodus: Stylesheets, Skripte und Bilder kommen vom Server,
+  Links und GET-Formulare behalten Serverpfade, fetch() geht ueber den
+  Elternrahmen und die API zum Server, Weiterleitungen auf demselben Server
+  werden verfolgt. Die Seite laeuft wie bisher in einer eigenen Herkunft
+  (Sandbox-CSP).
+- Begrenzt: ein Prozess je Projekt, zwei je Konto gleichzeitig, 30 Starts
+  je Konto und Stunde, die letzten 10 je Projekt bleiben. Ein Prozess endet
+  nach 30 Minuten, nach 5 Minuten ohne Blick darauf, mit "Beenden" oder wenn
+  der Worker endet; ein Prozess ohne Worker endet als Fehler. Eingaben
+  (hoechstens 2000 Zeichen, 50 wartend) und Serveranfragen (1 MB, 20
+  wartend, 15 s) sind begrenzt. Prozesse gehoeren zum Python-Werkzeug wie
+  die Laeufe, mit CSRF.
+- Worker: tools/ember_project_procs.py laeuft in einem eigenen Thread mit
+  eigener Datenbankverbindung neben Maras Python und den Laeufen; Container
+  eines frueheren Workers werden beim Start beendet. Neue Einstellungen
+  STU_EMBER_PROJECT_PROCS (3), STU_EMBER_PROJECT_PROC_SECONDS (1800) und
+  STU_EMBER_PROJECT_PROC_IDLE (300).
+
+DATENBANK
+- Migration 048_project_procs (Prozesse, ihre Eingaben und Serveranfragen
+  gehen mit ihrem Projekt).
+
+NOCH NICHT
+- Ein vollstaendiges Terminal (TTY), POST-Formulare und XMLHttpRequest in
+  der Servervorschau, Node.js im Sandbox-Image (Betreiberentscheidung), Mara
+  startet Prozesse selbst.
+
+TESTS
+- scripts/project-procs-selftest.php (SQLite; MariaDB mit
+  COREUI_SELFTEST_DB=1; Ende zu Ende mit echtem Worker und Docker mit
+  COREUI_SELFTEST_SANDBOX=1).
+- scripts/project-procs-worker-selftest.py (echte Prozesse und ein Server in
+  ember-py:1, wenn Docker da ist) und scripts/project-procs-ui-selftest.cjs
+  (Playwright, Vorschauseiten aus dem echten PHP-Code), alle in beiden
+  Preflights.
+- scripts/project-runs-selftest.php folgt der gemeinsamen Fehlerzuordnung des
+  Endpunkts.
+
+NICHT GETESTET
+- Ein Prozess auf dem echten Server mit dem laufenden pyworker-Dienst.

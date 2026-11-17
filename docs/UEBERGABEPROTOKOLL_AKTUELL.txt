@@ -1,4 +1,18 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.77, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.78).
+ZIEL 0.7.78: Roadmap P10 Schritt C, Prozesse im Sandbox-Container des
+Python-Workers (Programm, Shell, Entwicklungsserver; Ausgabe live, Eingabe,
+Beenden mit echtem Exitcode) und Vorschau des Entwicklungsservers ueber den
+Worker ohne veroeffentlichten Port. Migration 048_project_procs. Kein neues
+Image, kein Installer, keine nginx-Aenderung.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_78.txt.
+Naechster Schritt: P11 (Git, Wiederherstellung, Projektexport).
+Offene Betreiberfragen: Node.js im Sandbox-Image; context-slider-ui-selftest.cjs
+seit e7506f74 auf main rot (CSS oder Test anpassen?).
+Nach Merge naechste Version 0.7.79.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.76, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.77).
 ZIEL 0.7.77: Roadmap P10 Schritt B, Projekt ausfuehren und testen im
 Sandbox-Container des Python-Workers (Tab Dateien und Mara mit

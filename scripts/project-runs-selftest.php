@@ -71,7 +71,7 @@ prt_test(str_contains($chat, "if (ember_py_enabled() && coreui_pruns_ready(stu_p
 $endpoint = (string)file_get_contents($root . '/api/project_files.php');
 prt_test(str_contains($endpoint, "case 'run':\n      if (!coreui_pruns_allowed(\$pdo, \$uid)) stu_json(['ok'=>false, 'error'=>'python_disabled'], 403);")
   && str_contains($endpoint, "case 'run_cancel':") && str_contains($endpoint, "if (isset(\$_GET['runs'])) {")
-  && strpos($endpoint, "case 'run':") > strpos($endpoint, 'stu_require_csrf();') && str_contains($endpoint, "\$error === 'run_limit' => 429,"),
+  && strpos($endpoint, "case 'run':") > strpos($endpoint, 'stu_require_csrf();') && str_contains($endpoint, "in_array(\$error, ['run_limit', 'proc_limit', 'proc_active_limit'], true) => 429,"),
   'endpoint: runs behind CSRF and the Python switch');
 $worker = (string)file_get_contents($root . '/tools/ember_py_worker.py');
 prt_test(str_contains($worker, 'ember_project_runs.process_run(conn, cfg, run, work_base(cfg), stop_container)'), 'the worker takes runs');

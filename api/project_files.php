@@ -14,6 +14,10 @@ declare(strict_types=1);
  * GET  ?project_id=P&runs=1                  0.7.77 (P10 B): the latest runs and a suggested command
  * GET  ?project_id=P&run=N                   0.7.77 (P10 B): one run with its output
  * POST {action: run|run_cancel, ...}         0.7.77 (P10 B): a command in the sandbox, or its end
+ * GET  ?project_id=P&procs=1                 0.7.78 (P10 C): processes, a suggested command and port
+ * GET  ?project_id=P&proc=N&since=E          0.7.78 (P10 C): one process with its output after E
+ * GET  ?project_id=P&proc_preview=N&path=/X  0.7.78 (P10 C): a page of its development server, sandboxed
+ * POST {action: proc_start|proc_input|proc_stop|proc_fetch, ...}  0.7.78 (P10 C)
  * POST {action: create|save|rename|delete|restore, project_id, ...} with CSRF
  */
 require_once __DIR__ . '/helpers.php';
@@ -21,6 +25,7 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/project_preview_store.php';
 require_once __DIR__ . '/project_runs_store.php';
+require_once __DIR__ . '/project_procs_store.php';
 
 $pdo = stu_pdo();
 $uid = (int)stu_require_user_id();
@@ -75,6 +80,40 @@ try {
       }
       exit;
     }
+    // 0.7.78 (P10 C): a page of a development server in the sandbox, in an origin of its own.
+    if (isset($_GET['proc_preview'])) {
+      coreui_preview_headers();
+      try {
+        $procId = (int)$_GET['proc_preview'];
+        $serverPath = coreui_pprocs_path($_GET['path'] ?? '/');
+        $key = coreui_pprocs_key($_GET['k'] ?? '');
+        $pageUrl = './project_files.php?project_id=' . rawurlencode($projectId) . '&proc_preview=' . $procId
+          . ($key !== '' ? '&k=' . $key : '') . '&path=';
+        echo coreui_pprocs_page(static fn(string $p): array => coreui_pprocs_fetch($pdo, $uid, $projectId, $procId, 'GET', $p),
+          $serverPath, $pageUrl,
+          static fn(array $paths): array => coreui_pprocs_fetch_many($pdo, $uid, $projectId, $procId,
+            array_map(static fn(string $p): array => ['GET', $p, null, ''], $paths)),
+          $key);
+      } catch (Throwable $e) {
+        $code = $e->getMessage();
+        if ($e instanceof PDOException) error_log('[CoreAI] process preview: ' . get_class($e));
+        $text = [
+          'proc_not_running' => 'Der Prozess läuft nicht mehr. Bitte im Bereich Prozesse neu starten.',
+          'proc_no_port' => 'Für diesen Prozess ist kein Port für die Vorschau angegeben.',
+          'server_unreachable' => 'Auf dem angegebenen Port antwortet noch kein Server. Startet er noch, oder hört er auf einem anderen Port?',
+          'fetch_timeout' => 'Der Server hat nicht rechtzeitig geantwortet.',
+          'fetch_busy' => 'Gerade warten zu viele Anfragen an den Server. Bitte gleich noch einmal.',
+          'invalid_server_path' => 'Ungültiger Pfad auf dem Server.',
+          'proc_not_found' => 'Diesen Prozess gibt es nicht mehr.',
+          'project_not_found' => 'Das Projekt wurde nicht gefunden.',
+        ][$code] ?? 'Die Vorschau des Servers konnte nicht geladen werden.';
+        http_response_code(in_array($code, ['proc_not_found', 'project_not_found'], true) ? 404
+          : (in_array($code, ['server_unreachable', 'fetch_failed'], true) ? 502 : ($code === 'fetch_timeout' ? 504
+          : ($e instanceof PDOException ? 500 : ($e instanceof InvalidArgumentException ? 400 : 409)))));
+        echo coreui_preview_error_page($text);
+      }
+      exit;
+    }
     if (isset($_GET['zip'])) {
       $zip = coreui_pfiles_zip($pdo, $uid, $projectId);
       try {
@@ -92,6 +131,16 @@ try {
     }
     if (isset($_GET['run'])) {
       stu_json(['ok'=>true, 'run'=>coreui_pruns_get($pdo, $uid, $projectId, (int)$_GET['run'])]);
+    }
+    if (isset($_GET['procs'])) {
+      $paths = array_map(static fn(array $f): string => (string)$f['path'], coreui_pfiles_list($pdo, $uid, $projectId)['files'] ?? []);
+      $ready = coreui_pprocs_ready($pdo);
+      stu_json(['ok'=>true, 'ready'=>$ready, 'allowed'=>coreui_pruns_allowed($pdo, $uid),
+        'procs'=>$ready ? coreui_pprocs_list($pdo, $uid, $projectId) : [], 'suggestion'=>coreui_pprocs_suggest($paths),
+        'csrf_token'=>stu_csrf_token()]);
+    }
+    if (isset($_GET['proc'])) {
+      stu_json(['ok'=>true, 'proc'=>coreui_pprocs_get($pdo, $uid, $projectId, (int)$_GET['proc'], max(0, (int)($_GET['since'] ?? 0)))]);
     }
     if (isset($_GET['search'])) {
       stu_json(['ok'=>true, 'results'=>coreui_pfiles_search($pdo, $uid, $projectId, (string)$_GET['search'])]);
@@ -145,6 +194,20 @@ try {
       stu_json(['ok'=>true, 'run'=>coreui_pruns_enqueue($pdo, $uid, $projectId, $body['command'] ?? '')], 202);
     case 'run_cancel':
       stu_json(['ok'=>true, 'run'=>coreui_pruns_cancel($pdo, $uid, $projectId, (int)($body['run_id'] ?? 0))]);
+    case 'proc_start':
+      if (!coreui_pruns_allowed($pdo, $uid)) stu_json(['ok'=>false, 'error'=>'python_disabled'], 403);
+      stu_json(['ok'=>true, 'proc'=>coreui_pprocs_start($pdo, $uid, $projectId, $body['command'] ?? '', $body['port'] ?? null)], 202);
+    case 'proc_input':
+      stu_json(['ok'=>true, 'proc'=>coreui_pprocs_input($pdo, $uid, $projectId, (int)($body['proc_id'] ?? 0), $body['text'] ?? null,
+        ($body['newline'] ?? true) !== false)]);
+    case 'proc_stop':
+      stu_json(['ok'=>true, 'proc'=>coreui_pprocs_stop($pdo, $uid, $projectId, (int)($body['proc_id'] ?? 0))]);
+    case 'proc_fetch':
+      $sent = $body['body'] ?? null;
+      if ($sent !== null && !is_string($sent)) throw new InvalidArgumentException('invalid_body');
+      $answer = coreui_pprocs_fetch($pdo, $uid, $projectId, (int)($body['proc_id'] ?? 0), (string)($body['method'] ?? 'GET'),
+        $body['path'] ?? '', $sent, (string)($body['content_type'] ?? ''));
+      stu_json(['ok'=>true, 'response'=>coreui_pprocs_fetch_json($answer)]);
   }
   stu_json(['ok'=>false, 'error'=>'unknown_action'], 400);
 } catch (InvalidArgumentException $e) {
@@ -156,9 +219,12 @@ try {
     stu_json(['ok'=>false, 'error'=>'project_files_failed'], 500);
   }
   $status = match (true) {
-    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found', 'run_not_found'], true) => 404,
-    in_array($error, ['file_exists', 'file_changed', 'run_busy', 'no_files'], true) => 409,
-    $error === 'run_limit' => 429,
+    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found', 'run_not_found', 'proc_not_found'], true) => 404,
+    in_array($error, ['file_exists', 'file_changed', 'run_busy', 'no_files', 'proc_busy', 'proc_not_running', 'proc_no_port',
+      'input_busy', 'fetch_busy'], true) => 409,
+    in_array($error, ['run_limit', 'proc_limit', 'proc_active_limit'], true) => 429,
+    in_array($error, ['server_unreachable', 'fetch_failed'], true) => 502,
+    $error === 'fetch_timeout' => 504,
     in_array($error, ['project_full', 'storage_full'], true) => 413,
     str_contains($error, 'migration') => 503,
     default => 422,

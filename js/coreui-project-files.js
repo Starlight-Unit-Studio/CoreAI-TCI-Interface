@@ -1,6 +1,8 @@
 /* CoreAI 0.7.69 (P09): the tab "Dateien" on the project page.
  * 0.7.75 (P10 A): the preview of an HTML page of the project in a sandboxed frame.
  * 0.7.77 (P10 B): commands on the saved files in the sandbox container, with their output. 
+ * 0.7.78 (P10 C): processes that keep running there (a program, a shell, a development server)
+ *   with live output, input and Beenden, and the preview of a development server.
  * Files of the project as a tree, search in names and content, a text editor
  * for single files, the history of a file with a comparison and restore, new
  * file, rename, delete and the current state as a ZIP. The server owns every
@@ -17,7 +19,12 @@
   var state = { project: '', files: [], bytes: 0, limits: null, csrf: '', loaded: false, error: '',
     file: null, draft: '', history: false, compare: null, query: '', results: null, folders: {},
     form: null, status: '', statusKind: '', conflict: false, busy: false, preview: null,
-    run: { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false } };
+    run: { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false },
+    proc: freshProc() };
+  function freshProc() {
+    return { open: false, list: [], current: null, since: 0, command: '', port: '', suggestion: { command: '', port: null },
+      allowed: true, ready: true, error: '', sending: false };
+  }
   var searchTimer = 0;
 
   var ERR = {
@@ -42,7 +49,17 @@
     no_files: 'Das Projekt hat noch keine Dateien.',
     python_disabled: 'Ausführen gehört zum Python-Werkzeug, und das ist für dieses Konto ausgeschaltet.',
     run_not_found: 'Diesen Lauf gibt es nicht mehr.',
-    project_runs_migration_required: 'Die Datenbank-Migration 047 fehlt. Bitte das Update einspielen.'
+    project_runs_migration_required: 'Die Datenbank-Migration 047 fehlt. Bitte das Update einspielen.',
+    invalid_port: 'Der Port muss eine Zahl von 1024 bis 65535 sein.',
+    proc_busy: 'In diesem Projekt läuft schon ein Prozess.',
+    proc_active_limit: 'In deinen Projekten laufen schon zwei Prozesse. Bitte zuerst einen beenden.',
+    proc_limit: 'Für diese Stunde sind es genug Starts. Bitte später noch einmal.',
+    proc_not_running: 'Der Prozess läuft nicht mehr.',
+    proc_not_found: 'Diesen Prozess gibt es nicht mehr.',
+    proc_no_port: 'Für diesen Prozess ist kein Port angegeben.',
+    invalid_input: 'Die Eingabe ist zu lang (höchstens 2000 Zeichen).',
+    input_busy: 'Es warten schon viele Eingaben. Bitte einen Moment.',
+    project_procs_migration_required: 'Die Datenbank-Migration 048 fehlt. Bitte das Update einspielen.'
   };
   var MAX_PREVIEW_ERRORS = 5;
   var SOURCE = { build: 'Von Mara gebaut', mara: 'Von Mara geändert', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt',
@@ -282,11 +299,27 @@
     return index[0] || list[0] || '';
   }
   function previewUrl() {
+    if (state.preview.proc) {
+      return url({ project_id: state.project, proc_preview: state.preview.proc, k: state.preview.key, path: state.preview.path, v: state.preview.nonce });
+    }
     return url({ project_id: state.project, preview: state.preview.path, v: state.preview.nonce });
   }
   function openPreview(path) {
     if (!path) return;
     state.preview = { path: path, nonce: Date.now(), errors: [] };
+    renderPreview();
+  }
+  // 0.7.78 (P10 C): a page of the development server that runs in a process.
+  // Messages count only with the random key of this preview: a foreign page that a link opened
+  // in the same frame does not know it and cannot reach the server through CoreAI.
+  function previewKey() {
+    var bytes = new Uint8Array(18);
+    (window.crypto || window.msCrypto).getRandomValues(bytes);
+    return Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+  function openServerPreview(procId, path, port) {
+    var same = state.preview && state.preview.proc === procId ? state.preview.key : '';
+    state.preview = { proc: procId, port: port, key: same || previewKey(), path: path || '/', nonce: Date.now(), errors: [] };
     renderPreview();
   }
   function closePreview() {
@@ -295,6 +328,16 @@
   }
   function refreshPreview() {
     if (!state.preview) return;
+    if (state.preview.proc) {
+      // The worker copies a saved file into the running server within about two seconds.
+      var shown = state.preview;
+      setTimeout(function () {
+        if (state.preview !== shown) return;
+        shown.nonce = Date.now(); shown.errors = [];
+        renderPreview();
+      }, 2500);
+      return;
+    }
     if (state.loaded && pages().indexOf(state.preview.path) < 0 && !(state.file && state.file.path === state.preview.path)) {
       var next = startPage();
       if (!next) { closePreview(); return; }
@@ -321,7 +364,8 @@
     var head = el('div', 'project-preview-head');
     var title = el('div', 'project-preview-title');
     title.appendChild(el('strong', '', 'Vorschau'));
-    title.appendChild(el('small', '', state.preview.path + ' · gespeicherter Stand'));
+    title.appendChild(el('small', '', state.preview.proc ? state.preview.path + ' · Entwicklungsserver auf Port ' + state.preview.port
+      : state.preview.path + ' · gespeicherter Stand'));
     head.appendChild(title);
     var actions = el('div', 'project-preview-actions');
     actions.appendChild(button('Neu laden', 'project-files-secondary', refreshPreview, { id: 'projectPreviewReload' }));
@@ -484,11 +528,235 @@
     if (keep) { runInput.focus(); try { runInput.setSelectionRange(keep.start, keep.start); } catch (e) {} }
   }
 
+  // --- Processes (0.7.78, P10 C) ----------------------------------------------------------------
+  // A command keeps running in the sandbox container: a program, a shell or a development server.
+  // Its output arrives every second (only what is new), lines typed here go to its stdin, and
+  // "Beenden" ends it with its real exit code. With a port, the server's pages show in the preview.
+  var procBox = el('section', 'project-proc');
+  procBox.hidden = true;
+  procBox.setAttribute('aria-label', 'Prozesse');
+  panel.insertBefore(procBox, previewBox);
+  var procTimer = 0, procOutput = null, procInput = null, procShown = '', fetchesOpen = 0;
+  var PROC_ERROR = {
+    no_worker: 'Der Sandbox-Dienst hat den Prozess nicht übernommen. Läuft der Python-Dienst auf dem Server?',
+    worker_lost: 'Der Sandbox-Dienst hat sich nicht mehr gemeldet.',
+    worker_restart: 'Der Sandbox-Dienst wurde neu gestartet; der Prozess lief dabei nicht weiter.',
+    docker_missing: 'Docker ist auf dem Server nicht erreichbar.',
+    docker_runtime_error: 'Der Sandbox-Container ließ sich nicht starten.',
+    no_files: 'Das Projekt hat keine Dateien.',
+    unsafe_path: 'Ein Dateipfad im Projekt wurde abgelehnt.',
+    sandbox_stop_unconfirmed: 'Der Sandbox-Container ließ sich nicht sicher beenden.'
+  };
+  var PROC_STOPPED = { idle: ' · niemand hat mehr hingesehen', time_limit: ' · längste Laufzeit erreicht', worker_stopped: ' · Sandbox-Dienst neu gestartet' };
+  function procActive(p) { return !!p && (p.status === 'queued' || p.status === 'running'); }
+  function procLine(p) {
+    if (!p) return '';
+    if (p.status === 'queued') return 'Wartet auf den Sandbox-Dienst …';
+    if (p.status === 'running') return p.stop_requested ? 'Wird beendet …' : 'Läuft' + (p.port ? ' · Port ' + p.port : '');
+    if (p.status === 'exited') return 'Beendet mit Exitcode ' + p.exit_code;
+    if (p.status === 'stopped') return 'Beendet' + (p.exit_code !== null && p.exit_code !== undefined ? ' · Exitcode ' + p.exit_code : '') + (PROC_STOPPED[p.error] || '');
+    return PROC_ERROR[p.error] || ('Fehler: ' + p.error);
+  }
+  function procBadge(p) {
+    if (procActive(p)) return 'is-active';
+    if (p.status === 'exited') return p.exit_code === 0 ? 'is-ok' : 'is-fail';
+    return p.status === 'stopped' ? 'is-stopped' : 'is-fail';
+  }
+  function stopProcPoll() { if (procTimer) { clearTimeout(procTimer); procTimer = 0; } }
+  function loadProcs() {
+    return getJson({ project_id: state.project, procs: 1 }).then(function (d) {
+      var s = state.proc;
+      s.list = d.procs || []; s.ready = d.ready !== false; s.allowed = d.allowed !== false;
+      s.suggestion = d.suggestion || { command: '', port: null }; state.csrf = d.csrf_token || state.csrf;
+      if (!s.command) { s.command = s.suggestion.command || ''; s.port = s.suggestion.port ? String(s.suggestion.port) : ''; }
+      var active = s.list.filter(procActive)[0];
+      if (active && (!s.current || s.current.id !== active.id)) return showProc(active.id);
+      if (!s.current && s.list.length) return showProc(s.list[0].id);
+    }).catch(function (e) { state.proc.error = message(e); });
+  }
+  function showProc(id) {
+    stopProcPoll();
+    var s = state.proc;
+    if (!s.current || s.current.id !== id) { s.current = null; s.since = 0; procShown = ''; }
+    return getJson({ project_id: state.project, proc: id, since: s.since }).then(function (d) {
+      var p = d.proc, before = s.current;
+      var text = (p.output_cut && s.since > 0 ? '\n[… ältere Ausgabe ist nicht mehr gespeichert …]\n' : '') + (p.output || '');
+      procShown = (p.output_from === 0 || s.since === 0 ? '' : procShown) + text;
+      if (procShown.length > 200000) procShown = procShown.slice(-150000);
+      s.since = p.output_end; s.current = p; s.error = '';
+      if (!before || before.id !== p.id || before.status !== p.status || before.stop_requested !== p.stop_requested || !procOutput) renderProc();
+      else appendOutput();
+      if (procActive(p)) {
+        procTimer = setTimeout(function () { showProc(id); }, 1000);
+      } else {
+        var known = s.list.some(function (x) { return x.id === p.id && x.status === p.status; });
+        if (!known) getJson({ project_id: state.project, procs: 1 }).then(function (x) { s.list = x.procs || []; renderProc(); }).catch(function () {});
+      }
+    }).catch(function (e) { s.error = message(e); renderProc(); });
+  }
+  function appendOutput() {
+    if (!procOutput) return;
+    var atEnd = procOutput.scrollHeight - procOutput.scrollTop - procOutput.clientHeight < 24;
+    if (procOutput.textContent !== procShown) procOutput.textContent = procShown;
+    if (atEnd) procOutput.scrollTop = procOutput.scrollHeight;
+  }
+  function openProcs() {
+    state.proc.open = true; state.proc.error = '';
+    renderProc();
+    loadProcs().then(renderProc);
+  }
+  function closeProcs() { state.proc.open = false; stopProcPoll(); renderProc(); }
+  function startProc(command, port) {
+    var s = state.proc;
+    if (s.sending) return;
+    s.sending = true; s.error = ''; s.command = command; s.port = port;
+    renderProc();
+    post({ action: 'proc_start', command: command, port: port === '' ? null : port }).then(function (d) {
+      s.list = [d.proc].concat(s.list.filter(function (x) { return x.id !== d.proc.id; }));
+      s.current = null;
+      return showProc(d.proc.id);
+    }).catch(function (e) { s.error = message(e); })
+      .then(function () { s.sending = false; renderProc(); });
+  }
+  function stopProc() {
+    var p = state.proc.current;
+    if (!p) return;
+    post({ action: 'proc_stop', proc_id: p.id }).then(function (d) {
+      state.proc.current = Object.assign({}, state.proc.current, { status: d.proc.status, stop_requested: d.proc.stop_requested,
+        exit_code: d.proc.exit_code, error: d.proc.error });
+      renderProc();
+      if (procActive(d.proc)) showProc(d.proc.id);
+    }).catch(function (e) { state.proc.error = message(e); renderProc(); });
+  }
+  function sendInput(text) {
+    var p = state.proc.current;
+    if (!p || p.status !== 'running') return;
+    post({ action: 'proc_input', proc_id: p.id, text: text, newline: true }).then(function () {
+      if (procInput) procInput.value = '';
+    }).catch(function (e) { state.proc.error = message(e); renderProc(); });
+  }
+  // A request of the preview page to its development server, answered through the API.
+  function serverFetch(target, data) {
+    var reply = function (answer) { try { target.postMessage(Object.assign({ coreaiPreviewReply: data.id }, answer), '*'); } catch (e) {} };
+    var method = String(data.method || 'GET').toUpperCase();
+    if (typeof data.id !== 'string' || typeof data.path !== 'string' || !/^\/[\x21-\x7e]{0,999}$/.test(data.path)
+        || ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].indexOf(method) < 0
+        || (data.body !== null && data.body !== undefined && (typeof data.body !== 'string' || data.body.length > 1048576))) {
+      reply({ error: 'Diese Anfrage geht in der Vorschau nicht.' });
+      return;
+    }
+    if (fetchesOpen >= 6) { reply({ error: 'Zu viele Anfragen gleichzeitig.' }); return; }
+    fetchesOpen++;
+    post({ action: 'proc_fetch', proc_id: state.preview.proc, method: method, path: data.path,
+      body: typeof data.body === 'string' ? data.body : null, content_type: String(data.type || '').slice(0, 160) })
+      .then(function (d) { reply(d.response); })
+      .catch(function (e) { reply({ error: message(e) }); })
+      .then(function () { fetchesOpen--; });
+  }
+  function renderProc() {
+    var s = state.proc;
+    var keep = procInput && document.activeElement === procInput ? procInput.value : null;
+    var keepCommand = procBox.querySelector('.project-proc-command');
+    keepCommand = keepCommand && document.activeElement === keepCommand;
+    procBox.textContent = ''; procOutput = null; procInput = null;
+    procBox.hidden = !s.open;
+    if (!s.open) return;
+    var head = el('div', 'project-run-head');
+    var title = el('div', 'project-preview-title');
+    title.appendChild(el('strong', '', 'Prozesse'));
+    title.appendChild(el('small', '', 'Läuft weiter im Sandbox-Container: ein Programm, eine Shell oder ein Entwicklungsserver. Gespeicherte Änderungen kommen nach wenigen Sekunden an.'));
+    head.appendChild(title);
+    head.appendChild(button('Schließen', 'project-files-secondary', closeProcs, { id: 'projectProcClose' }));
+    procBox.appendChild(head);
+    var p = s.current, active = procActive(p);
+    if (!active) {
+      var form = el('form', 'project-run-form');
+      var cmd = el('input', 'project-run-command project-proc-command');
+      cmd.type = 'text'; cmd.value = s.command; cmd.maxLength = 400;
+      cmd.placeholder = s.suggestion.command || 'z. B. python -m http.server 8000';
+      cmd.setAttribute('aria-label', 'Befehl'); cmd.spellcheck = false; cmd.autocomplete = 'off';
+      cmd.addEventListener('input', function () { s.command = cmd.value; });
+      form.appendChild(cmd);
+      var port = el('input', 'project-proc-port');
+      port.type = 'text'; port.inputMode = 'numeric'; port.value = s.port; port.maxLength = 5; port.placeholder = 'Port';
+      port.setAttribute('aria-label', 'Port des Servers für die Vorschau (leer lassen ohne Server)');
+      port.addEventListener('input', function () { s.port = port.value.trim(); });
+      form.appendChild(port);
+      var go = el('button', 'project-files-primary', 'Starten');
+      go.type = 'submit'; go.id = 'projectProcStart';
+      go.disabled = s.sending || !s.allowed || !s.ready;
+      form.appendChild(go);
+      form.addEventListener('submit', function (e) { e.preventDefault(); var c = cmd.value.trim(); if (c) startProc(c, port.value.trim()); });
+      procBox.appendChild(form);
+      if (keepCommand) cmd.focus();
+    }
+    if (!s.ready) procBox.appendChild(el('p', 'project-files-status is-error', ERR.project_procs_migration_required));
+    else if (!s.allowed) procBox.appendChild(el('p', 'project-files-status is-error', ERR.python_disabled));
+    if (s.error) procBox.appendChild(el('p', 'project-files-status is-error', s.error));
+    if (p) {
+      var status = el('div', 'project-run-status project-proc-status ' + procBadge(p));
+      status.setAttribute('role', 'status');
+      var line = el('p', '');
+      line.appendChild(el('code', '', p.command));
+      line.appendChild(el('span', '', ' · ' + procLine(p)));
+      status.appendChild(line);
+      if (active) {
+        var actions = el('div', 'project-proc-actions');
+        if (p.status === 'running' && p.port && !p.stop_requested) {
+          actions.appendChild(button('Vorschau', 'project-files-secondary', function () { openServerPreview(p.id, '/', p.port); },
+            { id: 'projectProcPreview' }));
+        }
+        if (!p.stop_requested) actions.appendChild(button('Beenden', 'project-files-danger', stopProc, { id: 'projectProcStop' }));
+        status.appendChild(actions);
+      }
+      procBox.appendChild(status);
+      procOutput = el('pre', 'project-run-output project-proc-output', '');
+      procOutput.setAttribute('aria-label', 'Ausgabe des Prozesses');
+      procOutput.setAttribute('aria-live', 'off');
+      procBox.appendChild(procOutput);
+      procOutput.textContent = procShown;
+      procOutput.scrollTop = procOutput.scrollHeight;
+      if (p.status === 'running' && !p.stop_requested) {
+        var send = el('form', 'project-run-form project-proc-send');
+        procInput = el('input', 'project-run-command project-proc-input');
+        procInput.type = 'text'; procInput.maxLength = 2000; procInput.autocomplete = 'off'; procInput.spellcheck = false;
+        procInput.placeholder = 'Eingabe an das Programm, Enter sendet';
+        procInput.setAttribute('aria-label', 'Eingabe an das Programm');
+        if (keep !== null) procInput.value = keep;
+        send.appendChild(procInput);
+        var sendButton = el('button', 'project-files-secondary', 'Senden');
+        sendButton.type = 'submit'; sendButton.id = 'projectProcSend';
+        send.appendChild(sendButton);
+        send.addEventListener('submit', function (e) { e.preventDefault(); sendInput(procInput.value); });
+        procBox.appendChild(send);
+        if (keep !== null) procInput.focus();
+      }
+    }
+    if (s.list.length > 1 || (s.list.length === 1 && (!p || s.list[0].id !== p.id))) {
+      var list = el('div', 'project-run-list');
+      list.setAttribute('aria-label', 'Letzte Prozesse');
+      list.appendChild(el('strong', '', 'Letzte Prozesse'));
+      s.list.forEach(function (item) {
+        var b = button('', 'project-run-item project-proc-item ' + procBadge(item) + (p && p.id === item.id ? ' is-current' : ''),
+          function () { showProc(item.id); }, { 'data-proc': String(item.id) });
+        b.appendChild(el('code', '', item.command));
+        b.appendChild(el('small', '', procLine(item)));
+        list.appendChild(b);
+      });
+      procBox.appendChild(list);
+    }
+  }
+
   window.addEventListener('message', function (event) {
     if (!frame || !state.preview || event.source !== frame.contentWindow) return;
     var data = event.data;
     if (!data || typeof data !== 'object') return;
-    if (data.coreaiPreview === 'open' && typeof data.path === 'string' && pages().indexOf(data.path) >= 0) {
+    if (state.preview.proc && data.key !== state.preview.key) return;
+    if (state.preview.proc && data.coreaiPreview === 'open' && typeof data.path === 'string' && /^\/[\x21-\x7e]{0,999}$/.test(data.path)) {
+      openServerPreview(state.preview.proc, data.path, state.preview.port);
+    } else if (state.preview.proc && data.coreaiPreview === 'fetch') {
+      serverFetch(event.source, data);
+    } else if (!state.preview.proc && data.coreaiPreview === 'open' && typeof data.path === 'string' && pages().indexOf(data.path) >= 0) {
       openPreview(data.path);
     } else if (data.coreaiPreview === 'error' && state.preview.errors.length < MAX_PREVIEW_ERRORS) {
       state.preview.errors.push({ message: String(data.message || 'Fehler').slice(0, 300),
@@ -580,6 +848,7 @@
     }
     if (state.files.length) {
       bar.appendChild(button('Ausführen', 'project-files-secondary', openRuns, { id: 'projectFilesRun', 'aria-expanded': String(state.run.open) }));
+      bar.appendChild(button('Prozesse', 'project-files-secondary', openProcs, { id: 'projectFilesProcs', 'aria-expanded': String(state.proc.open) }));
     }
     if (state.files.length) {
       var zip = el('a', 'project-files-secondary project-files-zip', 'Als ZIP herunterladen');
@@ -786,6 +1055,9 @@
     stopRunPoll();
     state.run = { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false };
     renderRun();
+    stopProcPoll();
+    state.proc = freshProc(); procShown = '';
+    renderProc();
   }
   function open(projectId) {
     if (projectId !== state.project) { reset(); state.project = projectId || ''; }
