@@ -11,6 +11,9 @@ INSTALLATION OUTPUT IN ENGLISH
 - Commands, API names, environment variables, database migrations,
   model parameters and security guards are unchanged.
 - Historical archived release ZIPs remain byte-for-byte unchanged.
+- Host updater logs and progress labels now use English; the parser maps
+  current English installer milestones and recognizes older failure output.
+- Regression checks for image service, feedback and updater are updated.
 
 VOICE-INPUT PREFLIGHT
 - Updated the tool-after-voice-message source check for the current
@@ -19,7 +22,8 @@ VOICE-INPUT PREFLIGHT
   and proper browse handoff. No runtime guard was removed.
 
 VERIFICATION
-- Full preflight, syntax and CI checks required before merge.
+- All 12 GitHub Actions workflows passed on the implementation commit.
+- A live server upgrade and voice test are still required for end-to-end sign-off.
 - The repository change alone does not update any already installed host.
 
 Version: 0.7.86
