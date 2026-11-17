@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.87
+Date: 17 November 2026
+
+FIX: PREVIOUSLY UNTESTED INSTALLER SOURCE CONTRACTS
+- Voice service: scripts/voice-service-selftest.py now expects the actual
+  English optional-build warning emitted by scripts/install.sh.
+- Host updater: tests/update-runner-selftest.sh now checks the English
+  account audit line written to update.log.
+- Both failures came from stale language-sensitive test assertions after
+  0.7.86; neither finding alone establishes a voice service outage.
+
+NEW CI CHECK
+- .github/workflows/installer-preflight-contract.yml runs both offline tests,
+  plus automatic-update regression checks, Python syntax, and Bash syntax.
+- Triggers on installer, updater, preflight and regression-test changes.
+- Real server preflight remains a separate post-deployment verification.
+
+VERSION
+- 0.7.87 follows 0.7.86 as the next merge version.
+- No model, security-policy, database, image-generation, or runtime
+  voice behavior changes.
