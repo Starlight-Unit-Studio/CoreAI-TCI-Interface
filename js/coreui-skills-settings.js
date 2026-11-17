@@ -1,4 +1,4 @@
-/* CoreAI: TCI Interface 0.7.83 (P12 A): Settings > Skills.
+/* CoreAI: TCI Interface 0.7.83 (P12 A), 0.7.84 (P12 B): Settings > Skills.
    The account's own skills (api/skill_packages.php): a list with search, and an editor with the
    name, the short name Mara writes in [SKILL: ...], a description, trigger words, the tools a skill
    needs, where it applies (every chat or one project), on or off, the instruction, and companion
@@ -36,10 +36,15 @@
     skill_file_exists: 'Diese Datei gibt es schon.',
     skill_file_not_found: 'Diese Datei gibt es nicht mehr.',
     skill_files_limit: 'Ein Skill hat höchstens 20 Begleitdateien.',
-    csrf_failed: 'Die Sitzung wurde erneuert. Bitte die Seite neu laden.'
+    csrf_failed: 'Die Sitzung wurde erneuert. Bitte die Seite neu laden.',
+    skill_share_forbidden: 'Nur der Inhaber und Admins können Skills mit allen Konten teilen.',
+    skill_share_project: 'Ein Projekt-Skill lässt sich nicht teilen.',
+    invalid_skill_priority: 'Unbekannter Vorrang.'
   };
+  // 0.7.84 (P12 B): precedence of a skill.
+  var PRIORITY = {high: 'Hoch', normal: 'Normal', low: 'Niedrig'};
   var state = {csrf: '', ready: true, skills: [], builtin: [], projects: [], tools: {}, q: '', edit: null, file: null, busy: false,
-    loaded: false, searchTimer: 0};
+    loaded: false, searchTimer: 0, sharing: false, canShare: false, shared: []};
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -81,6 +86,7 @@
       state.ready = d.ready !== false;
       if (!state.ready) { status(ERRORS.skill_migration_required, true); $('skMain').hidden = true; $('skNew').disabled = true; return; }
       state.skills = d.skills || []; state.builtin = d.builtin || []; state.projects = d.projects || []; state.tools = d.tools || {};
+      state.sharing = d.sharing === true; state.canShare = d.can_share === true; state.shared = d.shared || [];
       status(note || '');
       $('skMain').hidden = !!state.edit;
       renderList();
@@ -108,6 +114,8 @@
       var meta = [sk.slug, sk.project ? 'nur Projekt „' + sk.project.name + '“' : 'alle Chats',
         sk.files.length === 1 ? '1 Begleitdatei' : sk.files.length + ' Begleitdateien'];
       if (sk.requires.length) meta.push('braucht ' + toolNames(sk.requires));
+      if (sk.priority && sk.priority !== 'normal') meta.push('Vorrang ' + PRIORITY[sk.priority].toLowerCase());
+      if (sk.shared) meta.push('mit allen Konten geteilt');
       if (!sk.enabled) meta.push('aus');
       copy.appendChild(el('small', '', meta.join(' · ')));
       copy.appendChild(el('small', 'sk-desc', sk.description));
@@ -121,6 +129,7 @@
       row.addEventListener('click', function () { openSkill(sk.id); });
       own.appendChild(row);
     });
+    renderShared();
     var builtin = $('skBuiltin');
     builtin.textContent = '';
     var q = state.q.toLowerCase();
@@ -145,9 +154,116 @@
     }
   }
 
+  // --- Shared skills (0.7.84, P12 B) -------------------------------------------------------------------
+  function sharedNote(sk) {
+    if (!sk.shadowed_by) return '';
+    return sk.shadowed_by.variant === 'own'
+      ? 'Dein eigener Skill „' + sk.shadowed_by.title + '“ mit derselben Kennung geht vor.'
+      : 'Der gemeinsame Skill „' + sk.shadowed_by.title + '“ von ' + sk.shadowed_by.owner + ' mit derselben Kennung geht vor.';
+  }
+  function useSwitch(sk) {
+    var sw = el('label', 'settings-switch sk-use');
+    var input = el('input'); input.type = 'checkbox'; input.checked = !!sk.used; input.setAttribute('data-use', sk.id);
+    input.setAttribute('aria-label', 'Für mich nutzen: ' + sk.title);
+    sw.appendChild(input); sw.appendChild(el('i'));
+    sw.addEventListener('click', function (e) { e.stopPropagation(); });
+    input.addEventListener('change', function () {
+      var on = input.checked;
+      request('POST', 'use', '', {id: sk.id, on: on}).then(function (d) {
+        state.shared = d.shared || [];
+        sk.used = on;
+        if (state.edit && state.edit.view) { state.edit.used = on; renderView(state.edit); } else renderShared();
+        status(on ? 'Mara nutzt „' + sk.title + '“ wieder.' : '„' + sk.title + '“ ist für dich ausgeschaltet.');
+      }).catch(function (err) { input.checked = !on; status(errText(err), true); });
+    });
+    return sw;
+  }
+  function renderShared() {
+    var box = $('skShared');
+    $('skSharedHead').hidden = !state.sharing;
+    box.hidden = !state.sharing;
+    box.textContent = '';
+    if (!state.sharing) return;
+    if (!state.shared.length) {
+      box.appendChild(el('p', 'sk-empty', state.q ? 'Kein gemeinsamer Skill passt zur Suche.'
+        : 'Noch keine gemeinsamen Skills. Der Inhaber und Admins können eigene Skills mit allen Konten teilen.'));
+    }
+    state.shared.forEach(function (sk) {
+      var row = el('div', 'sec-row sk-row sk-shared' + (sk.used ? '' : ' is-off'));
+      row.setAttribute('data-shared', sk.slug);
+      var copy = el('div', 'sec-copy');
+      copy.appendChild(el('strong', '', sk.title));
+      var meta = [sk.slug, 'von ' + sk.owner, sk.files.length === 1 ? '1 Begleitdatei' : sk.files.length + ' Begleitdateien'];
+      if (sk.requires.length) meta.push('braucht ' + toolNames(sk.requires));
+      if (sk.priority && sk.priority !== 'normal') meta.push('Vorrang ' + PRIORITY[sk.priority].toLowerCase());
+      if (!sk.used) meta.push('für dich aus');
+      copy.appendChild(el('small', '', meta.join(' · ')));
+      copy.appendChild(el('small', 'sk-desc', sk.description));
+      if (sk.used && sk.shadowed_by) copy.appendChild(el('small', 'sk-note', sharedNote(sk)));
+      row.appendChild(copy);
+      row.appendChild(useSwitch(sk));
+      var open = el('button', 'sec-open', '');
+      open.type = 'button';
+      open.setAttribute('aria-label', sk.title + ' ansehen');
+      open.innerHTML = '<svg aria-hidden="true"><use href="#i-chevron" /></svg>';
+      row.appendChild(open);
+      row.addEventListener('click', function () { viewShared(sk.id); });
+      box.appendChild(row);
+    });
+  }
+  function viewShared(id) {
+    if (state.busy) return;
+    state.busy = true;
+    request('GET', 'view', '&id=' + encodeURIComponent(id)).then(function (d) {
+      state.edit = Object.assign(d.skill, {view: true}); state.file = null;
+      renderView(state.edit);
+    }).catch(function (err) { status(errText(err), true); })
+      .then(function () { state.busy = false; });
+  }
+  function renderView(sk) {
+    var box = $('skEdit');
+    box.textContent = '';
+    box.hidden = false;
+    $('skMain').hidden = true;
+    var bar = el('div', 'pz-sub-bar');
+    var back = el('button', 'sec-back', '');
+    back.type = 'button'; back.id = 'skBack';
+    back.innerHTML = '<svg aria-hidden="true"><use href="#i-back" /></svg>Skills';
+    back.addEventListener('click', function () { closeEdit(); });
+    bar.appendChild(back);
+    box.appendChild(bar);
+    box.appendChild(el('h3', 'sk-edit-title', sk.title));
+    var panel = el('section', 'settings-panel cfg-card wide sk-form sk-view');
+    panel.id = 'skView';
+    var meta = [sk.slug, 'gemeinsamer Skill von ' + sk.owner, 'Vorrang ' + PRIORITY[sk.priority || 'normal'].toLowerCase()];
+    if (sk.requires.length) meta.push('braucht ' + toolNames(sk.requires));
+    panel.appendChild(el('p', 'pz-lead', meta.join(' · ')));
+    panel.appendChild(el('p', 'sk-desc', sk.description));
+    var on = el('div', 'setting-row sk-on');
+    var onCopy = el('span', 'setting-copy');
+    onCopy.appendChild(el('strong', '', 'FÜR MICH NUTZEN'));
+    onCopy.appendChild(el('small', '', 'Ändern kann ihn nur, wer ihn geteilt hat. Ausschalten gilt nur für dein Konto.'));
+    on.appendChild(onCopy); on.appendChild(useSwitch(sk));
+    panel.appendChild(on);
+    panel.appendChild(el('strong', 'sk-file-head', 'ANLEITUNG'));
+    panel.appendChild(el('pre', 'sk-pre', sk.body || ''));
+    if (sk.files.length) {
+      panel.appendChild(el('strong', 'sk-file-head', 'BEGLEITDATEIEN'));
+      sk.files.forEach(function (f) {
+        var d = el('details', 'sk-view-file');
+        d.setAttribute('data-file', f.path);
+        d.appendChild(el('summary', '', f.path + ' · ' + (KIND[f.kind] || f.kind) + ' · ' + f.size_bytes.toLocaleString('de-DE') + ' Bytes'));
+        d.appendChild(el('pre', 'sk-pre', f.content || ''));
+        panel.appendChild(d);
+      });
+    }
+    box.appendChild(panel);
+  }
+
   // --- The editor ---------------------------------------------------------------------------------------
   function blank() {
-    return {id: '', slug: '', title: '', description: '', triggers: [], requires: [], project: null, enabled: true, body: '', files: [], missing: []};
+    return {id: '', slug: '', title: '', description: '', triggers: [], requires: [], project: null, enabled: true, body: '', files: [], missing: [],
+      priority: 'normal', shared: false};
   }
   function openSkill(id) {
     if (state.busy) return;
@@ -231,6 +347,37 @@
     on.appendChild(onCopy); on.appendChild(sw);
     form.appendChild(on);
 
+    // 0.7.84 (P12 B): precedence, and sharing for the Inhaber and Admins.
+    var prio = el('select'); prio.id = 'skPriority';
+    Object.keys(PRIORITY).forEach(function (key) { var o = el('option', '', PRIORITY[key]); o.value = key; prio.appendChild(o); });
+    prio.value = sk.priority || 'normal';
+    if (state.sharing) {
+      form.appendChild(field('VORRANG', 'Passen mehr Skills, als ins Kontextfenster passen, kommen die mit hohem Vorrang zuerst. '
+        + 'Haben zwei gemeinsame Skills dieselbe Kennung, gilt der mit höherem Vorrang.', prio));
+    }
+    var share = null;
+    if (state.canShare) {
+      var shareRow = el('label', 'setting-row sk-on');
+      var shareCopy = el('span', 'setting-copy');
+      shareCopy.appendChild(el('strong', '', 'MIT ALLEN KONTEN TEILEN'));
+      var shareHint = el('small', '', '');
+      shareCopy.appendChild(shareHint);
+      var shareSw = el('span', 'settings-switch');
+      share = el('input'); share.type = 'checkbox'; share.id = 'skShare'; share.checked = !!sk.shared;
+      shareSw.appendChild(share); shareSw.appendChild(el('i'));
+      shareRow.appendChild(shareCopy); shareRow.appendChild(shareSw);
+      form.appendChild(shareRow);
+      var syncShare = function () {
+        var project = scope.value !== '';
+        share.disabled = project;
+        if (project) share.checked = false;
+        shareHint.textContent = project ? 'Ein Projekt-Skill bleibt in deinem Projekt und lässt sich nicht teilen.'
+          : 'Andere Konten finden ihn unter „Gemeinsam“ und können ihn für sich ausschalten. Ändern kannst nur du.';
+      };
+      scope.addEventListener('change', syncShare);
+      syncShare();
+    }
+
     var bodyInput = el('textarea', 'sk-body'); bodyInput.id = 'skBody'; bodyInput.rows = 12; bodyInput.value = sk.body || ''; bodyInput.spellcheck = true;
     bodyInput.placeholder = 'Was Mara Schritt für Schritt tun soll. Begleitdateien nennst du mit ihrem Pfad, zum Beispiel templates/bericht.md.';
     var count = el('small', 'sk-count');
@@ -267,7 +414,8 @@
       var requires = Array.prototype.slice.call(reqBox.querySelectorAll('input[type=checkbox]:checked')).map(function (c) { return c.value; });
       state.busy = true; save.disabled = true;
       request('POST', 'save', '', {id: sk.id, title: title.value, slug: slug.value, description: desc.value, triggers: triggers.value,
-        requires: requires, project_id: scope.value, enabled: enabled.checked, body: bodyInput.value}).then(function (d) {
+        requires: requires, project_id: scope.value, enabled: enabled.checked, body: bodyInput.value,
+        priority: prio.value, shared: share ? share.checked : false}).then(function (d) {
         var created = !sk.id;
         state.edit = d.skill;
         renderEdit();

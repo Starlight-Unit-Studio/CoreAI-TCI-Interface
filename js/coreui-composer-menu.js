@@ -33,6 +33,7 @@
     browse: '<rect x="3.5" y="4.5" width="17" height="15"/><path d="M3.5 8.5h17"/><circle cx="11" cy="14" r="2.6"/><path d="M13 16l2.6 2.6"/>',
     deep: '<path d="M4 16l7.5-7.5 2.5 2.5L6.5 18.5z"/><path d="M11.5 8.5l2-2 3.5 3.5-2 2"/><path d="M17 6l2-2M9 20h7M12.5 15.5V20"/>',
     plug: '<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0z"/><path d="M12 16v4.5"/>',
+    book: '<path d="M12 6.5C10 4.8 7 4.5 3.5 5v14c3.5-.5 6.5-.2 8.5 1.5 2-1.7 5-2 8.5-1.5V5C17 4.5 14 4.8 12 6.5zM12 6.5v14"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>'
   };
@@ -42,6 +43,7 @@
   var toolsAt = 0;
   var filesAvailable = true;
   var connectors = [];
+  var skillsEntry = null;  // 0.7.84 (P12 B): "Skills für diesen Chat" (js/coreui-chat-skills.js)
   var menu = null;
 
   function svg(name, cls) {
@@ -253,6 +255,12 @@
     box.setAttribute('aria-label', 'Anhängen und Werkzeuge');
     box.appendChild(section('Anhängen', attach));
     box.appendChild(section('Werkzeuge', work));
+    if (skillsEntry) {
+      var skillDetail = '', skillOff = false;
+      try { skillDetail = String(skillsEntry.detail() || ''); skillOff = !!skillsEntry.disabled(); } catch (e) { skillOff = true; }
+      box.appendChild(section('Skills', [{ id: 'skills', icon: 'book', label: 'Skills für diesen Chat', detail: skillDetail, disabled: skillOff,
+        run: function () { close(); try { skillsEntry.onSelect(); } catch (e) {} } }]));
+    }
     box.appendChild(section('Konnektoren', links));
     box.addEventListener('keydown', onKey);
     return box;
@@ -363,6 +371,12 @@
         disabled: !!def.disabled, onSelect: def.onSelect });
       return true;
     },
-    refresh: function () { return loadTools(true); }
+    refresh: function () { return loadTools(true); },
+    /** 0.7.84 (P12 B): the entry "Skills für diesen Chat"; detail() and disabled() are read when the menu opens. */
+    registerSkills: function (def) {
+      if (!def || typeof def.onSelect !== 'function' || typeof def.detail !== 'function' || typeof def.disabled !== 'function') return false;
+      skillsEntry = def;
+      return true;
+    }
   };
 })();

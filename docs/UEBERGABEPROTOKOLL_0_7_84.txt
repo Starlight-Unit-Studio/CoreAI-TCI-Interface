@@ -1,0 +1,49 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.84
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.83 nach PR #339
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"go": Roadmap P12 Schritt B (CF-044): gemeinsame Skills, Vorrang und eine ausdruecklich bestimmte
+Variante je Chat. Abnahme CF-044: Auswahl, Prioritaet und fehlende Voraussetzungen sind erkennbar;
+eine Sitzung nutzt die ausdruecklich bestimmte Variante.
+Festlegung in dieser Sitzung (dem Betreiber mitgeteilt): Teilen duerfen Inhaber und Admins; jedes
+angemeldete Konto nutzt gemeinsame Skills und kann jeden fuer sich ausschalten; Gaeste bekommen keine.
+
+UMSETZUNG
+- database/migrations/053_skill_sharing.sql: stu_skill_packages.shared und .priority (1, 0, -1),
+  stu_skill_package_optouts (Konto, Skill), stu_console_session_skills (Chat, Konto, Verweis,
+  Position); Fremdschluessel mit ON DELETE CASCADE auf Konto, Skill und Chat.
+- api/skill_packages_store.php: Bereitschaft fuer 053, Vorrang, Rolle (Gast zaehlt als Nutzer),
+  Teilen nur fuer Inhaber und Admins und nie fuer Projekt-Skills, Absender (Profilname oder Rolle),
+  Kandidaten eines Chats (eigene, Projekt, gemeinsame ohne Abschaltung), Aufloesung je Kennung
+  (Chat-Auswahl, Projekt, eigen, gemeinsam; Vorrang, dann aelter), festgelegte Skills eines Chats
+  (Paket-Id oder b:name, hoechstens drei, je Kennung eine Fassung, nur eigene Chats), Liste
+  "Gemeinsam" mit "geht vor"-Angabe, Ansehen, Abschalten, verschwundene Skills; Loeschen entfernt
+  Abschaltungen.
+- api/skills.php: Auswahl mit Vorrang (/skill zuerst), Bezeichnung der Variante in der Bibliothek,
+  "[GEMEINSAMER SKILL ...]" mit Absender, Hinweis "Fuer diesen Chat festgelegt", festgelegte Skills
+  zuerst und so viele das Kontextfenster erlaubt, die uebrigen im Bibliothekskopf.
+- api/chat.php: der Chat geht im Skill-Kontext mit. api/skill_packages.php: view, use, chat,
+  chat_set (Chats ueber coreui_console_session_require, Aenderungen mit CSRF).
+- js/console-app.js: Ereignis coreai:active-session beim Wechsel des Chats.
+- js/coreui-composer-menu.js: Bereich "Skills" ueber registerSkills. js/coreui-chat-skills.js,
+  css/coreui-chat-skills.css (neu): Fenster "Skills fuer diesen Chat", Anzeige ueber dem Eingabefeld.
+- settings.html, js/coreui-skills-settings.js, css/coreui-skills-settings.css: Bereich "Gemeinsam",
+  Ansehen, Schalter "Fuer mich nutzen", Vorrang und Teilen im Editor, Angaben in der Liste.
+- Tests, Preflights, Doku (README und CAPABILITIES englisch, ROADMAP, Matrix, CHANGELOG, TXT).
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Ollama, mitgelieferter Skill-Katalog.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Gemeinsame und festgelegte Skills mit einem echten Core auf dem Server.
+
+NAECHSTER SCHRITT
+- P12 ist im Selbsttest abgenommen. Weiter mit der Roadmap (P13, Skill-Lebenszyklus) auf Auftrag.
+
+Version: 0.7.84

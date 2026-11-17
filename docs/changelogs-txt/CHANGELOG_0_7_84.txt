@@ -1,0 +1,53 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.84
+Datum: 17.11.2026
+
+GEMEINSAME SKILLS (ROADMAP P12, SCHRITT B, CF-044)
+- Inhaber und Admins koennen eigene Skills mit allen Konten teilen ("Mit
+  allen Konten teilen" im Editor; nie einen Projekt-Skill).
+- Jedes angemeldete Konto sieht sie unter Einstellungen > Skills im neuen
+  Bereich "Gemeinsam" mit Absender, Vorrang, Voraussetzungen und Dateien;
+  "Ansehen" zeigt Anleitung und Dateien als Text, ein Schalter schaltet
+  einen gemeinsamen Skill nur fuer das eigene Konto aus.
+- Gaeste bekommen keine; ist der Besitzer nicht mehr Inhaber oder Admin,
+  verschwindet der Skill fuer alle.
+
+VORRANG
+- Hoch, Normal, Niedrig je Skill. Passen mehr Skills als ins
+  Kontextfenster, kommt der hoehere Vorrang zuerst; /skill bleibt vorn.
+- Bei gleicher Kennung gilt: fuer den Chat festgelegt, Projekt-Skill,
+  eigener, gemeinsamer (hoeherer Vorrang, dann der aeltere). Die Seite
+  sagt, welcher Skill stattdessen gilt.
+
+SKILLS FUER DIESEN CHAT
+- Neuer Bereich "Skills" im Plus-Menue des Eingabefelds. Das Fenster
+  zeigt alle Skills des Chats in Gruppen (Projekt, Deine Skills,
+  Gemeinsam, Mitgeliefert) mit Suche und markiert, welche Fassung einer
+  Kennung gilt ("gilt hier", "verdeckt").
+- Bis zu drei festlegen, je Kennung eine Fassung. Mara hat sie in diesem
+  Chat immer, zuerst geladen und in genau dieser Fassung, so viele das
+  Kontextfenster erlaubt; die uebrigen werden ihr genannt.
+- Die festgelegten stehen ueber dem Eingabefeld und lassen sich dort
+  herausnehmen; "Mara waehlt selbst" hebt die Auswahl auf; inzwischen
+  geloeschte werden benannt und beim naechsten Speichern entfernt.
+- Ein neuer Chat bekommt seine Auswahl nach der ersten Nachricht.
+
+MARAS BIBLIOTHEK
+- Eigene, Projekt- und gemeinsame Skills sind als solche benannt; ein
+  gemeinsamer Skill sagt in ihrem Prompt, von wem er ist.
+
+DATENBANK
+- Migration 053_skill_sharing (Teilen und Vorrang eines Skills,
+  abgeschaltete gemeinsame Skills je Konto, festgelegte Skills je Chat;
+  sie gehen mit Konto, Skill und Chat).
+
+TESTS
+- scripts/skill-sharing-selftest.php (SQLite mit Rollen, Gaesten,
+  zurueckgestuftem Besitzer, Abschalten, Chat-Auswahl mit Grenzen, Mara
+  mit festgelegten und gemeinsamen Skills und Vorrang; MariaDB mit
+  COREUI_SELFTEST_DB=1, Migration 052 und 053, 053 zweimal) und
+  scripts/skill-sharing-ui-selftest.cjs (Playwright: Einstellungen und
+  Chat), in beiden Preflights.
+- skill-packages (PHP und Oberflaeche) folgen den neuen Bezeichnungen.
+
+NICHT GETESTET
+- Gemeinsame und festgelegte Skills mit einem echten Core auf dem Server.

@@ -140,7 +140,9 @@ const status = page => page.textContent('#skStatus');
     // The page and its lists.
     assert.equal(await page.textContent('#view-skills h2'), 'Skills');
     assert.equal(await page.getAttribute('#tab-skills', 'aria-selected'), 'true');
-    assert.deepEqual(await texts(page, '#view-skills .sec-heading'), ['Deine Skills', 'Mitgeliefert']);
+    // 0.7.84: "Gemeinsam" only shows with migration 053 (this stand-in has none).
+    assert.deepEqual(await page.$$eval('#view-skills .sec-heading', l => l.filter(x => !x.hidden).map(x => x.textContent)), ['Deine Skills', 'Mitgeliefert']);
+    assert.equal(await page.isHidden('#skShared'), true);
     assert.equal(await page.$$eval('#skBuiltin .sk-row', l => l.length), 12, 'twelve built-in skills without a search');
     assert.equal(await page.textContent('#skBuiltin .sk-empty'), 'Und 3 weitere. Suche nach einem Begriff, um sie zu finden.');
     assert.equal(await page.locator('#skBuiltin input, #skBuiltin button').count(), 0, 'no switches for the built-in skills');
@@ -192,7 +194,7 @@ const status = page => page.textContent('#skStatus');
     await until(page, () => document.getElementById('skSave') && document.getElementById('skSave').textContent === 'SPEICHERN');
     const created = srv.st.posts.filter(p => p.action === 'save').pop();
     assert.deepEqual(created, {action: 'save', id: '', title: 'Wochenbericht', slug: 'wochenbericht', description: 'Fasst die Woche fuer das Team zusammen.',
-      triggers: 'Wochenbericht, Statusbericht', requires: ['web', 'python'], project_id: '', enabled: true, body});
+      triggers: 'Wochenbericht, Statusbericht', requires: ['web', 'python'], project_id: '', enabled: true, body, priority: 'normal', shared: false});
     assert.equal(await status(page), 'Der Skill ist angelegt. Jetzt kannst du Begleitdateien hinzufügen.');
     assert.equal(await page.textContent('#skMissing'),
       'Die Anleitung nennt Dateien, die fehlen: references/fehlt.md, templates/bericht.md. Lege sie unten an oder ändere die Anleitung.');

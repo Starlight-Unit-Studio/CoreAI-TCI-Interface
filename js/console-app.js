@@ -274,6 +274,8 @@
 
   function rememberActiveSession(sessionId) {
     try { localStorage.setItem(activeSessionStorageKey(), String(sessionId || '')); } catch (e) {}
+    // 0.7.84 (P12 B): modules that belong to the open chat (its fixed skills) follow it.
+    try { window.dispatchEvent(new CustomEvent('coreai:active-session', {detail: {id: String(sessionId || '')}})); } catch (e) {}
   }
 
   function rememberedActiveSession() {

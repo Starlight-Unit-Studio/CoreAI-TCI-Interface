@@ -6,7 +6,7 @@
 .sk-row { cursor: pointer; gap: 10px; }
 .sk-row.sk-builtin { cursor: default; }
 .sk-row.is-off .sec-copy strong { opacity: .6; }
-.sk-row .sec-copy { min-width: 0; }
+.sk-row .sec-copy { flex: 1 1 auto; min-width: 0; }
 .sk-row .sec-copy small { overflow-wrap: anywhere; }
 .sk-desc { color: var(--muted, #66728a); }
 .sk-warn { color: var(--amb, #e29b39); font-weight: 600; overflow-wrap: anywhere; }
@@ -40,3 +40,12 @@
   .sk-file { flex-wrap: wrap; }
   .sk-file-actions { margin-left: 0; flex: 1 1 100%; }
 }
+.sk-note { color: var(--muted, #66728a); font-style: italic; overflow-wrap: anywhere; }
+.sk-use { flex: 0 0 auto; }
+.sk-pre {
+  margin: 0; padding: 10px; max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  border: 1px solid var(--line, rgba(91, 146, 255, .25)); background: var(--panel-solid, #fbfdff); color: var(--txt, #101626);
+}
+.sk-view-file summary { cursor: pointer; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+.sk-view-file pre { margin-top: 6px; }

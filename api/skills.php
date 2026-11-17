@@ -80,8 +80,22 @@ function coreui_skills_select(string $request, int $max = 4): array {
     }
     if ($score > 0) $scores[$id] = $score;
   }
-  arsort($scores, SORT_NUMERIC); // Stable catalog order breaks ties.
-  return array_slice(array_keys($scores), 0, max(0, min(4, $max)));
+  // 0.7.84 (P12 B): a skill named with /skill comes first, then the higher precedence of an own or
+  // shared skill (built-in ones are normal), then the better match; the stable order breaks ties.
+  $ids = array_keys($scores);
+  $priority = static fn(string $id): int => (int)(coreui_skills_own()[$id]['priority'] ?? 0);
+  usort($ids, static fn($a, $b): int => [$scores[$b] >= 10000, $priority((string)$b), $scores[$b]]
+    <=> [$scores[$a] >= 10000, $priority((string)$a), $scores[$a]]);
+  return array_map('strval', array_slice($ids, 0, max(0, min(4, $max))));
+}
+
+/** 0.7.84 (P12 B): how Mara's library names a variant of an own or shared skill. */
+function coreui_skills_variant_label(array $entry): string {
+  return match ((string)($entry['variant'] ?? 'own')) {
+    'project' => 'Projekt-Skill',
+    'shared' => 'gemeinsamer Skill' . ((string)($entry['owner'] ?? '') !== '' ? ' von ' . (string)$entry['owner'] : ''),
+    default => 'eigener Skill',
+  };
 }
 
 /** The optional skills, all of them: the account's own first, then the catalog order. */
@@ -102,7 +116,8 @@ function coreui_skills_index(array $loaded, string $size = 'full'): string {
     $entry = (array)coreui_skills_entry($id);
     // 0.7.83: the account's own skills say so, and what they need that this chat does not have.
     $missing = coreui_skills_missing_tools($id);
-    $note = !empty($entry['own']) ? ' (eigener Skill' . ($missing !== [] ? ', braucht ' . implode(', ', $missing) . ', fehlt hier' : '') . ')' : '';
+    $note = !empty($entry['own']) ? ' (' . coreui_skills_variant_label($entry) . (!empty($entry['pinned']) ? ', fuer diesen Chat festgelegt' : '')
+      . ($missing !== [] ? ', braucht ' . implode(', ', $missing) . ', fehlt hier' : '') . ')' : '';
     $lines[] = match ($size) {
       'ids' => $id,
       'titles' => $id . ' (' . (string)$entry['title'] . ')',
@@ -111,11 +126,14 @@ function coreui_skills_index(array $loaded, string $size = 'full'): string {
   }
   if ($lines === []) return '';
   $done = array_values(array_filter($loaded, static fn(string $l): bool => !str_contains($l, '/')));
+  // 0.7.84 (P12 B): skills the chat fixed that did not fit into the context window.
+  $waiting = array_values(array_diff((array)($GLOBALS['COREUI_SKILLS_PINNED'] ?? []), $loaded));
   $list = $size === 'full' ? implode("\n", $lines) : implode(', ', $lines);
   return "[SKILL-BIBLIOTHEK: Arbeitsanleitungen, die du bei Bedarf selbst laedst. Passt eine davon zu deiner Aufgabe, "
     . "antworte zuerst NUR mit [SKILL: kennung]; danach bekommst du die Anleitung und arbeitest weiter. Hoechstens zwei "
     . "Skills auf einmal ([SKILL: a, b]). Fuer Smalltalk, Meinungen und einfache Fragen brauchst du keinen."
-    . ($done !== [] ? ' Schon geladen: ' . implode(', ', $done) . '.' : '') . "]\n"
+    . ($done !== [] ? ' Schon geladen: ' . implode(', ', $done) . '.' : '')
+    . ($waiting !== [] ? ' Fuer diesen Chat festgelegt, aber noch nicht geladen: ' . implode(', ', $waiting) . '; lade sie, wenn die Aufgabe sie braucht.' : '') . "]\n"
     . $list . "\n[ENDE SKILL-BIBLIOTHEK]\n\n";
 }
 
@@ -265,7 +283,11 @@ function coreui_skills_compose(): void {
       if (str_contains($id, '/')) continue;
       if (isset($own[$id])) {
         // 0.7.83: an own skill of the account, with what it needs and the files it names but lacks.
-        $optional .= '[EIGENER SKILL ' . $id . ': ' . (string)$own[$id]['title'] . "]\n";
+        // 0.7.84: a shared skill says whose it is; a skill the chat fixed says so.
+        $optional .= (($own[$id]['variant'] ?? '') === 'shared'
+          ? '[GEMEINSAMER SKILL ' . $id . ': ' . (string)$own[$id]['title'] . ', von ' . (string)($own[$id]['owner'] ?? 'Admin') . "]\n"
+          : '[EIGENER SKILL ' . $id . ': ' . (string)$own[$id]['title'] . "]\n");
+        if (!empty($own[$id]['pinned'])) $optional .= "(Fuer diesen Chat festgelegt: nutze genau diese Fassung.)\n";
         $missing = coreui_skills_missing_tools($id);
         if ($missing !== []) {
           $optional .= '(Voraussetzung fehlt in diesem Chat: ' . implode(', ', $missing)
@@ -323,6 +345,7 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
   // Reset all in-memory context before selecting anything for this turn.
   $GLOBALS['COREUI_SKILLS_OWN'] = [];
   $GLOBALS['COREUI_SKILLS_TOOLS'] = null;
+  $GLOBALS['COREUI_SKILLS_PINNED'] = [];
   $GLOBALS['COREUI_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_SKILLS_INDEX_BLOCK'] = '';
@@ -337,7 +360,12 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
     if (array_key_exists('tools', $context) && is_array($context['tools'])) $GLOBALS['COREUI_SKILLS_TOOLS'] = array_values($context['tools']);
     if (function_exists('coreui_skillpkg_for_chat') && (int)($context['uid'] ?? 0) > 0) {
       try {
-        $GLOBALS['COREUI_SKILLS_OWN'] = coreui_skillpkg_for_chat($pdo, (int)$context['uid'], (string)($context['project'] ?? ''));
+        $GLOBALS['COREUI_SKILLS_OWN'] = coreui_skillpkg_for_chat($pdo, (int)$context['uid'], (string)($context['project'] ?? ''),
+          (string)($context['session'] ?? ''));
+        // 0.7.84 (P12 B): the skills this chat fixed, own and built-in ones, in their order.
+        $pinned = array_keys(array_filter($GLOBALS['COREUI_SKILLS_OWN'], static fn(array $e): bool => !empty($e['pinned'])));
+        $GLOBALS['COREUI_SKILLS_PINNED'] = array_values(array_unique(array_merge(array_map('strval', $pinned),
+          coreui_skillpkg_builtin_pins($pdo, (int)$context['uid'], (string)($context['session'] ?? '')))));
       } catch (Throwable $e) {
         error_log('[CoreAI] own skills unavailable: ' . get_class($e));
       }
@@ -356,7 +384,11 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
   // The obvious skills come right away (no extra model call on a slow local
   // Core). A small window gets fewer of them and a shorter library, never
   // fewer required ones.
-  $selected = coreui_skills_select($request, $maxOptional);
+  // 0.7.84 (P12 B): the skills the chat fixed come first, as many as the context window takes;
+  // the rest of the room goes to the ones that fit the request.
+  $pinned = array_slice((array)$GLOBALS['COREUI_SKILLS_PINNED'], 0, max(0, min(4, $maxOptional)));
+  $selected = array_values(array_unique(array_merge($pinned, coreui_skills_select($request, $maxOptional))));
+  $selected = array_slice($selected, 0, max(count($pinned), min(4, $maxOptional)));
   foreach ($selected as $id) {
     if (function_exists('coreui_work_record')) {
       coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);

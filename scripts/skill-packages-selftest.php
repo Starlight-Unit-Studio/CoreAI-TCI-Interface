@@ -66,7 +66,11 @@ skp_test(str_contains($settings, 'id="tab-skills" data-view="skills" aria-contro
   && preg_match('~<script src="\./js/coreui-skills-settings\.js\?v=\d+"></script>~', $settings) === 1
   && preg_match('~<link rel="stylesheet" href="\./css/coreui-skills-settings\.css\?v=\d+" />~', $settings) === 1, 'Settings > Skills');
 $js = $read('js/coreui-skills-settings.js');
-skp_test(str_contains($js, "opts.headers['X-CoreUI-CSRF'] = state.csrf;") && substr_count($js, '.innerHTML = ') === 2
+// 0.7.84: every innerHTML of the page is a fixed icon, never data.
+preg_match_all('~\.innerHTML = (.*);~', $js, $html);
+$fixedIcons = $html[1] !== [] && array_filter($html[1], static fn(string $v): bool
+  => preg_match('~^\'<svg aria-hidden="true"><use href="#i-[a-z]+" /></svg>(?:Skills)?\'$~', $v) !== 1) === [];
+skp_test(str_contains($js, "opts.headers['X-CoreUI-CSRF'] = state.csrf;") && $fixedIcons
   && str_contains($js, "new MutationObserver(ensure).observe(view, {attributes: true, attributeFilter: ['hidden']});"),
   'page: CSRF on changes, only fixed icons as HTML, loaded when opened');
 $migration = $read('database/migrations/052_skill_packages.sql');
@@ -187,7 +191,8 @@ skp_test(str_contains($block, "- wochenbericht: Fasst die Woche fuer das Team zu
 skp_test(strpos($block, '- wochenbericht:') < strpos($block, '- python:') && str_contains($block, '- python: '), 'own skills first, the built-in ones stay');
 skp_test(!str_contains($block, '[EIGENER SKILL'), 'nothing loaded for small talk');
 $block = $prepare('Wie geht es dir?', $projectA, ['web', 'python', 'files']);
-skp_test(str_contains($block, "- kundenbrief: Brief an Kunden im Ton des Projekts. (eigener Skill)\n")
+// 0.7.84 (P12 B): a project skill is named as such.
+skp_test(str_contains($block, "- kundenbrief: Brief an Kunden im Ton des Projekts. (Projekt-Skill)\n")
   && str_contains($block, "- wochenbericht: Fasst die Woche fuer das Team zusammen. (eigener Skill)\n"), 'project skills in their project, nothing missing');
 skp_test(str_contains($prepare('Wie geht es dir?', $projectA, ['web'], 2), 'kundenbrief (Kundenbrief)')
   && str_contains($prepare('Wie geht es dir?', $projectA, ['web'], 1), 'kundenbrief, wochenbericht,'), 'library sizes: titles and names');
