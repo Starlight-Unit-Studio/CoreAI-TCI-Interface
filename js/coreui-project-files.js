@@ -783,7 +783,8 @@
     }).catch(function (e) { state.vcs.error = message(e); });
   }
   function openVcs() {
-    state.vcs.open = true; state.vcs.error = ''; state.vcs.view = null;
+    // Never show an old state: files may have changed meanwhile (another tab, Mara, a build).
+    state.vcs.open = true; state.vcs.error = ''; state.vcs.view = null; state.vcs.data = null;
     renderVcs();
     vcsLoad().then(renderVcs);
   }
