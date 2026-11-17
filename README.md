@@ -14,6 +14,8 @@
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
+**English update experience:** The owner update modal, progress/status screen, and related Settings card use English, including labels and errors. Previous German update logs remain available as originally recorded.
+
 **Installer regression protection:** A dedicated CI workflow now executes the offline voice-service and host-update preflight contracts on setup and updater changes, rather than only checking source syntax.
 
 **Installation language:** The official setup one-liner, Docker and native installers, and the installer preflight reports, and host updater status messages use English for user-facing output. Existing environment variables and command names are unchanged.
