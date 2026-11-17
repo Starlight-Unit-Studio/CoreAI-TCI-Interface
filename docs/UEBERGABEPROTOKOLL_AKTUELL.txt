@@ -7,6 +7,8 @@ Sandbox-Container des Python-Workers (Tab Dateien und Mara mit
 Dokument: docs/UEBERGABEPROTOKOLL_0_7_77.txt.
 Naechster Schritt: P10 C (Terminal- und Prozesssitzungen, Entwicklungsserver).
 Offene Betreiberfrage: Node.js im Sandbox-Image (neues Image, Installer).
+Offene Betreiberfrage: context-slider-ui-selftest.cjs ist seit e7506f74 auf main rot
+(.ctx-stops auf Telefonen zwei statt drei Spalten); CSS oder Test anpassen?
 Nach Merge naechste Version 0.7.78.
 --- VORHERIGER STAND ---
 
