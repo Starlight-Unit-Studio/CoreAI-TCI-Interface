@@ -25,6 +25,8 @@ REPAIRS
   display only; the raw update log remains unchanged.
 - Extended update browser test expectations and added English UI/cache
   checks to installer-preflight CI.
+- Added a dedicated GitHub Actions Chromium/Playwright workflow for real
+  update-window behavior, including German-locale mobile layout.
 - Added a CI job to actually run these offline selftests on relevant PRs.
 - Updated version and UI asset cache key to 0.7.87.
 - Changelog and README documented.
