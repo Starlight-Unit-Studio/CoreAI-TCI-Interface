@@ -264,6 +264,8 @@ function coreui_pfiles_restore(PDO $pdo, int $uid, string $projectId, string $pa
 /** Every file and revision of a project (the project is being deleted). */
 function coreui_pfiles_purge(PDO $pdo, int $uid, string $projectId): void {
   if (!coreui_pfiles_schema_ready($pdo)) return;
+  // 0.7.80 (P11): the versions and working states go too (MariaDB also removes them by cascade).
+  if (function_exists('coreui_pvcs_purge')) coreui_pvcs_purge($pdo, $uid, $projectId);
   $pdo->prepare('DELETE FROM stu_console_project_file_revisions WHERE project_id=? AND user_id=?')->execute([$projectId, $uid]);
   $pdo->prepare('DELETE FROM stu_console_project_files WHERE project_id=? AND user_id=?')->execute([$projectId, $uid]);
 }
@@ -325,7 +327,16 @@ function coreui_pfiles_usage(PDO $pdo, int $uid): array {
   $count = (int)$st->fetchColumn();
   $st = $pdo->prepare('SELECT COALESCE(SUM(size_bytes), 0) FROM stu_console_project_file_revisions WHERE user_id=?');
   $st->execute([$uid]);
-  return ['count'=>$count, 'bytes'=>(int)$st->fetchColumn()];
+  $bytes = (int)$st->fetchColumn();
+  // 0.7.80 (P11): the contents kept for versions count too (each content once per project).
+  try {
+    $st = $pdo->prepare('SELECT COALESCE(SUM(size_bytes), 0) FROM stu_console_project_blobs WHERE user_id=?');
+    $st->execute([$uid]);
+    $bytes += (int)$st->fetchColumn();
+  } catch (Throwable $e) {
+    // Without migration 049 there are no versions.
+  }
+  return ['count'=>$count, 'bytes'=>$bytes];
 }
 
 /**

@@ -1,5 +1,17 @@
 # CoreAI: TCI Interface
 
+## 0.7.80 - 17.11.2026
+
+- **Versions and working states (roadmap P11, step A):** In the **Files** tab of a project, "Versionen" keeps versions of all files. "Sichern" records the current state with a short description; the panel shows unsaved changes (new, changed, deleted), every version of the active working state with who made it, and what a version changed, down to a line comparison of one file.
+- **Working states (branches) with their own files:** "Neuer Arbeitsstand" starts from the newest version and can carry the unsaved changes along; otherwise they stay with the working state they were made in. "Wechseln" puts the other working state's files into the project (editor, preview, runs, processes and Mara follow) and keeps the unsaved files of the one that is left. Two working states never change each other. A working state that is not active can be deleted; versions only it reaches go with it. A file a switch adds or changes gets a revision "Arbeitsstand gewechselt" in its file history; a file a switch removes loses its file history (its content stays in the versions), and the history starts again when it comes back.
+- **Restore under control:** "Wiederherstellen" brings back any version on the active working state. Unsaved changes are first saved as a version of their own ("Automatisch gesichert vor dem Wiederherstellen"), and the restored state is added as a new version ("Wiederhergestellt: …"), so every earlier version stays.
+- **ZIP with Git:** "Als ZIP mit Git" downloads the files of the active working state together with a real Git repository of all working states and versions, built in PHP (objects, trees, commits, branches, HEAD and an index). `git log`, `git status`, `git checkout` and `git fsck` work after unpacking; no Git program is needed on the server. Authors are generic (no personal data).
+- **Bounded:** 10 working states and 200 versions per project; each content is stored once per project and counts toward the account's storage. Everything goes with its project.
+- **Database:** Migration `049_project_versions` (contents, working states, versions with their files, kept files of inactive working states, the active working state; the revision kind `branch` for files changed by a switch).
+- **Acceptance of P11 in the self test:** a change is saved on its own working state, restored under control and exported as a usable ZIP (checked with git); the other working state stays as it was.
+- **Not yet:** merging working states with conflict handling, Mara saving versions and working on her own working state, importing a Git repository.
+- **Tests:** New `scripts/project-vcs-selftest.php` (SQLite; MariaDB with `COREUI_SELFTEST_DB=1`; the Git export checked with `git fsck --strict`, `git log`, `git status`, `git branch` and `git show` where git exists) and `scripts/project-vcs-ui-selftest.cjs` (Playwright), both in both preflights. The line comparison of the editor is shared with the versions panel.
+
 ## 0.7.79 - 17.11.2026
 
 - **Node.js in the sandbox (operator decision):** The sandbox image is now `ember-py:2`: Python 3.12 as before plus Node.js 24 (LTS) with npm and npx, copied from the official `node:24-bookworm-slim` image. Runs, processes and Mara's Python jobs use it behind the same walls (read-only system, no capabilities, user 65534, limits). The npm cache lives in the work folder (`NPM_CONFIG_CACHE=/work/.npm-cache`) because `/tmp` does not allow running programs, which `npx` needs; npm asks for no updates, funding or audits.

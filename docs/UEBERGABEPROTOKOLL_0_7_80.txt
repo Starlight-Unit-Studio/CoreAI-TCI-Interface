@@ -1,0 +1,57 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.80
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.79 nach PR #335
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"weiter mit P11": Roadmap P11 (Git, Wiederherstellung und Projektexport). Abnahme laut Roadmap:
+Eine Aenderung wird auf einem eigenen Branch gesichert, kontrolliert zurueckgenommen und als
+nutzbares Projekt-ZIP exportiert. Andere Arbeitsstaende bleiben erhalten. Umgesetzt als Schritt A;
+Zusammenfuehren mit Konfliktbearbeitung und Mara folgen in Schritt B.
+
+UMSETZUNG
+- database/migrations/049_project_versions.sql: stu_console_project_blobs (Inhalt je Projekt und
+  sha256 einmal), stu_console_project_branches (Name, neueste Version, worktree_saved),
+  stu_console_project_commits (Eltern, Beschreibung, Herkunft person, mara, auto, Anzahl, Bytes,
+  Baum-Pruefsumme), stu_console_project_commit_files (Pfad und sha256 je Version),
+  stu_console_project_worktrees (ungesicherte Dateien nicht aktiver Arbeitsstaende),
+  stu_console_project_vcs (aktiver Arbeitsstand). Fremdschluessel auf Projekt und Konto mit
+  ON DELETE CASCADE. ALTER der Revisionsart um "branch" (wie 045 fuer "mara").
+- api/project_vcs_store.php (neu): Die Projektdateien (stu_console_project_files) sind die Dateien
+  des aktiven Arbeitsstands; alles, was sie liest (Editor, Vorschau, Laeufe, Prozesse, Mara), bleibt
+  unveraendert. Erster Blick legt "main" und, wenn Dateien da sind, die Version "Ausgangsstand" an.
+  Sichern (nothing_to_commit, history_full, storage_full), Verlauf ueber die Eltern, Aenderungen
+  einer Version, Datei in einer Version oder jetzt, neuer Arbeitsstand (mitnehmen oder nicht),
+  Wechseln (ungesicherte Dateien bleiben beim verlassenen Arbeitsstand), Wiederherstellen (vorher
+  automatische Sicherung, dann neue Version), Loeschen eines nicht aktiven Arbeitsstands mit
+  Aufraeumen nicht mehr erreichbarer Versionen und Inhalte, Git-Export: Blob-, Baum- und
+  Commit-Objekte (zlib, sha1) in Git-Sortierung, Branches, HEAD, Index Version 2; Autoren allgemein.
+- api/project_files_store.php: gespeicherte Inhalte zaehlen zum Speicher; Loeschen des Projekts
+  raeumt auch die Versionen.
+- api/project_files.php: GET vcs, vcs_commit, vcs_file, vcs_zip; POST vcs_commit, vcs_branch,
+  vcs_switch, vcs_restore, vcs_branch_delete (CSRF). Fehlercodes 404 und 409.
+- js/coreui-project-files.js, css/coreui-project-files.css: Bereich "Versionen" (Arbeitsstaende mit
+  Wechseln und Loeschen, neuer Arbeitsstand mit "Ungesicherte Aenderungen mitnehmen", ungesicherte
+  Aenderungen mit Zeilenvergleich, Sichern, Versionen mit Aenderungen und Wiederherstellen, Link
+  "Als ZIP mit Git"). Der Zeilenvergleich des Editors ist als diffBody geteilt. Nach Wechseln oder
+  Wiederherstellen laden Dateiliste und Vorschau neu; ein ungespeicherter Entwurf im Editor wird
+  vorher abgefragt. Im Dateiverlauf heisst die neue Revisionsart "Arbeitsstand gewechselt".
+- Bewusste Folge: Eine Datei, die ein Wechsel entfernt, verliert ihren Dateiverlauf aus P09 (der
+  Inhalt bleibt in den Versionen); beim Zurueckwechseln beginnt er neu.
+- README (Abschnitt 4, "Not yet complete", API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3, P11),
+  Feature-Matrix CF-037 und CF-038 (jetzt Teilbestand).
+- Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Der Bereich auf dem echten Server mit echten Projekten (nach dem Update im Tab Dateien
+  "Versionen" oeffnen).
+
+NAECHSTER SCHRITT
+- P11 B: Zusammenfuehren mit Konfliktbearbeitung, Mara sichert Versionen und arbeitet auf einem
+  eigenen Arbeitsstand.
+
+Version: 0.7.80

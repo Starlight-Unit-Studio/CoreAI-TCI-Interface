@@ -18,6 +18,11 @@ declare(strict_types=1);
  * GET  ?project_id=P&proc=N&since=E          0.7.78 (P10 C): one process with its output after E
  * GET  ?project_id=P&proc_preview=N&path=/X  0.7.78 (P10 C): a page of its development server, sandboxed
  * POST {action: proc_start|proc_input|proc_stop|proc_fetch, ...}  0.7.78 (P10 C)
+ * GET  ?project_id=P&vcs=1                   0.7.80 (P11 A): working states, unsaved changes, versions
+ * GET  ?project_id=P&vcs_commit=N            0.7.80: one version with what it changed
+ * GET  ?project_id=P&vcs_file=N|work&path=X  0.7.80: a file in a version or now
+ * GET  ?project_id=P&vcs_zip=1               0.7.80: ZIP with a Git repository of the versions
+ * POST {action: vcs_commit|vcs_branch|vcs_switch|vcs_restore|vcs_branch_delete, ...}  0.7.80
  * POST {action: create|save|rename|delete|restore, project_id, ...} with CSRF
  */
 require_once __DIR__ . '/helpers.php';
@@ -26,6 +31,7 @@ require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/project_preview_store.php';
 require_once __DIR__ . '/project_runs_store.php';
 require_once __DIR__ . '/project_procs_store.php';
+require_once __DIR__ . '/project_vcs_store.php';
 
 $pdo = stu_pdo();
 $uid = (int)stu_require_user_id();
@@ -114,6 +120,15 @@ try {
       }
       exit;
     }
+    if (isset($_GET['vcs_zip'])) {
+      $zip = coreui_pvcs_git_zip($pdo, $uid, $projectId);
+      try {
+        coreui_pfiles_send_download($zip['name'], 'application/zip', $zip['path']);
+      } finally {
+        @unlink($zip['path']);
+      }
+      exit;
+    }
     if (isset($_GET['zip'])) {
       $zip = coreui_pfiles_zip($pdo, $uid, $projectId);
       try {
@@ -144,6 +159,18 @@ try {
     }
     if (isset($_GET['proc'])) {
       stu_json(['ok'=>true, 'proc'=>coreui_pprocs_get($pdo, $uid, $projectId, (int)$_GET['proc'], max(0, (int)($_GET['since'] ?? 0)))]);
+    }
+    // 0.7.80 (P11 A): versions and working states.
+    if (isset($_GET['vcs'])) {
+      if (!coreui_pvcs_ready($pdo)) stu_json(['ok'=>true, 'ready'=>false, 'csrf_token'=>stu_csrf_token()]);
+      stu_json(['ok'=>true, 'ready'=>true] + coreui_pvcs_state($pdo, $uid, $projectId) + ['csrf_token'=>stu_csrf_token()]);
+    }
+    if (isset($_GET['vcs_commit'])) {
+      stu_json(['ok'=>true] + coreui_pvcs_commit_changes($pdo, $uid, $projectId, (int)$_GET['vcs_commit']));
+    }
+    if (isset($_GET['vcs_file'])) {
+      $which = (string)$_GET['vcs_file'] === 'work' ? 'work' : (int)$_GET['vcs_file'];
+      stu_json(['ok'=>true, 'file'=>coreui_pvcs_file($pdo, $uid, $projectId, $which, $path)]);
     }
     if (isset($_GET['search'])) {
       stu_json(['ok'=>true, 'results'=>coreui_pfiles_search($pdo, $uid, $projectId, (string)$_GET['search'])]);
@@ -205,6 +232,17 @@ try {
         ($body['newline'] ?? true) !== false)]);
     case 'proc_stop':
       stu_json(['ok'=>true, 'proc'=>coreui_pprocs_stop($pdo, $uid, $projectId, (int)($body['proc_id'] ?? 0))]);
+    case 'vcs_commit':
+      stu_json(['ok'=>true, 'commit'=>coreui_pvcs_commit($pdo, $uid, $projectId, $body['message'] ?? ''),
+        'state'=>coreui_pvcs_state($pdo, $uid, $projectId)], 201);
+    case 'vcs_branch':
+      stu_json(['ok'=>true, 'state'=>coreui_pvcs_branch_create($pdo, $uid, $projectId, $body['name'] ?? '', !empty($body['carry']))], 201);
+    case 'vcs_switch':
+      stu_json(['ok'=>true, 'state'=>coreui_pvcs_switch($pdo, $uid, $projectId, (int)($body['branch_id'] ?? 0))]);
+    case 'vcs_restore':
+      stu_json(['ok'=>true, 'state'=>coreui_pvcs_restore($pdo, $uid, $projectId, (int)($body['commit_id'] ?? 0))]);
+    case 'vcs_branch_delete':
+      stu_json(['ok'=>true, 'state'=>coreui_pvcs_branch_delete($pdo, $uid, $projectId, (int)($body['branch_id'] ?? 0))]);
     case 'proc_fetch':
       $sent = $body['body'] ?? null;
       if ($sent !== null && !is_string($sent)) throw new InvalidArgumentException('invalid_body');
@@ -222,9 +260,11 @@ try {
     stu_json(['ok'=>false, 'error'=>'project_files_failed'], 500);
   }
   $status = match (true) {
-    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found', 'run_not_found', 'proc_not_found'], true) => 404,
+    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found', 'run_not_found', 'proc_not_found',
+      'branch_not_found', 'commit_not_found'], true) => 404,
     in_array($error, ['file_exists', 'file_changed', 'run_busy', 'no_files', 'proc_busy', 'proc_not_running', 'proc_no_port',
-      'input_busy', 'fetch_busy'], true) => 409,
+      'input_busy', 'fetch_busy', 'nothing_to_commit', 'branch_exists', 'branch_active', 'branch_limit', 'history_full',
+      'already_current'], true) => 409,
     in_array($error, ['run_limit', 'proc_limit', 'proc_active_limit'], true) => 429,
     in_array($error, ['server_unreachable', 'fetch_failed'], true) => 502,
     $error === 'fetch_timeout' => 504,

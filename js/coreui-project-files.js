@@ -3,6 +3,8 @@
  * 0.7.77 (P10 B): commands on the saved files in the sandbox container, with their output. 
  * 0.7.78 (P10 C): processes that keep running there (a program, a shell, a development server)
  *   with live output, input and Beenden, and the preview of a development server.
+ * 0.7.80 (P11 A): versions and working states (Sichern, Verlauf, Änderungen, Wiederherstellen,
+ *   Arbeitsstände with their own files) and the ZIP with a Git repository.
  * Files of the project as a tree, search in names and content, a text editor
  * for single files, the history of a file with a comparison and restore, new
  * file, rename, delete and the current state as a ZIP. The server owns every
@@ -20,7 +22,10 @@
     file: null, draft: '', history: false, compare: null, query: '', results: null, folders: {},
     form: null, status: '', statusKind: '', conflict: false, busy: false, preview: null,
     run: { open: false, list: [], current: null, command: '', suggestion: '', allowed: true, ready: true, error: '', sending: false },
-    proc: freshProc() };
+    proc: freshProc(), vcs: freshVcs() };
+  function freshVcs() {
+    return { open: false, ready: true, data: null, error: '', busy: false, message: '', view: null, form: null };
+  }
   function freshProc() {
     return { open: false, list: [], current: null, since: 0, command: '', port: '', suggestion: { command: '', port: null },
       allowed: true, ready: true, error: '', sending: false };
@@ -59,11 +64,22 @@
     proc_no_port: 'Für diesen Prozess ist kein Port angegeben.',
     invalid_input: 'Die Eingabe ist zu lang (höchstens 2000 Zeichen).',
     input_busy: 'Es warten schon viele Eingaben. Bitte einen Moment.',
-    project_procs_migration_required: 'Die Datenbank-Migration 048 fehlt. Bitte das Update einspielen.'
+    project_procs_migration_required: 'Die Datenbank-Migration 048 fehlt. Bitte das Update einspielen.',
+    nothing_to_commit: 'Es gibt keine ungesicherten Änderungen.',
+    invalid_message: 'Bitte kurz beschreiben, was sich geändert hat (höchstens 200 Zeichen).',
+    invalid_branch_name: 'Der Name darf Buchstaben, Ziffern, Punkt, Unterstrich, Bindestrich und / enthalten und beginnt mit einem Buchstaben oder einer Ziffer.',
+    branch_exists: 'Diesen Arbeitsstand gibt es schon.',
+    branch_limit: 'Ein Projekt hat höchstens 10 Arbeitsstände.',
+    branch_active: 'Der aktive Arbeitsstand kann nicht gelöscht werden.',
+    branch_not_found: 'Diesen Arbeitsstand gibt es nicht mehr.',
+    commit_not_found: 'Diese Version gibt es nicht mehr.',
+    history_full: 'Der Verlauf ist voll (200 Versionen). Lösche einen Arbeitsstand, den du nicht mehr brauchst.',
+    already_current: 'Genau dieser Stand ist schon da.',
+    project_vcs_migration_required: 'Die Datenbank-Migration 049 fehlt. Bitte das Update einspielen.'
   };
   var MAX_PREVIEW_ERRORS = 5;
   var SOURCE = { build: 'Von Mara gebaut', mara: 'Von Mara geändert', create: 'Neu angelegt', edit: 'Bearbeitet', rename: 'Umbenannt',
-    restore: 'Wiederhergestellt' };
+    restore: 'Wiederhergestellt', branch: 'Arbeitsstand gewechselt' };
 
   function message(err) {
     var code = err && err.message || '';
@@ -747,6 +763,240 @@
     }
   }
 
+  // --- Versions and working states (0.7.80, P11 A) -------------------------------------------------
+  // "Sichern" keeps the state of every file as a version. Each working state has its own files:
+  // unsaved changes stay with the working state they were made in. Restoring saves unsaved
+  // changes first and adds the old state as a new version, so no version is lost.
+  var vcsBox = el('section', 'project-vcs');
+  vcsBox.hidden = true;
+  vcsBox.setAttribute('aria-label', 'Versionen');
+  panel.insertBefore(vcsBox, previewBox);
+  var vcsMessage = null;
+  var AUTHOR = { person: 'von dir', mara: 'von Mara', auto: 'automatisch' };
+  var CHANGE = { added: 'neu', modified: 'geändert', deleted: 'gelöscht' };
+  function vcsLoad() {
+    return getJson({ project_id: state.project, vcs: 1 }).then(function (d) {
+      state.csrf = d.csrf_token || state.csrf;
+      state.vcs.ready = d.ready !== false;
+      state.vcs.data = d.ready === false ? null : d;
+      state.vcs.error = '';
+    }).catch(function (e) { state.vcs.error = message(e); });
+  }
+  function openVcs() {
+    state.vcs.open = true; state.vcs.error = ''; state.vcs.view = null;
+    renderVcs();
+    vcsLoad().then(renderVcs);
+  }
+  function closeVcs() { state.vcs.open = false; renderVcs(); }
+  // After a switch or a restore the project files are different: the list and the preview follow.
+  function vcsFilesChanged() {
+    state.file = null; state.draft = ''; state.compare = null; state.history = false;
+    return load().then(function () { render(); refreshPreview(); });
+  }
+  function vcsAction(body, changesFiles, done) {
+    if (state.vcs.busy) return;
+    if (changesFiles && !leave()) return;
+    state.vcs.busy = true; state.vcs.error = '';
+    renderVcs();
+    post(body).then(function (d) {
+      state.vcs.data = Object.assign({ ready: true }, d.state || state.vcs.data);
+      state.vcs.view = null;
+      if (done) done(d);
+      return changesFiles ? vcsFilesChanged() : null;
+    }).catch(function (e) { state.vcs.error = message(e); })
+      .then(function () { state.vcs.busy = false; renderVcs(); });
+  }
+  function vcsCommit() {
+    var text = vcsMessage ? vcsMessage.value.trim() : '';
+    if (!text) { state.vcs.error = ERR.invalid_message; renderVcs(); return; }
+    // Saving reads the files as they are on the server: a draft in the editor is not part of it.
+    if (dirty() && !window.confirm('Im Editor ist eine Änderung an „' + state.file.path + '“ noch nicht gespeichert. Ohne sie sichern?')) return;
+    vcsAction({ action: 'vcs_commit', message: text }, false, function () { state.vcs.message = ''; if (vcsMessage) vcsMessage.value = ''; });
+  }
+  function vcsSwitch(branch) { vcsAction({ action: 'vcs_switch', branch_id: branch.id }, true); }
+  function vcsDelete(branch) {
+    if (!window.confirm('Arbeitsstand „' + branch.name + '“ löschen? Versionen, die nur dort liegen, gehen mit.')) return;
+    vcsAction({ action: 'vcs_branch_delete', branch_id: branch.id }, false);
+  }
+  function vcsRestore(commit) {
+    var note = state.vcs.data && !state.vcs.data.status.clean ? ' Ungesicherte Änderungen werden vorher als eigene Version gesichert.' : '';
+    if (!window.confirm('„' + commit.message + '“ wiederherstellen?' + note)) return;
+    vcsAction({ action: 'vcs_restore', commit_id: commit.id }, true);
+  }
+  function vcsCreate(name, carry) { vcsAction({ action: 'vcs_branch', name: name, carry: carry }, true, function () { state.vcs.form = null; }); }
+  function vcsShowCommit(commit) {
+    getJson({ project_id: state.project, vcs_commit: commit.id }).then(function (d) {
+      state.vcs.view = { kind: 'commit', commit: d.commit, changes: d.changes };
+      renderVcs();
+    }).catch(function (e) { state.vcs.error = message(e); renderVcs(); });
+  }
+  // One file compared between two states: [from, to] are a version id, 'work' or null (not there).
+  function vcsShowFile(path, from, to, title) {
+    var get = function (which) {
+      if (which === null) return Promise.resolve({ exists: false, content: '' });
+      return getJson({ project_id: state.project, vcs_file: which, path: path }).then(function (d) { return d.file; });
+    };
+    Promise.all([get(from), get(to)]).then(function (both) {
+      state.vcs.view = { kind: 'file', path: path, title: title, before: both[0], after: both[1], back: state.vcs.view };
+      renderVcs();
+    }).catch(function (e) { state.vcs.error = message(e); renderVcs(); });
+  }
+  function changeList(changes, onPick) {
+    var list = el('ul', 'project-vcs-changes');
+    ['added', 'modified', 'deleted'].forEach(function (kind) {
+      (changes[kind] || []).forEach(function (path) {
+        var item = el('li', 'is-' + kind);
+        var b = button('', 'project-vcs-change', function () { onPick(path, kind); }, { 'data-path': path });
+        b.appendChild(el('code', '', path));
+        b.appendChild(el('small', '', CHANGE[kind]));
+        item.appendChild(b);
+        list.appendChild(item);
+      });
+    });
+    return list;
+  }
+  function renderVcs() {
+    var s = state.vcs;
+    var keep = vcsMessage && document.activeElement === vcsMessage;
+    if (vcsMessage) s.message = vcsMessage.value;
+    vcsBox.textContent = ''; vcsMessage = null;
+    vcsBox.hidden = !s.open;
+    if (!s.open) return;
+    var head = el('div', 'project-run-head');
+    var title = el('div', 'project-preview-title');
+    title.appendChild(el('strong', '', 'Versionen'));
+    title.appendChild(el('small', '', 'Sichern hält den Stand aller Dateien fest. Jeder Arbeitsstand hat eigene Dateien; ungesicherte Änderungen bleiben bei ihrem Arbeitsstand.'));
+    head.appendChild(title);
+    var actions = el('div', 'project-preview-actions');
+    if (s.data) {
+      var zip = el('a', 'project-files-secondary', 'Als ZIP mit Git');
+      zip.href = url({ project_id: state.project, vcs_zip: 1 });
+      zip.setAttribute('download', ''); zip.id = 'projectVcsZip';
+      actions.appendChild(zip);
+    }
+    actions.appendChild(button('Schließen', 'project-files-secondary', closeVcs, { id: 'projectVcsClose' }));
+    head.appendChild(actions);
+    vcsBox.appendChild(head);
+    if (!s.ready) { vcsBox.appendChild(el('p', 'project-files-status is-error', ERR.project_vcs_migration_required)); return; }
+    if (s.error) vcsBox.appendChild(el('p', 'project-files-status is-error', s.error));
+    var d = s.data;
+    if (!d) { vcsBox.appendChild(el('p', 'project-files-hint', 'Lädt …')); return; }
+
+    // Working states.
+    var branches = el('div', 'project-vcs-branches');
+    branches.setAttribute('aria-label', 'Arbeitsstände');
+    branches.appendChild(el('strong', '', 'Arbeitsstände'));
+    d.branches.forEach(function (b) {
+      var row = el('div', 'project-vcs-branch' + (b.active ? ' is-active' : ''));
+      row.setAttribute('data-branch', b.name);
+      row.appendChild(el('code', '', b.name));
+      row.appendChild(el('small', '', (b.active ? 'aktiv' : '') + (b.unsaved ? (b.active ? ' · ' : '') + 'ungesicherte Änderungen' : '')));
+      if (!b.active) {
+        var sw = button('Wechseln', 'project-files-secondary', function () { vcsSwitch(b); }, { 'data-switch': b.name });
+        sw.disabled = s.busy;
+        row.appendChild(sw);
+        row.appendChild(button('Löschen', 'project-files-danger', function () { vcsDelete(b); }, { 'data-delete': b.name }));
+      }
+      branches.appendChild(row);
+    });
+    if (s.form) {
+      var form = el('form', 'project-run-form project-vcs-new');
+      var name = el('input', 'project-run-command');
+      name.type = 'text'; name.maxLength = 60; name.value = s.form.name || ''; name.placeholder = 'Name, z. B. neuer-titel'; name.id = 'projectVcsBranchName';
+      name.setAttribute('aria-label', 'Name des Arbeitsstands'); name.autocomplete = 'off'; name.spellcheck = false;
+      form.appendChild(name);
+      var carry = el('label', 'project-vcs-carry');
+      var box = el('input'); box.type = 'checkbox'; box.id = 'projectVcsCarry'; box.checked = s.form.carry;
+      carry.appendChild(box);
+      carry.appendChild(el('span', '', 'Ungesicherte Änderungen mitnehmen'));
+      form.appendChild(carry);
+      var create = el('button', 'project-files-primary', 'Anlegen'); create.type = 'submit'; create.id = 'projectVcsCreate'; create.disabled = s.busy;
+      form.appendChild(create);
+      form.appendChild(button('Abbrechen', 'project-files-secondary', function () { s.form = null; renderVcs(); }));
+      form.addEventListener('submit', function (e) { e.preventDefault(); s.form = { name: name.value, carry: box.checked }; vcsCreate(name.value.trim(), box.checked); });
+      branches.appendChild(form);
+      setTimeout(function () { name.focus(); }, 0);
+    } else {
+      branches.appendChild(button('Neuer Arbeitsstand', 'project-files-secondary', function () {
+        s.form = { name: '', carry: !d.status.clean }; renderVcs();
+      }, { id: 'projectVcsNewBranch' }));
+    }
+    vcsBox.appendChild(branches);
+
+    // Unsaved changes and saving.
+    var status = el('div', 'project-vcs-status');
+    status.setAttribute('role', 'status');
+    var changed = d.status.added.length + d.status.modified.length + d.status.deleted.length;
+    status.appendChild(el('strong', '', d.status.clean ? 'Alles gesichert' : 'Ungesicherte Änderungen (' + changed + ')'));
+    if (!d.status.clean) {
+      var head0 = d.active.head_commit_id;
+      status.appendChild(changeList(d.status, function (path, kind) {
+        vcsShowFile(path, kind === 'added' ? null : head0, kind === 'deleted' ? null : 'work', 'Ungesichert gegenüber der letzten Version');
+      }));
+    }
+    var save = el('form', 'project-run-form project-vcs-save');
+    vcsMessage = el('input', 'project-run-command');
+    vcsMessage.type = 'text'; vcsMessage.maxLength = 200; vcsMessage.value = s.message; vcsMessage.id = 'projectVcsMessage';
+    vcsMessage.placeholder = 'Was hat sich geändert?'; vcsMessage.setAttribute('aria-label', 'Beschreibung der Version'); vcsMessage.autocomplete = 'off';
+    save.appendChild(vcsMessage);
+    var go = el('button', 'project-files-primary', 'Sichern'); go.type = 'submit'; go.id = 'projectVcsCommit';
+    go.disabled = s.busy || d.status.clean;
+    save.appendChild(go);
+    save.addEventListener('submit', function (e) { e.preventDefault(); vcsCommit(); });
+    status.appendChild(save);
+    vcsBox.appendChild(status);
+    if (keep) { vcsMessage.focus(); try { vcsMessage.setSelectionRange(vcsMessage.value.length, vcsMessage.value.length); } catch (e) {} }
+
+    // A version's changes, or one file compared.
+    var v = s.view;
+    if (v && v.kind === 'commit') {
+      var cbox = el('div', 'project-vcs-view');
+      var chead = el('div', 'project-file-compare-head');
+      chead.appendChild(el('strong', '', '„' + v.commit.message + '“'));
+      chead.appendChild(button('Schließen', 'project-files-secondary', function () { s.view = null; renderVcs(); }));
+      cbox.appendChild(chead);
+      if (v.changes.clean) cbox.appendChild(el('p', 'project-files-hint', 'Diese Version hat nichts geändert.'));
+      else cbox.appendChild(changeList(v.changes, function (path, kind) {
+        vcsShowFile(path, kind === 'added' ? null : v.commit.parent_id, kind === 'deleted' ? null : v.commit.id, '„' + v.commit.message + '“');
+      }));
+      vcsBox.appendChild(cbox);
+    } else if (v && v.kind === 'file') {
+      var fbox = el('div', 'project-vcs-view project-file-compare');
+      var fhead = el('div', 'project-file-compare-head');
+      fhead.appendChild(el('strong', '', v.path + ' · ' + v.title));
+      var ops = diffLines(lines(v.before.content), lines(v.after.content));
+      if (ops) {
+        fhead.appendChild(el('span', 'project-diff-count', '+' + ops.filter(function (o) { return o.t === '+'; }).length
+          + ' −' + ops.filter(function (o) { return o.t === '-'; }).length));
+      }
+      fhead.appendChild(button(v.back ? 'Zurück' : 'Schließen', 'project-files-secondary', function () { s.view = v.back || null; renderVcs(); }));
+      fbox.appendChild(fhead);
+      fbox.appendChild(diffBody(ops));
+      vcsBox.appendChild(fbox);
+    }
+
+    // The versions of the active working state.
+    var log = el('div', 'project-vcs-log');
+    log.setAttribute('aria-label', 'Versionen von ' + d.active.name);
+    log.appendChild(el('strong', '', 'Versionen von ' + d.active.name));
+    if (!d.log.length) log.appendChild(el('p', 'project-files-hint', 'Noch keine Version. Sichere den ersten Stand.'));
+    d.log.forEach(function (c, i) {
+      var row = el('div', 'project-vcs-commit' + (i === 0 ? ' is-head' : ''));
+      row.setAttribute('data-commit', String(c.id));
+      var text = el('div', 'project-vcs-commit-text');
+      text.appendChild(el('span', '', c.message));
+      text.appendChild(el('small', '', AUTHOR[c.author] + ' · ' + when(c.created_at) + ' · ' + (c.files_count === 1 ? '1 Datei' : c.files_count + ' Dateien')
+        + (i === 0 ? ' · neueste' : '')));
+      row.appendChild(text);
+      var acts = el('div', 'project-vcs-commit-actions');
+      acts.appendChild(button('Änderungen', 'project-files-secondary', function () { vcsShowCommit(c); }, { 'data-show': String(c.id) }));
+      if (i > 0 || !d.status.clean) acts.appendChild(button('Wiederherstellen', 'project-files-secondary', function () { vcsRestore(c); }, { 'data-restore': String(c.id) }));
+      row.appendChild(acts);
+      log.appendChild(row);
+    });
+    vcsBox.appendChild(log);
+  }
+
   window.addEventListener('message', function (event) {
     if (!frame || !state.preview || event.source !== frame.contentWindow) return;
     var data = event.data;
@@ -849,6 +1099,7 @@
     if (state.files.length) {
       bar.appendChild(button('Ausführen', 'project-files-secondary', openRuns, { id: 'projectFilesRun', 'aria-expanded': String(state.run.open) }));
       bar.appendChild(button('Prozesse', 'project-files-secondary', openProcs, { id: 'projectFilesProcs', 'aria-expanded': String(state.proc.open) }));
+      bar.appendChild(button('Versionen', 'project-files-secondary', openVcs, { id: 'projectFilesVcs', 'aria-expanded': String(state.vcs.open) }));
     }
     if (state.files.length) {
       var zip = el('a', 'project-files-secondary project-files-zip', 'Als ZIP herunterladen');
@@ -916,8 +1167,13 @@
     actions.appendChild(button('Vergleich schließen', 'project-files-secondary', function () { state.compare = null; render(); }));
     head.appendChild(actions);
     box.appendChild(head);
-    if (!ops) { box.appendChild(el('p', 'project-files-empty', 'Die Datei ist zu groß für einen Vergleich.')); return box; }
-    if (!ops.some(function (o) { return o.t !== ' '; })) { box.appendChild(el('p', 'project-files-empty', 'Keine Unterschiede.')); return box; }
+    box.appendChild(diffBody(ops));
+    return box;
+  }
+  // The lines of a comparison, unchanged runs folded (also used by the versions, 0.7.80).
+  function diffBody(ops) {
+    if (!ops) return el('p', 'project-files-empty', 'Die Datei ist zu groß für einen Vergleich.');
+    if (!ops.some(function (o) { return o.t !== ' '; })) return el('p', 'project-files-empty', 'Keine Unterschiede.');
     var pre = el('div', 'project-diff');
     var i = 0;
     while (i < ops.length) {
@@ -937,8 +1193,7 @@
         pre.appendChild(diffRow(ops[i])); i++;
       }
     }
-    box.appendChild(pre);
-    return box;
+    return pre;
   }
   function diffRow(op) {
     var row = el('div', 'project-diff-row ' + (op.t === '+' ? 'is-add' : op.t === '-' ? 'is-del' : 'is-same'));
@@ -1058,6 +1313,8 @@
     stopProcPoll();
     state.proc = freshProc(); procShown = '';
     renderProc();
+    state.vcs = freshVcs();
+    renderVcs();
   }
   function open(projectId) {
     if (projectId !== state.project) { reset(); state.project = projectId || ''; }

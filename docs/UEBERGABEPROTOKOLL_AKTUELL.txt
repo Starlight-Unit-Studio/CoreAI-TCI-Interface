@@ -1,4 +1,16 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
+Version main: 0.7.79, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.80).
+ZIEL 0.7.80: Roadmap P11 Schritt A, Versionen und Arbeitsstaende der
+Projektdateien (Sichern, Verlauf, Aenderungen, eigene Dateien je
+Arbeitsstand, Wiederherstellen mit automatischer Sicherung) und ZIP mit
+echtem Git-Repository. Migration 049_project_versions.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_80.txt.
+Naechster Schritt: P11 B (Zusammenfuehren mit Konflikten, Mara mit Versionen).
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.81.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.78, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.79).
 ZIEL 0.7.79 (Betreiberauftrag): Node.js 24 mit npm und npx im Sandbox-Image
 (neuer Tag ember-py:2, Installer bauen es und entfernen ember-py:1), Vorschlaege
