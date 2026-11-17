@@ -16,11 +16,18 @@ declare(strict_types=1);
  * change is a new revision (source "mara"); the tab Dateien can restore any
  * earlier state. A change is all or nothing: one block that does not match
  * exactly once changes nothing, and Mara gets told why.
+ *
+ * 0.7.77 (P10 B): [AUSFUEHREN: befehl] runs a command on the saved files in the sandbox
+ * container (api/project_runs_store.php) and gives Mara the real output and exit code, so she
+ * can test, change a file and test again.
  */
 require_once __DIR__ . '/project_files_store.php';
+require_once __DIR__ . '/project_runs_store.php';
 
 const COREUI_PFTOOLS_READ_CHARS = 16000;
 const COREUI_PFTOOLS_HINT_FILES = 40;
+const COREUI_PFTOOLS_RUN_WAIT = 130;
+const COREUI_PFTOOLS_RUN_CHARS = 6000;
 
 /** The project of a chat when Mara may use the file tools there, else ''. */
 function coreui_pftools_project(PDO $pdo, int $uid, string $sessionId): string {
@@ -43,6 +50,45 @@ function coreui_pftools_extract_block(string $reply, string $name): ?string {
 }
 function coreui_pftools_extract_edit(string $reply): ?string { return coreui_pftools_extract_block($reply, 'DATEI_AENDERN'); }
 function coreui_pftools_extract_write(string $reply): ?string { return coreui_pftools_extract_block($reply, 'DATEI_NEU'); }
+
+/**
+ * [AUSFUEHREN: befehl] (pure): the command, or null. At the end of a line the command runs to
+ * the last "]" (brackets inside stay: python -c "print([1])"), unless another marker follows on
+ * that line; then, and in the middle of a line, it ends at the first "]".
+ */
+function coreui_pftools_extract_run(string $reply): ?string {
+  $start = '~\[\s*AUSF(?:UE|Ü)HREN\s*:\s*';
+  if (preg_match($start . '([^\r\n]{1,400})\][ \t]*(?:\r?\n|\z)~u', $reply, $m) === 1
+      && preg_match('~\[\s*[A-ZÄÖÜ_]{3,}(?:\s+[A-ZÄÖÜ]+)*\s*:~u', $m[1]) !== 1) {
+    $command = trim($m[1]);
+  } elseif (preg_match($start . '([^\[\]\r\n]{1,400})\]~u', $reply, $m) === 1) {
+    $command = trim($m[1]);
+  } else {
+    return null;
+  }
+  return $command !== '' ? $command : null;
+}
+
+/** Start and end of a long output (pure). */
+function coreui_pftools_clip(string $text, int $limit = COREUI_PFTOOLS_RUN_CHARS): string {
+  if (mb_strlen($text, 'UTF-8') <= $limit) return $text;
+  $head = (int)($limit * 0.3);
+  return mb_substr($text, 0, $head, 'UTF-8') . "\n[... gekuerzt ...]\n" . mb_substr($text, -($limit - $head), null, 'UTF-8');
+}
+
+/** What Mara reads after a run (pure). */
+function coreui_pftools_run_result(array $run): string {
+  $text = 'Befehl: ' . $run['command'] . "\n" . coreui_pruns_summary($run);
+  if (coreui_pruns_active((string)$run['status'])) {
+    return $text . "\nDer Lauf ist noch nicht fertig. Das Ergebnis steht danach im Tab Dateien unter Ausfuehren.";
+  }
+  $out = trim((string)($run['stdout'] ?? ''));
+  $err = trim((string)($run['stderr'] ?? ''));
+  if ($out !== '') $text .= "\n--- Ausgabe (stdout) ---\n" . coreui_pftools_clip($out);
+  if ($err !== '') $text .= "\n--- Fehlerausgabe (stderr) ---\n" . coreui_pftools_clip($err);
+  if ($out === '' && $err === '' && $run['status'] === 'done') $text .= "\n(Keine Ausgabe.)";
+  return $text . "\n(Lauf im Sandbox-Container mit den gespeicherten Projektdateien; was der Befehl an Dateien aendert, bleibt nicht erhalten.)";
+}
 
 /** Split the tool input "path\nbody" (pure). */
 function coreui_pftools_split(string $input): array {
@@ -130,6 +176,14 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
   if ($projectId === '') return 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.';
   $kind = (string)($tool['tool'] ?? '');
   try {
+    if ($kind === 'prun') {
+      $run = coreui_pruns_enqueue($pdo, $uid, $projectId, (string)$tool['input'], $sessionId);
+      $run = coreui_pruns_wait($pdo, $uid, $projectId, (int)$run['id'], COREUI_PFTOOLS_RUN_WAIT);
+      $ok = $run['status'] === 'done' && (int)$run['exit_code'] === 0;
+      coreui_pftools_record($pdo, $ok ? 'success' : ($run['status'] === 'done' ? 'info' : 'error'),
+        $run['status'] === 'done' ? 'Projekt ausgefuehrt, Exitcode ' . (int)$run['exit_code'] : 'Projektlauf ohne Ergebnis', ['count'=>1]);
+      return coreui_pftools_run_result($run);
+    }
     if ($kind === 'pfile_read') {
       $path = coreui_pfiles_path((string)$tool['input']);
       $file = coreui_pfiles_get($pdo, $uid, $projectId, $path);
@@ -176,6 +230,11 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
       'file_changed'=>'die Datei wurde gerade anders geaendert; lies sie neu',
       'project_full'=>'das Projekt ist voll (200 Dateien oder 10 MB)',
       'storage_full'=>'der Speicher des Kontos ist voll',
+      'invalid_command'=>'der Befehl muss eine Zeile mit hoechstens 400 Zeichen sein',
+      'run_busy'=>'in diesem Projekt laeuft schon ein Befehl',
+      'run_limit'=>'fuer diese Stunde sind es genug Laeufe',
+      'no_files'=>'das Projekt hat noch keine Dateien',
+      'project_runs_migration_required'=>'das Ausfuehren ist auf diesem Server noch nicht eingerichtet (Migration 047)',
     ][$e->getMessage()] ?? $e->getMessage();
     return 'Das ging nicht: ' . $why . '.';
   }
@@ -186,7 +245,7 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
  * The part of Mara's prompt in a project chat: which files the project has and
  * how she reads and changes them. '' outside a project or without files support.
  */
-function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compact): string {
+function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compact, bool $canRun = false): string {
   $projectId = coreui_pftools_project($pdo, $uid, $sessionId);
   if ($projectId === '') return '';
   try {
@@ -202,7 +261,8 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
   if ($compact) {
     return "PROJEKTDATEIEN: " . $files . " Lesen: [DATEI: pfad]. Gezielt aendern: [DATEI_AENDERN: pfad] mit Bloecken "
       . "<<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN]. "
-      . "Neu oder ganz ersetzen: [DATEI_NEU: pfad] Inhalt [/DATEI_NEU].";
+      . "Neu oder ganz ersetzen: [DATEI_NEU: pfad] Inhalt [/DATEI_NEU]."
+      . ($canRun ? " Ausfuehren und testen: [AUSFUEHREN: befehl] (Sandbox mit Python 3.12)." : '');
   }
   return "PROJEKTDATEIEN: " . $files . "\n"
     . "Du kannst die Dateien dieses Projekts selbst lesen und gezielt aendern, ein Werkzeug pro Schritt:\n"
@@ -211,6 +271,9 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
     . "=======\nneue Zeilen\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]\n"
     . "  Mehrere SUCHEN/ERSETZEN-Bloecke sind erlaubt; jeder SUCHEN-Text muss genau einmal vorkommen.\n"
     . "- [DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] legt eine Datei an oder ersetzt sie ganz.\n"
+    . ($canRun ? "- [AUSFUEHREN: befehl] fuehrt einen Befehl mit den gespeicherten Dateien im Sandbox-Container aus (Python 3.12, "
+      . "kein Node.js), zum Beispiel [AUSFUEHREN: python -m unittest -v]; du bekommst die echte Ausgabe und den Exitcode. "
+      . "Nach einer Aenderung fuehrst du die Tests erneut aus. Was der Befehl an Dateien aendert, bleibt nicht erhalten.\n" : '')
     . "Aendere nur, was die Person moechte. Fuer kleine Aenderungen an vorhandenen Dateien nimm DATEI_AENDERN statt eines neuen Baus. "
     . "Jeder vorige Stand bleibt im Tab Dateien wiederherstellbar. Sag danach kurz, was du geaendert hast.";
 }

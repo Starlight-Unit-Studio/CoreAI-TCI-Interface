@@ -20,6 +20,7 @@ declare(strict_types=1);
  * it is attached to her answer, and she says in her answer that it is there.
  * 0.7.73 (P09 B): in a project chat [DATEI: pfad], [DATEI_AENDERN: pfad] and [DATEI_NEU: pfad]
  * read and change single project files (api/project_file_tools.php).
+ * 0.7.77 (P10 B): [AUSFUEHREN: befehl] runs a command on them in the sandbox container.
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
@@ -31,6 +32,7 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
     'pfile_write'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_write') ? coreui_pftools_extract_write($r) : null,
     'pfile_edit'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_edit') ? coreui_pftools_extract_edit($r) : null,
     'pfile_read'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_read') ? coreui_pftools_extract_read($r) : null,
+    'prun'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_run') ? coreui_pftools_extract_run($r) : null,
     'skill'=>static fn(string $r): ?string => function_exists('coreui_skills_extract_marker') ? coreui_skills_extract_marker($r) : null,
     'browse'=>static fn(string $r): ?string => function_exists('ember_extract_browse_marker') ? ember_extract_browse_marker($r) : null,
     'web'=>static fn(string $r): ?string => function_exists('ember_extract_web_marker') ? ember_extract_web_marker($r) : null,
@@ -91,7 +93,7 @@ function coreui_browse_goal_start_url(string $goal): ?string {
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
     'skill'=>'Skill geladen', 'image'=>'Bild', 'pfile_read'=>'Projektdatei lesen', 'pfile_edit'=>'Projektdatei aendern',
-    'pfile_write'=>'Projektdatei schreiben'];
+    'pfile_write'=>'Projektdatei schreiben', 'prun'=>'Projekt ausfuehren'];
   return 'Schritt ' . $step . ' von ' . $max . ': ' . ($what[(string)$tool['tool']] ?? 'Werkzeug');
 }
 
@@ -101,7 +103,7 @@ function coreui_agent_step_note(array $tool): ?string {
   if ($tool['tool'] === 'python' || $input === '') return null;
   $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
     'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: ', 'pfile_read'=>'Ich lese die Datei ',
-    'pfile_edit'=>'Ich ändere die Datei ', 'pfile_write'=>'Ich schreibe die Datei '];
+    'pfile_edit'=>'Ich ändere die Datei ', 'pfile_write'=>'Ich schreibe die Datei ', 'prun'=>'Ich führe aus: '];
   // An image shows its description without the size word.
   if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^(?:GROSS:\s*)?(?:ICH:\s*)?~u', '', $input));
   // A file change shows its path only, never the code.
@@ -124,6 +126,7 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'pfile_read' => 'Datei gelesen: „' . $short . '“',
     'pfile_edit' => 'Datei geändert: „' . trim(explode("\n", $input, 2)[0]) . '“',
     'pfile_write' => 'Datei geschrieben: „' . trim(explode("\n", $input, 2)[0]) . '“',
+    'prun' => 'Ausgeführt: „' . $short . '“',
     default => 'Werkzeug',
   };
   return $what;
@@ -146,6 +149,7 @@ function coreui_agent_tool_menu(array $allowed): string {
     $lines[] = '[DATEI_AENDERN: pfad] mit Bloecken <<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN], um eine Projektdatei gezielt zu aendern';
     $lines[] = '[DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] fuer eine neue oder ganz ersetzte Projektdatei';
   }
+  if (in_array('prun', $allowed, true)) $lines[] = '[AUSFUEHREN: befehl] um das Projekt im Sandbox-Container auszufuehren oder zu testen (echte Ausgabe und Exitcode)';
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -319,7 +323,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       }
       // No unverified second tool, no broken marker leaked as public prose.
       if ($final === '' || coreui_agent_next_tool($final,
-          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write']) !== null
+          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write','prun']) !== null
           || preg_match('~\\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\\s+GROSS)?(?:\\s+ICH)?):|\\[/?PY\\]~iu', $final) === 1) {
         $final = $result; // Honest, deterministic fallback if the model fails.
         $record('model', 'info', 'Bildabschluss aus Werkzeugergebnis',
