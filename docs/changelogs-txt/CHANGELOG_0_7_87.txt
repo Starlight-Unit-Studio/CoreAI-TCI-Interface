@@ -22,6 +22,8 @@ NEW CI CHECK
   plus automatic-update regression checks, Python syntax, and Bash syntax.
 - Triggers on installer, updater, preflight and regression-test changes.
 - English update UI and cache fingerprints are checked in CI.
+- A dedicated real Chromium/Playwright job covers the update modal and
+  phone layout when the update UI changes.
 - Real server preflight remains a separate post-deployment verification.
 
 VERSION
