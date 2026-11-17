@@ -593,15 +593,15 @@ for needle in ('profiles: ["image"]', 'dockerfile: docker/image/Dockerfile', 'us
     check(needle in block, 'compose image service: ' + needle)
 install = (ROOT / 'scripts' / 'install.sh').read_text(encoding='utf-8')
 for needle in ('"$PROJECT_ROOT/var/image-models" \\', 'COREUI_INSTALL_IMAGE=$INSTALL_IMAGE', 'if compose build image; then',
-               "warn 'Bilddienst konnte nicht gebaut werden; CoreAI laeuft ohne Bilder weiter.'",
+               "warn 'Image service could not be built; CoreAI will continue without image generation.'",
                'python3 -I "$PROJECT_ROOT/tools/image/adopt_spike.py"', 'compose up -d image', 'compose stop image',
                '|| -n "$REQUEST_INSTALL_IMAGE" \\', 'if (( MEM_TOTAL_GB >= 31 )); then IMAGE_DEFAULT=1; else IMAGE_DEFAULT=0; fi'):
     check(needle in install, 'install.sh: ' + needle)
-check(install.index('if compose build image; then') < install.index("log 'Baue das wegwerfbare Python-Sandbox-Image"),
+check(install.index('if compose build image; then') < install.index("log 'Building disposable Python sandbox image"),
       'the image service is built with the other images')
 check('"$image_models_dir"' in (ROOT / 'scripts' / 'stack.sh').read_text(encoding='utf-8'), 'stack.sh creates var/image-models')
 state = (ROOT / 'scripts' / 'lib' / 'coreai_update_state.py').read_text(encoding='utf-8')
-check("('Baue den Bilddienst', 41," in state and "log 'Baue den Bilddienst (" in install, 'the update window names the long first build')
+check("('Building the image service', 41," in state and "log 'Building the image service (" in install, 'the update window names the long first build')
 
 print('CoreAI Bilddienst: Register, Fortschritt aus sd-cli, Gewichte mit festem SHA-256, Auftraege (ein Bild zur Zeit, Abbruch, '
       'Zeitlimit, Fehler), Uebernahme aus dem Bildtest, Compose, Installer OK')
