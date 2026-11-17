@@ -86,8 +86,8 @@ function coreui_hf_search_parse(array $results): array {
     $repo = (string)($meta['id'] ?? $meta['modelId'] ?? '');
     if (!coreui_hf_repo_valid($repo) || !empty($meta['private']) || !empty($meta['gated']) || isset($rows[$repo])) continue;
     $tags = array_map('strtolower', array_filter((array)($meta['tags'] ?? []), 'is_string'));
-    if (!in_array('gguf', $tags, true) && strtolower((string)($meta['library_name'] ?? '')) !== 'gguf'
-        && preg_match('~(?:^|[-_.])gguf(?:$|[-_.])~i', $repo) !== 1) continue;
+    // Only what the Hub itself marks as GGUF (tag or library), not a name ending in -GGUF.
+    if (!in_array('gguf', $tags, true) && strtolower((string)($meta['library_name'] ?? '')) !== 'gguf') continue;
     $rows[$repo] = ['name'=>$repo, 'summary'=>'GGUF · Lizenz: ' . coreui_hf_license($meta),
       'url'=>coreui_hf_url($repo)];
     if (count($rows) >= 60) break;

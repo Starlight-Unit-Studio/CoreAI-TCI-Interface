@@ -31,6 +31,12 @@ CORE-BEGRIFF IN DER CORE-BIBLIOTHEK
   "Auf der Originalseite ansehen", "Bitte die offizielle Seite des Cores
   verwenden."
 
+HUGGING-FACE-BIBLIOTHEK
+- coreui_hf_search_parse nimmt ein Repository nicht mehr nur wegen eines
+  Namens auf -GGUF auf; noetig ist das Tag oder die Bibliothek gguf des Hubs.
+  Der vorhandene scripts/huggingface-library-selftest.php laeuft in beiden
+  Preflights und damit bei jedem Update und war deshalb auf main 0.7.76 rot.
+
 DATENBANK
 - Migration 047_project_runs (Laeufe gehen mit ihrem Projekt).
 

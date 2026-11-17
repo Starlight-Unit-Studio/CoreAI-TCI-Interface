@@ -46,6 +46,9 @@ UMSETZUNG
 - Nachtrag fuer die CI-Pruefung ui-and-version: zwei sichtbare "Modell"-Texte der Core-Bibliothek in
   app.html (aus PR #332) und ein Hinweis in js/coreui-model-library.js sagen jetzt "Core" bzw.
   "Originalseite". scripts/frontend-regression-selftest.php war damit schon auf main 0.7.76 rot.
+- Nachtrag Preflight: api/huggingface_library.php verlangt fuer die Suche das GGUF-Tag oder die
+  GGUF-Bibliothek des Hubs, nicht mehr nur einen Namen auf -GGUF. scripts/huggingface-library-selftest.php
+  (in beiden Preflights, also bei jedem Update) war damit schon auf main 0.7.76 rot.
 - Nicht geaendert: Sandbox-Image (tools/ember_py.Dockerfile), Installer, compose.yaml, Modelfile,
   SYSTEM-Prompts. Der pyworker-Dienst laedt das neue Modul beim naechsten Start (Update startet ihn neu).
 
