@@ -36,11 +36,7 @@
   var lastTapAt = 0;
   var lastTapX = 0;
   var lastTapY = 0;
-  var touchLookTimer = null;
-
   function clearTouchLook() {
-    if (touchLookTimer) window.clearTimeout(touchLookTimer);
-    touchLookTimer = null;
     if (sprite && pets.clearLook) pets.clearLook(sprite);
   }
   function greet(clientX, clientY) {
@@ -51,7 +47,7 @@
     lastTapAt = now;
     lastTapX = clientX;
     lastTapY = clientY;
-    pets.playTemporary(sprite, repeatTap ? 'jumping' : 'waving', repeatTap ? 1100 : 1100);
+    pets.playTemporary(sprite, repeatTap ? 'jumping' : 'waving', 1100);
   }
 
   function areaLimits() {
@@ -90,9 +86,9 @@
     var pet = pets.current;
     if (!pet) {
       dock.hidden = true;
+      clearTouchLook();
       dock.textContent = '';
       sprite = null;
-      clearTouchLook();
       return;
     }
     var size = spriteSize();
