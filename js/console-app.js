@@ -253,8 +253,10 @@
     var pets = window.CoreAIPets;
     if (!pets || typeof pets.setActivity !== 'function') return;
     var current = pets.getActivity();
-    if (type === 'waiting' && /ANTWORTET/.test(label || '')) pets.setActivity('running');
-    else if (type === 'error') pets.setActivity('failed');
+    // Status changes, not arbitrary timers, drive Mara's work animation.
+    // All accepted active generation labels count, not just "ANTWORTET".
+    if (type === 'error') pets.setActivity('failed');
+    else if (type === 'waiting' && /ANTWORTET|VERARBEITET|ERZEUGT|SETZT FORT/.test(label || '')) pets.setActivity('running');
     else if (type === 'online' && (current === 'running' || current === 'waiting')) pets.setActivity('review');
   }
 
