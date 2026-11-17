@@ -977,119 +977,119 @@ if command -v php >/dev/null 2>&1; then
 
   file_test=''
   if file_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/local-file-tool-selftest.php" 2>&1)"; then
-    ok 'Lokale Dateiauftraege: Python-Fences, mehrteilige Projekte, ZIP und Vollstaendigkeit geprueft.'
+    ok 'Local file tasks: Python fences, multipart projects, ZIP output and completeness verified.'
   else
     fail "Lokaler Dateiwerkzeug-Selbsttest: ${file_test:-Unbekannter Fehler}"
   fi
 
   context_test=''
   if context_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/context-budget-selftest.php" 2>&1)"; then
-    ok 'Kontextfenster: erkannte Fenstergroesse, Datei-Prompt-Budget und Planauszug geprueft.'
+    ok 'Context window: detected window size, file prompt budget and plan extract verified.'
   else
     fail "Kontextfenster-Selbsttest: ${context_test:-Unbekannter Fehler}"
   fi
 
   insights_test=''
   if insights_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/insights-selftest.php" 2>&1)"; then
-    ok 'Infokaesten: Core, Kontext, Werkzeuge und Projekt nur lesend und sitzungsbezogen.'
+    ok 'Info panels: Core, context, tools and project are read-only and session-scoped.'
   else
     fail "Infokaesten-Selbsttest: ${insights_test:-Unbekannter Fehler}"
   fi
 
   ai_context_test=''
   if ai_context_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/ai-context-selftest.php" 2>&1)"; then
-    ok 'KI-Profil: Kontextfenster nur auf Wunsch, nie Cloud, pro Lauf fixiert, Speicher-Richtwerte geprueft.'
+    ok 'AI profile: context window by choice only, never cloud, pinned per run, RAM guidance verified.'
   else
     fail "KI-Profil-Kontextfenster-Selbsttest: ${ai_context_test:-Unbekannter Fehler}"
   fi
 
   date_test=''
   if date_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/date-awareness-selftest.php" 2>&1)"; then
-    ok 'Datum und Uhrzeit: jeder Core-Aufruf eines Konsolenauftrags kennt beides.'
+    ok 'Date and time: every Core call in a console task receives both.'
   else
     fail "Datums-Selbsttest: ${date_test:-Unbekannter Fehler}"
   fi
 
   knowledge_test=''
   if knowledge_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/knowledge-search-selftest.php" 2>&1)"; then
-    ok 'RAG-Lite: seltene Namen vor Allerweltsbegriffen, Rueckfragen ueber den Verlauf, sichtbarer Suchschritt.'
+    ok 'RAG-Lite: rare names take precedence over common terms, history-based follow-ups and visible search step.'
   else
     fail "RAG-Lite-Suche: ${knowledge_test:-Unbekannter Fehler}"
   fi
 
   vision_test=''
   if vision_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/vision-persona-selftest.php" 2>&1)"; then
-    ok 'Bild und Video: dieselbe Mara wie bei Text, kein falscher Fehler, keine Bildfakten im Gedaechtnis.'
+    ok 'Images and video: same Mara persona as text, no false error and no image claims stored in memory.'
   else
     fail "Bild-/Video-Persona: ${vision_test:-Unbekannter Fehler}"
   fi
 
   audio_test=''
   if audio_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/audio-wav-selftest.php" 2>&1)"; then
-    ok 'Audio: WAV-Pruefung, Hilfen fuer Audio-Aufrufe und Medien-Test P20.0 geprueft.'
+    ok 'Audio: WAV checks, audio-call guidance and media test P20.0 verified.'
   else
     fail "Audio-WAV-Selbsttest: ${audio_test:-Unbekannter Fehler}"
   fi
 
   tiers_test=''
   if tiers_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/core-tiers-selftest.php" 2>&1)"; then
-    ok 'Core-Stufen: TCI-Namen im Chat und Maras Persona fuer jeden Core geprueft.'
+    ok 'Core tiers: TCI names in chat and Mara's persona for every Core verified.'
   else
     fail "Core-Stufen-Selbsttest: ${tiers_test:-Unbekannter Fehler}"
   fi
 
   install_test=''
   if install_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/core-install-selftest.php" 2>&1)"; then
-    ok 'Core-Installer: Maras Core aus dem Modelfile, Hardware-Check, Fortschritt, ein Auftrag, nur Admins geprueft.'
+    ok 'Core installer: Mara's Core from Modelfile, hardware check, progress, single job, admins only verified.'
   else
     fail "Core-Installer-Selbsttest: ${install_test:-Unbekannter Fehler}"
   fi
 
   library_test=''
   if library_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/ollama-library-selftest.php" 2>&1)"; then
-    ok 'Ollama-Modellsuche: lokale Varianten, sichere Herkunft und gemeinsamer Installationsstatus geprueft.'
+    ok 'Ollama model search: local variants, trusted origin and shared installation status verified.'
   else
     fail "Ollama-Modellsuche-Selbsttest: ${library_test:-Unbekannter Fehler}"
   fi
 
   hf_library_test=''
   if hf_library_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/huggingface-library-selftest.php" 2>&1)"; then
-    ok 'Hugging-Face-GGUF-Bibliothek: Freigaben, Quantisierungen und sichere lokale Installation geprueft.'
+    ok 'Hugging Face GGUF library: approvals, quantizations and safe local installation verified.'
   else
     fail "Hugging-Face-Bibliothek-Selbsttest: ${hf_library_test:-Unbekannter Fehler}"
   fi
 
   installed_cores_test=''
   if installed_cores_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/installed-cores-selftest.php" 2>&1)"; then
-    ok 'Installierte Cores: Standard und Basis geschützt, Einzel-Deinstallation und Rollenpfad geprüft.'
+    ok 'Installed Cores: default and base models protected; individual uninstall and role access verified.'
   else
     fail "Installierte-Cores-Selbsttest: ${installed_cores_test:-Unbekannter Fehler}"
   fi
 
   guest_test=''
   if guest_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/guest-access-selftest.php" 2>&1)"; then
-    ok 'Gast-Zugang: Limit, Zaehlung bei jeder Antwort, nur privater Chat, Stundenlimit, Login und Admin geprueft.'
+    ok 'Guest access: quota, count on each reply, private chat only, hourly limit, login and admin verified.'
   else
     fail "Gast-Zugang-Selbsttest: ${guest_test:-Unbekannter Fehler}"
   fi
 
   abuse_test=''
   if abuse_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/abuse-guard-selftest.php" 2>&1)"; then
-    ok 'Missbrauchsschutz: Geraetemerkmal, Netz-Kontingent, Tagesgrenze, Login-Drossel und echte Besucher-Adresse geprueft.'
+    ok 'Abuse protection: device fingerprint, network quota, daily limit, login throttling and real visitor address verified.'
   else
     fail "Missbrauchsschutz-Selbsttest: ${abuse_test:-Unbekannter Fehler}"
   fi
 
   captcha_test=''
   if captcha_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/captcha-selftest.php" 2>&1)"; then
-    ok 'Captcha: signierte Aufgabe, einmalig gueltig, Faelschung, Ablauf und Wiederverwendung abgelehnt.'
+    ok 'Captcha: signed challenge, single use, tampering, expiration and reuse rejected.'
   else
     fail "Captcha-Selbsttest: ${captcha_test:-Unbekannter Fehler}"
   fi
 
   roles_test=''
   if roles_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/roles-guest-selftest.php" 2>&1)"; then
-    ok 'Rollen: Inhaber, Admin, Nutzer, Gast; Gaeste nutzen den Standard-Core.'
+    ok 'Roles: owner, admin, user and guest; guests use the default Core.'
   else
     fail "Rollen-Selbsttest: ${roles_test:-Unbekannter Fehler}"
   fi
@@ -1097,7 +1097,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.83: models outside CoreAI only for the Inhaber and released accounts.
   model_access_test=''
   if model_access_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-access-selftest.php" 2>&1)"; then
-    ok 'Modell-Freigaben: Maras Cores fuer alle, fremde Modelle nur fuer Inhaber und freigegebene Konten.'
+    ok 'Model permissions: Mara's Cores for everyone; third-party models only for owner and permitted accounts.'
   else
     fail "Modell-Freigaben-Selbsttest: ${model_access_test:-Unbekannter Fehler}"
   fi
@@ -1105,7 +1105,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.83: update window: only a new commit, Inhaber only, waiting for everyone.
   update_test=''
   if update_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/update-selftest.php" 2>&1)"; then
-    ok 'Update-Fenster: nur bei neuem Commit, Start nur durch den Inhaber, Wartefenster fuer alle.'
+    ok 'Update window: shown only for new commits, started only by owner, waiting screen for all.'
   else
     fail "Update-Selbsttest: ${update_test:-Unbekannter Fehler}"
   fi
@@ -1113,7 +1113,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.84: deleting an account (rules, confirmation, files; a full deletion on the database, rolled back).
   delete_test=''
   if delete_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-delete-selftest.php" 2>&1)"; then
-    ok 'Konto loeschen: Rechte, Bestaetigung, Dateien und vollstaendige Loeschung (mit Rollback) geprueft.'
+    ok 'Delete account: permissions, confirmation, files and complete deletion (with rollback) verified.'
   else
     fail "Konto-Loeschen-Selbsttest: ${delete_test:-Unbekannter Fehler}"
   fi
@@ -1121,7 +1121,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.85: settings per account (password, signing out, name and e-mail; on the database rolled back).
   manage_test=''
   if manage_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-admin-selftest.php" 2>&1)"; then
-    ok 'Konto bearbeiten: Rechte, Passwort, Abmelden, Name und E-Mail (mit Rollback) geprueft.'
+    ok 'Edit account: permissions, password, sign-out, name and email (with rollback) verified.'
   else
     fail "Konto-Bearbeiten-Selbsttest: ${manage_test:-Unbekannter Fehler}"
   fi
@@ -1129,7 +1129,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.85: own rules per account (tools blocked per account, global off stays off).
   policy_test=''
   if policy_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/user-policy-selftest.php" 2>&1)"; then
-    ok 'Regeln pro Konto: Werkzeuge gesperrt, global aus bleibt aus, Tageslimit, Kontextfenster (mit Rollback) geprueft.'
+    ok 'Per-account policies: disabled tools, global disable, daily limit and context window (with rollback) verified.'
   else
     fail "Regeln-pro-Konto-Selbsttest: ${policy_test:-Unbekannter Fehler}"
   fi
@@ -1137,7 +1137,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.86: Mara's memories stored and used whole (no cut), budget per window.
   memory_length_test=''
   if memory_length_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/memory-length-selftest.php" 2>&1)"; then
-    ok 'Memory: Erinnerungen ganz gespeichert und ganz im Prompt, Budget je Kontextfenster geprueft.'
+    ok 'Memory: memories stored and provided in full, budgeted by context-window size verified.'
   else
     fail "Memory-Laengen-Selbsttest: ${memory_length_test:-Unbekannter Fehler}"
   fi
@@ -1145,7 +1145,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.1: read aloud on the PHP side: cache per account, 7 days, guests never, only own answers.
   voice_read_test=''
   if voice_read_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/voice-read-selftest.php" 2>&1)"; then
-    ok 'Vorlesen: Zwischenspeicher pro Konto (7 Tage), keine Gaeste, nur eigene Antworten, Schalter im KI-Profil geprueft.'
+    ok 'Read aloud: 7-day per-account cache, no guests, own replies only and AI-profile toggle verified.'
   else
     fail "Vorlesen-Selbsttest: ${voice_read_test:-Unbekannter Fehler}"
   fi
@@ -1153,7 +1153,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.5.94: Stimmproben in Admin Core: runs, samples only when listed, Inhaber only.
   tts_store_test=''
   if tts_store_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tts-spike-store-selftest.php" 2>&1)"; then
-    ok 'Stimmproben: Testlaeufe, nur gelistete Hoerproben aus ihrem Lauf, nur fuer den Inhaber geprueft.'
+    ok 'Voice samples: test runs, only listed previews from their run, owner access only verified.'
   else
     fail "Stimmproben-Selbsttest: ${tts_store_test:-Unbekannter Fehler}"
   fi
@@ -1161,7 +1161,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.37 (P20.5 A): Bildproben in Admin Core: runs, images only when listed and real PNGs, Inhaber only.
   image_store_test=''
   if image_store_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-spike-store-selftest.php" 2>&1)"; then
-    ok 'Bildproben: Testlaeufe, nur gelistete PNG-Bilder aus ihrem Lauf, nur fuer den Inhaber geprueft.'
+    ok 'Image samples: test runs, only listed PNG files from their run, owner access only verified.'
   else
     fail "Bildproben-Selbsttest: ${image_store_test:-Unbekannter Fehler}"
   fi
@@ -1170,7 +1170,7 @@ if command -v php >/dev/null 2>&1; then
   # the account, cancel, history, deletion with the chat, switches under Betrieb and per account.
   image_gen_test=''
   if image_gen_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-gen-selftest.php" 2>&1)"; then
-    ok 'Bilder im Chat: Marker, Arbeitsschritt, Speichern fuer das Konto, Abbruch, Verlauf, Loeschen und Schalter geprueft.'
+    ok 'Images in chat: markers, work step, per-account storage, cancel, history, delete and toggles verified.'
   else
     fail "Bilder-im-Chat-Selbsttest: ${image_gen_test:-Unbekannter Fehler}"
   fi
@@ -1178,7 +1178,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.81: Benachrichtigungen: Web Push (RFC 8291 example, VAPID), saving, dispatch and triggers.
   notifications_test=''
   if notifications_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/notifications-selftest.php" 2>&1)"; then
-    ok 'Benachrichtigungen: Web-Push-Verschluesselung (RFC 8291), VAPID, Kategorien, Versand und Ausloeser geprueft.'
+    ok 'Notifications: Web Push encryption (RFC 8291), VAPID, categories, delivery and triggers verified.'
   else
     fail "Benachrichtigungs-Selbsttest: ${notifications_test:-Unbekannter Fehler}"
   fi
@@ -1186,7 +1186,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.82: E-Mail-Versand (SMTP) in Admin Core: input checks, sealed password, a real SMTP session.
   mail_settings_test=''
   if mail_settings_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/mail-settings-selftest.php" 2>&1)"; then
-    ok 'E-Mail-Versand: Eingaben, verschluesseltes Passwort, Vorrang der Serverkonfiguration und SMTP-Sitzung geprueft.'
+    ok 'Email delivery: inputs, encrypted password, server-configuration precedence and SMTP session verified.'
   else
     fail "E-Mail-Versand-Selbsttest: ${mail_settings_test:-Unbekannter Fehler}"
   fi
@@ -1194,7 +1194,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.84: Profil overview: tokens counted per account, streaks, longest task, raster, tools, insights.
   profile_stats_test=''
   if profile_stats_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-stats-selftest.php" 2>&1)"; then
-    ok 'Profil: Token-Zaehlung, Serien, laengste Aufgabe, Raster, Werkzeuge und Einblicke geprueft.'
+    ok 'Profile: token counts, streaks, longest task, activity grid, tools and insights verified.'
   else
     fail "Profil-Selbsttest: ${profile_stats_test:-Unbekannter Fehler}"
   fi
@@ -1202,7 +1202,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.85: Sicherheit und Anmeldung: RFC 6238 codes, WebAuthn, lockdown, recovery, advanced account security.
   sign_in_security_test=''
   if sign_in_security_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/sign-in-security-selftest.php" 2>&1)"; then
-    ok 'Sicherheit: Authenticator-Codes (RFC 6238), Passkeys (WebAuthn), Lockdown, Wiederherstellung und erweiterte Kontosicherheit geprueft.'
+    ok 'Security: authenticator codes (RFC 6238), passkeys (WebAuthn), lockdown, recovery and advanced account security verified.'
   else
     fail "Sicherheits-Selbsttest: ${sign_in_security_test:-Unbekannter Fehler}"
   fi
@@ -1210,7 +1210,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.86: Konto: Benutzername (unique, reserved names), plans Free/Go/Plus/Pro as real rules.
   account_page_test=''
   if account_page_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-page-selftest.php" 2>&1)"; then
-    ok 'Konto: Benutzername (eindeutig, reservierte Namen) und Plaene (Free, Go, Plus, Pro als echte Regeln) geprueft.'
+    ok 'Account: unique usernames, reserved names and plans (Free, Go, Plus, Pro with enforced rules) verified.'
   else
     fail "Konto-Selbsttest: ${account_page_test:-Unbekannter Fehler}"
   fi
@@ -1218,7 +1218,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.87: chat menu and Archivierte Chats: pin order, archive search and filters, files, search, Markdown.
   chat_menu_test=''
   if chat_menu_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/chat-menu-selftest.php" 2>&1)"; then
-    ok 'Chat-Menue: Anpinnen, Archivsuche und Filter, Dateien, Suche im Chat und Teilen als Markdown geprueft.'
+    ok 'Chat menu: pinning, archive search and filtering, files, in-chat search and Markdown sharing verified.'
   else
     fail "Chat-Menue-Selbsttest: ${chat_menu_test:-Unbekannter Fehler}"
   fi
@@ -1226,7 +1226,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.0: Settings > Personalisierung: styles, instructions, reference photos, memory summary, wipe.
   personalization_page_test=''
   if personalization_page_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/personalization-page-selftest.php" 2>&1)"; then
-    ok 'Personalisierung: Stile, Anweisungen, Referenzfotos, Erinnerungszusammenfassung und Loeschen geprueft.'
+    ok 'Personalization: styles, instructions, reference photos, memory summary and deletion verified.'
   else
     fail "Personalisierung-Selbsttest: ${personalization_page_test:-Unbekannter Fehler}"
   fi
@@ -1234,7 +1234,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.1: Settings > Pets: built-in sheets, uploads (PNG, WebP), choice, the chat work line.
   pets_test=''
   if pets_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/pets-selftest.php" 2>&1)"; then
-    ok 'Pets: eigene CoreAI-Pets, Sprite-Sheets, Auswahl und Hochladen geprueft.'
+    ok 'Pets: original CoreAI pets, sprite sheets, selection and upload verified.'
   else
     fail "Pets-Selbsttest: ${pets_test:-Unbekannter Fehler}"
   fi
@@ -1243,7 +1243,7 @@ if command -v php >/dev/null 2>&1; then
   # imported with a confirmed creator license by the CoreAI owner.
   openpet_library_test=''
   if openpet_library_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/openpet-library-selftest.php" 2>&1)"; then
-    ok 'OpenPet: geprüfte Standard-Pet-Bibliothek, private Ablage und Rechteprüfung OK.'
+    ok 'OpenPet: approved default pet library, private storage and rights checks OK.'
   else
     fail "OpenPet-Bibliothek: ${openpet_library_test:-Unbekannter Fehler}"
   fi
@@ -1251,7 +1251,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.14: Settings > Stimme: voices to choose (free licenses), the chosen voice in plans and parts, preview, transcript language; 0.7.15 the microphone switch.
   voice_settings_test=''
   if voice_settings_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/voice-settings-selftest.php" 2>&1)"; then
-    ok 'Stimme: Stimmenauswahl, Vorhoeren, Sprache der Stimmsequenzen und Mikrofon-Schalter geprueft.'
+    ok 'Voice: voice selection, previews, language of voice messages and microphone toggle verified.'
   else
     fail "Stimme-Selbsttest: ${voice_settings_test:-Unbekannter Fehler}"
   fi
@@ -1389,7 +1389,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.59: all image references share identity, subject and style preservation.
   reference_consistency_test=''
   if reference_consistency_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-reference-consistency-selftest.php" 2>&1)"; then
-    ok 'Bildreferenzen: Identitaet, Motivtreue, Stilvorlage und mehrere Quellen geprueft.'
+    ok 'Image references: identity, subject fidelity, style reference and multiple sources verified.'
   else
     fail "Bildreferenz-Konsistenztest: ${reference_consistency_test:-Unbekannter Fehler}"
   fi
@@ -1398,166 +1398,166 @@ if command -v php >/dev/null 2>&1; then
   # person's own words, the endpoint's answer for accounts and guests, the readable archive.
   composer_intent_test=''
   if composer_intent_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/composer-intent-selftest.php" 2>&1)"; then
-    ok '+ Menue: Werkzeug-Auswahl, Anweisung an Mara, Absicherung, Freigaben und Archiv geprueft.'
+    ok '+ menu: tool selection, instructions to Mara, security, permissions and archive verified.'
   else
     fail "+-Menue-Selbsttest: ${composer_intent_test:-Unbekannter Fehler}"
   fi
 
   compact_test=''
   if compact_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/compaction-selftest.php" 2>&1)"; then
-    ok 'Chat komprimieren: Fenster, laufende Zusammenfassung, Archiv zuerst, Suche und Loeschen geprueft.'
+    ok 'Compress chat: modal, incremental summary, archive-first, search and deletion verified.'
   else
     fail "Komprimierungs-Selbsttest: ${compact_test:-Unbekannter Fehler}"
   fi
 
   loop_test=''
   if loop_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/agent-loop-selftest.php" 2>&1)"; then
-    ok 'Arbeitsschleife: verkettete Schritte, Antwort, Uebergabe an den Browser, sechs Schritte, Abbruch geprueft.'
+    ok 'Work loop: chained steps, response, browser handoff, six steps and cancellation verified.'
   else
     fail "Arbeitsschleifen-Selbsttest: ${loop_test:-Unbekannter Fehler}"
   fi
 
   web_test=''
   if web_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/web-search-selftest.php" 2>&1)"; then
-    ok 'Websuche: Stichworte als zweiter Versuch, keine Doppelten, saubere Snippets und Datum geprueft.'
+    ok 'Web search: keyword retry, no duplicates, clean snippets and dates verified.'
   else
     fail "Websuche-Selbsttest: ${web_test:-Unbekannter Fehler}"
   fi
 
   if progressive_web_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/progressive-web-search-selftest.php" 2>&1)"; then
-    ok 'Websuche: fortlaufende Treffer ohne Dubletten, Paging und Quellenbelege geprueft.'
+    ok 'Web search: progressive results without duplicates, paging and source citations verified.'
   else
-    fail 'Websuche: progressive Treffer-/Paging-Regressionspruefung fehlgeschlagen.'
+    fail 'Web search: progressive results / paging regression test failed.'
   fi
 
   weather_test=''
   if weather_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/weather-live-selftest.php" 2>&1)"; then
-    ok '0.6.22: Live-Wetter im Websuche-Schritt (WDR fuer NRW, Live-Daten fuer jeden Ort, keine alten Suchtreffer) geprueft.'
+    ok '0.6.22: live weather within web search (WDR for NRW, live data for any location, no stale results) verified.'
   else
     fail "Wetter-Selbsttest: ${weather_test:-Unbekannter Fehler}"
   fi
 
   mention_test=''
   if mention_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/tool-mention-selftest.php" 2>&1)"; then
-    ok 'Werkzeug-Erwaehnungen: Erklaerungen starten kein Werkzeug und keine Korrekturrunde.'
+    ok 'Tool mentions: explanations do not launch tools or correction loops.'
   else
     fail "Werkzeug-Erwaehnungs-Selbsttest: ${mention_test:-Unbekannter Fehler}"
   fi
 
   think_test=''
   if think_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/thinking-switch-selftest.php" 2>&1)"; then
-    ok 'Denkschalter und Core-Wahl: Modelfile ohne festes Denken, Speichern, Vorladen, globaler Kanal und Analyse-Filter geprueft.'
+    ok 'Thinking toggle and Core selection: no forced thinking in Modelfile, saving, preload, global channel and analysis filter verified.'
   else
     fail "Denkschalter-Selbsttest: ${think_test:-Unbekannter Fehler}"
   fi
 
   if runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" --selftest >/dev/null 2>&1; then
-    ok 'Modelfile-Audit: SYSTEM- und Abweichungspruefung offline bestanden.'
+    ok 'Modelfile audit: SYSTEM and drift checks passed offline.'
   else
     fail 'Modelfile-Audit: Offline-Selbsttest fehlgeschlagen.'
   fi
 
   gemma_test=''
   if gemma_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/gemma-zero-parameters-selftest.php" 2>&1)"; then
-    ok 'Gemma: aktives Modelfile, Dateiabgleich und keine API-Parameterueberschreibung.'
+    ok 'Gemma: active Modelfile, file comparison and no API parameter overrides.'
   else
     fail "Gemma-Modelfile-/Ollama-Parametervertrag: ${gemma_test:-Unbekannter Fehler}"
   fi
 
   if command -v node >/dev/null 2>&1; then
     if node "$PROJECT_ROOT/scripts/terran-terminology-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Terranische CoreAI-Bezeichnungen: Terra-Net und Systemtexte geprueft.'
+      ok 'Terran CoreAI terminology: Terra-Net and system text verified.'
     else
-      fail 'Terranische CoreAI-Bezeichnungen: Arch-Net/Ayalren-Rueckfall gefunden.'
+      fail 'Terran CoreAI terminology: regression to Arch-Net/Ayalren detected.'
     fi
     if node "$PROJECT_ROOT/scripts/tci-language-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Mara-TCI-Sprache und Stimmsequenz-Terminologie geprueft.'
+      ok 'Mara-TCI language and voice-message terminology verified.'
     else
       fail 'Mara-TCI-Sprache: Terminologie-Selbsttest fehlgeschlagen.'
     fi
     # 0.7.69: every endpoint the interface calls is allowed by both nginx templates.
     if node "$PROJECT_ROOT/scripts/api-allowlist-selftest.cjs" >/dev/null 2>&1; then
-      ok 'API-Freigabe: alle Endpunkte der Oberflaeche in beiden nginx-Vorlagen erlaubt.'
+      ok 'API allowlist: all UI endpoints allowed in both Nginx templates.'
     else
-      fail 'API-Freigabe: die Oberflaeche ruft einen Endpunkt, den nginx ablehnt.'
+      fail 'API allowlist: the UI calls an endpoint blocked by Nginx.'
     fi
     if node "$PROJECT_ROOT/scripts/tci-chat-message-selftest.cjs" >/dev/null 2>&1; then
-      ok 'TCI CORE: Chat-Kopf, breite Antwortspalte und Bildabschluss-Reihenfolge geprueft.'
+      ok 'TCI CORE: chat heading, full-width replies and image completion ordering verified.'
     else
       fail 'TCI CORE: Chat-Kopf-/Bildabschluss-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/text-selection-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Textmarkierung, Kopieren und nativer Rechtsklick sind freigegeben.'
+      ok 'Chat: text selection, copying and native context menu are enabled.'
     else
-      fail 'Chat: Textauswahl-/Kopierschutz aus dem Game ist noch aktiv.'
+      fail 'Chat: legacy game text-selection or copy protection is still active.'
     fi
     if node "$PROJECT_ROOT/scripts/work-events-ui-selftest.js" >/dev/null 2>&1; then
-      ok 'Websuche: Quellenzeile folgt echten Ereignissen ohne rotierende Schein-Webseiten.'
+      ok 'Web search: source row follows actual events, without rotating fake webpages.'
     else
-      fail 'Websuche: Quellen-Karussell zeigt falschen Ablauf oder ist kaputt.'
+      fail 'Web search: source carousel shows an incorrect sequence or is broken.'
     fi
     if php "$PROJECT_ROOT/scripts/general-controls-selftest.php" >/dev/null 2>&1; then
-      ok 'Allgemein: Core-Routing, gespeicherte Einstellungen und echte Denkstufen verifiziert.'
+      ok 'General: Core routing, stored settings and real reasoning levels verified.'
     else
-      fail 'Allgemein: Core-Routing oder Reasoning-Selbsttest fehlgeschlagen.'
+      fail 'General: Core routing or reasoning self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/ui-language-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Allgemein: App-Sprache DE/EN und automatische Browsererkennung geprueft.'
+      ok 'General: DE/EN app language and automatic browser detection verified.'
     else
-      fail 'Allgemein: App-Sprachumschaltung fehlgeschlagen.'
+      fail 'General: app language switching failed.'
     fi
     if node "$PROJECT_ROOT/scripts/reasoning-effort-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Denkaufwand: Chat-Stufen, echtes Speichern und binaerer Core-Fallback geprueft.'
+      ok 'Reasoning effort: chat levels, real persistence and binary Core fallback verified.'
     else
-      fail 'Denkaufwand: Chat-Regler, General oder Core-Fallback fehlgeschlagen.'
+      fail 'Reasoning effort: chat control, general settings or Core fallback failed.'
     fi
     if node "$PROJECT_ROOT/scripts/send-shortcut-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Allgemein: Enter, Strg/Command+Enter und IME-Schutz geprueft.'
+      ok 'General: Enter, Ctrl/Command+Enter and IME protection verified.'
     else
-      fail 'Allgemein: Tastatur-Shortcuts oder Composer-Integration fehlgeschlagen.'
+      fail 'General: keyboard shortcuts or composer integration failed.'
     fi
     if node "$PROJECT_ROOT/scripts/theme-preferences-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Anzeige: System/Hell/Dunkel, Schriftart, Hell/Dunkel getrennt, Motiv-Pruefung und Zeichensetzungsregeln geprueft.'
+      ok 'Display: system/light/dark, font, separate light/dark modes, theme checks and punctuation rules verified.'
     else
-      fail 'Anzeige: Tag-/Nachtmodus-Selbsttest fehlgeschlagen.'
+      fail 'Display: day/night mode self-test failed.'
     fi
     if node "$PROJECT_ROOT/scripts/response-timing-ui-selftest.js" >/dev/null 2>&1; then
-      ok 'Antwortdauer: gespeicherte Gesamt- und Modellzeit in der Infoanzeige geprueft.'
+      ok 'Response duration: stored total and model time in information display verified.'
     else
       fail 'Antwortdauer-JavaScript-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/welcome-composer-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat-Start/Composer: Begruessungsentwurf, Erst-Nachricht und Stopp geprueft.'
+      ok 'Chat start / composer: greeting draft, first message and stop verified.'
     else
       fail 'Chat-Start/Composer: Lazy-Sitzung oder Stopp-Schaltflaeche fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/chat-navigation-recovery-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat-Navigation: bestehender Modellauftrag ohne erneute Generierung wiederhergestellt.'
+      ok 'Chat navigation: ongoing model request restored without regenerating.'
     else
       fail 'Chat-Navigation: Wiederherstellungs-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/insights-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Infokaesten: rechte Spalte, Handy-Buttons und Live-Kontext geprueft.'
+      ok 'Info panels: right column, phone buttons and live context verified.'
     else
       fail 'Infokaesten: JavaScript-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/context-slider-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'KI-Profil: Kontextfenster-Regler mit Richtwert an jeder Stufe geprueft.'
+      ok 'AI profile: context-window control with guidance at each step verified.'
     else
       fail 'KI-Profil: Kontextfenster-Regler-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/thinking-switch-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Core-Chip mit TCI-Namen, fester Reihenfolge, Status-Punkten (gruen, gelb, rot), Legende, Laden, Denkschalter und Fehlerfaellen geprueft.'
+      ok 'Chat: Core chip with TCI names, fixed order, status dots (green, yellow, red), legend, loading, thinking toggle and errors verified.'
     else
       fail 'Chat: Denkschalter-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/core-install-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Chat: Install-Fenster mit Hardware-Check, Bestaetigung, Fortschritt und Jetzt nutzen geprueft.'
+      ok 'Chat: installation modal with hardware check, confirmation, progress and Use Now verified.'
     else
       fail 'Chat: Install-Fenster-Oberflaechentest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/model-library-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Ollama-Modellfenster: Suche, Detailansicht, Downloadbestaetigung und Fortschritt geprueft.'
+      ok 'Ollama model modal: search, details, download confirmation and progress verified.'
     else
       fail 'Ollama-Modellfenster: Offline-Oberflaechentest fehlgeschlagen.'
     fi
@@ -1565,25 +1565,25 @@ if command -v php >/dev/null 2>&1; then
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
-      ok 'Profil: Mobiler Zuschnitt, Quadrat/Hochformat, Originalquelle und erneutes Zuschneiden geprueft.'
+      ok 'Profile: mobile crop, square/portrait, original image and recropping verified.'
     else
       fail 'Profil: Zuschnitt-Oberflaechentest fehlgeschlagen.'
       printf '%s\n' "$profile_crop_ui" >&2
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Login: Registrieren und Als Gast chatten nur wenn offen, Pruefungen und Fehlerfaelle geprueft.'
+      ok 'Login: Register and Chat as Guest only when enabled, validation and error cases verified.'
     else
       fail 'Login: Registrierungs-Selbsttest fehlgeschlagen.'
     fi
     if node "$PROJECT_ROOT/scripts/browse-live-ui-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Live-Browser: Mara ueberlegt mit Sekunden, Cursor gleitet, Warteschlange, Fortsetzen nach Abbruch geprueft.'
+      ok 'Live browser: Mara's thinking timer, smooth cursor, queue and recovery after interruption verified.'
     else
       fail 'Live-Browser-Oberflaechentest fehlgeschlagen.'
     fi
     # 0.6.67: local Playwright check for viewer -> editor -> FLUX reference handoff.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/image-editor-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Bildeditor: mobile Ansicht, Touch-Auswahl, Undo/Redo und Bildreferenzen geprueft.'
+        ok 'Image editor: mobile layout, touch selection, undo/redo and image references verified.'
       else
         fail 'Bildeditor: mobile UI-Selbsttest fehlgeschlagen.'
       fi
@@ -1591,14 +1591,14 @@ if command -v php >/dev/null 2>&1; then
       ok 'Bildeditor: Playwright fehlt. Browser-Selbsttest uebersprungen (keine Live-Abnahme).'
     fi
     if node "$PROJECT_ROOT/scripts/settings-navigation-foundation-selftest.cjs" >/dev/null 2>&1; then
-      ok 'Einstellungen: 25 Kategorien, Expertenmodus, vorbereitete Unterseiten und Admin-Trennung geprueft.'
+      ok 'Settings: 25 categories, expert mode, placeholder sections and admin separation verified.'
     else
       fail 'Einstellungen: Kategorie- oder Admin-Strukturtest fehlgeschlagen.'
     fi
     # 0.6.71: category navigation, expert mode and standalone Admin Core; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/settings-tabs-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Einstellungen: Kategorien, Suche, Expertenmodus, mobiles Menue und eigenstaendiger Admin Core geprueft.'
+        ok 'Settings: categories, search, expert mode, mobile menu and independent Admin Core verified.'
       else
         fail 'Einstellungen: Tab-Oberflaechentest fehlgeschlagen.'
       fi
@@ -1609,7 +1609,7 @@ if command -v php >/dev/null 2>&1; then
     # smart punctuation in the chat input; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/appearance-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Darstellung: Motiv-Export/-Import, Hex-Werte, Hell/Dunkel getrennt, Schriftart und Zeichensetzung im Browser geprueft.'
+        ok 'Appearance: theme export/import, hex values, separate light/dark, fonts and punctuation verified in browser.'
       else
         fail 'Darstellung: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1620,7 +1620,7 @@ if command -v php >/dev/null 2>&1; then
     # service worker; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/notifications-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Benachrichtigungen: Push-Aktivierung, Geraete, E-Mail-Status, Kategorien und Service Worker im Browser geprueft.'
+        ok 'Notifications: push activation, devices, email status, categories and service worker verified in browser.'
       else
         fail 'Benachrichtigungen: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1630,7 +1630,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.82: Admin Core > Betrieb > E-Mail-Versand (SMTP); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/admin-mail-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'E-Mail-Versand: SMTP-Karte (Speichern, Passwort behalten, Testmail, Serverkonfiguration) im Browser geprueft.'
+        ok 'Email delivery: SMTP card (save, retain password, test email, server configuration) verified in browser.'
       else
         fail 'E-Mail-Versand: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1640,7 +1640,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.84: Settings > Profil overview (figures, raster, made, tools, insights); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/profile-stats-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Profil: Kennzahlen, Raster (taeglich, woechentlich, kumulativ), Erstelltes, Werkzeuge und Einblicke im Browser geprueft.'
+        ok 'Profile: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
       else
         fail 'Profil: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1650,7 +1650,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.85: Sicherheit und Anmeldung and the sign-in with second step and passkey; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/security-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Sicherheit: Seite (Passkeys, Authenticator mit QR, E-Mail-Code, Codes, Sitzungen, Verlauf, Lockdown) und Anmeldung im Browser geprueft.'
+        ok 'Security: settings page (passkeys, QR authenticator, email codes, sessions, history, lockdown) and sign-in verified in browser.'
       else
         fail 'Sicherheit: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1660,7 +1660,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.87: chat menu (⋮) and Settings > Archivierte Chats; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/chat-menu-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/archived-chats-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Chat-Menue und Archivierte Chats im Browser geprueft.'
+        ok 'Chat menu and archived chats verified in browser.'
       else
         fail 'Chat-Menue oder Archivierte Chats: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1670,7 +1670,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.4: four insight panels must exist in saved chats, not on the welcome page.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/insights-chat-visibility-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Infokaesten: vier Schaltflaechen im Handy-Chat, Desktop-Seitenleiste und leere Startseite geprueft.'
+        ok 'Info panels: four mobile chat buttons, desktop sidebar and empty welcome screen verified.'
       else
         fail 'Infokaesten: Chat-/Startseiten-Umschaltung oder mobile Schaltflaechen fehlerhaft.'
       fi
@@ -1680,7 +1680,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.4: TCI identity and full-width assistant replies at phone and desktop widths.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/tci-chat-layout-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'TCI CORE: Avatar, Namenszeilen und volle Antwortbreite im Browser geprueft.'
+        ok 'TCI CORE: avatar, name lines and full-width replies verified in browser.'
       else
         fail 'TCI CORE: Responsiver Chat-Layouttest fehlgeschlagen.'
       fi
@@ -1690,7 +1690,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.14/0.7.15: Settings > Stimme, the microphone switch and the recordings; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-settings-ui-selftest.cjs" >/dev/null 2>&1 && node "$PROJECT_ROOT/scripts/voice-recordings-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Stimme, Mikrofon-Schalter und Aufnahmen im Browser geprueft.'
+        ok 'Voice, microphone toggle and recordings verified in browser.'
       else
         fail 'Stimme: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1700,7 +1700,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.28: Settings > Speicher (overview, Dateien with project folders, Bilder, menu, deleting, full storage); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/storage-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Speicher: Uebersicht, Dateien, Bilder und Loeschen im Browser geprueft.'
+        ok 'Storage: overview, files, images and deletion verified in browser.'
       else
         fail 'Speicher: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1710,7 +1710,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.29: Settings > Tastatur (recording, clashes, reset) and the shortcuts in the chat; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/keyboard-shortcuts-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Tastatur: Tastenkuerzel aufnehmen, pruefen, zuruecksetzen und im Chat ausfuehren im Browser geprueft.'
+        ok 'Keyboard: record, test and reset shortcuts, and execute them in chat, verified in browser.'
       else
         fail 'Tastatur: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1720,7 +1720,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.30: Settings > Nutzung (Uebersicht, Analysen, charts); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/usage-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Nutzung: Uebersicht und Analysen im Browser geprueft.'
+        ok 'Usage: overview and analytics verified in browser.'
       else
         fail 'Nutzung: Oberflaechentest fehlgeschlagen.'
       fi
@@ -1730,7 +1730,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.7.32: Settings > Datenkontrollen (confirmations, typed word, results); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/data-controls-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Datenkontrollen: Archivieren, Loeschen und Export im Browser geprueft.'
+        ok 'Data controls: archive, delete and export verified in browser.'
       else
         fail 'Datenkontrollen: Oberflaechentest fehlgeschlagen.'
       fi
