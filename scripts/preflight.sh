@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.78: processes, terminal input and a development server preview in the sandbox (P10 C).
+# CoreAI: TCI Interface 0.7.79: Node.js 24 with npm in the sandbox image (ember-py:2) next to Python.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -245,6 +245,7 @@ UI_FILES=(
   scripts/project-procs-selftest.php
   scripts/project-procs-worker-selftest.py
   scripts/project-procs-ui-selftest.cjs
+  scripts/sandbox-image-selftest.py
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -619,7 +620,7 @@ else
   fail 'Browser-Regeln-Selbsttest fehlgeschlagen.'
 fi
 
-# 0.7.77 (P10 B): project runs in the worker; with Docker and ember-py:1 real runs in the sandbox.
+# 0.7.77 (P10 B): project runs in the worker; with Docker and the sandbox image real runs in the sandbox.
 project_runs_worker_test=''
 if project_runs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-runs-worker-selftest.py" 2>&1)"; then
   ok "$project_runs_worker_test"
@@ -627,12 +628,33 @@ else
   fail "Projektlaeufe-Worker-Selbsttest: ${project_runs_worker_test:-Unbekannter Fehler}"
 fi
 
-# 0.7.78 (P10 C): processes in the worker; with Docker and ember-py:1 real processes and a server.
+# 0.7.78 (P10 C): processes in the worker; with Docker and the sandbox image real processes and a server.
 project_procs_worker_test=''
 if project_procs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-procs-worker-selftest.py" 2>&1)"; then
   ok "$project_procs_worker_test"
 else
   fail "Projektprozesse-Worker-Selbsttest: ${project_procs_worker_test:-Unbekannter Fehler}"
+fi
+
+# 0.7.79: the Dockerfile, one tag everywhere and, with Docker, Node.js tests behind the sandbox walls.
+sandbox_image_test=''
+if sandbox_image_test="$(python3 "$PROJECT_ROOT/scripts/sandbox-image-selftest.py" 2>&1)"; then
+  ok "$sandbox_image_test"
+else
+  fail "Sandbox-Image-Selbsttest: ${sandbox_image_test:-Unbekannter Fehler}"
+fi
+
+# 0.7.79: the sandbox image of Python jobs, runs and processes has Python and Node.js with npm.
+if command -v docker >/dev/null 2>&1 && docker image inspect ember-py:2 >/dev/null 2>&1; then
+  sandbox_tools=''
+  if sandbox_tools="$(docker run --rm --network none --read-only --user 65534:65534 -e HOME=/tmp --tmpfs /tmp:rw,noexec,nosuid,size=16m \
+      ember-py:2 sh -c 'python --version && node --version && npm --version' 2>&1)"; then
+    ok "Sandbox-Image ember-py:2: $(printf '%s' "$sandbox_tools" | sed -n 1p), Node.js $(printf '%s' "$sandbox_tools" | sed -n 2p), npm $(printf '%s' "$sandbox_tools" | sed -n 3p)."
+  else
+    fail "Sandbox-Image ember-py:2: Python oder Node.js startet nicht: ${sandbox_tools:-Unbekannter Fehler}"
+  fi
+else
+  warn 'Sandbox-Image ember-py:2 fehlt noch; der Python-Dienst baut es bei seinem naechsten Start.'
 fi
 
 # 0.7.38: Deep Research in the browse worker (search, read, notes, report with only real sources, Stopp).

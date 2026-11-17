@@ -34,6 +34,17 @@ prt_test(coreui_pruns_suggest(['game.py', 'tests/test_game.py']) === 'python -m 
 prt_test(coreui_pruns_suggest(['game.py', 'test_game.py']) === 'python -m unittest -v', 'suggest tests at the top');
 prt_test(coreui_pruns_suggest(['main.py', 'util.py']) === 'python main.py' && coreui_pruns_suggest(['b.py', 'a.py']) === 'python a.py'
   && coreui_pruns_suggest(['index.html', 'game.js']) === '' && coreui_pruns_suggest(['src/x.py']) === '', 'suggest a program, else nothing');
+// 0.7.79: JavaScript projects (Node.js 24 in the sandbox).
+$pkg = '{"scripts": {"test": "node --test", "start": "node server.js"}, "devDependencies": {"jest": "^29"}}';
+prt_test(coreui_pruns_suggest(['package.json', 'add.js'], $pkg) === 'npm install && npm test'
+  && coreui_pruns_suggest(['package.json'], '{"scripts": {"test": "node --test"}}') === 'npm test'
+  && coreui_pruns_suggest(['package.json', 'test/add.test.js'], '{"scripts": {"test": "echo \\"Error: no test specified\\" && exit 1"}}') === 'node --test'
+  && coreui_pruns_suggest(['add.js', 'add.test.mjs']) === 'node --test' && coreui_pruns_suggest(['index.js']) === 'node index.js'
+  && coreui_pruns_suggest(['package.json', 'index.js'], 'kaputt') === 'node index.js'
+  && coreui_pruns_suggest(['tests/test_a.py', 'package.json'], $pkg) === 'python -m unittest discover -v -s tests'
+  && coreui_pruns_suggest(['add.js'], $pkg) === '', 'suggest npm test, node --test or the Node.js program');
+prt_test(coreui_pruns_package('{"scripts": {"dev": "vite", "x": 3}, "dependencies": {"vite": "^5"}}') === ['scripts'=>['dev'=>'vite'], 'deps'=>['vite']]
+  && coreui_pruns_package(null) === ['scripts'=>[], 'deps'=>[]] && coreui_pruns_package('[1]') === ['scripts'=>[], 'deps'=>[]], 'package.json read');
 $done = ['id'=>1, 'command'=>'python t.py', 'status'=>'done', 'exit_code'=>1, 'error'=>null, 'duration_ms'=>1234, 'stdout'=>"a\n", 'stderr'=>"Traceback\n"];
 prt_test(coreui_pruns_summary($done) === 'Beendet mit Exitcode 1 in 1,2 s.', 'summary of a run: ' . coreui_pruns_summary($done));
 prt_test(coreui_pruns_summary(['status'=>'error', 'error'=>'timeout', 'duration_ms'=>null]) === 'Nach 120 s abgebrochen (Zeitlimit).'
@@ -207,7 +218,7 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
       $config = "<?php\n";
       foreach (['STU_DB_HOST'=>getenv('COREUI_DB_HOST') ?: '127.0.0.1', 'STU_DB_PORT'=>getenv('COREUI_DB_PORT') ?: '3306',
         'STU_DB_NAME'=>(string)getenv('COREUI_DB_NAME'), 'STU_DB_USER'=>(string)getenv('COREUI_DB_USER'), 'STU_DB_PASS'=>(string)getenv('COREUI_DB_PASS'),
-        'STU_EMBER_PY_WORKDIR'=>$tmp . '/work', 'STU_EMBER_PY_IMAGE'=>'ember-py:1'] as $k => $v) {
+        'STU_EMBER_PY_WORKDIR'=>$tmp . '/work', 'STU_EMBER_PY_IMAGE'=>'ember-py:2'] as $k => $v) {
         $config .= "define('{$k}', " . var_export((string)$v, true) . ");\n";
       }
       file_put_contents($tmp . '/config.local.php', $config);

@@ -7,7 +7,7 @@
 Offline: the docker line (the walls of the runs, stdin open, an init), the request line for a
 development server, reading its answer, the digest, the sync plan, files written in one step,
 the end states and the hook in tools/ember_py_worker.py.
-With Docker and the image ember-py:1 present, real processes: input reaches the program and
+With Docker and the image ember-py:2 present, real processes: input reaches the program and
 its output comes back in order, the exit code of a program that ends by itself, "Beenden" with
 the real exit code of SIGTERM, a development server answers from inside the container (page,
 redirect, JSON, POST, a missing page), a saved change is served after the sync, a port without
@@ -34,11 +34,11 @@ def check(ok, why):
 
 
 # --- Pure parts ---------------------------------------------------------------------------------
-cfg = {"STU_EMBER_PY_IMAGE": "ember-py:1", "STU_EMBER_PY_MEMORY": "512m"}
+cfg = {"STU_EMBER_PY_IMAGE": "ember-py:2", "STU_EMBER_PY_MEMORY": "512m"}
 line = procs.docker_command(cfg, "ember-proc-1-x", "/var/w", "python -m http.server 8000")
 for flag in ["--read-only", "--cap-drop", "ALL", "no-new-privileges", "65534:65534", "--pids-limit", "--memory", "-i", "--init"]:
     check(flag in line, "docker line has " + flag)
-check(line[-4:] == ["ember-py:1", "sh", "-c", "python -m http.server 8000"] and "/var/w:/work:rw" in line
+check(line[-4:] == ["ember-py:2", "sh", "-c", "python -m http.server 8000"] and "/var/w:/work:rw" in line
       and "-p" not in line and "--publish" not in line, "docker line: image, sh -c, the work directory, no published port")
 check(not any(":/opt" in x or "docker.sock" in x or "config.local" in x for x in line), "no CoreAI mount, no socket")
 check(procs.docker_command(dict(cfg, STU_EMBER_PROJECT_IMAGE="ember-dev:1"), "c", "/w", "true")[-4] == "ember-dev:1", "own image")
@@ -124,10 +124,10 @@ check("import ember_project_procs" in worker and "ember_project_procs.ProcManage
       and '"STU_EMBER_PROJECT_PROC_IDLE": "300"' in worker, "the worker runs the process manager in a thread")
 
 
-# --- Real processes in the sandbox (Docker and ember-py:1) -----------------------------------------
+# --- Real processes in the sandbox (Docker and ember-py:2) -----------------------------------------
 def docker_ready():
     try:
-        return subprocess.run(["docker", "image", "inspect", "ember-py:1"], stdout=subprocess.DEVNULL,
+        return subprocess.run(["docker", "image", "inspect", "ember-py:2"], stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL, timeout=20).returncode == 0
     except Exception:
         return False
@@ -152,7 +152,7 @@ def staged(files):
     return dict((path, (content, sha(content))) for path, content in files.items())
 
 
-sandbox = "Sandbox-Prozesse uebersprungen (Docker oder ember-py:1 fehlt)"
+sandbox = "Sandbox-Prozesse uebersprungen (Docker oder ember-py:2 fehlt)"
 started = []
 
 
@@ -167,7 +167,7 @@ def _cleanup():
 if docker_ready():
     base = tempfile.mkdtemp(prefix="coreai-procs-")
     os.chmod(base, 0o777)
-    cfg = {"STU_EMBER_PY_IMAGE": "ember-py:1"}
+    cfg = {"STU_EMBER_PY_IMAGE": "ember-py:2"}
 
     # Input and output, then an exit code of its own.
     echo = procs.Proc(9101, "python ask.py")
@@ -238,6 +238,22 @@ if docker_ready():
     check(confirmed and rc in (137, 143), "sleep ends on Beenden: %r" % rc)
     other.cleanup()
 
+    # 0.7.79: a Node.js server (ember-py:2) answers the preview the same way, and ends with its own code.
+    node_app = ("const http = require('node:http');\n"
+                "http.createServer((req, res) => { res.setHeader('Content-Type', 'application/json');"
+                " res.end(JSON.stringify({ node: process.version, pfad: req.url })); })\n"
+                "  .listen(3000, 'localhost', () => console.log('Node-Server bereit'));\n")
+    nodeproc = procs.Proc(9104, "node server.js", 3000)
+    started.append(nodeproc)
+    nodeproc.start(cfg, base, staged({"server.js": node_app}))
+    check(wait_for(lambda: "Node-Server bereit" in nodeproc.snapshot()[0]), "the Node.js server starts: %r" % (nodeproc.snapshot(),))
+    answer = nodeproc.fetch("GET", "/api?x=1")
+    check(answer.get("status") == 200 and b'"node":"v24.' in answer["body"] and b'"pfad":"/api?x=1"' in answer["body"],
+          "the Node.js server on localhost answers from inside the container: %r" % answer)
+    rc, confirmed = nodeproc.stop(stop)
+    check(confirmed and rc == 143, "Beenden ends the Node.js server with its real exit code: %r" % rc)
+    nodeproc.cleanup()
+
     t0 = time.monotonic()
     rc, confirmed = server.stop(stop)
     check(confirmed and rc == 143 and time.monotonic() - t0 < 10,
@@ -246,8 +262,8 @@ if docker_ready():
     server.cleanup()
     check(os.listdir(base) == [], "work directories are removed: %r" % os.listdir(base))
     shutil.rmtree(base, ignore_errors=True)
-    sandbox = ("echte Prozesse in ember-py:1 (Eingabe, Ausgabe in Reihenfolge, Exitcode, Server mit Seite, Weiterleitung, "
-               "JSON, POST, 404, Abgleich, Beenden mit SIGTERM)")
+    sandbox = ("echte Prozesse in ember-py:2 (Eingabe, Ausgabe in Reihenfolge, Exitcode, Server mit Seite, Weiterleitung, "
+               "JSON, POST, 404, Abgleich, Node.js-Server, Beenden mit SIGTERM)")
 
 print("CoreAI Projektprozesse (Worker): Docker-Zeile, Server-Anfrage, Antwort, Pruefsumme, Abgleich, Endzustaende, "
       "Puffer, Anbindung OK; " + sandbox)

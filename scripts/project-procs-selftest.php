@@ -46,6 +46,11 @@ ppr_test(coreui_pprocs_suggest(['index.html', 'style.css']) === ['command'=>'pyt
   && coreui_pprocs_suggest(['app.py', 'index.html']) === ['command'=>'python app.py', 'port'=>null]
   && coreui_pprocs_suggest(['b.py', 'a.py']) === ['command'=>'python a.py', 'port'=>null]
   && coreui_pprocs_suggest(['notes.md']) === ['command'=>'', 'port'=>null], 'suggestions');
+ppr_test(coreui_pprocs_suggest(['package.json', 'index.html'], '{"scripts": {"dev": "vite", "start": "node s.js"}, "devDependencies": {"vite": "^5"}}')
+    === ['command'=>'npm install && npm run dev', 'port'=>null]
+  && coreui_pprocs_suggest(['package.json'], '{"scripts": {"start": "node server.js"}}') === ['command'=>'npm start', 'port'=>null]
+  && coreui_pprocs_suggest(['server.js', 'index.html']) === ['command'=>'node server.js', 'port'=>null]
+  && coreui_pprocs_suggest(['app.py', 'server.js']) === ['command'=>'python app.py', 'port'=>null], 'suggestions for Node.js projects (0.7.79)');
 $p = ['status'=>'stopped', 'exit_code'=>143, 'error'=>null, 'stop_requested'=>true];
 ppr_test(coreui_pprocs_summary($p) === 'Beendet (Exitcode 143).'
   && coreui_pprocs_summary(['status'=>'exited', 'exit_code'=>3, 'error'=>null, 'stop_requested'=>false]) === 'Beendet mit Exitcode 3.'
@@ -329,7 +334,7 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
       $config = "<?php\n";
       foreach (['STU_DB_HOST'=>getenv('COREUI_DB_HOST') ?: '127.0.0.1', 'STU_DB_PORT'=>getenv('COREUI_DB_PORT') ?: '3306',
         'STU_DB_NAME'=>(string)getenv('COREUI_DB_NAME'), 'STU_DB_USER'=>(string)getenv('COREUI_DB_USER'), 'STU_DB_PASS'=>(string)getenv('COREUI_DB_PASS'),
-        'STU_EMBER_PY_WORKDIR'=>$tmp . '/work', 'STU_EMBER_PY_IMAGE'=>'ember-py:1', 'STU_EMBER_PROJECT_PROC_IDLE'=>'30'] as $k => $v) {
+        'STU_EMBER_PY_WORKDIR'=>$tmp . '/work', 'STU_EMBER_PY_IMAGE'=>'ember-py:2', 'STU_EMBER_PROJECT_PROC_IDLE'=>'30'] as $k => $v) {
         $config .= "define('{$k}', " . var_export((string)$v, true) . ");\n";
       }
       file_put_contents($tmp . '/config.local.php', $config);

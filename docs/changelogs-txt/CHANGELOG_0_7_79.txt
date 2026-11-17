@@ -1,0 +1,48 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.79
+Datum: 17.11.2026
+
+NODE.JS IN DER SANDBOX (BETREIBERENTSCHEIDUNG)
+- Das Sandbox-Image heisst jetzt ember-py:2: Python 3.12 wie bisher und
+  dazu Node.js 24 (LTS) mit npm und npx aus dem offiziellen Image
+  node:24-bookworm-slim. Laeufe, Prozesse und Maras Python-Auftraege
+  nutzen es hinter denselben Mauern (schreibgeschuetztes System, keine
+  Capabilities, Nutzer 65534, Grenzen).
+- Der npm-Cache liegt im Arbeitsordner (NPM_CONFIG_CACHE=/work/.npm-cache),
+  weil /tmp kein Ausfuehren erlaubt, npx aber Programme aus dem Cache
+  startet. npm fragt nicht nach Updates, Spenden oder Audits.
+- Wechsel beim Update: Die Installer bauen ember-py:2 und entfernen danach
+  ember-py:1, wenn es nicht mehr benutzt wird; der pyworker baut ember-py:2
+  beim Start selbst, falls es fehlt. Compose, pyworker, Worker-Standards und
+  die Module fuer Laeufe und Prozesse nutzen den neuen Tag. Das Image wird
+  um rund 200 MB groesser (rund 750 MB).
+
+JAVASCRIPT-PROJEKTE
+- "Ausfuehren" schlaegt npm test vor (mit "npm install &&", wenn die
+  package.json Pakete hat), node --test fuer Testdateien oder node index.js.
+  "Prozesse" schlaegt npm run dev, npm start oder node server.js vor.
+- Maras Hinweis nennt Node.js 24 mit npm und das Beispiel
+  [AUSFUEHREN: npm test].
+- Die Vorschau erreicht auch einen Node.js-Server auf localhost (IPv6 ::1
+  als Ausweich).
+
+PREFLIGHT
+- Beide Preflights starten Python, Node.js und npm im Image ember-py:2 und
+  fuehren den neuen scripts/sandbox-image-selftest.py aus.
+
+KONTEXTREGLER-TEST
+- scripts/context-slider-ui-selftest.cjs erwartet auf Telefonen zwei
+  Spalten (drei Zeilen), wie vom Betreiber fuer e7506f74 entschieden.
+
+NOCH NICHT
+- Live-Nachladen von Modulen eines Entwicklungsservers wie Vite in der
+  Vorschau (die gebaute Ausgabe funktioniert).
+
+TESTS
+- scripts/sandbox-image-selftest.py (neu, in beiden Preflights).
+- scripts/project-procs-worker-selftest.py mit einem Node.js-Server,
+  project-runs-selftest.php und project-procs-selftest.php mit den
+  JavaScript-Vorschlaegen; Worker- und Ende-zu-Ende-Tests auf ember-py:2.
+
+NICHT GETESTET
+- Der Bau von ember-py:2 auf dem echten Server (Docker Hub) und npm install
+  dort.

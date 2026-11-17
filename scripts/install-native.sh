@@ -478,8 +478,8 @@ if is_enabled "$INSTALL_BROWSE"; then
     > /etc/systemd/system/ember-coreui-browse.service
 fi
 
-log 'Baue das isolierte Python-Sandbox-Image.'
-docker build -t ember-py:1 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
+log 'Baue das isolierte Python-Sandbox-Image (mit Node.js).'
+docker build -t ember-py:2 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 sed \
   -e "s|@@COREUI_ROOT@@|$PROJECT_ROOT|g" \
   "$PROJECT_ROOT/config/ember-py-worker.service.template" \
@@ -521,6 +521,12 @@ chmod 0750 "$PROJECT_ROOT/scripts/install-native.sh" "$PROJECT_ROOT/scripts/pref
 
 systemctl daemon-reload
 systemctl enable --now ember-coreui-python.service
+# 0.7.79: an update brings new worker code (runs, processes, the image ember-py:2); a running worker
+# keeps the old code until it restarts, so it is restarted here like the browse worker.
+systemctl restart ember-coreui-python.service
+# ember-py:2 replaces ember-py:1 (Node.js added). Only now, with the worker on the new tag, the old
+# image goes; a container that still uses it keeps it (no error).
+docker image rm ember-py:1 >/dev/null 2>&1 || true
 if is_enabled "$INSTALL_BROWSE"; then
   systemctl enable --now ember-coreui-browse.service
   # 0.7.38: an update brings new worker code (Deep Research); a running worker keeps the old code

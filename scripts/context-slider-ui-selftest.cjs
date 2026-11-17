@@ -179,7 +179,8 @@ function context(model, extra) {
   assert(settingsApi.includes("$keepModel = !array_key_exists('model_override', $body);")
     && settingsApi.includes("if ($requestedModel !== '' && !$keepModel) {"), 'the server keeps the Core chosen in the chat');
   const css = fs.readFileSync(path.join(__dirname, '../css/console.css'), 'utf8');
-  assert(/@media \(max-width: 720px\)[\s\S]{0,80}\.ctx-stops[\s\S]{0,60}repeat\(3/.test(css), 'two rows on phones');
+  // Operator decision (17.11.2026, since e7506f74): two columns on phones, so six stops make three rows.
+  assert(/@media \(max-width: 720px\)[\s\S]{0,80}\.ctx-stops[\s\S]{0,60}repeat\(2/.test(css), 'three rows of two stops on phones');
 
   console.log('CoreAI KI-Profil slider: six stops, guide values, default, cloud, model switch OK');
 })().catch(error => { console.error(error); process.exit(1); });

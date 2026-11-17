@@ -54,7 +54,7 @@ _PATH = re.compile(r"^/[\x21-\x7e]{0,999}$")
 _METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD")
 
 # Runs inside the container with "python -I -c": one request to the development server on
-# 127.0.0.1, redirects on the same server followed up to three times. The first output line is
+# 127.0.0.1 (or ::1 when only IPv6 answers), redirects on the same server followed up to three times. The first output line is
 # JSON (status, type, final path), the body follows as it came, cut at the limit.
 FETCH_SCRIPT = r"""
 import http.client, json, sys, urllib.parse as up
@@ -63,14 +63,20 @@ body = sys.stdin.buffer.read() if method not in ("GET", "HEAD") else None
 out = sys.stdout.buffer
 def say(head, data=b""):
     out.write((json.dumps(head) + "\n").encode("utf-8")); out.write(data); out.flush(); sys.exit(0)
-for hop in range(4):
-    conn = http.client.HTTPConnection("127.0.0.1", port, timeout=8)
+def ask(host):
+    conn = http.client.HTTPConnection(host, port, timeout=8)
     headers = {"Host": "localhost:%d" % port, "Accept-Encoding": "identity", "User-Agent": "CoreAI-Vorschau"}
     if body is not None and ctype:
         headers["Content-Type"] = ctype
+    conn.request(method, path, body=body, headers=headers)
+    return conn, conn.getresponse()
+for hop in range(4):
+    # A server on "localhost" may listen on IPv6 only (Node.js, Vite): then ::1 answers.
     try:
-        conn.request(method, path, body=body, headers=headers)
-        r = conn.getresponse()
+        try:
+            conn, r = ask("127.0.0.1")
+        except ConnectionRefusedError:
+            conn, r = ask("::1")
     except Exception as exc:
         say({"error": "connect", "detail": type(exc).__name__})
     loc = r.getheader("Location") or ""
@@ -108,7 +114,7 @@ def docker_command(cfg, container, workdir, command):
         "-v", "%s:/work:rw" % workdir,
         "-w", "/work", "-e", "HOME=/tmp", "-e", "PYTHONUNBUFFERED=1", "-e", "PYTHONDONTWRITEBYTECODE=1",
         "-e", "MPLBACKEND=Agg",
-        str(cfg.get("STU_EMBER_PROJECT_IMAGE") or cfg.get("STU_EMBER_PY_IMAGE", "ember-py:1")),
+        str(cfg.get("STU_EMBER_PROJECT_IMAGE") or cfg.get("STU_EMBER_PY_IMAGE", "ember-py:2")),
         "sh", "-c", command,
     ]
 

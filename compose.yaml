@@ -220,7 +220,7 @@ services:
     environment:
       COREUI_PROJECT_ROOT: ${COREUI_PROJECT_ROOT:-/opt/ember-coreui}
       STU_CONFIG: ${COREUI_PROJECT_ROOT:-/opt/ember-coreui}/api/config.local.php
-      STU_EMBER_PY_IMAGE: ember-py:1
+      STU_EMBER_PY_IMAGE: ember-py:2
       PYTHONUNBUFFERED: "1"
     volumes:
       - .:${COREUI_PROJECT_ROOT:-/opt/ember-coreui}:ro

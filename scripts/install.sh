@@ -789,8 +789,8 @@ if is_enabled "$INSTALL_IMAGE"; then
     warn 'Bilddienst konnte nicht gebaut werden; CoreAI laeuft ohne Bilder weiter.'
   fi
 fi
-log 'Baue das wegwerfbare Python-Sandbox-Image ohne Projekt- oder Geheimnis-Mounts.'
-docker build -t ember-py:1 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
+log 'Baue das wegwerfbare Python-Sandbox-Image (mit Node.js) ohne Projekt- oder Geheimnis-Mounts.'
+docker build -t ember-py:2 -f "$PROJECT_ROOT/tools/ember_py.Dockerfile" "$PROJECT_ROOT/tools"
 
 # Same PHP lint stage and order; report exact file and PHP parser failure.
 compose run -T --rm --no-deps php sh -ec '
@@ -870,6 +870,9 @@ fi
 
 log 'Starte den isolierten CoreAI: TCI Interface-Python-Worker.'
 compose up -d pyworker
+# 0.7.79: ember-py:2 replaces ember-py:1 (Node.js added). Only now, with the worker on the new tag,
+# the old image goes; a container that still uses it keeps it (no error).
+docker image rm ember-py:1 >/dev/null 2>&1 || true
 
 if [[ "$VOICE_READY" == '1' ]]; then
   # Beim ersten Start laedt der Dienst Eves Gewichte (etwa 0,7 GB) und prueft jede Datei gegen ihren SHA-256.
