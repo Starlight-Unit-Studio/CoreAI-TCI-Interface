@@ -20,9 +20,17 @@ declare(strict_types=1);
  * 0.7.77 (P10 B): [AUSFUEHREN: befehl] runs a command on the saved files in the sandbox
  * container (api/project_runs_store.php) and gives Mara the real output and exit code, so she
  * can test, change a file and test again.
+ *
+ * 0.7.81 (P11 B): versions (api/project_vcs_store.php).
+ *   [VERSION_SICHERN: Beschreibung]   save the project files as a version (author "mara")
+ *   [ARBEITSSTAND: name]              switch to that working state, or start it from the active one
+ *                                     (unsaved changes come along, the old one keeps its last version)
+ *   [ZUSAMMENFUEHREN: name]           merge that working state into the active one, only without
+ *                                     conflicts; conflicts stay for the person in the tab Dateien
  */
 require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/project_runs_store.php';
+require_once __DIR__ . '/project_vcs_store.php';
 
 const COREUI_PFTOOLS_READ_CHARS = 16000;
 const COREUI_PFTOOLS_HINT_FILES = 40;
@@ -67,6 +75,76 @@ function coreui_pftools_extract_run(string $reply): ?string {
     return null;
   }
   return $command !== '' ? $command : null;
+}
+
+/** A one-line marker [NAME: text] (pure): the text, or null. 0.7.81 for the version tools. */
+function coreui_pftools_extract_line(string $reply, string $name, int $max): ?string {
+  if (preg_match('~\[\s*' . $name . '\s*:\s*([^\]\r\n]{1,' . $max . '}?)\s*\]~u', $reply, $m) !== 1) return null;
+  return trim($m[1]) !== '' ? trim($m[1]) : null;
+}
+function coreui_pftools_extract_commit(string $reply): ?string { return coreui_pftools_extract_line($reply, 'VERSION_SICHERN', 200); }
+function coreui_pftools_extract_branch(string $reply): ?string { return coreui_pftools_extract_line($reply, 'ARBEITSSTAND', 60); }
+function coreui_pftools_extract_merge(string $reply): ?string {
+  return coreui_pftools_extract_line($reply, 'ZUSAMMENF(?:UE|Ü)HREN', 60);
+}
+
+/** The working state of a project called $name, or null. */
+function coreui_pftools_branch_named(array $state, string $name): ?array {
+  foreach ($state['branches'] as $branch) if ($branch['name'] === $name) return $branch;
+  return null;
+}
+
+/** 0.7.81: one version tool; what Mara reads next. */
+function coreui_pftools_vcs(PDO $pdo, int $uid, string $projectId, string $kind, string $input): string {
+  if (!coreui_pvcs_ready($pdo)) throw new RuntimeException('project_vcs_migration_required');
+  if ($kind === 'pvcs_commit') {
+    try {
+      $commit = coreui_pvcs_commit($pdo, $uid, $projectId, $input, 'mara');
+    } catch (RuntimeException $e) {
+      if ($e->getMessage() !== 'nothing_to_commit') throw $e;
+      return 'Es gibt keine ungesicherten Aenderungen; nichts gesichert.';
+    }
+    $state = coreui_pvcs_state($pdo, $uid, $projectId);
+    coreui_pftools_record($pdo, 'success', 'Version gesichert', ['count'=>1]);
+    return 'Version gesichert: "' . $commit['message'] . '" auf dem Arbeitsstand ' . $state['active']['name'] . ' (' . $commit['files_count']
+      . ' Dateien). Sie bleibt im Tab Dateien unter Versionen wiederherstellbar.';
+  }
+  $state = coreui_pvcs_state($pdo, $uid, $projectId);
+  $before = (string)$state['active']['name'];
+  if ($kind === 'pvcs_branch') {
+    $name = coreui_pvcs_branch_name($input);
+    $target = coreui_pftools_branch_named($state, $name);
+    if ($target !== null && $target['active']) return 'Der Arbeitsstand ' . $name . ' ist schon aktiv.';
+    if ($target !== null) {
+      coreui_pvcs_switch($pdo, $uid, $projectId, (int)$target['id']);
+      coreui_pftools_record($pdo, 'success', 'Arbeitsstand gewechselt', ['count'=>1]);
+      return 'Gewechselt auf den Arbeitsstand ' . $name . '; die Projektdateien sind jetzt seine. Ungesicherte Aenderungen von ' . $before
+        . ' bleiben dort.';
+    }
+    $after = coreui_pvcs_branch_create($pdo, $uid, $projectId, $name, true);
+    coreui_pftools_record($pdo, 'success', 'Arbeitsstand angelegt', ['count'=>1]);
+    return 'Neuer Arbeitsstand ' . $name . ' angelegt und aktiv' . (!$after['status']['clean'] ? ', die ungesicherten Aenderungen sind mitgekommen' : '')
+      . '. ' . $before . ' bleibt bei seiner letzten Version.';
+  }
+  if ($kind === 'pvcs_merge') {
+    $name = coreui_pvcs_branch_name($input);
+    $from = coreui_pftools_branch_named($state, $name);
+    if ($from === null) throw new RuntimeException('branch_not_found');
+    $preview = coreui_pvcs_merge_preview($pdo, $uid, $projectId, (int)$from['id']);
+    if ($preview['conflicts'] !== []) {
+      coreui_pftools_record($pdo, 'info', 'Zusammenfuehren mit Konflikten', ['count'=>count($preview['conflicts'])]);
+      return 'NICHT zusammengefuehrt: ' . count($preview['conflicts']) . ' Konflikt(e) in ' . implode(', ', array_column($preview['conflicts'], 'path'))
+        . '. Beide Seiten haben dort dieselben Stellen verschieden geaendert. Die Person kann das im Tab Dateien unter Versionen loesen; nichts wurde geaendert.';
+    }
+    $merge = coreui_pvcs_merge($pdo, $uid, $projectId, (int)$from['id'],
+      ['ours_tree'=>$preview['ours_tree'], 'theirs_head'=>$preview['theirs_head']], 'mara');
+    $changes = $preview['changes'];
+    coreui_pftools_record($pdo, 'success', 'Arbeitsstaende zusammengefuehrt', ['count'=>1]);
+    return 'Zusammengefuehrt: ' . $name . ' in ' . $before . ' (' . count($changes['added']) . ' neu, ' . count($changes['modified']) . ' geaendert, '
+      . count($changes['deleted']) . ' geloescht' . ($preview['merged'] !== [] ? ', zeilenweise zusammengefuehrt: ' . implode(', ', $preview['merged']) : '')
+      . '). Neue Version "' . $merge['commit']['message'] . '"; sie laesst sich im Tab Dateien zuruecknehmen.';
+  }
+  return 'Unbekanntes Versions-Werkzeug.';
 }
 
 /** Start and end of a long output (pure). */
@@ -184,6 +262,9 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
         $run['status'] === 'done' ? 'Projekt ausgefuehrt, Exitcode ' . (int)$run['exit_code'] : 'Projektlauf ohne Ergebnis', ['count'=>1]);
       return coreui_pftools_run_result($run);
     }
+    if (in_array($kind, ['pvcs_commit', 'pvcs_branch', 'pvcs_merge'], true)) {
+      return coreui_pftools_vcs($pdo, $uid, $projectId, $kind, trim((string)$tool['input']));
+    }
     if ($kind === 'pfile_read') {
       $path = coreui_pfiles_path((string)$tool['input']);
       $file = coreui_pfiles_get($pdo, $uid, $projectId, $path);
@@ -235,6 +316,16 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
       'run_limit'=>'fuer diese Stunde sind es genug Laeufe',
       'no_files'=>'das Projekt hat noch keine Dateien',
       'project_runs_migration_required'=>'das Ausfuehren ist auf diesem Server noch nicht eingerichtet (Migration 047)',
+      'project_vcs_migration_required'=>'Versionen sind auf diesem Server noch nicht eingerichtet (Migration 049)',
+      'project_merge_migration_required'=>'das Zusammenfuehren ist auf diesem Server noch nicht eingerichtet (Migration 050)',
+      'invalid_message'=>'die Beschreibung einer Version ist eine Zeile mit hoechstens 200 Zeichen',
+      'invalid_branch_name'=>'der Name eines Arbeitsstands besteht aus Buchstaben, Ziffern und ._-/ (hoechstens 60 Zeichen, ohne Leerzeichen)',
+      'branch_not_found'=>'diesen Arbeitsstand gibt es im Projekt nicht',
+      'branch_limit'=>'das Projekt hat schon 10 Arbeitsstaende',
+      'branch_exists'=>'ein Arbeitsstand mit diesem Namen (oder diesem Namen als Ordner) gibt es schon',
+      'history_full'=>'das Projekt hat schon 200 Versionen',
+      'already_merged'=>'der Arbeitsstand ist schon ganz enthalten; es gibt nichts zusammenzufuehren',
+      'merge_same'=>'ein Arbeitsstand kann nicht mit sich selbst zusammengefuehrt werden',
     ][$e->getMessage()] ?? $e->getMessage();
     return 'Das ging nicht: ' . $why . '.';
   }
@@ -258,11 +349,30 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
   $more = $list['count'] - count($names);
   $files = $names === [] ? 'Das Projekt hat noch keine Dateien.'
     : 'Dateien des Projekts: ' . implode(', ', $names) . ($more > 0 ? ' und ' . $more . ' weitere.' : '.');
+  // 0.7.81 (P11 B): versions and working states; read only here (the first version comes with the first use).
+  $vcs = '';
+  if (coreui_pvcs_ready($pdo)) {
+    $st = $pdo->prepare('SELECT b.name FROM stu_console_project_vcs v JOIN stu_console_project_branches b ON b.id=v.active_branch_id
+      WHERE v.project_id=?');
+    $st->execute([$projectId]);
+    $active = (string)($st->fetchColumn() ?: COREUI_PVCS_MAIN);
+    $canMerge = coreui_pvcs_merge_ready($pdo);
+    $vcs = $compact
+      ? " Arbeitsstand: " . $active . ". Version sichern: [VERSION_SICHERN: Beschreibung]. Eigener Arbeitsstand: [ARBEITSSTAND: name]."
+        . ($canMerge ? " Zusammenfuehren: [ZUSAMMENFUEHREN: name]." : '')
+      : "VERSIONEN: Aktiver Arbeitsstand ist " . $active . ".\n"
+        . "- [VERSION_SICHERN: kurze Beschreibung] sichert den Stand aller Dateien als Version (wiederherstellbar).\n"
+        . "- [ARBEITSSTAND: name] wechselt auf diesen Arbeitsstand oder legt ihn neu an (Name wie mara/neue-farbe, ohne Leerzeichen); "
+        . "ungesicherte Aenderungen kommen beim Anlegen mit, der bisherige Arbeitsstand bleibt bei seiner letzten Version.\n"
+        . ($canMerge ? "- [ZUSAMMENFUEHREN: name] fuehrt diesen Arbeitsstand in den aktiven zusammen, nur ohne Konflikte; Konflikte loest die Person.\n" : '')
+        . "Fuer eine groessere Aenderung legst du zuerst einen eigenen Arbeitsstand an, damit der bisherige unveraendert bleibt; "
+        . "ist sie fertig und getestet, sicherst du eine Version. Zusammenfuehren nur, wenn die Person es moechte.\n";
+  }
   if ($compact) {
     return "PROJEKTDATEIEN: " . $files . " Lesen: [DATEI: pfad]. Gezielt aendern: [DATEI_AENDERN: pfad] mit Bloecken "
       . "<<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN]. "
       . "Neu oder ganz ersetzen: [DATEI_NEU: pfad] Inhalt [/DATEI_NEU]."
-      . ($canRun ? " Ausfuehren und testen: [AUSFUEHREN: befehl] (Sandbox mit Python 3.12)." : '');
+      . ($canRun ? " Ausfuehren und testen: [AUSFUEHREN: befehl] (Sandbox mit Python 3.12)." : '') . $vcs;
   }
   return "PROJEKTDATEIEN: " . $files . "\n"
     . "Du kannst die Dateien dieses Projekts selbst lesen und gezielt aendern, ein Werkzeug pro Schritt:\n"
@@ -275,6 +385,7 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
       . "Node.js 24 mit npm), zum Beispiel [AUSFUEHREN: python -m unittest -v] oder [AUSFUEHREN: npm test]; du bekommst die echte "
       . "Ausgabe und den Exitcode. "
       . "Nach einer Aenderung fuehrst du die Tests erneut aus. Was der Befehl an Dateien aendert, bleibt nicht erhalten.\n" : '')
+    . $vcs
     . "Aendere nur, was die Person moechte. Fuer kleine Aenderungen an vorhandenen Dateien nimm DATEI_AENDERN statt eines neuen Baus. "
     . "Jeder vorige Stand bleibt im Tab Dateien wiederherstellbar. Sag danach kurz, was du geaendert hast.";
 }

@@ -18,6 +18,13 @@ require_once __DIR__ . '/project_files_store.php';
  * restored state as a new version, so nothing is lost. The export is a ZIP of the active working
  * state with a real Git repository (.git) built here from the versions: git log, git status and
  * git checkout work after unpacking. No git program is needed on the server.
+ *
+ * 0.7.81 (P11 B): another working state can be merged into the active one (migration 050). The
+ * merge starts from the newest version both have in common and takes every change of either side;
+ * where both changed the same lines differently, the person decides (their version, the other one,
+ * or a text of their own) before anything changes. Unsaved changes are saved first, the other
+ * working state stays as it is, and the merge is a new version with two parents, so it can be
+ * taken back like every other version.
  */
 
 const COREUI_PVCS_BRANCHES = 10;
@@ -25,6 +32,8 @@ const COREUI_PVCS_COMMITS = 200;
 const COREUI_PVCS_MESSAGE_CHARS = 200;
 const COREUI_PVCS_LOG = 50;
 const COREUI_PVCS_MAIN = 'main';
+// 0.7.81: how far the line comparison of a merge searches before it treats a part as changed as a whole.
+const COREUI_PVCS_DIFF_EDITS = 600;
 
 function coreui_pvcs_ready(PDO $pdo): bool {
   static $memo = [];
@@ -36,6 +45,21 @@ function coreui_pvcs_ready(PDO $pdo): bool {
         $pdo->query("SELECT 1 FROM {$table} LIMIT 0");
       }
       $memo[$key] = true;
+    } catch (Throwable $e) {
+      $memo[$key] = false;
+    }
+  }
+  return $memo[$key];
+}
+
+/** 0.7.81 (P11 B): merging needs migration 050 (a version with a second parent). */
+function coreui_pvcs_merge_ready(PDO $pdo): bool {
+  static $memo = [];
+  $key = spl_object_id($pdo);
+  if (!array_key_exists($key, $memo)) {
+    try {
+      $pdo->query('SELECT merge_parent_id FROM stu_console_project_commits LIMIT 0');
+      $memo[$key] = coreui_pvcs_ready($pdo);
     } catch (Throwable $e) {
       $memo[$key] = false;
     }
@@ -164,8 +188,12 @@ function coreui_pvcs_commit_row(PDO $pdo, string $projectId, int $commitId): arr
   return $row;
 }
 
-/** A new version of $files (path => sha256, contents already stored) on a working state. */
-function coreui_pvcs_add_commit(PDO $pdo, int $uid, string $projectId, array $branch, array $files, string $message, string $author): int {
+/**
+ * A new version of $files (path => sha256, contents already stored) on a working state.
+ * $mergeParent: 0.7.81, the newest version of the working state merged in (a second parent).
+ */
+function coreui_pvcs_add_commit(PDO $pdo, int $uid, string $projectId, array $branch, array $files, string $message, string $author,
+    ?int $mergeParent = null): int {
   $st = $pdo->prepare('SELECT COUNT(*) FROM stu_console_project_commits WHERE project_id=?');
   $st->execute([$projectId]);
   if ((int)$st->fetchColumn() >= COREUI_PVCS_COMMITS) throw new RuntimeException('history_full');
@@ -185,6 +213,9 @@ function coreui_pvcs_add_commit(PDO $pdo, int $uid, string $projectId, array $br
     ->execute([$projectId, $uid, (int)$branch['id'], $branch['head_commit_id'] === null ? null : (int)$branch['head_commit_id'], $message,
       $author, count($files), $bytes, coreui_pvcs_tree_digest($files)]);
   $id = (int)$pdo->lastInsertId();
+  if ($mergeParent !== null) {
+    $pdo->prepare('UPDATE stu_console_project_commits SET merge_parent_id=? WHERE id=?')->execute([$mergeParent, $id]);
+  }
   $insert = $pdo->prepare('INSERT INTO stu_console_project_commit_files (commit_id, path, sha256) VALUES (?, ?, ?)');
   foreach ($files as $path => $sha) $insert->execute([$id, $path, $sha]);
   $pdo->prepare('UPDATE stu_console_project_branches SET head_commit_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?')->execute([$id, (int)$branch['id']]);
@@ -213,21 +244,58 @@ function coreui_pvcs_init(PDO $pdo, int $uid, string $projectId): void {
 }
 
 function coreui_pvcs_commit_public(array $row): array {
-  return ['id'=>(int)$row['id'], 'parent_id'=>$row['parent_id'] === null ? null : (int)$row['parent_id'], 'message'=>(string)$row['message'],
+  $merge = $row['merge_parent_id'] ?? null;
+  return ['id'=>(int)$row['id'], 'parent_id'=>$row['parent_id'] === null ? null : (int)$row['parent_id'],
+    'merge_parent_id'=>$merge === null ? null : (int)$merge, 'message'=>(string)$row['message'],
     'author'=>(string)$row['author'], 'files_count'=>(int)$row['files_count'], 'bytes'=>(int)$row['bytes'],
     'branch_id'=>$row['branch_id'] === null ? null : (int)$row['branch_id'], 'created_at'=>(string)$row['created_at']];
 }
 
-/** The versions of a working state, newest first, by following the parents. */
+/** 0.7.81: the parents of every version of a project: id => [first parent, merged parent] (only those there). */
+function coreui_pvcs_graph(PDO $pdo, string $projectId): array {
+  $st = $pdo->prepare('SELECT * FROM stu_console_project_commits WHERE project_id=?');
+  $st->execute([$projectId]);
+  $graph = [];
+  foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+    $parents = [];
+    foreach ([$row['parent_id'] ?? null, $row['merge_parent_id'] ?? null] as $parent) if ($parent !== null) $parents[] = (int)$parent;
+    $graph[(int)$row['id']] = $parents;
+  }
+  return $graph;
+}
+
+/** A version and every version before it, over both parents (pure): id => true. */
+function coreui_pvcs_ancestors(array $graph, ?int $id): array {
+  $seen = [];
+  $todo = $id === null ? [] : [$id];
+  while ($todo !== []) {
+    $next = array_pop($todo);
+    if (isset($seen[$next]) || !isset($graph[$next])) continue;
+    $seen[$next] = true;
+    foreach ($graph[$next] as $parent) $todo[] = $parent;
+  }
+  return $seen;
+}
+
+/**
+ * The newest version two versions have in common (pure), or null. Versions only get younger
+ * than their parents, so the highest common number is never an ancestor of another common one.
+ */
+function coreui_pvcs_merge_base(array $graph, ?int $a, ?int $b): ?int {
+  $common = array_intersect_key(coreui_pvcs_ancestors($graph, $a), coreui_pvcs_ancestors($graph, $b));
+  return $common === [] ? null : max(array_keys($common));
+}
+
+/** The versions of a working state, newest first, over both parents of a merge. */
 function coreui_pvcs_log(PDO $pdo, string $projectId, ?int $headId, int $limit = COREUI_PVCS_LOG): array {
+  $ids = array_keys(coreui_pvcs_ancestors(coreui_pvcs_graph($pdo, $projectId), $headId));
+  rsort($ids, SORT_NUMERIC);
   $out = [];
   $st = $pdo->prepare('SELECT * FROM stu_console_project_commits WHERE id=? AND project_id=?');
-  while ($headId !== null && count($out) < $limit) {
-    $st->execute([$headId, $projectId]);
+  foreach (array_slice($ids, 0, $limit) as $id) {
+    $st->execute([$id, $projectId]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
-    if (!$row) break;
-    $out[] = coreui_pvcs_commit_public($row);
-    $headId = $row['parent_id'] === null ? null : (int)$row['parent_id'];
+    if ($row) $out[] = coreui_pvcs_commit_public($row);
   }
   return $out;
 }
@@ -241,9 +309,14 @@ function coreui_pvcs_state(PDO $pdo, int $uid, string $projectId): array {
   $activeId = (int)$vcs->fetchColumn();
   $st = $pdo->prepare('SELECT * FROM stu_console_project_branches WHERE project_id=? ORDER BY name');
   $st->execute([$project['id']]);
+  $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  // 0.7.81: a working state whose newest version the active one already contains has nothing to merge.
+  $activeHead = null;
+  foreach ($rows as $row) if ((int)$row['id'] === $activeId && $row['head_commit_id'] !== null) $activeHead = (int)$row['head_commit_id'];
+  $contained = coreui_pvcs_ancestors(coreui_pvcs_graph($pdo, $project['id']), $activeHead);
   $branches = [];
   $active = null;
-  foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+  foreach ($rows as $row) {
     $head = $row['head_commit_id'] === null ? null : (int)$row['head_commit_id'];
     $isActive = (int)$row['id'] === $activeId;
     if ($isActive) {
@@ -253,7 +326,7 @@ function coreui_pvcs_state(PDO $pdo, int $uid, string $projectId): array {
         && !coreui_pvcs_changes(coreui_pvcs_commit_files($pdo, $head), coreui_pvcs_worktree($pdo, (int)$row['id']))['clean'];
     }
     $item = ['id'=>(int)$row['id'], 'name'=>(string)$row['name'], 'head_commit_id'=>$head, 'active'=>$isActive, 'unsaved'=>$unsaved,
-      'updated_at'=>(string)$row['updated_at']];
+      'merged'=>$head === null || isset($contained[$head]), 'updated_at'=>(string)$row['updated_at']];
     $branches[] = $item;
     if ($isActive) $active = $item;
   }
@@ -262,7 +335,8 @@ function coreui_pvcs_state(PDO $pdo, int $uid, string $projectId): array {
   $count = $pdo->prepare('SELECT COUNT(*) FROM stu_console_project_commits WHERE project_id=?');
   $count->execute([$project['id']]);
   return ['active'=>$active, 'branches'=>$branches, 'status'=>$status, 'log'=>coreui_pvcs_log($pdo, $project['id'], $active['head_commit_id']),
-    'limits'=>['branches'=>COREUI_PVCS_BRANCHES, 'commits'=>COREUI_PVCS_COMMITS, 'used_commits'=>(int)$count->fetchColumn()]];
+    'limits'=>['branches'=>COREUI_PVCS_BRANCHES, 'commits'=>COREUI_PVCS_COMMITS, 'used_commits'=>(int)$count->fetchColumn()],
+    'can_merge'=>coreui_pvcs_merge_ready($pdo)];
 }
 
 /** Save the project files as a new version of the active working state. */
@@ -482,21 +556,20 @@ function coreui_pvcs_branch_delete(PDO $pdo, int $uid, string $projectId, int $b
 
 /** Versions no working state reaches and contents nothing refers to are removed. */
 function coreui_pvcs_prune(PDO $pdo, string $projectId): void {
-  $st = $pdo->prepare('SELECT id, parent_id FROM stu_console_project_commits WHERE project_id=?');
-  $st->execute([$projectId]);
-  $parent = [];
-  foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) $parent[(int)$row['id']] = $row['parent_id'] === null ? null : (int)$row['parent_id'];
+  $graph = coreui_pvcs_graph($pdo, $projectId);
   $heads = $pdo->prepare('SELECT head_commit_id FROM stu_console_project_branches WHERE project_id=? AND head_commit_id IS NOT NULL');
   $heads->execute([$projectId]);
   $keep = [];
-  foreach ($heads->fetchAll(PDO::FETCH_COLUMN) ?: [] as $id) {
-    for ($id = (int)$id; $id !== null && isset($parent[$id]) && !isset($keep[$id]); $id = $parent[$id]) $keep[$id] = true;
-  }
-  $drop = array_values(array_diff(array_keys($parent), array_keys($keep)));
+  // 0.7.81: a merged version keeps both of its parents.
+  foreach ($heads->fetchAll(PDO::FETCH_COLUMN) ?: [] as $id) $keep += coreui_pvcs_ancestors($graph, (int)$id);
+  $drop = array_values(array_diff(array_keys($graph), array_keys($keep)));
   if ($drop !== []) {
     $marks = implode(',', array_fill(0, count($drop), '?'));
     $pdo->prepare("DELETE FROM stu_console_project_commit_files WHERE commit_id IN ($marks)")->execute($drop);
     $pdo->prepare("UPDATE stu_console_project_commits SET parent_id=NULL WHERE parent_id IN ($marks)")->execute($drop);
+    if (coreui_pvcs_merge_ready($pdo)) {
+      $pdo->prepare("UPDATE stu_console_project_commits SET merge_parent_id=NULL WHERE merge_parent_id IN ($marks)")->execute($drop);
+    }
     $pdo->prepare("DELETE FROM stu_console_project_commits WHERE project_id=? AND id IN ($marks)")->execute([$projectId, ...$drop]);
   }
   $pdo->prepare('DELETE FROM stu_console_project_blobs WHERE project_id=? AND sha256 NOT IN (
@@ -515,6 +588,311 @@ function coreui_pvcs_purge(PDO $pdo, int $uid, string $projectId): void {
   foreach (['stu_console_project_vcs', 'stu_console_project_commits', 'stu_console_project_branches', 'stu_console_project_blobs'] as $table) {
     $pdo->prepare("DELETE FROM {$table} WHERE project_id=? AND user_id=?")->execute([$projectId, $uid]);
   }
+}
+
+// --- Merge (0.7.81, P11 B) -------------------------------------------------------------------------
+
+/** The lines of a text, each with its line end (pure). */
+function coreui_pvcs_lines(string $text): array {
+  if ($text === '') return [];
+  return preg_split('~(?<=\n)~', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+}
+
+/**
+ * Myers' shortest edit between two lists of lines (pure): the lines they have in common as
+ * [[index in $a, index in $b], ...]; [] when it needs more than $maxEdits steps (or one is empty).
+ */
+function coreui_pvcs_myers(array $a, array $b, int $maxEdits): array {
+  $n = count($a);
+  $m = count($b);
+  if ($n === 0 || $m === 0) return [];
+  $v = [1 => 0];
+  $trace = [];
+  $found = false;
+  for ($d = 0; $d <= min($n + $m, $maxEdits); $d++) {
+    $trace[] = $v;
+    for ($k = -$d; $k <= $d; $k += 2) {
+      $x = ($k === -$d || ($k !== $d && $v[$k - 1] < $v[$k + 1])) ? $v[$k + 1] : $v[$k - 1] + 1;
+      $y = $x - $k;
+      while ($x < $n && $y < $m && $a[$x] === $b[$y]) { $x++; $y++; }
+      $v[$k] = $x;
+      if ($x >= $n && $y >= $m) { $found = true; break 2; }
+    }
+  }
+  if (!$found) return [];
+  $pairs = [];
+  $x = $n;
+  $y = $m;
+  for ($d = count($trace) - 1; $d >= 0; $d--) {
+    $v = $trace[$d];
+    $k = $x - $y;
+    $prevK = ($k === -$d || ($k !== $d && $v[$k - 1] < $v[$k + 1])) ? $k + 1 : $k - 1;
+    $prevX = $v[$prevK];
+    $prevY = $prevX - $prevK;
+    while ($x > $prevX && $y > $prevY) { $x--; $y--; $pairs[] = [$x, $y]; }
+    $x = $prevX;
+    $y = $prevY;
+  }
+  return array_reverse($pairs);
+}
+
+/**
+ * The lines two texts have in common, in order (pure). Equal lines at the start and at the end
+ * first, the rest with Myers; when that part differs too much, it counts as changed as a whole
+ * (a merge then asks instead of guessing).
+ */
+function coreui_pvcs_common_lines(array $a, array $b, int $maxEdits = COREUI_PVCS_DIFF_EDITS): array {
+  $n = count($a);
+  $m = count($b);
+  $start = 0;
+  while ($start < $n && $start < $m && $a[$start] === $b[$start]) $start++;
+  $end = 0;
+  while ($end < $n - $start && $end < $m - $start && $a[$n - 1 - $end] === $b[$m - 1 - $end]) $end++;
+  $pairs = [];
+  for ($i = 0; $i < $start; $i++) $pairs[] = [$i, $i];
+  $middle = coreui_pvcs_myers(array_slice($a, $start, $n - $start - $end), array_slice($b, $start, $m - $start - $end), $maxEdits);
+  foreach ($middle as [$i, $j]) $pairs[] = [$i + $start, $j + $start];
+  for ($i = 0; $i < $end; $i++) $pairs[] = [$n - $end + $i, $m - $end + $i];
+  return $pairs;
+}
+
+/**
+ * Three-way merge of one text (pure). Every change of either side is taken; where both sides
+ * changed the same or neighbouring lines differently, both stay between conflict markers
+ * ("<<<<<<< ours", "=======", ">>>>>>> theirs"). Returns ['content', 'conflicts', 'clean'].
+ */
+function coreui_pvcs_merge3(string $base, string $ours, string $theirs, string $oursLabel = 'ours', string $theirsLabel = 'theirs'): array {
+  $o = coreui_pvcs_lines($base);
+  $a = coreui_pvcs_lines($ours);
+  $b = coreui_pvcs_lines($theirs);
+  $ma = [];
+  foreach (coreui_pvcs_common_lines($o, $a) as [$i, $j]) $ma[$i] = $j;
+  $mb = [];
+  foreach (coreui_pvcs_common_lines($o, $b) as [$i, $j]) $mb[$i] = $j;
+  $nl = str_contains($ours, "\r\n") ? "\r\n" : "\n";
+  $block = static function (array $lines) use ($nl): string {
+    $text = implode('', $lines);
+    return $text === '' || str_ends_with($text, "\n") ? $text : $text . $nl;
+  };
+  [$no, $na, $nb] = [count($o), count($a), count($b)];
+  [$lo, $la, $lb] = [0, 0, 0];
+  $out = '';
+  $conflicts = 0;
+  while (true) {
+    // Lines all three have at the same place stay.
+    $i = 0;
+    while ($lo + $i < $no && ($ma[$lo + $i] ?? -1) === $la + $i && ($mb[$lo + $i] ?? -1) === $lb + $i) $i++;
+    if ($i > 0) {
+      $out .= implode('', array_slice($o, $lo, $i));
+      $lo += $i; $la += $i; $lb += $i;
+      continue;
+    }
+    // Up to the next line both sides still have from the base, at least one side changed something.
+    $next = $lo;
+    while ($next < $no && !(isset($ma[$next]) && isset($mb[$next]))) $next++;
+    [$ea, $eb] = $next < $no ? [$ma[$next], $mb[$next]] : [$na, $nb];
+    $co = array_slice($o, $lo, $next - $lo);
+    $ca = array_slice($a, $la, $ea - $la);
+    $cb = array_slice($b, $lb, $eb - $lb);
+    if ($co === [] && $ca === [] && $cb === []) break;
+    if ($ca === $co) {
+      $out .= implode('', $cb);
+    } elseif ($cb === $co || $ca === $cb) {
+      $out .= implode('', $ca);
+    } else {
+      $out .= '<<<<<<< ' . $oursLabel . $nl . $block($ca) . '=======' . $nl . $block($cb) . '>>>>>>> ' . $theirsLabel . $nl;
+      $conflicts++;
+    }
+    [$lo, $la, $lb] = [$next, $ea, $eb];
+    if ($next >= $no) break;
+  }
+  return ['content'=>$out, 'conflicts'=>$conflicts, 'clean'=>$conflicts === 0];
+}
+
+/** Whether a text still has the conflict markers a merge of these two working states put in (pure). */
+function coreui_pvcs_has_markers(string $text, string $oursLabel, string $theirsLabel): bool {
+  return preg_match('~^<{7} ' . preg_quote($oursLabel, '~') . '\r?$~m', $text) === 1
+    || preg_match('~^>{7} ' . preg_quote($theirsLabel, '~') . '\r?$~m', $text) === 1;
+}
+
+/**
+ * Which files a merge decides by itself (pure); $base, $ours, $theirs: path => sha256. A file only
+ * one side changed takes that change; a file both changed is merged line by line ('lines'); a file
+ * one side deleted and the other changed is a conflict. 'take': path => sha256 of what stays.
+ */
+function coreui_pvcs_merge_trees(array $base, array $ours, array $theirs): array {
+  $take = [];
+  $lines = [];
+  $conflicts = [];
+  $paths = array_values(array_unique(array_map('strval', array_merge(array_keys($base), array_keys($ours), array_keys($theirs)))));
+  sort($paths, SORT_STRING);
+  foreach ($paths as $path) {
+    $b = $base[$path] ?? null;
+    $o = $ours[$path] ?? null;
+    $t = $theirs[$path] ?? null;
+    if ($o === $t) { if ($o !== null) $take[$path] = $o; continue; }
+    if ($o === $b) { if ($t !== null) $take[$path] = $t; continue; }
+    if ($t === $b) { if ($o !== null) $take[$path] = $o; continue; }
+    if ($o !== null && $t !== null) { $lines[] = $path; continue; }
+    $conflicts[$path] = $o === null ? 'deleted_ours' : 'deleted_theirs';
+  }
+  return ['take'=>$take, 'lines'=>$lines, 'conflicts'=>$conflicts];
+}
+
+function coreui_pvcs_merge_message(string $fromName): string {
+  return 'Zusammengeführt: ' . $fromName;
+}
+
+/** Everything a merge of working state $fromId into the active one would do (reads only). */
+function coreui_pvcs_merge_plan(PDO $pdo, int $uid, string $projectId, int $activeId, int $fromId): array {
+  $from = coreui_pvcs_branch($pdo, $projectId, $fromId);
+  if ($fromId === $activeId) throw new RuntimeException('merge_same');
+  $into = coreui_pvcs_branch($pdo, $projectId, $activeId);
+  $oursHead = $into['head_commit_id'] === null ? null : (int)$into['head_commit_id'];
+  $theirsHead = $from['head_commit_id'] === null ? null : (int)$from['head_commit_id'];
+  $graph = coreui_pvcs_graph($pdo, $projectId);
+  if ($theirsHead === null || isset(coreui_pvcs_ancestors($graph, $oursHead)[$theirsHead])) throw new RuntimeException('already_merged');
+  $baseId = coreui_pvcs_merge_base($graph, $oursHead, $theirsHead);
+  $base = coreui_pvcs_commit_files($pdo, $baseId);
+  $ours = coreui_pvcs_working($pdo, $uid, $projectId);
+  $theirs = coreui_pvcs_commit_files($pdo, $theirsHead);
+  $tree = coreui_pvcs_merge_trees($base, $ours, $theirs);
+  $texts = [];
+  $merged = [];
+  $conflicts = [];
+  foreach ($tree['lines'] as $path) {
+    $result = coreui_pvcs_merge3(isset($base[$path]) ? coreui_pvcs_blob($pdo, $projectId, $base[$path]) : '',
+      (string)coreui_pfiles_row($pdo, $uid, $projectId, $path)['content'], coreui_pvcs_blob($pdo, $projectId, $theirs[$path]),
+      (string)$into['name'], (string)$from['name']);
+    if ($result['clean']) {
+      $texts[$path] = $result['content'];
+      $merged[] = $path;
+    } else {
+      $conflicts[$path] = ['kind'=>isset($base[$path]) ? 'content' : 'added', 'count'=>$result['conflicts'], 'merged'=>$result['content']];
+    }
+  }
+  foreach ($tree['conflicts'] as $path => $kind) $conflicts[(string)$path] = ['kind'=>$kind, 'count'=>1, 'merged'=>null];
+  ksort($conflicts, SORT_STRING);
+  return ['into'=>$into, 'from'=>$from, 'ours_head'=>$oursHead, 'theirs_head'=>$theirsHead, 'base_id'=>$baseId, 'ours'=>$ours,
+    'theirs'=>$theirs, 'take'=>$tree['take'], 'texts'=>$texts, 'merged'=>$merged, 'conflicts'=>$conflicts,
+    'ours_tree'=>coreui_pvcs_tree_digest($ours), 'unsaved'=>!coreui_pvcs_changes(coreui_pvcs_commit_files($pdo, $oursHead), $ours)['clean']];
+}
+
+/**
+ * What merging working state $fromId into the active one changes, before anything changes:
+ * files taken over, files merged line by line, and the conflicts with both versions and a text
+ * with conflict markers to edit. ours_tree and theirs_head go back with the merge.
+ */
+function coreui_pvcs_merge_preview(PDO $pdo, int $uid, string $projectId, int $fromId): array {
+  coreui_pvcs_init($pdo, $uid, $projectId);
+  $project = coreui_pfiles_require($pdo, $uid, $projectId);
+  if (!coreui_pvcs_merge_ready($pdo)) throw new RuntimeException('project_merge_migration_required');
+  $vcs = $pdo->prepare('SELECT active_branch_id FROM stu_console_project_vcs WHERE project_id=?');
+  $vcs->execute([$project['id']]);
+  $plan = coreui_pvcs_merge_plan($pdo, $uid, $project['id'], (int)$vcs->fetchColumn(), $fromId);
+  $result = $plan['take'];
+  foreach ($plan['texts'] as $path => $text) $result[$path] = hash('sha256', $text);
+  $conflicts = [];
+  foreach ($plan['conflicts'] as $path => $conflict) {
+    $path = (string)$path;
+    $conflicts[] = ['path'=>$path, 'kind'=>$conflict['kind'], 'count'=>$conflict['count'], 'merged'=>$conflict['merged'],
+      'ours'=>isset($plan['ours'][$path]) ? (string)coreui_pfiles_row($pdo, $uid, $project['id'], $path)['content'] : null,
+      'theirs'=>isset($plan['theirs'][$path]) ? coreui_pvcs_blob($pdo, $project['id'], $plan['theirs'][$path]) : null];
+  }
+  $from = $plan['from'];
+  $fromUnsaved = (int)$from['worktree_saved'] === 1
+    && !coreui_pvcs_changes($plan['theirs'], coreui_pvcs_worktree($pdo, (int)$from['id']))['clean'];
+  return ['into'=>['id'=>(int)$plan['into']['id'], 'name'=>(string)$plan['into']['name']],
+    'from'=>['id'=>(int)$from['id'], 'name'=>(string)$from['name'], 'unsaved'=>$fromUnsaved],
+    'base_commit_id'=>$plan['base_id'], 'theirs_head'=>$plan['theirs_head'], 'ours_tree'=>$plan['ours_tree'], 'unsaved'=>$plan['unsaved'],
+    'changes'=>coreui_pvcs_changes(array_diff_key($plan['ours'], $plan['conflicts']), $result), 'merged'=>$plan['merged'],
+    'conflicts'=>$conflicts, 'message'=>coreui_pvcs_merge_message((string)$from['name'])];
+}
+
+/**
+ * Merge working state $fromId into the active one. $opts: ours_tree and theirs_head as the
+ * preview gave them (anything changed in between: 'merge_changed'), resolutions (path =>
+ * ['choice' => 'ours'|'theirs'|'text', 'text' => ...]) for every conflict ('merge_unresolved'
+ * otherwise) and message. Unsaved changes are saved first; the merge is a new version with the
+ * other working state's newest version as its second parent. The other working state stays.
+ */
+function coreui_pvcs_merge(PDO $pdo, int $uid, string $projectId, int $fromId, array $opts = [], string $author = 'person'): array {
+  coreui_pvcs_init($pdo, $uid, $projectId);
+  $project = coreui_pfiles_require($pdo, $uid, $projectId);
+  if (!coreui_pvcs_merge_ready($pdo)) throw new RuntimeException('project_merge_migration_required');
+  if (!in_array($author, ['person', 'mara'], true)) throw new InvalidArgumentException('invalid_author');
+  $message = trim((string)($opts['message'] ?? '')) !== '' ? coreui_pvcs_message($opts['message']) : null;
+  $resolutions = $opts['resolutions'] ?? [];
+  if (!is_array($resolutions)) throw new InvalidArgumentException('invalid_resolution');
+  $id = coreui_pfiles_atomic($pdo, static function () use ($pdo, $uid, $project, $fromId, $opts, $author, $message, $resolutions): int {
+    $vcs = coreui_pvcs_lock($pdo, $project['id']);
+    $plan = coreui_pvcs_merge_plan($pdo, $uid, $project['id'], (int)$vcs['active_branch_id'], $fromId);
+    if ((array_key_exists('ours_tree', $opts) && (string)$opts['ours_tree'] !== $plan['ours_tree'])
+        || (array_key_exists('theirs_head', $opts) && (int)$opts['theirs_head'] !== $plan['theirs_head'])) {
+      throw new RuntimeException('merge_changed');
+    }
+    foreach (array_keys($resolutions) as $path) {
+      if (!isset($plan['conflicts'][(string)$path])) throw new InvalidArgumentException('invalid_resolution');
+    }
+    $final = $plan['take'];
+    $texts = $plan['texts'];
+    foreach ($plan['conflicts'] as $path => $conflict) {
+      $path = (string)$path;
+      $resolution = $resolutions[$path] ?? null;
+      if (!is_array($resolution)) throw new RuntimeException('merge_unresolved');
+      $choice = (string)($resolution['choice'] ?? '');
+      if ($choice === 'ours' || $choice === 'theirs') {
+        $side = $choice === 'ours' ? $plan['ours'] : $plan['theirs'];
+        if (isset($side[$path])) $final[$path] = $side[$path];
+      } elseif ($choice === 'text' && is_string($resolution['text'] ?? null)) {
+        $text = coreui_pfiles_text($resolution['text']);
+        if (coreui_pvcs_has_markers($text, (string)$plan['into']['name'], (string)$plan['from']['name'])) {
+          throw new InvalidArgumentException('conflict_markers');
+        }
+        $texts[$path] = $text;
+      } else {
+        throw new InvalidArgumentException('invalid_resolution');
+      }
+    }
+    $count = $pdo->prepare('SELECT COUNT(*) FROM stu_console_project_commits WHERE project_id=?');
+    $count->execute([$project['id']]);
+    if ((int)$count->fetchColumn() + ($plan['unsaved'] ? 2 : 1) > COREUI_PVCS_COMMITS) throw new RuntimeException('history_full');
+    $branch = $plan['into'];
+    if ($plan['unsaved']) {
+      coreui_pvcs_store_working($pdo, $uid, $project['id']);
+      coreui_pvcs_add_commit($pdo, $uid, $project['id'], $branch, $plan['ours'], 'Automatisch gesichert vor dem Zusammenführen', 'auto');
+      $branch = coreui_pvcs_branch($pdo, $project['id'], (int)$branch['id']);
+    }
+    // Merged and edited texts become stored contents.
+    $has = $pdo->prepare('SELECT COUNT(*) FROM stu_console_project_blobs WHERE project_id=? AND sha256=?');
+    $insert = $pdo->prepare(coreui_pvcs_insert_ignore($pdo) . ' INTO stu_console_project_blobs (project_id, sha256, user_id, content,
+      size_bytes, created_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)');
+    $newBytes = 0;
+    foreach ($texts as $path => $text) {
+      $sha = hash('sha256', $text);
+      $has->execute([$project['id'], $sha]);
+      if ((int)$has->fetchColumn() === 0) {
+        $insert->execute([$project['id'], $sha, $uid, $text, strlen($text)]);
+        $newBytes += strlen($text);
+      }
+      $final[(string)$path] = $sha;
+    }
+    $sizes = $pdo->prepare('SELECT sha256, size_bytes FROM stu_console_project_blobs WHERE project_id=?');
+    $sizes->execute([$project['id']]);
+    $size = [];
+    foreach ($sizes->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) $size[$row['sha256']] = (int)$row['size_bytes'];
+    $bytes = 0;
+    foreach ($final as $sha) $bytes += $size[$sha] ?? 0;
+    if (count($final) > COREUI_PFILES_MAX_FILES || $bytes > COREUI_PFILES_PROJECT_BYTES) throw new RuntimeException('project_full');
+    if ($newBytes > 0 && function_exists('coreui_files_room') && coreui_files_room($pdo, $uid, $newBytes) !== null) {
+      throw new RuntimeException('storage_full');
+    }
+    coreui_pvcs_apply($pdo, $uid, $project['id'], $final, 'merge');
+    return coreui_pvcs_add_commit($pdo, $uid, $project['id'], $branch, $final,
+      $message ?? coreui_pvcs_merge_message((string)$plan['from']['name']), $author, (int)$plan['theirs_head']);
+  });
+  return ['commit'=>coreui_pvcs_commit_public(coreui_pvcs_commit_row($pdo, $project['id'], $id)),
+    'state'=>coreui_pvcs_state($pdo, $uid, $projectId)];
 }
 
 // --- Git -----------------------------------------------------------------------------------------
@@ -617,6 +995,9 @@ function coreui_pvcs_git_zip(PDO $pdo, int $uid, string $projectId): array {
     $person = coreui_pvcs_git_person((string)$row['author']);
     $body = 'tree ' . $tree . "\n";
     if ($row['parent_id'] !== null && isset($gitCommit[(int)$row['parent_id']])) $body .= 'parent ' . $gitCommit[(int)$row['parent_id']] . "\n";
+    // 0.7.81: a merge has the merged working state's version as its second parent.
+    $merge = $row['merge_parent_id'] ?? null;
+    if ($merge !== null && isset($gitCommit[(int)$merge])) $body .= 'parent ' . $gitCommit[(int)$merge] . "\n";
     $body .= 'author ' . $person . ' ' . $when . " +0000\n" . 'committer ' . $person . ' ' . $when . " +0000\n\n" . (string)$row['message'] . "\n";
     [$sha, $data] = coreui_pvcs_git_object('commit', $body);
     $objects[$sha] = $data;

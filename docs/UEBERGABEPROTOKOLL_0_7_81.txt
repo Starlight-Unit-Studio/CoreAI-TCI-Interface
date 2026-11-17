@@ -1,0 +1,57 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.81
+Datum: 17.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.80 nach PR #336
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"weiter mit P11 b": Roadmap P11 Schritt B. Zusammenfuehren von Arbeitsstaenden mit
+Konfliktbearbeitung; Mara sichert Versionen und arbeitet auf einem eigenen Arbeitsstand.
+Abnahme der Feature-Matrix CF-037: Konflikte werden ohne Verlust fremder Arbeit behandelt.
+
+UMSETZUNG
+- database/migrations/050_project_merges.sql: stu_console_project_commits.merge_parent_id
+  (ADD COLUMN IF NOT EXISTS, zweiter Eltern-Teil einer Version), Revisionsart "merge".
+- api/project_vcs_store.php: coreui_pvcs_merge_ready; Graph ueber beide Eltern
+  (coreui_pvcs_graph, _ancestors, _merge_base: hoechste gemeinsame Nummer, weil Versionen immer
+  juenger als ihre Eltern sind); Verlauf, Aufraeumen und Git-Export ueber beide Eltern;
+  Zeilenvergleich (_lines, _myers mit hoechstens 600 Schritten, _common_lines mit gleichem Anfang
+  und Ende zuerst); Dreiwege-Merge einer Datei (_merge3, benachbarte Aenderungen sind wie in Git
+  ein Konflikt, Marker mit den Namen der Arbeitsstaende, CRLF bleibt), Entscheidung je Datei
+  (_merge_trees: eine Seite geaendert, beide geaendert, geloescht gegen geaendert);
+  _merge_plan, _merge_preview (liest nur) und _merge (unter der Sperre: alles neu gerechnet,
+  ours_tree und theirs_head muessen stimmen, sonst merge_changed; jede Loesung pflicht,
+  sonst merge_unresolved; Text mit Markern dieser Zusammenfuehrung: conflict_markers;
+  ungesicherte Aenderungen zuerst als Version; Grenzen 200 Dateien, 10 MB, Speicher;
+  Version mit zwei Eltern). Zustand: can_merge, je Arbeitsstand merged.
+- api/project_files.php: GET vcs_merge, POST vcs_merge (CSRF); 409 fuer already_merged,
+  merge_same, merge_changed, merge_unresolved; 400 fuer conflict_markers, invalid_resolution.
+- api/project_file_tools.php: [VERSION_SICHERN: ...], [ARBEITSSTAND: name] (wechseln oder neu
+  mit Uebernahme), [ZUSAMMENFUEHREN: name] (nur ohne Konflikte; sonst nichts geaendert und die
+  Dateien genannt); Hinweis mit aktivem Arbeitsstand (liest nur, legt nichts an).
+- api/console_agent_loop.php, api/chat.php: Werkzeuge pvcs_commit, pvcs_branch (mit Migration
+  049) und pvcs_merge (mit 050), Arbeitsweg, Menue, nicht gelaufene Marker werden entfernt.
+- js/coreui-project-files.js, css/coreui-project-files.css: Knopf "Zusammenfuehren" nur, wo es
+  etwas gibt; Vorschau (wird uebernommen mit Zeilenvergleich der anderen Seite, zeilenweise
+  zusammengefuehrt), Konflikte mit Wahl (Meine Fassung, Fassung von X, Selbst zusammenfuehren
+  mit Textfeld), Vergleichen, Beschreibung, "Zusammenfuehren" erst mit allen Loesungen; bei
+  merge_changed kommt die Vorschau neu mit Hinweis. Im Verlauf ist eine Zusammenfuehrung
+  markiert; im Dateiverlauf heisst die Revisionsart "Zusammengefuehrt".
+- Tests mit woertlichen Werkzeuglisten nachgezogen (project-runs, project-file-tools, skills,
+  image-gen), keine Pruefung entfernt.
+- README (Abschnitt 4, "Not yet complete", API-Tabelle), docs/CAPABILITIES.md, ROADMAP (M3, P11),
+  Feature-Matrix CF-037 und CF-038.
+- Nicht geaendert: Installer, compose.yaml, nginx, Modelfile, SYSTEM-Prompts.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Zusammenfuehren auf dem echten Server mit echten Projekten.
+- Maras Versions-Werkzeuge mit einem echten Core (Marker, Arbeitsweg und Werkzeuge sind im
+  Selbsttest geprueft, nicht die Entscheidungen eines Cores).
+
+NAECHSTER SCHRITT
+- P11 C: Artefakte und ihre Lebensdauer (CF-031), auf Auftrag.
+
+Version: 0.7.81

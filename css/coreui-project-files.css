@@ -240,10 +240,29 @@
 .project-vcs-commit-text span { overflow-wrap:anywhere; }
 .project-vcs-commit-text small { color:var(--muted); }
 .project-vcs-commit-actions { display:flex; flex-wrap:wrap; gap:6px; }
+/* 0.7.81 (P11 B): merging working states with conflicts. */
+.project-vcs-merge { display:flex; flex-direction:column; gap:8px; margin:10px; }
+.project-vcs-merge > strong { font-size:12px; color:var(--muted); }
+.project-vcs-merge > .project-files-hint, .project-vcs-merge > .project-files-status { margin:0; }
+.project-vcs-conflict {
+  display:flex; flex-direction:column; gap:6px; padding:8px; border:1px solid var(--line); border-left:3px solid var(--red);
+}
+.project-vcs-conflict.is-solved { border-left-color:var(--green); }
+.project-vcs-conflict-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.project-vcs-conflict-head code { overflow-wrap:anywhere; }
+.project-vcs-conflict-head small { flex:1 1 auto; color:var(--muted); }
+.project-vcs-choices { display:flex; flex-wrap:wrap; gap:6px 14px; }
+.project-vcs-choice { display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; }
+.project-vcs-conflict-text {
+  width:100%; box-sizing:border-box; min-height:120px; padding:8px; resize:vertical; tab-size:2;
+  font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  border:1px solid var(--line-strong); background:var(--panel-cx); color:var(--txt);
+}
+.project-vcs-merge-go { padding:0; }
 
 @media (max-width: 640px) {
   .project-files-toolbar > * { flex:1 1 auto; }
-  .project-vcs-commit-actions > *, .project-vcs-branch > button { flex:1 1 auto; }
+  .project-vcs-commit-actions > *, .project-vcs-branch > button, .project-vcs-conflict-head > button { flex:1 1 auto; }
   .project-proc-port { flex:1 1 80px; }
   .project-run-form > * { flex:1 1 auto; }
   .project-preview-actions > * { flex:1 1 auto; }

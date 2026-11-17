@@ -21,6 +21,8 @@ declare(strict_types=1);
  * 0.7.73 (P09 B): in a project chat [DATEI: pfad], [DATEI_AENDERN: pfad] and [DATEI_NEU: pfad]
  * read and change single project files (api/project_file_tools.php).
  * 0.7.77 (P10 B): [AUSFUEHREN: befehl] runs a command on them in the sandbox container.
+ * 0.7.81 (P11 B): [VERSION_SICHERN: ...], [ARBEITSSTAND: name] and [ZUSAMMENFUEHREN: name]
+ * save versions and work on working states of the project.
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
@@ -33,6 +35,9 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
     'pfile_edit'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_edit') ? coreui_pftools_extract_edit($r) : null,
     'pfile_read'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_read') ? coreui_pftools_extract_read($r) : null,
     'prun'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_run') ? coreui_pftools_extract_run($r) : null,
+    'pvcs_commit'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_commit') ? coreui_pftools_extract_commit($r) : null,
+    'pvcs_branch'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_branch') ? coreui_pftools_extract_branch($r) : null,
+    'pvcs_merge'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_merge') ? coreui_pftools_extract_merge($r) : null,
     'skill'=>static fn(string $r): ?string => function_exists('coreui_skills_extract_marker') ? coreui_skills_extract_marker($r) : null,
     'browse'=>static fn(string $r): ?string => function_exists('ember_extract_browse_marker') ? ember_extract_browse_marker($r) : null,
     'web'=>static fn(string $r): ?string => function_exists('ember_extract_web_marker') ? ember_extract_web_marker($r) : null,
@@ -93,7 +98,8 @@ function coreui_browse_goal_start_url(string $goal): ?string {
 function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
     'skill'=>'Skill geladen', 'image'=>'Bild', 'pfile_read'=>'Projektdatei lesen', 'pfile_edit'=>'Projektdatei aendern',
-    'pfile_write'=>'Projektdatei schreiben', 'prun'=>'Projekt ausfuehren'];
+    'pfile_write'=>'Projektdatei schreiben', 'prun'=>'Projekt ausfuehren', 'pvcs_commit'=>'Version sichern',
+    'pvcs_branch'=>'Arbeitsstand', 'pvcs_merge'=>'Arbeitsstaende zusammenfuehren'];
   return 'Schritt ' . $step . ' von ' . $max . ': ' . ($what[(string)$tool['tool']] ?? 'Werkzeug');
 }
 
@@ -103,7 +109,8 @@ function coreui_agent_step_note(array $tool): ?string {
   if ($tool['tool'] === 'python' || $input === '') return null;
   $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
     'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: ', 'pfile_read'=>'Ich lese die Datei ',
-    'pfile_edit'=>'Ich ändere die Datei ', 'pfile_write'=>'Ich schreibe die Datei ', 'prun'=>'Ich führe aus: '];
+    'pfile_edit'=>'Ich ändere die Datei ', 'pfile_write'=>'Ich schreibe die Datei ', 'prun'=>'Ich führe aus: ',
+    'pvcs_commit'=>'Ich sichere eine Version: ', 'pvcs_branch'=>'Ich arbeite auf dem Arbeitsstand ', 'pvcs_merge'=>'Ich führe den Arbeitsstand zusammen: '];
   // An image shows its description without the size word.
   if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^(?:GROSS:\s*)?(?:ICH:\s*)?~u', '', $input));
   // A file change shows its path only, never the code.
@@ -127,6 +134,9 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'pfile_edit' => 'Datei geändert: „' . trim(explode("\n", $input, 2)[0]) . '“',
     'pfile_write' => 'Datei geschrieben: „' . trim(explode("\n", $input, 2)[0]) . '“',
     'prun' => 'Ausgeführt: „' . $short . '“',
+    'pvcs_commit' => 'Version gesichert: „' . $short . '“',
+    'pvcs_branch' => 'Arbeitsstand: „' . $short . '“',
+    'pvcs_merge' => 'Zusammengeführt: „' . $short . '“',
     default => 'Werkzeug',
   };
   return $what;
@@ -150,6 +160,9 @@ function coreui_agent_tool_menu(array $allowed): string {
     $lines[] = '[DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] fuer eine neue oder ganz ersetzte Projektdatei';
   }
   if (in_array('prun', $allowed, true)) $lines[] = '[AUSFUEHREN: befehl] um das Projekt im Sandbox-Container auszufuehren oder zu testen (echte Ausgabe und Exitcode)';
+  if (in_array('pvcs_commit', $allowed, true)) $lines[] = '[VERSION_SICHERN: kurze Beschreibung] um den Stand der Projektdateien als Version zu sichern';
+  if (in_array('pvcs_branch', $allowed, true)) $lines[] = '[ARBEITSSTAND: name] um auf einen Arbeitsstand zu wechseln oder einen eigenen anzulegen';
+  if (in_array('pvcs_merge', $allowed, true)) $lines[] = '[ZUSAMMENFUEHREN: name] um einen Arbeitsstand ohne Konflikte in den aktiven zusammenzufuehren';
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -323,7 +336,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       }
       // No unverified second tool, no broken marker leaked as public prose.
       if ($final === '' || coreui_agent_next_tool($final,
-          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write','prun']) !== null
+          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write','prun','pvcs_commit','pvcs_branch','pvcs_merge']) !== null
           || preg_match('~\\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\\s+GROSS)?(?:\\s+ICH)?):|\\[/?PY\\]~iu', $final) === 1) {
         $final = $result; // Honest, deterministic fallback if the model fails.
         $record('model', 'info', 'Bildabschluss aus Werkzeugergebnis',

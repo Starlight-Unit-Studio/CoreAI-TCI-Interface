@@ -1,0 +1,78 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.81
+Datum: 17.11.2026
+
+ARBEITSSTAENDE ZUSAMMENFUEHREN (ROADMAP P11, SCHRITT B)
+- Unter "Versionen" im Tab Dateien bringt "Zusammenfuehren" neben einem
+  anderen Arbeitsstand dessen gesicherte Versionen in den aktiven. Zuerst
+  kommt eine Vorschau, die nichts aendert: was uebernommen wird (neu,
+  geaendert, geloescht, jeweils mit der Aenderung der anderen Seite als
+  Zeilenvergleich), welche Dateien zeilenweise zusammengefuehrt werden und
+  jeder Konflikt. Der Knopf erscheint nur, wo es etwas zusammenzufuehren
+  gibt.
+- Der Merge beginnt bei der neuesten Version, die beide Arbeitsstaende
+  gemeinsam haben (ueber beide Eltern frueherer Zusammenfuehrungen). Eine
+  Datei, die nur eine Seite geaendert hat, bekommt diese Aenderung; eine
+  Datei, die beide geaendert haben, wird Zeile fuer Zeile zusammengefuehrt
+  (Dreiwege-Merge).
+
+KONFLIKTE OHNE VERLUST
+- Haben beide Seiten dieselben oder benachbarte Zeilen verschieden
+  geaendert, oder hat eine Seite eine Datei geloescht, die die andere
+  geaendert hat, aendert sich nichts, bis jeder Konflikt eine Wahl hat:
+  "Meine Fassung", die Fassung des anderen Arbeitsstands oder "Selbst
+  zusammenfuehren" mit beiden Fassungen zwischen Konfliktmarkern in einem
+  Textfeld. "Vergleichen" zeigt beide Fassungen als Zeilenvergleich. Ein
+  Text, in dem noch die Marker dieser Zusammenfuehrung stehen, wird
+  abgelehnt. Hat sich zwischen Vorschau und Zusammenfuehren etwas
+  geaendert, kommt die Vorschau neu.
+- Ungesicherte Aenderungen werden vorher gesichert ("Automatisch gesichert
+  vor dem Zusammenfuehren"), der andere Arbeitsstand bleibt genau, wie er
+  war, und die Zusammenfuehrung ist eine neue Version ("Zusammengefuehrt:
+  ..." oder eine eigene Beschreibung), die sich wie jede andere
+  wiederherstellen laesst. Dateien, die sie aendert, bekommen im
+  Dateiverlauf den Eintrag "Zusammengefuehrt".
+
+ZWEI ELTERN
+- Eine Zusammenfuehrung ist eine Version mit der neuesten Version des
+  anderen Arbeitsstands als zweitem Eltern-Teil. Der Verlauf zeigt die
+  uebernommenen Versionen mit (neueste zuerst, die Zusammenfuehrung
+  markiert), ein zusammengefuehrter Arbeitsstand laesst sich loeschen, ohne
+  diese Versionen zu verlieren, und der Git-Export schreibt beide Eltern
+  (git log --merges, git merge-base und git branch --merged stimmen).
+
+MARA MIT VERSIONEN
+- Im Projekt-Chat sichert Mara Versionen selbst ([VERSION_SICHERN:
+  Beschreibung], als ihre markiert), wechselt mit [ARBEITSSTAND: name] auf
+  einen Arbeitsstand oder legt ihren eigenen an (ungesicherte Aenderungen
+  kommen mit, der bisherige bleibt bei seiner letzten Version) und fuehrt
+  mit [ZUSAMMENFUEHREN: name] nur ohne Konflikte zusammen. Bei Konflikten
+  aendert sie nichts und nennt die Dateien; die Person loest sie unter
+  "Versionen".
+- Ihr Hinweis nennt den aktiven Arbeitsstand und empfiehlt fuer eine
+  groessere Aenderung einen eigenen Arbeitsstand. Der Arbeitsweg sagt, was
+  sie tut ("Ich sichere eine Version: ..."); ein Versionsmarker, der nicht
+  lief, erscheint nie im Chat.
+
+DATENBANK
+- Migration 050_project_merges (zweiter Eltern-Teil einer Version,
+  Revisionsart "merge"). Ohne sie gehen Versionen wie bisher, Zusammenfuehren
+  wird nicht angeboten.
+
+NOCH NICHT
+- Zwei Arbeitsstaende gleichzeitig geoeffnet, Import eines
+  Git-Repositorys, Artefakte und ihre Lebensdauer (CF-031).
+
+TESTS
+- scripts/project-merge-selftest.php (Zeilen, Myers gegen eine einfache
+  LCS mit Zufallstexten, Dreiwege-Merge mit Zufallseigenschaften,
+  Konflikte, Speicher gegen SQLite, Maras Werkzeuge in der Arbeitsschleife,
+  fehlende Migration; MariaDB mit COREUI_SELFTEST_DB=1; der Git-Export mit
+  git fsck --strict, git rev-list --parents, git merge-base,
+  git branch --merged und git log --merges, wo git vorhanden ist) und
+  scripts/project-merge-ui-selftest.cjs (Playwright), in beiden Preflights.
+- Die woertlichen Werkzeuglisten in den Selbsttests project-runs,
+  project-file-tools, skills und image-gen folgen den drei neuen Werkzeugen.
+
+NICHT GETESTET
+- Zusammenfuehren auf dem echten Server mit echten Projekten und Maras
+  Versions-Werkzeuge mit einem echten Core.

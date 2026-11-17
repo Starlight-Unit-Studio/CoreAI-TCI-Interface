@@ -167,10 +167,10 @@ pft_test($notes === ['Ich lese die Datei index.html', 'Ich ändere die Datei ind
 // --- Wiring --------------------------------------------------------------------------------------
 pft_test(str_contains($chatSource, "require_once __DIR__ . '/project_file_tools.php';")
   && str_contains($chatSource, "array_push(\$tools, 'pfile_read', 'pfile_edit', 'pfile_write');")
-  && str_contains($chatSource, "['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write', 'prun']")
+  && str_contains($chatSource, "['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write', 'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge']")
   && str_contains($chatSource, 'return $channel === \'console\' ? coreui_pftools_run($pdo, $uid, $sessionId, $tool)')
   && str_contains($chatSource, "if (ember_py_enabled() && coreui_pruns_ready(stu_pdo())) \$tools[] = 'prun';")
-  && str_contains($chatSource, "in_array(\$tool['tool'], ['pfile_read', 'pfile_edit', 'pfile_write', 'prun'], true)")
+  && str_contains($chatSource, "in_array(\$tool['tool'], ['pfile_read', 'pfile_edit', 'pfile_write', 'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge'], true)")
   && substr_count($chatSource, 'coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,') === 2, 'chat.php: tools allowed, first step, dispatch, hint in both prompts');
 $migration = (string)file_get_contents($root . '/database/migrations/045_project_files_mara.sql');
 pft_test(str_contains($migration, "ENUM('build','create','edit','rename','restore','mara')")
