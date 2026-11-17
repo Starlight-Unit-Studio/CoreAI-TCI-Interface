@@ -84,8 +84,15 @@ function server(level) {
     // document reload. This overlay runs in the test only, not the product.
     if (rel === 'js/coreui-update.js') {
       const original = body.toString('utf8');
-      body = Buffer.from(original.replace('        finish();',
-        '        console.error("TRACE_UPDATE_FINISH", JSON.stringify({state:data.state,version:data.version, waitVersion:wait.version, down:wait.down})); finish();'));
+      body = Buffer.from(original
+        .replace('        finish();',
+          '        console.error("TRACE_UPDATE_FINISH", JSON.stringify({state:data.state,version:data.version, waitVersion:wait.version, down:wait.down})); finish();')
+        .replace(/location\.reload\(\);/g,
+          'console.error("TRACE_RELOAD_UPDATE", new Error().stack); location.reload();'));
+      console.log('TRACE_UPDATE_SCRIPT_INJECTED');
+    } else if (rel === 'js/settings.js') {
+      body = Buffer.from(body.toString('utf8').replace(/location\.replace\(/g,
+        'console.error("TRACE_SETTINGS_REPLACE", new Error().stack); location.replace('));
     }
     return route.fulfill({contentType: types[path.extname(file)] || 'application/octet-stream', body});
   };
@@ -102,10 +109,14 @@ async function open(browser, level, viewport, prepare) {
   const navigation = {count: 0, baseline: 0, urls: []};
   // Only full page loads count as reloads; URL fragment navigation inside
   // Settings must not masquerade as an update-driven page reload.
-  page.on('load', () => { navigation.count += 1; navigation.urls.push(page.url()); });
+  page.on('load', () => {
+    navigation.count += 1;
+    navigation.urls.push(page.url());
+    console.log('TRACE_PAGE_LOAD', navigation.count, page.url());
+  });
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => {
-    if (message.text().includes('TRACE_UPDATE_FINISH')) console.log(message.text());
+    if (message.text().includes('TRACE_')) console.log(message.text());
   });
   await page.clock.install();
   await page.route('http://coreui.test/**', route => srv.route(route));
