@@ -4,7 +4,8 @@
 
 - **English installation output:** The official `setup.sh` one-liner, Docker installer, native installer, and both preflight scripts report progress, validation, prompts, errors, and warnings in English. CLI operations, environment names, service behavior, permissions, and default installation modes remain unchanged. Archived historical release ZIPs are not rewritten.
 - **Voice-input regression repair:** The self-test for tool execution after a voice message now checks the actual three-argument tool-permission signature, including the browser-allowance decision. No behavior is disabled or bypassed; the test still requires the voice tool loop to execute before reply cleanup and to enforce permitted tools.
-- **Verification:** Static English-output review and release-version contract. The browser/server preflights and CI must pass before merging.
+- **Updater compatibility:** Host-update logs and progress steps now use English. The progress parser recognizes the new setup messages, supports both English and legacy German preflight errors, and still reports accurate build percentages and failure states. The image-service, feedback and update-runner regression expectations were updated to match the new output.
+- **Verification:** All 12 GitHub Actions workflows passed on the implementation commit. The deployment-specific preflight and a live voice session on the operator server still need verification.
 
 ## 0.7.85 - 17.11.2026
 
