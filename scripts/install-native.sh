@@ -102,7 +102,7 @@ if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
   source /etc/os-release
 else
-  die '/etc/os-release is missing. Unterstuetzt werden Debian und Ubuntu.'
+  die '/etc/os-release is missing. Supported distributions: Debian and Ubuntu.'
 fi
 case "${ID:-}:${ID_LIKE:-}" in
   debian:*|ubuntu:*|*:debian*) ;;
@@ -402,7 +402,7 @@ if ! ollama show "$BASE_MODEL" >/dev/null 2>&1; then
   ollama pull "$BASE_MODEL"
   BASE_MODEL_NEW=1
 else
-  log "Ollama-Basismodell $BASE_MODEL already exists and is preserved."
+  log "Ollama base model $BASE_MODEL already exists and is preserved."
 fi
 
 if [[ "$MODEL_NAME" != "$BASE_MODEL" ]]; then
