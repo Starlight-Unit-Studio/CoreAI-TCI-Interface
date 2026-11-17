@@ -75,7 +75,7 @@ wait_http() {
 [[ -f "$PROJECT_ROOT/app.html" ]] || die 'app.html is missing. The installation package is incomplete.'
 [[ -f "$PROJECT_ROOT/settings.html" ]] || die 'settings.html is missing. The installation package is incomplete.'
 [[ -f "$PROJECT_ROOT/admin/index.html" ]] || die 'admin/index.html is missing. The installation package is incomplete.'
-[[ -f "$PROJECT_ROOT/config/nginx.conf.template" ]] || die 'Nginx-Template is missing.'
+[[ -f "$PROJECT_ROOT/config/nginx.conf.template" ]] || die 'Nginx template is missing.'
 [[ -f "$PROJECT_ROOT/database/migrations/001_core.sql" ]] || die 'SQL base schema is missing.'
 [[ -f "$PROJECT_ROOT/database/migrations/002_coreui_management.sql" ]] || die 'SQL management schema is missing.'
 [[ -f "$PROJECT_ROOT/database/migrations/003_console_sessions.sql" ]] || die 'SQL sessions schema is missing.'
