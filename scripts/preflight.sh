@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.82: the lifetime of the files Mara made, with a preview of the same version (P11 C).
+# CoreAI: TCI Interface 0.7.83: the account's own skills with companion files, used by Mara (P12 A).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -257,6 +257,13 @@ UI_FILES=(
   api/artifact_lifecycle_store.php
   scripts/artifact-lifecycle-selftest.php
   scripts/artifact-lifecycle-ui-selftest.cjs
+  database/migrations/052_skill_packages.sql
+  api/skill_packages_store.php
+  api/skill_packages.php
+  js/coreui-skills-settings.js
+  css/coreui-skills-settings.css
+  scripts/skill-packages-selftest.php
+  scripts/skill-packages-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1560,6 +1567,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Lebensdauer-Selbsttest: ${artifact_lifecycle_test:-Unbekannter Fehler}"
   fi
 
+  # 0.7.83 (P12 A): the account's own skills: store, companion files, Mara's library and loading.
+  skill_packages_test=''
+  if skill_packages_test="$(compose exec -T php php scripts/skill-packages-selftest.php 2>&1)"; then
+    ok "$skill_packages_test"
+  else
+    fail "Eigene-Skills-Selbsttest: ${skill_packages_test:-Unbekannter Fehler}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -1998,6 +2013,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Zusammenfuehren: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
+    fi
+    # 0.7.83 (P12 A): Settings > Skills: own skills, companion files, the built-in library.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/skill-packages-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Skills: eigene Skills mit Begleitdateien, Voraussetzungen, Geltungsbereich und die mitgelieferten im Browser geprueft.'
+      else
+        fail 'Skills: Oberflaechentest fehlgeschlagen.'
+      fi
+    else
+      warn 'Skills: Oberflaechentest uebersprungen (Playwright fuer Node nicht installiert).'
     fi
     # 0.7.82 (P11 C): the cards of Mara's files: preview of the same version, Behalten, Loeschen, notes.
     if node -e "require('playwright')" >/dev/null 2>&1; then

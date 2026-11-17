@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.82. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.7.83. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 This catalog inventories Mara's existing user-facing tools and CoreAI's application functionality. **Built-in** means code is present, **optional** means another installed service, model, permission or license is needed, and **planned** means not yet a delivered feature. An installed source merge is not the same as server deployment or a live end-to-end test.
 
@@ -49,6 +49,8 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Keep or delete Mara's files from the chat: **Keep** marks a file (the same as a favourite under **Settings > Storage**), **Delete** removes it for good and leaves a note in the chat message saying when and why it was deleted, so the message that pointed at the file keeps saying what happened. The owner can let Mara's files be deleted automatically after 30, 90, 180 or 365 days (**Admin Core > Operations**, unlimited by default); kept files and files in project chats are never deleted that way, every other file shows the day it will go, in the chat and under **Settings > Storage**.
 - Write and revise Markdown plans, inspect source snippets and structure coding tasks; an unrestricted remote shell or complete IDE is **not** provided.
 - Use a curated **Skills** catalog (research, software development, writing, documents and more) as task instructions and referenced knowledge, subject to tool permissions.
+- Write your own skills under **Settings > Skills**: a name, a short name Mara uses to load it, a description, trigger words, the tools it needs (web search, browser research, Python, images, project files, running in the project), where it applies (all your chats or one project), on or off, and the instruction Mara follows (up to 4,000 bytes). A skill can carry up to 20 companion text files of up to 8,000 bytes each in four folders: `references/` (background Mara reads), `templates/` (texts she fills in), `scripts/` (code she only gets as text; nothing in a skill ever runs by itself) and `assets/` (data such as a CSV). The page shows files the instruction names but the skill does not have, and lists the built-in skills to look up, without switches.
+- Mara finds your own skills like the built-in ones: by trigger word, by `/skill short-name`, or by loading one herself with `[SKILL: short-name]`; she loads a companion file only when she needs it (`[SKILL: short-name/templates/report.md]`), as many as the context window allows. If a skill needs a tool the chat does not have, or names a file it lacks, Mara is told so and says what she cannot do instead of claiming a result. A project skill is only there in the chats of its project; skills of other accounts are never offered.
 - Use observable plan, build and work-event steps without pretending that a named Skill automatically installs its own executable program.
 
 ### 4. Projects, sources and memory
@@ -134,7 +136,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 | Topic | Source of truth |
 | --- | --- |
 | Conversation and tool loop | [chat.php](../api/chat.php), [console_agent_loop.php](../api/console_agent_loop.php), [console_work_store.php](../api/console_work_store.php) |
-| Skills and generated work | [skills.php](../api/skills.php), [console_native_tools.php](../api/console_native_tools.php), [console_artifact_store.php](../api/console_artifact_store.php) |
+| Skills and generated work | [skills.php](../api/skills.php), [skill_packages_store.php](../api/skill_packages_store.php), [skill_packages.php](../api/skill_packages.php), [console_native_tools.php](../api/console_native_tools.php), [console_artifact_store.php](../api/console_artifact_store.php) |
 | Research | [console_web_research.php](../api/console_web_research.php), [coreai_deep_research.py](../tools/coreai_deep_research.py), [Hybrid architecture](DEEP_RESEARCH_HYBRID_ARCHITECTURE.md) |
 | Projects and files | [console_project_store.php](../api/console_project_store.php), [project_files_store.php](../api/project_files_store.php) |
 | Models and permissions | [core_tier_variants.php](../api/core_tier_variants.php), [model_catalog.php](../api/model_catalog.php), [user_settings.php](../api/user_settings.php) |

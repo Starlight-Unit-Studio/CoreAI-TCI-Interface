@@ -1,0 +1,62 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.83
+Datum: 17.11.2026
+
+EIGENE SKILLS (ROADMAP P12, SCHRITT A, CF-042 BIS CF-044)
+- Neue Einstellungsseite "Skills" (bei den CoreAI-Funktionen, nach
+  Memory). Jedes angemeldete Konto legt dort eigene Skills an: Name,
+  Kennung (die Mara in [SKILL: ...] schreibt und die man mit /skill ...
+  vorgeben kann; nie der Name eines mitgelieferten Skills), Beschreibung,
+  bis zu 12 Ausloeser, Voraussetzungen (Websuche, Browser-Recherche,
+  Python, Bilder, Projektdateien, Ausfuehren im Projekt), Geltungsbereich
+  (alle Chats des Kontos oder die Chats eines Projekts), an/aus und die
+  Anleitung, der Mara folgt (bis 4.000 Bytes, mit Zaehler).
+- Die Seite hat eine Suche, die eigenen Skills mit Angaben (Geltung, Zahl
+  der Begleitdateien, Voraussetzungen, aus) und die mitgelieferten zum
+  Nachschlagen (zwoelf ohne Suche, alle mit Suche), ohne Schalter: die
+  waehlt Mara weiter selbst.
+
+BEGLEITDATEIEN
+- Bis 20 Textdateien mit je bis 8.000 Bytes in vier Ordnern:
+  references/ (Hintergrund), templates/ (Vorlagen zum Ausfuellen, ohne
+  stehengebliebene Platzhalter), scripts/ (Code nur als Text; laeuft nie
+  von selbst, nur wenn die Person es will und ein Werkzeug dafuer in
+  Maras Werkzeugprotokoll steht) und assets/ (Daten, etwa CSV).
+- Anlegen, Bearbeiten, Umbenennen und Loeschen (mit Rueckfrage) auf der
+  Seite. Dateien, die die Anleitung nennt, die aber fehlen, stehen dort
+  und in Maras Prompt.
+
+MARA MIT EIGENEN SKILLS
+- Ihre Skill-Bibliothek nennt die eigenen Skills zuerst ("eigener
+  Skill"), mit dem, was ein Skill braucht und dem Chat fehlt.
+- Sie findet sie wie die mitgelieferten: ueber Ausloeser, /skill kennung
+  oder selbst mit [SKILL: kennung]. Begleitdateien kommen einzeln mit
+  [SKILL: kennung/ordner/datei], so viele das Kontextfenster erlaubt (bis
+  8.000 Bytes bei grossem, 4.000 bei kleinerem, keine bei 4.096 Tokens).
+- Fehlende Werkzeuge oder Dateien stehen in ihrem Prompt und im
+  Schrittergebnis; sie sagt dann, was nicht geht, statt ein Ergebnis zu
+  behaupten.
+- Projekt-Skills nur in den Chats ihres Projekts, ausgeschaltete nie,
+  Skills anderer Konten nie, Game E.M.B.E.R. keine.
+
+DATENBANK
+- Migration 052_skill_packages (Skills eines Kontos mit eindeutiger
+  Kennung je Konto, Begleitdateien mit Art, Groesse und Pruefsumme; beide
+  gehen mit dem Konto, Projekt-Skills mit ihrem Projekt).
+
+NOCH NICHT (P12 B)
+- Gemeinsame Skills, eine ausdruecklich bestimmte Variante je Chat,
+  Prioritaet zwischen Skills.
+
+TESTS
+- scripts/skill-packages-selftest.php (rein, Verdrahtung, Speicher gegen
+  SQLite, Mara mit eigenen Skills, Vorlagen, Skripten als Text, Daten,
+  Referenzen, fehlenden Werkzeugen und Dateien, Projekt-Geltung; MariaDB
+  mit COREUI_SELFTEST_DB=1, Migration 052 zweimal) und
+  scripts/skill-packages-ui-selftest.cjs (Playwright), in beiden
+  Preflights.
+- skills-selftest.php, settings-navigation-foundation-selftest.cjs (jetzt
+  25 Kategorien) und settings-tabs-ui-selftest.cjs folgen der neuen
+  Seite; die mitgelieferten Skills haben weiter keine Schalter.
+
+NICHT GETESTET
+- Eigene Skills mit einem echten Core auf dem Server.

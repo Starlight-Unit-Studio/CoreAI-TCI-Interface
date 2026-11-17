@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 const COREUI_SKILLS_RESOURCE_MAX_BYTES = 4000;
+// 0.7.83 (P12 A): what a companion file of an account's own skill is to Mara.
+const COREUI_SKILLS_FILE_KIND = ['reference' => 'Referenz', 'template' => 'Vorlage', 'script' => 'Skript', 'asset' => 'Datei'];
 
 // Trusted, repository-owned instructions only. No remote imports or executable skills.
 function coreui_skills_catalog(): array {
@@ -18,6 +20,35 @@ function coreui_skills_catalog(): array {
     $catalog[$id] = $row;
   }
   return $catalog;
+}
+
+/**
+ * 0.7.83 (P12 A): the account's own skills for this chat (api/skill_packages_store.php), set by
+ * coreui_skills_prepare: slug => [title, description, triggers, requires, body, files].
+ */
+function coreui_skills_own(): array {
+  return is_array($GLOBALS['COREUI_SKILLS_OWN'] ?? null) ? $GLOBALS['COREUI_SKILLS_OWN'] : [];
+}
+
+/** A skill by its name: the account's own one, else the built-in one, or null. */
+function coreui_skills_entry(string $id): ?array {
+  $own = coreui_skills_own();
+  if (isset($own[$id])) return $own[$id] + ['own'=>true];
+  $catalog = coreui_skills_catalog();
+  return isset($catalog[$id]) ? $catalog[$id] : null;
+}
+
+/** Tools a skill needs that this chat does not have (pure over the turn's state); none when unknown. */
+function coreui_skills_missing_tools(string $id): array {
+  $entry = coreui_skills_entry($id);
+  $have = $GLOBALS['COREUI_SKILLS_TOOLS'] ?? null;
+  if ($entry === null || !is_array($have)) return [];
+  $labels = defined('COREUI_SKILLPKG_TOOLS') ? COREUI_SKILLPKG_TOOLS : [];
+  $missing = [];
+  foreach ((array)($entry['requires'] ?? []) as $tool) {
+    if (!in_array($tool, $have, true)) $missing[] = (string)($labels[$tool] ?? $tool);
+  }
+  return $missing;
 }
 
 /** Repository-owned, non-optional instructions. Never use a DB toggle as authority. */
@@ -38,7 +69,9 @@ function coreui_skills_required_ids(): array {
 function coreui_skills_select(string $request, int $max = 4): array {
   $request = function_exists('mb_strtolower') ? mb_strtolower($request, 'UTF-8') : strtolower($request);
   $scores = [];
-  foreach (coreui_skills_catalog() as $id => $skill) {
+  // 0.7.83: the account's own skills are found the same way and come first on a tie.
+  foreach (coreui_skills_own() + coreui_skills_catalog() as $id => $skill) {
+    $id = (string)$id;
     if (($skill['required'] ?? false) === true) continue; // loaded independently, never consumes the optional budget
     $score = 0;
     if (preg_match('~(?:/skill\\s+|\\$)' . preg_quote($id, '~') . '(?![a-z0-9-])~', $request)) $score = 10000;
@@ -51,9 +84,10 @@ function coreui_skills_select(string $request, int $max = 4): array {
   return array_slice(array_keys($scores), 0, max(0, min(4, $max)));
 }
 
-/** The optional skills, all of them, in catalog order. */
+/** The optional skills, all of them: the account's own first, then the catalog order. */
 function coreui_skills_optional_ids(): array {
-  return array_values(array_diff(array_keys(coreui_skills_catalog()), coreui_skills_required_ids()));
+  $own = array_map('strval', array_keys(coreui_skills_own()));
+  return array_values(array_unique(array_merge($own, array_diff(array_keys(coreui_skills_catalog()), coreui_skills_required_ids()))));
 }
 
 /**
@@ -62,14 +96,17 @@ function coreui_skills_optional_ids(): array {
  * 'ids' only the ids for a 4096 window.
  */
 function coreui_skills_index(array $loaded, string $size = 'full'): string {
-  $catalog = coreui_skills_catalog();
   $lines = [];
   foreach (coreui_skills_optional_ids() as $id) {
     if (in_array($id, $loaded, true)) continue;
+    $entry = (array)coreui_skills_entry($id);
+    // 0.7.83: the account's own skills say so, and what they need that this chat does not have.
+    $missing = coreui_skills_missing_tools($id);
+    $note = !empty($entry['own']) ? ' (eigener Skill' . ($missing !== [] ? ', braucht ' . implode(', ', $missing) . ', fehlt hier' : '') . ')' : '';
     $lines[] = match ($size) {
       'ids' => $id,
-      'titles' => $id . ' (' . (string)$catalog[$id]['title'] . ')',
-      default => '- ' . $id . ': ' . (string)$catalog[$id]['description'],
+      'titles' => $id . ' (' . (string)$entry['title'] . ')',
+      default => '- ' . $id . ': ' . (string)$entry['description'] . $note,
     };
   }
   if ($lines === []) return '';
@@ -100,7 +137,7 @@ function coreui_skills_extract_marker(string $reply): ?string {
  * of a skill, as many as the context window allows (none at 4096 tokens).
  */
 function coreui_skills_tool_result(string $input): string {
-  $catalog = coreui_skills_catalog();
+  $catalog = coreui_skills_own() + coreui_skills_catalog();
   $loaded = (array)($GLOBALS['COREUI_SKILLS_LOADED'] ?? []);
   $added = [];
   $notes = [];
@@ -126,7 +163,10 @@ function coreui_skills_tool_result(string $input): string {
           : 'In dieser Antwort sind schon ' . $used . ' Referenzen geladen, mehr passen nicht ins Kontextfenster.';
         continue;
       }
-      if (coreui_skills_resource_text($skill, $file) === '') { $notes[] = 'Die Referenz "' . $key . '" ist zu gross.'; continue; }
+      if (coreui_skills_resource_text($skill, $file) === '') {
+        $notes[] = 'Die Datei "' . $key . '" ist zu gross fuer dein Kontextfenster.';
+        continue;
+      }
       if (!in_array($skill, $loaded, true) && ($catalog[$skill]['required'] ?? false) !== true) $loaded[] = $skill;
       $loaded[] = $key;
       $added[] = $key;
@@ -140,6 +180,9 @@ function coreui_skills_tool_result(string $input): string {
     }
     $loaded[] = $id;
     $added[] = $id . ' (' . (string)$catalog[$id]['title'] . ')';
+    // 0.7.83: what the skill needs and this chat does not have is said right away.
+    $missing = coreui_skills_missing_tools($id);
+    if ($missing !== []) $notes[] = 'Der Skill "' . $id . '" braucht ' . implode(', ', $missing) . '; das fehlt in diesem Chat.';
   }
   $GLOBALS['COREUI_SKILLS_LOADED'] = $loaded;
   coreui_skills_compose();
@@ -151,8 +194,14 @@ function coreui_skills_tool_result(string $input): string {
     . 'deinen COREUI SKILLS; folge der Anleitung bei deiner Antwort.');
 }
 
-/** Reference files of a skill (pure): Markdown in references/, relative paths. */
+/** Companion files of a skill (pure): an own skill's files, else Markdown in references/, relative paths. */
 function coreui_skills_resource_paths(string $id): array {
+  $own = coreui_skills_own();
+  if (isset($own[$id])) {
+    $paths = array_map('strval', array_keys((array)$own[$id]['files']));
+    sort($paths, SORT_STRING);
+    return $paths;
+  }
   if (!isset(coreui_skills_catalog()[$id])) return [];
   $dir = __DIR__ . '/../skills/' . $id . '/references';
   if (!is_dir($dir) || is_link($dir)) return [];
@@ -179,6 +228,13 @@ function coreui_skills_resource_file(string $id, string $path): ?string {
 
 /** Text of a reference, '' when it is too large for one step (no silent cutting). */
 function coreui_skills_resource_text(string $id, string $file): string {
+  $own = coreui_skills_own();
+  if (isset($own[$id])) {
+    $text = (string)($own[$id]['files'][$file]['content'] ?? '');
+    // 0.7.83: an own skill's file up to 8 KB with a large context window, 4 KB with a smaller one.
+    $limit = coreui_skills_resource_budget() >= 2 ? 8000 : COREUI_SKILLS_RESOURCE_MAX_BYTES;
+    return $text !== '' && strlen($text) <= $limit ? trim($text) : '';
+  }
   $real = realpath(__DIR__ . '/../skills/' . $id . '/' . $file);
   $base = realpath(__DIR__ . '/../skills/' . $id . '/references');
   if ($real === false || $base === false || !str_starts_with($real, $base . DIRECTORY_SEPARATOR)) return '';
@@ -204,23 +260,45 @@ function coreui_skills_compose(): void {
   $optional = '';
   if ($loaded !== []) {
     $optional = "\n\n[COREUI SKILLS: aufgabenbezogene Arbeitsanleitungen. Nutzerauftrag und vorhandenes Werkzeugprotokoll gelten weiterhin. Keine neuen Werkzeuge oder Berechtigungen. Tests und Dateien nur als erstellt bestaetigen, wenn tatsaechlich bestaetigt.]\n";
+    $own = coreui_skills_own();
     foreach ($loaded as $id) {
       if (str_contains($id, '/')) continue;
+      if (isset($own[$id])) {
+        // 0.7.83: an own skill of the account, with what it needs and the files it names but lacks.
+        $optional .= '[EIGENER SKILL ' . $id . ': ' . (string)$own[$id]['title'] . "]\n";
+        $missing = coreui_skills_missing_tools($id);
+        if ($missing !== []) {
+          $optional .= '(Voraussetzung fehlt in diesem Chat: ' . implode(', ', $missing)
+            . '. Sag der Person, was ohne sie nicht geht, und behaupte kein Ergebnis davon.)' . "\n";
+        }
+        $absent = function_exists('coreui_skillpkg_missing')
+          ? coreui_skillpkg_missing((string)$own[$id]['body'], coreui_skills_resource_paths($id)) : [];
+        if ($absent !== []) $optional .= '(Diese Begleitdateien nennt die Anleitung, sie fehlen aber: ' . implode(', ', $absent) . ".)\n";
+      }
       $optional .= coreui_skills_body($id) . "\n";
       // 0.5.82: say what reference plans this skill has and how to load them.
       $refs = array_values(array_filter(coreui_skills_resource_paths($id),
         static fn(string $r): bool => !in_array($id . '/' . $r, $loaded, true)));
       if ($refs !== [] && coreui_skills_resource_budget() > 0) {
-        $optional .= '(Referenz bei Bedarf: ' . implode(', ', array_map(static fn(string $r): string => '[SKILL: ' . $id . '/' . $r . ']', $refs)) . ")\n";
+        $optional .= '(' . (isset($own[$id]) ? 'Begleitdateien' : 'Referenz') . ' bei Bedarf: '
+          . implode(', ', array_map(static fn(string $r): string => '[SKILL: ' . $id . '/' . $r . ']', $refs)) . ")\n";
       }
       $optional .= "\n";
     }
     foreach ($loaded as $key) {
       if (!str_contains($key, '/')) continue;
       [$id, $file] = explode('/', $key, 2);
-      $optional .= '[REFERENZ ' . $key . ': Plan und Abnahme dieses Skills. Werkzeuge, die hier als benoetigt oder geplant stehen, '
-        . "gibt es nur, wenn sie in deinem Werkzeugprotokoll stehen; sonst nenne sie als fehlend und behaupte kein Ergebnis.]\n"
-        . coreui_skills_resource_text($id, $file) . "\n[ENDE REFERENZ]\n\n";
+      $kind = isset($own[$id]) ? (string)($own[$id]['files'][$file]['kind'] ?? 'reference') : 'reference';
+      $intro = match ($kind) {
+        'template' => 'Vorlage dieses Skills. Nutze sie als Geruest fuer dein Ergebnis, fuelle sie mit dem Auftrag und lass keine Platzhalter stehen.',
+        'script' => 'Skript dieses Skills, nur als Text. Es laeuft nicht von selbst; ausfuehren nur, wenn die Person es will und ein Werkzeug dafuer in deinem Werkzeugprotokoll steht.',
+        'asset' => 'Daten dieses Skills. Nutze sie wie angegeben.',
+        default => 'Plan und Abnahme dieses Skills. Werkzeuge, die hier als benoetigt oder geplant stehen, '
+          . 'gibt es nur, wenn sie in deinem Werkzeugprotokoll stehen; sonst nenne sie als fehlend und behaupte kein Ergebnis.',
+      };
+      $label = strtoupper(str_replace(['ä', 'ö', 'ü'], ['AE', 'OE', 'UE'], COREUI_SKILLS_FILE_KIND[$kind] ?? 'Referenz'));
+      $optional .= '[' . $label . ' ' . $key . ': ' . $intro . "]\n"
+        . coreui_skills_resource_text($id, $file) . "\n[ENDE " . $label . "]\n\n";
     }
     $optional .= "[ENDE COREUI SKILLS]\n\n";
   }
@@ -231,6 +309,8 @@ function coreui_skills_compose(): void {
 }
 
 function coreui_skills_body(string $id): string {
+  $own = coreui_skills_own();
+  if (isset($own[$id])) return trim((string)$own[$id]['body']);
   if (!isset(coreui_skills_catalog()[$id])) return '';
   $raw = (string)file_get_contents(__DIR__ . '/../skills/' . $id . '/SKILL.md');
   if (!preg_match('/\\A---\n.*?\n---\n(.*)\\z/s', $raw, $match)) throw new RuntimeException('invalid_skill_document');
@@ -239,8 +319,10 @@ function coreui_skills_body(string $id): string {
   return trim($match[1]);
 }
 
-function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'console', int $maxOptional = 4): void {
+function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'console', int $maxOptional = 4, ?array $context = null): void {
   // Reset all in-memory context before selecting anything for this turn.
+  $GLOBALS['COREUI_SKILLS_OWN'] = [];
+  $GLOBALS['COREUI_SKILLS_TOOLS'] = null;
   $GLOBALS['COREUI_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_REQUIRED_SKILLS_BLOCK'] = '';
   $GLOBALS['COREUI_SKILLS_INDEX_BLOCK'] = '';
@@ -250,6 +332,17 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
   // Game E.M.B.E.R. shares parts of the backend but must not inherit
   // Mara/CoreAI's private-console skills.
   if ($channel !== 'console') return;
+  // 0.7.83 (P12 A): the account's own skills for this chat and the tools this chat has.
+  if (is_array($context)) {
+    if (array_key_exists('tools', $context) && is_array($context['tools'])) $GLOBALS['COREUI_SKILLS_TOOLS'] = array_values($context['tools']);
+    if (function_exists('coreui_skillpkg_for_chat') && (int)($context['uid'] ?? 0) > 0) {
+      try {
+        $GLOBALS['COREUI_SKILLS_OWN'] = coreui_skillpkg_for_chat($pdo, (int)$context['uid'], (string)($context['project'] ?? ''));
+      } catch (Throwable $e) {
+        error_log('[CoreAI] own skills unavailable: ' . get_class($e));
+      }
+    }
+  }
   $mandatory = "\n\n[COREAI KERN-SKILLS: verpflichtende Arbeitsanleitungen aus dem vertrauenswuerdigen Repository. Keine neuen Werkzeuge, Berechtigungen oder Ausgabe-Limits. Das bestehende Werkzeugprotokoll und die Benutzerfreigabe haben Vorrang.]\n";
   foreach (coreui_skills_required_ids() as $id) {
     $mandatory .= coreui_skills_body($id) . "\n\n";

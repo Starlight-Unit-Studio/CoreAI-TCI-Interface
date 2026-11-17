@@ -180,5 +180,9 @@ foreach (['config/runtime/nginx.conf.template','config/nginx.conf.template'] as 
   skill_assert(!str_contains((string)file_get_contents($root . '/' . $nginxFile), 'user_skills'), 'Old endpoint still allowed: ' . $nginxFile);
 }
 $settings = (string)file_get_contents($root . '/settings.html');
-skill_assert(!str_contains($settings, 'view-skills') && !str_contains($settings, 'skills-settings'), 'No Skills tab');
+// 0.7.83 (P12 A): Settings > Skills holds the account's own skills; the built-in ones still have no switch.
+$skillsPage = (string)file_get_contents($root . '/js/coreui-skills-settings.js');
+skill_assert(str_contains($settings, 'id="view-skills"') && str_contains($settings, './js/coreui-skills-settings.js')
+  && !str_contains($settings, './js/skills-settings.js') && !str_contains($skillsPage, 'user_skills')
+  && !str_contains($skillsPage, "builtin.appendChild(el('input'"), 'Skills only for the own skills, no switches for the built-in ones');
 echo "CoreAI skills: whole library for Mara, preselection, [SKILL:] in the work loop, trusted block, reference plans on request, no switches OK\n";
