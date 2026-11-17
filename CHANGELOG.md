@@ -6,7 +6,7 @@
 - **Host updater regression hotfix:** Fixed the update-runner self-test still expecting a German account audit line after the updater switched to English. The test now verifies the English log entry, while backup, restart, progress, and access safeguards remain unchanged.
 - **CI coverage gap closed:** Added a required offline regression workflow for the voice service, host updater and automatic-update contracts whenever installer/preflight or updater files change. Previously the 12 existing checks passed without executing these two tests that the deployed preflight later ran.
 - **English update window:** Translated the golden owner update dialog, waiting screen, progress labels, retry controls and Update card in Settings to English, including the strings visible in the failed-update screenshots. Previously these were hardcoded German in `js/coreui-update.js` and `settings.html`. Known German errors left in a persisted 0.7.86 update status are displayed in English while the original log remains verbatim.
-- **UI regression:** Extended browser expectations for the English update dialog even on a German phone locale, and added an offline string/legacy-error/cache-fingerprint CI contract.
+- **UI regression:** Extended browser expectations for the English update dialog even on a German phone locale, and added an offline string/legacy-error/cache-fingerprint CI contract plus a dedicated Playwright workflow that tests the golden window in a real Chromium browser.
 - **Version:** Advanced to 0.7.87 so a failed 0.7.86 host can install the fix as a newer update. No database, model or chat feature changes.
 
 ## 0.7.86 - 17.11.2026
