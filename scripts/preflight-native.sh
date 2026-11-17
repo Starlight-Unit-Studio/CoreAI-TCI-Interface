@@ -1194,7 +1194,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.6.84: Profil overview: tokens counted per account, streaks, longest task, raster, tools, insights.
   profile_stats_test=''
   if profile_stats_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-stats-selftest.php" 2>&1)"; then
-    ok 'Profilee: token counts, streaks, longest task, activity grid, tools and insights verified.'
+    ok 'Profile: token counts, streaks, longest task, activity grid, tools and insights verified.'
   else
     fail "Profile-self-test: ${profile_stats_test:-Unknown error}"
   fi
@@ -1383,7 +1383,7 @@ if command -v php >/dev/null 2>&1; then
       ok "$profile_reference_test"
     fi
   else
-    fail "Profilee reference-self-test: ${profile_reference_test:-Unknown error}"
+    fail "Profile reference-self-test: ${profile_reference_test:-Unknown error}"
   fi
 
   # 0.6.59: all image references share identity, subject and style preservation.
@@ -1565,9 +1565,9 @@ if command -v php >/dev/null 2>&1; then
     # user-square / assistant-portrait behavior.
     profile_crop_ui=''
     if profile_crop_ui="$(node "$PROJECT_ROOT/scripts/profile-crop-ui-selftest.cjs" 2>&1)"; then
-      ok 'Profilee: mobile crop, square/portrait, original image and recropping verified.'
+      ok 'Profile: mobile crop, square/portrait, original image and recropping verified.'
     else
-      fail 'Profilee: image cropping-UI test failed.'
+      fail 'Profile: image cropping-UI test failed.'
       printf '%s\n' "$profile_crop_ui" >&2
     fi
     if node "$PROJECT_ROOT/scripts/registration-ui-selftest.cjs" >/dev/null 2>&1; then
@@ -1640,7 +1640,7 @@ if command -v php >/dev/null 2>&1; then
     # 0.6.84: Settings > Profil overview (figures, raster, made, tools, insights); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/profile-stats-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'Profilee: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
+        ok 'Profile: statistics, activity grid (daily, weekly, cumulative), created artifacts, tools and insights verified in browser.'
       else
         fail 'Profile: UI test failed.'
       fi
@@ -1672,7 +1672,7 @@ if command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/insights-chat-visibility-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Info panels: four mobile chat buttons, desktop sidebar and empty welcome screen verified.'
       else
-        fail 'Info panels: Chat-/Startseiten-Umschaltung oder mobile Schaltflaechen fehlerhaft.'
+        fail 'Info panels: chat / welcome-screen switch or mobile buttons are faulty.'
       fi
     else
       ok 'Info panels: browser smoke test skipped (Playwright not installed); offline DOM contract still required.'
@@ -1943,10 +1943,10 @@ if command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/voice-terms-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Voice-message terms: AI-profile list, save, cleanup, no guest field, day/night and phone verified.'
       else
-        fail 'Begriffe fuer Voice messages: UI test failed.'
+        fail 'Voice-message terms: UI test failed.'
       fi
     else
-      ok 'Begriffe fuer Voice messages: UI test skipped (Playwright for Node.js is not installed).'
+      ok 'Voice-message terms: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.5.94: Stimmproben card (Inhaber only); needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
