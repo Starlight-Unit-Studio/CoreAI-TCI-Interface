@@ -55,7 +55,37 @@ UNVERAENDERT
 - Modelfile, SYSTEM-Prompts, Installer, Ollama, mitgelieferter Skill-Katalog und seine Dateien.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer alle geaenderten PHP-Dateien (api/chat.php, skills.php, skill_packages.php,
+  skill_packages_store.php, die Selbsttests), node --check fuer die geaenderten JavaScript-Dateien,
+  bash -n fuer beide Preflights: ohne Fehler. Version-Guard (0.7.82 auf 0.7.83), Branding-Test,
+  Cache-Fingerabdruecke, tci-language und terran-terminology: OK.
+- scripts/skill-packages-selftest.php (neu): OK mit SQLite und mit MariaDB (Migration 052 zweimal
+  eingespielt; Projekt-Skills gehen mit ihrem Projekt, alle Skills mit ihrem Konto).
+- scripts/skill-packages-ui-selftest.cjs (neu, Playwright): OK, fuenfmal hintereinander gruen, auch
+  Telefon (390 px, kein seitliches Scrollen in Liste und Editor). Dabei gefunden und behoben: nach
+  dem Loeschen eines Skills ueberschrieb das Neuladen der Liste die Meldung sofort.
+- Bestehende Tests gruen: skills-selftest.php (Pruefung "keine Skills-Seite" ersetzt durch "Seite nur
+  fuer eigene Skills, keine Schalter fuer mitgelieferte"), settings-navigation-foundation (25
+  Kategorien), api-allowlist (42 Endpunkte in beiden nginx-Vorlagen), ai-context, composer-intent,
+  deep-research, native-tools, personalization, project-files, storage, update, voice-read,
+  voice-settings und weitere PHP-Tests, die skills.php oder die nginx-Vorlagen lesen.
+- settings-tabs-ui-selftest.cjs: die neue Pruefung (Pfeiltaste von Memory zu Skills, keine Schalter
+  bei den mitgelieferten) besteht. Die Liste der Admin-Einstellungen erwartete
+  artifact_retention_days aus 0.7.82 noch nicht; nachgezogen. Danach scheitert der Test wie auf main
+  an einer aelteren Stelle: das Deinstallations-Modul aus 0.6.96 fragt auch fuer ein normales Konto
+  uninstall_status ab (nicht Teil dieses PR).
+- 24 gezielt eingebaute Fehler (17 in Speicher, Mara-Anbindung, Endpunkt und Chat-Kontext, 7 in der
+  Seite: Name als HTML, ohne CSRF, Loeschen ohne Rueckfrage, alle mitgelieferten ohne Suche,
+  Umbenennen ohne alten Pfad, fehlende Dateien versteckt, Voraussetzungen nicht gezeigt): alle
+  erkannt. Ein zuerst nicht erkannter Fehler (Gaeste-Sperre entfernt) fuehrte zu einer strengeren
+  Pruefung im Selbsttest.
+- GitHub-Pruefungen am PR: 11 von 11 gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*), Branch gegen main 0.7.82 in derselben
+  Umgebung: Branch 194 bestanden, 15 fehlgeschlagen; main 192 bestanden, 15 fehlgeschlagen. Die
+  15 sind auf beiden genau dieselben und schon laenger bekannt (browse-image ohne
+  Python-Playwright, browse-live-ui, chat-menu-ui, image-progress-ui, long-chat, model-library-ui,
+  pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui, settings-tabs-ui,
+  update-ui, voice-input, voice-samples-ui). Die beiden neuen Tests bestehen.
 
 NICHT GETESTET
 - Eigene Skills mit einem echten Core auf dem Server.
