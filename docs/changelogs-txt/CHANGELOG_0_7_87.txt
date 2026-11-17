@@ -9,10 +9,19 @@ FIX: PREVIOUSLY UNTESTED INSTALLER SOURCE CONTRACTS
 - Both failures came from stale language-sensitive test assertions after
   0.7.86; neither finding alone establishes a voice service outage.
 
+UPDATE WINDOW AND SETTINGS CARD IN ENGLISH
+- Golden owner update window, failure and retry messages, log heading,
+  Ollama restart option, progress view and buttons are English.
+- The related Settings update card is in English without changing Mara's
+  chat response language or the rest of the CoreAI interface.
+- Previously saved German failure messages from 0.7.86 display in English,
+  while archived update logs are not translated or overwritten.
+
 NEW CI CHECK
 - .github/workflows/installer-preflight-contract.yml runs both offline tests,
   plus automatic-update regression checks, Python syntax, and Bash syntax.
 - Triggers on installer, updater, preflight and regression-test changes.
+- English update UI and cache fingerprints are checked in CI.
 - Real server preflight remains a separate post-deployment verification.
 
 VERSION
