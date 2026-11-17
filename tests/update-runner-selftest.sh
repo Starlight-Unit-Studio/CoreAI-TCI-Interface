@@ -161,7 +161,7 @@ ST="$APP/var/update/status.json"
 sed "s|^TARGET_DIR=.*|TARGET_DIR='/opt/elsewhere'|" "$WORK/remote/setup.sh" > "$WORK/remote/other-setup.sh"
 printf '{"action":"update","requested_by":1,"restart_ollama":false}' > "$APP/var/update-request/request.json"
 FAKE_SETUP_FILE="$WORK/remote/other-setup.sh" "$UPD" run > /dev/null 2>&1 && fail 'foreign target accepted'
-[[ "$(json "$ST" phase)" == 'download' && "$(json "$ST" message)" == *'installiert nicht nach'* ]] || fail 'foreign target state'
+[[ "$(json "$ST" phase)" == 'download' && "$(json "$ST" message)" == *'targets a different directory'* ]] || fail 'foreign target state'
 ! grep -q '^setup' "$LOG" || fail 'foreign setup ran'
 
 # A failing installation: state failed, the stack is brought up so the window can say so.
@@ -214,7 +214,7 @@ printf '{"action":"update","requested_by":5,"restart_ollama":true}' > "$APP/var/
 [[ "$(json "$ST" from_version)" == '0.5.83' && "$(json "$ST" to_version)" == '0.5.85' && "$(json "$ST" commit)" == "$B" ]] || fail 'versions in status'
 [[ "$(json "$ST" requested_by)" == '5' && "$(json "$ST" restart_ollama)" == 'True' ]] || fail 'request fields in status'
 [[ "$(json "$ST" percent)" == 100 && "$(json "$ST" step)" == 'Done.' ]] || fail 'done at 100 percent'
-grep -q 'Entwicklerstand erfolgreich installiert' "$APP/var/update/update.log" || fail 'installer output not in the update log'
+grep -q 'Development source successfully installed' "$APP/var/update/update.log" || fail 'installer output not in the update log'
 grep -q '#7 \[php 3/6\]' "$APP/var/update/update.log" || fail 'installer errors (stderr) not in the update log'
 [[ ! -e "$APP/var/update-request/request.json" ]] || fail 'request not consumed'
 grep -q '^setup main$' "$LOG" || fail 'setup.sh from main not run'
@@ -248,7 +248,7 @@ printf '{"action":"update","requested_by":5,"restart_ollama":false}' > "$APP/var
 # An update cut off (server restart): the next check marks it as interrupted.
 python3 -I "$APP/scripts/lib/coreai_update_state.py" status "$ST" state=running phase=install
 "$UPD" check > /dev/null
-[[ "$(json "$ST" state)" == 'failed' && "$(json "$ST" message)" == *'unterbrochen'* ]] || fail 'interrupted update'
+[[ "$(json "$ST" state)" == 'failed' && "$(json "$ST" message)" == *'interrupted'* ]] || fail 'interrupted update'
 # While an update holds the lock, a check waits and still consumes its request.
 exec 8>>"$APP/var/update/.lock"
 flock -n 8
