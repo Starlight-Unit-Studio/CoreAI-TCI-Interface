@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.7.86 - 17.11.2026
+
+- **English installation output:** The official `setup.sh` one-liner, Docker installer, native installer, and both preflight scripts report progress, validation, prompts, errors, and warnings in English. CLI operations, environment names, service behavior, permissions, and default installation modes remain unchanged. Archived historical release ZIPs are not rewritten.
+- **Voice-input regression repair:** The self-test for tool execution after a voice message now checks the actual three-argument tool-permission signature, including the browser-allowance decision. No behavior is disabled or bypassed; the test still requires the voice tool loop to execute before reply cleanup and to enforce permitted tools.
+- **Verification:** Static English-output review and release-version contract. The browser/server preflights and CI must pass before merging.
+
 ## 0.7.85 - 17.11.2026
 
 - **Pet animation lifecycle:** Mara's OpenPet v2 companion now uses work, tool-wait, review, completion jump, error, wave and directional drag states instead of effectively staying in idle and running. The full work-status labels (including edited answers and alternative generations) trigger active animation. Review and jump run in sequence, but a new operation or failure cancels the celebration.
