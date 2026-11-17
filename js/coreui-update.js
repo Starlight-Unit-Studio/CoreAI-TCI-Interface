@@ -19,18 +19,18 @@
   // Only if the host sends no percent (an older updater): a rough value per phase.
   var PHASE_PERCENT = { queued: 0, backup: 4, download: 9, install: 50, restart: 92, done: 100 };
   var STEPS = [
-    ['backup', 'Sichern'],
-    ['download', 'Laden'],
-    ['install', 'Installieren'],
-    ['restart', 'Neustart']
+    ['backup', 'Backup'],
+    ['download', 'Download'],
+    ['install', 'Install'],
+    ['restart', 'Restart']
   ];
   var PHASES = {
-    queued: 'Das Update wird vorbereitet.',
-    backup: 'Die Datenbank wird gesichert.',
-    download: 'Der neue Stand wird geladen.',
-    install: 'CoreAI wird installiert und neu gestartet.',
-    restart: 'Die Dienste werden neu gestartet.',
-    done: 'Neustart abgeschlossen.'
+    queued: 'Preparing the update.',
+    backup: 'Backing up the database.',
+    download: 'Downloading the new version.',
+    install: 'Installing CoreAI and restarting services.',
+    restart: 'Restarting services.',
+    done: 'Restart complete.'
   };
 
   var csrf = '';
@@ -72,14 +72,28 @@
 
   function errorText(code) {
     var texts = {
-      updater_missing: 'Der Update-Dienst ist auf dem Server noch nicht eingerichtet. Einmal mit dem Setup-Einzeiler aktualisieren.',
-      update_running: 'Es läuft bereits ein Update.',
-      no_update: 'Es gibt gerade kein neues Update.',
-      request_dir_missing: 'Der Anfrage-Ordner fehlt. Einmal mit dem Setup-Einzeiler aktualisieren.',
-      owner_only: 'Nur der Inhaber kann CoreAI aktualisieren.',
-      csrf_failed: 'Die Sitzung ist abgelaufen. Bitte die Seite neu laden.'
+      updater_missing: 'The update service is not installed on this server yet. Run the official setup one-liner first.',
+      update_running: 'An update is already running.',
+      no_update: 'No new update is available.',
+      request_dir_missing: 'The update request directory is missing. Run the official setup one-liner first.',
+      owner_only: 'Only the owner can update CoreAI.',
+      csrf_failed: 'Your session has expired. Reload the page.'
     };
-    return texts[code] || ('Das Update konnte nicht gestartet werden (' + code + ').');
+    return texts[code] || ('Could not start the update (' + code + ').');
+  }
+
+  // Historic update status files may still contain messages from the German
+  // 0.7.86 updater. Keep the original audit log intact, but show known
+  // persisted status messages in English in the update window.
+  function translateLegacyUpdateMessage(message) {
+    var older = {
+      'Die Installation meldet Fehler. Details im Update-Protokoll.': 'The installation reported errors. See the update log for details.',
+      'Die Datenbanksicherung ist fehlgeschlagen. CoreAI bleibt unverändert.': 'Database backup failed. CoreAI remains unchanged.',
+      'GitHub ist nicht erreichbar. CoreAI bleibt unverändert.': 'GitHub is unreachable. CoreAI remains unchanged.',
+      'Update abgeschlossen; der Health-Check meldet noch Fehler.': 'Update completed, but the health check still reports errors.',
+      'Das Update wurde unterbrochen, etwa durch einen Neustart des Servers. Bitte erneut starten.': 'The update was interrupted, possibly by a server restart. Please try again.'
+    };
+    return older[message] || message;
   }
 
   // --- Changelog: a small, safe Markdown subset (headings, lists, bold, code) ---
@@ -105,10 +119,10 @@
       list = null;
       var head = /^#{2,3}\s+(.*)$/.exec(line);
       if (head) target.appendChild(el('h3', '', head[1]));
-      else if (line.trim() === '...') target.appendChild(el('p', 'cu-more', 'Weitere Änderungen stehen im CHANGELOG.'));
+      else if (line.trim() === '...') target.appendChild(el('p', 'cu-more', 'More changes are listed in the changelog.'));
       else if (line.trim()) inline(target.appendChild(el('p')), line);
     });
-    if (!target.firstChild) target.appendChild(el('p', 'cu-more', 'Für diesen Stand liegen keine Änderungsnotizen vor.'));
+    if (!target.firstChild) target.appendChild(el('p', 'cu-more', 'No changelog notes are available for this version.'));
   }
 
   function close() {
@@ -149,7 +163,7 @@
     path.setAttribute('d', 'M3 12a9 9 0 1 0 3-6.7L3 8 M3 3v5h5');
     svg.appendChild(path);
     button.appendChild(svg);
-    button.appendChild(el('span', '', 'Wiederholen'));
+    button.appendChild(el('span', '', 'Retry'));
   }
 
   // --- The golden window (Inhaber) ---
@@ -162,32 +176,32 @@
 
     var head = box.appendChild(el('header', 'cu-head'));
     head.appendChild(el('span', 'cu-kicker', 'COREAI UPDATE'));
-    var title = head.appendChild(el('h2', '', failure ? 'Update fehlgeschlagen' : 'Neue Version verfügbar'));
+    var title = head.appendChild(el('h2', '', failure ? 'Update failed' : 'New version available'));
     title.id = 'cuTitle';
     var versions = head.appendChild(el('p', 'cu-versions'));
-    versions.appendChild(el('span', 'cu-from', info.current_version || 'installiert'));
+    versions.appendChild(el('span', 'cu-from', info.current_version || 'installed'));
     versions.appendChild(el('span', 'cu-arrow', '→'));
     versions.appendChild(el('strong', 'cu-to', info.latest_version || ('Commit ' + (info.latest_commit || ''))));
 
     if (failure) {
-      var problem = box.appendChild(el('p', 'cu-error', info.message || 'Das Update ist fehlgeschlagen.'));
+      var problem = box.appendChild(el('p', 'cu-error', translateLegacyUpdateMessage(info.message || 'The update failed.')));
       problem.setAttribute('role', 'alert');
       if (info.failure_kind === 'preflight') {
         var hint = box.appendChild(el('p', 'cu-retry-hint',
-          'Der Preflight hat Fehler gemeldet. Bitte versuche es in ein paar Minuten erneut. '
-          + 'Die Details stehen im Update-Protokoll. Nach einem korrigierten Merge lässt sich das Update wiederholen.'));
+          'Preflight reported errors. Review the update log before retrying. '
+          + 'After the problem is fixed and a newer version is available, the update can be retried.'));
         hint.setAttribute('role', 'status');
       }
       if (last && last.log && last.log.length) {
         var details = box.appendChild(el('details', 'cu-log'));
-        details.appendChild(el('summary', '', 'Update-Protokoll (letzte Zeilen)'));
+        details.appendChild(el('summary', '', 'Update log (latest lines)'));
         details.appendChild(el('pre', '', last.log.join('\n')));
       }
     }
 
     var notes = box.appendChild(el('div', 'cu-notes'));
     notes.tabIndex = 0;
-    notes.setAttribute('aria-label', 'Änderungen');
+    notes.setAttribute('aria-label', 'Changes');
     renderNotes(notes, info.notes);
 
     var error = box.appendChild(el('p', 'cu-error cu-start-error'));
@@ -199,13 +213,13 @@
     ollama.type = 'checkbox';
     ollama.checked = true;
     ollama.id = 'cuOllama';
-    option.appendChild(el('span', '', 'Ollama danach neu starten'));
-    box.appendChild(el('p', 'cu-hint', 'Vorher wird die Datenbank gesichert. Alle offenen Seiten zeigen währenddessen den Installationsfortschritt; nur beim Neustart von PHP und Web ist CoreAI kurz nicht erreichbar. Danach lädt die Seite von selbst neu.'));
+    option.appendChild(el('span', '', 'Restart Ollama afterward'));
+    box.appendChild(el('p', 'cu-hint', 'The database is backed up first. All open pages show installation progress. CoreAI is briefly unavailable while PHP and web restart; the page then reloads automatically.'));
 
     var actions = box.appendChild(el('footer', 'cu-actions'));
-    var later = actions.appendChild(el('button', 'cu-later', 'Später'));
+    var later = actions.appendChild(el('button', 'cu-later', 'Later'));
     later.type = 'button';
-    var start = actions.appendChild(el('button', 'cu-start', failure ? null : 'Update starten'));
+    var start = actions.appendChild(el('button', 'cu-start', failure ? null : 'Start update'));
     start.type = 'button';
     if (failure) retryIcon(start);
     if (!info.installed) {
@@ -232,7 +246,7 @@
         later.disabled = false;
         start.disabled = !info.installed;
         error.hidden = false;
-        error.textContent = 'Die Pause konnte nicht gespeichert werden. Bitte erneut versuchen.';
+        error.textContent = 'Could not save the pause. Please try again.';
       });
     });
     start.addEventListener('click', function () {
@@ -263,7 +277,7 @@
     box.setAttribute('aria-modal', 'true');
     box.setAttribute('aria-labelledby', 'cuWaitTitle');
     box.appendChild(el('div', 'cu-spinner')).setAttribute('aria-hidden', 'true');
-    var title = box.appendChild(el('h2', '', 'Bitte auf Neustart warten'));
+    var title = box.appendChild(el('h2', '', 'Waiting for restart'));
     title.id = 'cuWaitTitle';
     var phase = box.appendChild(el('p', 'cu-phase'));
     phase.setAttribute('aria-live', 'polite');
@@ -274,21 +288,21 @@
     });
     var progress = box.appendChild(el('div', 'cu-progress'));
     var head = progress.appendChild(el('div', 'cu-progress-head'));
-    head.appendChild(el('span', 'cu-progress-label', 'Installationsfortschritt'));
+    head.appendChild(el('span', 'cu-progress-label', 'Installation progress'));
     head.appendChild(el('strong', 'cu-percent', '0 %'));
     var bar = progress.appendChild(el('div', 'cu-bar'));
     bar.setAttribute('role', 'progressbar');
     bar.setAttribute('aria-valuemin', '0');
     bar.setAttribute('aria-valuemax', '100');
-    bar.setAttribute('aria-label', 'Installationsfortschritt');
+    bar.setAttribute('aria-label', 'Installation progress');
     bar.appendChild(el('span', 'cu-fill'));
     box.appendChild(el('p', 'cu-eta'));
-    var reload = box.appendChild(el('button', 'cu-reload', 'Seite neu laden'));
+    var reload = box.appendChild(el('button', 'cu-reload', 'Reload page'));
     reload.type = 'button';
     reload.hidden = true;
     reload.addEventListener('click', function () { location.reload(); });
     // Inhaber only: the host service did not pick the request up.
-    var cancel = box.appendChild(el('button', 'cu-cancel', 'Anfrage zurückziehen'));
+    var cancel = box.appendChild(el('button', 'cu-cancel', 'Cancel request'));
     cancel.type = 'button';
     cancel.hidden = true;
     cancel.addEventListener('click', function () {
@@ -337,12 +351,12 @@
     bar.setAttribute('aria-valuenow', String(percent));
     bar.classList.toggle('is-moving', !finished && !wait.offline);
     var eta = root.querySelector('.cu-eta');
-    if (finished) eta.textContent = 'Die Seite wird neu geladen.';
-    else if (wait.offline) eta.textContent = 'CoreAI startet gerade neu, die Verbindung ist kurz weg. Der Fortschritt kommt gleich zurück.';
-    else eta.textContent = 'Läuft seit ' + clock(elapsed) + ' Min. Die Seite lädt danach von selbst neu.';
+    if (finished) eta.textContent = 'Reloading the page.';
+    else if (wait.offline) eta.textContent = 'CoreAI is restarting and the connection is briefly unavailable. Progress will resume shortly.';
+    else eta.textContent = 'Running for ' + clock(elapsed) + ' min. The page will reload automatically afterward.';
     root.querySelector('.cu-reload').hidden = elapsed < GIVE_UP_S;
     var stalled = !finished && wait.phase === 'queued' && last && last.update && last.update.stalled;
-    if (stalled) eta.textContent = 'Der Update-Dienst auf dem Server reagiert nicht (systemctl status coreai-update.path).';
+    if (stalled) eta.textContent = 'The update service is not responding (systemctl status coreai-update.path).';
     root.querySelector('.cu-cancel').hidden = !stalled;
   }
 
@@ -408,17 +422,17 @@
     var info = last && last.owner ? last.update : null;
     card.hidden = !info;
     if (!info) return;
-    var stateText = 'CoreAI ist aktuell.';
-    if (!info.installed) stateText = 'Der Update-Dienst ist auf dem Server noch nicht eingerichtet. Einmal mit dem Setup-Einzeiler aktualisieren, danach kommen Updates hierüber.';
-    else if (info.running) stateText = (info.step || PHASES[info.phase] || 'Ein Update läuft.') + ' (' + (info.percent || 0) + ' %)';
-    else if (info.state === 'failed') stateText = 'Letztes Update fehlgeschlagen: ' + (info.message || 'siehe Update-Protokoll.');
-    else if (info.available) stateText = 'Neue Version ' + (info.latest_version || '') + ' verfügbar.';
-    else if (info.check_error) stateText = 'GitHub war bei der letzten Prüfung nicht erreichbar.';
-    if (info.checking) stateText += ' Prüfung läuft ...';
-    else if (info.checked_at && info.installed) stateText += ' Zuletzt geprüft: ' + new Date(info.checked_at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' }) + '.';
+    var stateText = 'CoreAI is up to date.';
+    if (!info.installed) stateText = 'The server update service is not installed. Run the official setup one-liner first to enable updates here.';
+    else if (info.running) stateText = (info.step || PHASES[info.phase] || 'An update is running.') + ' (' + (info.percent || 0) + ' %)';
+    else if (info.state === 'failed') stateText = 'Last update failed: ' + translateLegacyUpdateMessage(info.message || 'see the update log.');
+    else if (info.available) stateText = 'New version ' + (info.latest_version || '') + ' available.';
+    else if (info.check_error) stateText = 'GitHub was unreachable during the last check.';
+    if (info.checking) stateText += ' Checking for updates ...';
+    else if (info.checked_at && info.installed) stateText += ' Last checked: ' + new Date(info.checked_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' }) + '.';
     document.getElementById('updateCardState').textContent = stateText;
-    document.getElementById('updateCardCurrent').textContent = info.current_version || 'unbekannt';
-    document.getElementById('updateCardLatest').textContent = info.latest_version || (info.latest_commit ? 'Commit ' + info.latest_commit : 'noch nicht geprüft');
+    document.getElementById('updateCardCurrent').textContent = info.current_version || 'unknown';
+    document.getElementById('updateCardLatest').textContent = info.latest_version || (info.latest_commit ? 'Commit ' + info.latest_commit : 'not checked yet');
     document.getElementById('updateCardOpen').hidden = !(info.available || info.state === 'failed') || info.running;
     document.getElementById('updateCardCheck').disabled = !info.installed || info.checking || info.running;
     var auto = document.getElementById('updateAutoEnable');
@@ -430,10 +444,10 @@
     if (hold) {
       var seconds = Math.max(0, Number(info.snooze_seconds) || 0);
       hold.textContent = seconds > 0
-        ? '„Später“ aktiv: automatischer Start und Erinnerungsfenster pausieren noch etwa '
-          + Math.ceil(seconds / 60) + ' Minuten. Manuell aktualisieren ist möglich.'
-        : 'Standardmäßig aus. Wenn aktiviert, installiert CoreAI neue GitHub-Merges nach der regelmäßigen Prüfung. '
-          + 'Dazu werden die Datenbank gesichert und Dienste neu gestartet.';
+        ? 'Later is active: automatic updates and reminders are paused for about '
+          + Math.ceil(seconds / 60) + ' minutes. Manual updates remain available.'
+        : 'Off by default. When enabled, CoreAI installs new GitHub merges after the regular check. '
+          + 'The database is backed up and services are restarted.';
     }
   }
 
@@ -443,7 +457,7 @@
     if (check) check.addEventListener('click', function () {
       check.disabled = true;
       request('POST', 'check').then(function () {
-        document.getElementById('updateCardState').textContent = 'Prüfung läuft ...';
+        document.getElementById('updateCardState').textContent = 'Checking for updates ...';
         setTimeout(refresh, 6000);
       }).catch(function (problem) {
         document.getElementById('updateCardState').textContent = errorText(problem.message);
@@ -464,7 +478,7 @@
         auto.checked = !enabled;
         auto.disabled = false;
         document.getElementById('updateCardState').textContent =
-          'Automatische Updates konnten nicht geändert werden: ' + errorText(problem.message);
+          'Could not change automatic updates: ' + errorText(problem.message);
       });
     });
   }
