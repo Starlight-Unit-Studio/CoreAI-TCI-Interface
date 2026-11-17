@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // HANDOVER 0.7.86
+Date: 17 November 2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Baseline: main 0.7.85 (PR #341 merged)
+Branch: fix/installer-english-voice-preflight-0.7.86
+
+REQUEST
+During installation/preflight, a single voice-input self-test failed:
+"tools after a voice message: the work loop before the reply is cleaned".
+The operator additionally requested all installation-script text in English.
+
+FINDING
+scripts/voice-input-selftest.php matched an old exact source snippet:
+ember_agent_allowed_tools(user, session). The actual api/chat.php path uses
+a third, explicit browser-permission parameter. The voice work loop remains
+upstream of cleanup; the stale source assertion caused this reported failure.
+
+CHANGES
+- scripts/voice-input-selftest.php: align with current permission signature,
+  keeping assertions for tool execution, browse handoff and reply cleanup.
+- setup.sh, scripts/install.sh, scripts/install-native.sh: translate user-facing
+  messages and administrator prompts to English.
+- scripts/preflight.sh and scripts/preflight-native.sh: translate output from
+  the existing checks to English. The checks and skip conditions remain intact.
+- Update 0.7.86 versions, changelog, README and browser cache fingerprint.
+
+UNCHANGED
+- Model queue, Ollama parameters, model permissions, installed Cores, chat
+  prompts, installer paths, database schema, release/archive bytes and
+  existing account data.
+
+VALIDATION
+- Static source inspection and targeted syntax checks required.
+- CI must pass before merge.
+- A real server installation/upgrade and the operator's live voice test are
+  not represented by CI passing.
+
+Version: 0.7.86
