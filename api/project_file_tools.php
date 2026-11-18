@@ -27,15 +27,28 @@ declare(strict_types=1);
  *                                     (unsaved changes come along, the old one keeps its last version)
  *   [ZUSAMMENFUEHREN: name]           merge that working state into the active one, only without
  *                                     conflicts; conflicts stay for the person in the tab Dateien
+ *
+ * 0.7.91: Mara knows the environment of P10 and uses the processes of P10 C herself
+ * (api/project_procs_store.php). One process per project; the tools act on it.
+ *   [PROZESS_STARTEN: befehl]        start a program that keeps running (a port in the command,
+ *                                    such as http.server 8000 or --port 5173, makes it a server)
+ *   [SERVER_STARTEN: port befehl]    start a development server on that port
+ *   [PROZESS_AUSGABE]                state and newest output
+ *   [PROZESS_EINGABE: zeile]         a line for the program's stdin
+ *   [PROZESS_BEENDEN]                stop it (SIGTERM, then SIGKILL) and read the real exit code
+ *   [SERVER_ABRUF: /pfad]            GET a page or an interface of the running server
  */
 require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/project_runs_store.php';
 require_once __DIR__ . '/project_vcs_store.php';
+require_once __DIR__ . '/project_procs_store.php';
 
 const COREUI_PFTOOLS_READ_CHARS = 16000;
 const COREUI_PFTOOLS_HINT_FILES = 40;
 const COREUI_PFTOOLS_RUN_WAIT = 130;
 const COREUI_PFTOOLS_RUN_CHARS = 6000;
+const COREUI_PFTOOLS_PROC_CHARS = 4000;
+const COREUI_PFTOOLS_PROC_KINDS = ['pproc_start', 'pserver_start', 'pproc_output', 'pproc_input', 'pproc_stop', 'pserver_fetch'];
 
 /** The project of a chat when Mara may use the file tools there, else ''. */
 function coreui_pftools_project(PDO $pdo, int $uid, string $sessionId): string {
@@ -65,16 +78,77 @@ function coreui_pftools_extract_write(string $reply): ?string { return coreui_pf
  * that line; then, and in the middle of a line, it ends at the first "]".
  */
 function coreui_pftools_extract_run(string $reply): ?string {
-  $start = '~\[\s*AUSF(?:UE|Ü)HREN\s*:\s*';
-  if (preg_match($start . '([^\r\n]{1,400})\][ \t]*(?:\r?\n|\z)~u', $reply, $m) === 1
+  return coreui_pftools_extract_command($reply, 'AUSF(?:UE|Ü)HREN');
+}
+
+/** A marker [NAME: text] whose text may hold brackets, read as for [AUSFUEHREN:] (pure). 0.7.91. */
+function coreui_pftools_extract_command(string $reply, string $name, int $max = 400): ?string {
+  $start = '~\[\s*' . $name . '\s*:\s*';
+  if (preg_match($start . '([^\r\n]{1,' . $max . '})\][ \t]*(?:\r?\n|\z)~u', $reply, $m) === 1
       && preg_match('~\[\s*[A-ZÄÖÜ_]{3,}(?:\s+[A-ZÄÖÜ]+)*\s*:~u', $m[1]) !== 1) {
     $command = trim($m[1]);
-  } elseif (preg_match($start . '([^\[\]\r\n]{1,400})\]~u', $reply, $m) === 1) {
+  } elseif (preg_match($start . '([^\[\]\r\n]{1,' . $max . '})\]~u', $reply, $m) === 1) {
     $command = trim($m[1]);
   } else {
     return null;
   }
   return $command !== '' ? $command : null;
+}
+
+/** 0.7.91: the process markers (pure); the input, or null. Markers without text give a fixed word. */
+function coreui_pftools_extract_proc_start(string $reply): ?string { return coreui_pftools_extract_command($reply, 'PROZESS_STARTEN'); }
+function coreui_pftools_extract_server_start(string $reply): ?string { return coreui_pftools_extract_command($reply, 'SERVER_STARTEN'); }
+function coreui_pftools_extract_proc_input(string $reply): ?string {
+  return coreui_pftools_extract_command($reply, 'PROZESS_EINGABE', COREUI_PPROCS_INPUT_CHARS);
+}
+function coreui_pftools_extract_proc_output(string $reply): ?string {
+  return preg_match('~\[\s*PROZESS_AUSGABE\s*(?::[^\]\r\n]{0,200})?\]~u', $reply) === 1 ? 'ausgabe' : null;
+}
+function coreui_pftools_extract_proc_stop(string $reply): ?string {
+  return preg_match('~\[\s*PROZESS_BEENDEN\s*(?::[^\]\r\n]{0,200})?\]~u', $reply) === 1 ? 'beenden' : null;
+}
+function coreui_pftools_extract_server_fetch(string $reply): ?string {
+  return coreui_pftools_extract_line($reply, 'SERVER_ABRUF', 1000);
+}
+
+/**
+ * The port in a server command (pure), or null: python -m http.server 8000, --port 5173,
+ * --port=3000, -p 8080, PORT=3000. Ports outside 1024 to 65535 count as none.
+ */
+function coreui_pftools_guess_port(string $command): ?int {
+  $port = null;
+  // python -m http.server [port] [-b addr] [-d dir]: the first number that is no option's value.
+  if (preg_match('~\bhttp\.server\b([^;&|]*)~', $command, $m) === 1) {
+    $tokens = preg_split('~\s+~', trim($m[1])) ?: [];
+    for ($i = 0; $i < count($tokens); $i++) {
+      if (in_array($tokens[$i], ['-b', '--bind', '-d', '--directory', '--protocol'], true)) { $i++; continue; }
+      if (preg_match('~^\d{1,6}$~', $tokens[$i]) === 1) { $port = (int)$tokens[$i]; break; }
+    }
+  }
+  if ($port === null) {
+    foreach (['~(?:^|\s)--port(?:=|\s+)(\d{1,6})\b~', '~(?:^|\s)-p\s+(\d{1,6})\b~', '~(?:^|\s)PORT=(\d{1,6})\b~'] as $pattern) {
+      if (preg_match($pattern, $command, $m) === 1) { $port = (int)$m[1]; break; }
+    }
+  }
+  return $port !== null && $port >= 1024 && $port <= 65535 ? $port : null;
+}
+
+/** [SERVER_STARTEN: port befehl] (pure): ['port'=>?int, 'command'=>string]; a port in front wins. */
+function coreui_pftools_server_spec(string $input): array {
+  $input = trim($input);
+  if (preg_match('~^(?:port\s*)?(\d{1,6})\s*[:,]?\s+(\S.*)$~iu', $input, $m) === 1) {
+    return ['port'=>coreui_pprocs_port($m[1]), 'command'=>trim($m[2])];
+  }
+  return ['port'=>coreui_pftools_guess_port($input), 'command'=>$input];
+}
+
+/** [SERVER_ABRUF:] (pure): a path on the server; a local address in front is dropped. */
+function coreui_pftools_server_path(string $input): string {
+  $path = trim($input);
+  if (preg_match('~^(?:https?://)?(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(?::\d{1,5})?(/\S*)?$~i', $path, $m) === 1) {
+    $path = ($m[1] ?? '') !== '' ? $m[1] : '/';
+  }
+  return coreui_pprocs_path($path);
 }
 
 /** A one-line marker [NAME: text] (pure): the text, or null. 0.7.81 for the version tools. */
@@ -248,12 +322,151 @@ function coreui_pftools_record(PDO $pdo, string $state, string $title, array $me
   if (function_exists('coreui_work_record')) coreui_work_record($pdo, 'tool', $state, $title, $meta + ['source'=>'project_files']);
 }
 
-/** Run one file tool of the work loop; the result is what Mara reads next. */
-function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool): string {
+/** 0.7.91: the process of a project the tools act on: the active one, or with $any the latest. */
+function coreui_pftools_proc_current(PDO $pdo, int $uid, string $projectId, bool $any = false): ?array {
+  coreui_pprocs_reap($pdo, $uid, $projectId);
+  $st = $pdo->prepare('SELECT id FROM stu_console_project_procs WHERE user_id=? AND project_id=?'
+    . ($any ? '' : " AND status IN ('queued','running')") . ' ORDER BY id DESC LIMIT 1');
+  $st->execute([$uid, $projectId]);
+  $id = $st->fetchColumn();
+  return $id === false ? null : coreui_pprocs_get($pdo, $uid, $projectId, (int)$id, 0);
+}
+
+/** Look at a process again, $ticks times at most, until $done says so. Looking keeps it alive. */
+function coreui_pftools_proc_poll(PDO $pdo, int $uid, string $projectId, array $proc, int $ticks, callable $done, ?callable $sleep): array {
+  $sleep = $sleep ?? static function (): void { usleep(500000); };
+  for ($i = 0; $i < $ticks && !$done($proc); $i++) {
+    $sleep();
+    $proc = coreui_pprocs_get($pdo, $uid, $projectId, (int)$proc['id'], 0);
+  }
+  return $proc;
+}
+
+/** The newest output of a process, at most COREUI_PFTOOLS_PROC_CHARS characters (pure). */
+function coreui_pftools_proc_tail(array $proc): string {
+  $out = (string)($proc['output'] ?? '');
+  if (mb_strlen($out, 'UTF-8') <= COREUI_PFTOOLS_PROC_CHARS) return $out;
+  return "[... aeltere Ausgabe ausgelassen ...]\n" . mb_substr($out, -COREUI_PFTOOLS_PROC_CHARS, null, 'UTF-8');
+}
+
+/** What Mara reads about a process (pure). $output is what she should see of its output. */
+function coreui_pftools_proc_text(array $proc, string $output, string $heading = 'Ausgabe'): string {
+  $text = 'Prozess: ' . $proc['command'] . ($proc['port'] !== null ? ' (Port ' . (int)$proc['port'] . ')' : '') . "\n"
+    . coreui_pprocs_summary($proc);
+  $output = trim($output, "\r\n");
+  $text .= $output !== '' ? "\n--- " . $heading . " ---\n" . $output : "\n(" . ($heading === 'Ausgabe' ? 'Noch keine Ausgabe' : 'Keine neue Ausgabe') . '.)';
+  if ($proc['status'] === 'queued' && !$proc['stop_requested']) {
+    $text .= "\n(Der Sandbox-Dienst hat ihn noch nicht uebernommen; schau gleich mit [PROZESS_AUSGABE] nach.)";
+  } elseif ($proc['status'] === 'running' && !$proc['stop_requested']) {
+    $text .= "\n(Er laeuft im Sandbox-Container weiter, hoechstens 30 Minuten, und endet nach 5 Minuten, in denen niemand im Tab Dateien "
+      . 'unter Prozesse hinsieht und du ihn nicht nutzt. Gespeicherte Projektdateien kommen nach wenigen Sekunden bei ihm an.'
+      . ($proc['port'] !== null ? ' Die Person sieht den Server im Tab Dateien unter Prozesse mit "Vorschau"; eine Adresse wie localhost:'
+        . (int)$proc['port'] . ' erreicht sie nicht. Pruefen kannst du ihn mit [SERVER_ABRUF: /pfad].' : '') . ')';
+  }
+  return $text;
+}
+
+/** What Mara reads after a request to the server (pure). */
+function coreui_pftools_fetch_text(string $path, array $answer): string {
+  $type = (string)$answer['type'];
+  $body = (string)$answer['body'];
+  $text = 'GET ' . $path . ': HTTP ' . (int)$answer['status'] . ($type !== '' ? ' (' . $type . ')' : '')
+    . ((string)$answer['path'] !== $path ? ', nach Weiterleitung ' . $answer['path'] : '') . "\n";
+  if ($body === '') return $text . '(Leere Antwort.)';
+  if (!coreui_pprocs_is_text($type) || preg_match('//u', $body) !== 1) {
+    return $text . '(Binaerdaten, ' . strlen($body) . ' Bytes' . (!empty($answer['truncated']) ? ', gekuerzt' : '') . '.)';
+  }
+  return $text . "--- Inhalt ---\n" . coreui_pftools_clip($body, COREUI_PFTOOLS_PROC_CHARS)
+    . (!empty($answer['truncated']) ? "\n(Die Antwort war groesser und wurde gekuerzt.)" : '');
+}
+
+/** 0.7.91: one process tool; what Mara reads next. */
+function coreui_pftools_proc(PDO $pdo, int $uid, string $projectId, string $kind, string $input, ?callable $sleep): string {
+  if (!coreui_pprocs_ready($pdo)) throw new RuntimeException('project_procs_migration_required');
+  $active = static fn(array $p): bool => coreui_pprocs_active((string)$p['status']);
+  $started = static fn(array $p): bool => $p['status'] !== 'queued';
+  if ($kind === 'pproc_start' || $kind === 'pserver_start') {
+    $spec = $kind === 'pserver_start' ? coreui_pftools_server_spec($input)
+      : ['port'=>coreui_pftools_guess_port($input), 'command'=>$input];
+    if ($kind === 'pserver_start' && $spec['port'] === null) {
+      return 'Der Server wurde NICHT gestartet: nenne den Port, auf dem er hoert, vor dem Befehl, zum Beispiel '
+        . '[SERVER_STARTEN: 3000 npm start] oder [SERVER_STARTEN: 8000 python -m http.server 8000].';
+    }
+    $proc = coreui_pprocs_start($pdo, $uid, $projectId, $spec['command'], $spec['port']);
+    // The worker takes it within a second or two (up to 20 s here), then the first output comes (3 s more).
+    $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, $proc, 40, $started, $sleep);
+    if ($proc['status'] === 'running') {
+      $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, $proc, 6, static fn(array $p): bool => !coreui_pprocs_active((string)$p['status']), $sleep);
+    }
+    $server = $proc['port'] !== null;
+    if ($proc['status'] === 'running') {
+      coreui_pftools_record($pdo, 'success', $server ? 'Server gestartet, Port ' . (int)$proc['port'] : 'Prozess gestartet', ['count'=>1]);
+    } elseif ($proc['status'] === 'queued') {
+      coreui_pftools_record($pdo, 'info', 'Prozess wartet auf den Sandbox-Dienst', ['count'=>1]);
+    } else {
+      coreui_pftools_record($pdo, $proc['status'] === 'error' ? 'error' : 'info', $proc['status'] === 'error' ? 'Prozess nicht gestartet'
+        : 'Prozess gleich wieder beendet, Exitcode ' . (int)$proc['exit_code'], ['count'=>1]);
+    }
+    return coreui_pftools_proc_text($proc, coreui_pftools_proc_tail($proc));
+  }
+  if ($kind === 'pproc_output') {
+    $proc = coreui_pftools_proc_current($pdo, $uid, $projectId, true);
+    if ($proc === null) return 'In diesem Projekt wurde noch kein Prozess gestartet. Starte einen mit [PROZESS_STARTEN: befehl] oder [SERVER_STARTEN: port befehl].';
+    if ($active($proc)) {
+      $end = (int)$proc['output_end'];
+      $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, $proc, 4,
+        static fn(array $p): bool => !coreui_pprocs_active((string)$p['status']) || (int)$p['output_end'] !== $end, $sleep);
+    }
+    coreui_pftools_record($pdo, 'info', 'Prozessausgabe gelesen', ['count'=>1]);
+    return coreui_pftools_proc_text($proc, coreui_pftools_proc_tail($proc));
+  }
+  $proc = coreui_pftools_proc_current($pdo, $uid, $projectId);
+  if ($proc === null) {
+    return $kind === 'pproc_stop' ? 'Gerade laeuft kein Prozess in diesem Projekt; nichts beendet.'
+      : 'Gerade laeuft kein Prozess in diesem Projekt. Starte einen mit [PROZESS_STARTEN: befehl] oder [SERVER_STARTEN: port befehl].';
+  }
+  if ($kind === 'pproc_stop') {
+    coreui_pprocs_stop($pdo, $uid, $projectId, (int)$proc['id']);
+    $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, coreui_pprocs_get($pdo, $uid, $projectId, (int)$proc['id'], 0), 20,
+      static fn(array $p): bool => !coreui_pprocs_active((string)$p['status']), $sleep);
+    coreui_pftools_record($pdo, $active($proc) ? 'info' : 'success',
+      $active($proc) ? 'Prozess wird beendet' : 'Prozess beendet' . ($proc['exit_code'] !== null ? ', Exitcode ' . (int)$proc['exit_code'] : ''), ['count'=>1]);
+    return coreui_pftools_proc_text($proc, coreui_pftools_proc_tail($proc));
+  }
+  // Input and requests need it running; a queued one gets its moment.
+  $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, $proc, 40, $started, $sleep);
+  if ($proc['status'] !== 'running') return coreui_pftools_proc_text($proc, coreui_pftools_proc_tail($proc));
+  if ($kind === 'pproc_input') {
+    $end = (int)$proc['output_end'];
+    coreui_pprocs_input($pdo, $uid, $projectId, (int)$proc['id'], $input);
+    $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, coreui_pprocs_get($pdo, $uid, $projectId, (int)$proc['id'], 0), 6,
+      static fn(array $p): bool => !coreui_pprocs_active((string)$p['status']) || (int)$p['output_end'] > $end, $sleep);
+    $new = coreui_pprocs_get($pdo, $uid, $projectId, (int)$proc['id'], $end);
+    coreui_pftools_record($pdo, 'success', 'Eingabe an den Prozess gesendet', ['count'=>1]);
+    return 'Eingabe gesendet: "' . $input . "\"\n" . coreui_pftools_proc_text($proc,
+      ($new['output_cut'] ? "[... ausgelassen ...]\n" : '') . coreui_pftools_proc_tail($new), 'Neue Ausgabe');
+  }
+  if ($kind === 'pserver_fetch') {
+    $path = coreui_pftools_server_path($input);
+    if ($proc['port'] === null) {
+      return 'Der laufende Prozess hat keinen Port, also keinen Server zum Abrufen. Ein Server startet mit [SERVER_STARTEN: port befehl].';
+    }
+    $answer = coreui_pprocs_fetch($pdo, $uid, $projectId, (int)$proc['id'], 'GET', $path, null, '', $sleep);
+    coreui_pftools_record($pdo, (int)$answer['status'] < 400 ? 'success' : 'info', 'Server abgerufen, HTTP ' . (int)$answer['status'], ['count'=>1]);
+    return coreui_pftools_fetch_text($path, $answer);
+  }
+  return 'Unbekanntes Prozess-Werkzeug.';
+}
+
+/** Run one file tool of the work loop; the result is what Mara reads next. $sleep is replaceable in tests. */
+function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, ?callable $sleep = null): string {
   $projectId = coreui_pftools_project($pdo, $uid, $sessionId);
   if ($projectId === '') return 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.';
   $kind = (string)($tool['tool'] ?? '');
   try {
+    if (in_array($kind, COREUI_PFTOOLS_PROC_KINDS, true)) {
+      return coreui_pftools_proc($pdo, $uid, $projectId, $kind, trim((string)$tool['input']), $sleep);
+    }
     if ($kind === 'prun') {
       $run = coreui_pruns_enqueue($pdo, $uid, $projectId, (string)$tool['input'], $sessionId);
       $run = coreui_pruns_wait($pdo, $uid, $projectId, (int)$run['id'], COREUI_PFTOOLS_RUN_WAIT);
@@ -301,7 +514,8 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
     error_log('[CoreAI] project file tool failed: ' . get_class($e));
     return 'Die Projektdatei konnte gerade nicht gelesen oder gespeichert werden (Datenbankfehler). Nichts geaendert.';
   } catch (InvalidArgumentException|RuntimeException $e) {
-    coreui_pftools_record($pdo, 'error', 'Projektdatei nicht verfuegbar', ['count'=>0]);
+    coreui_pftools_record($pdo, 'error', in_array($kind, COREUI_PFTOOLS_PROC_KINDS, true) ? 'Prozess-Werkzeug ohne Ergebnis'
+      : 'Projektdatei nicht verfuegbar', ['count'=>0]);
     $why = [
       'invalid_path'=>'der Pfad ist ungueltig (relativ, ohne "..", Buchstaben, Ziffern und ._-()+)',
       'unsupported_type'=>'nur Textdateien wie .html, .css, .js, .json, .md, .txt oder .py',
@@ -326,10 +540,89 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
       'history_full'=>'das Projekt hat schon 200 Versionen',
       'already_merged'=>'der Arbeitsstand ist schon ganz enthalten; es gibt nichts zusammenzufuehren',
       'merge_same'=>'ein Arbeitsstand kann nicht mit sich selbst zusammengefuehrt werden',
+      // 0.7.91: processes.
+      'project_procs_migration_required'=>'Prozesse sind auf diesem Server noch nicht eingerichtet (Migration 048)',
+      'proc_busy'=>'in diesem Projekt laeuft schon ein Prozess; lies ihn mit [PROZESS_AUSGABE] oder beende ihn mit [PROZESS_BEENDEN]',
+      'proc_active_limit'=>'in diesem Konto laufen schon zwei Prozesse in anderen Projekten',
+      'proc_limit'=>'fuer diese Stunde sind es genug Prozessstarts',
+      'proc_not_running'=>'der Prozess laeuft nicht mehr',
+      'proc_not_found'=>'den Prozess gibt es nicht mehr',
+      'invalid_port'=>'der Port liegt zwischen 1024 und 65535',
+      'invalid_input'=>'die Eingabe ist eine Zeile mit hoechstens 2000 Zeichen',
+      'input_busy'=>'es warten schon zu viele Eingaben auf das Programm',
+      'invalid_server_path'=>'der Pfad beginnt mit / (zum Beispiel / oder /api/daten), ohne Leerzeichen',
+      'server_unreachable'=>'der Server antwortet nicht: er ist noch nicht bereit, hoert auf einem anderen Port oder nicht auf 127.0.0.1 '
+        . 'im Container; lies die Ausgabe mit [PROZESS_AUSGABE]',
+      'fetch_timeout'=>'der Server hat nicht rechtzeitig geantwortet',
+      'fetch_failed'=>'die Anfrage an den Server ist fehlgeschlagen',
+      'fetch_busy'=>'es warten schon zu viele Anfragen an den Server',
     ][$e->getMessage()] ?? $e->getMessage();
     return 'Das ging nicht: ' . $why . '.';
   }
   return 'Unbekanntes Datei-Werkzeug.';
+}
+
+/**
+ * 0.7.91: the environment of the project in Mara's prompt (P10): the sandbox, the preview the
+ * person sees, the processes and the process running now. $canRun: commands (Python tool and
+ * migration 047); $canProcs: processes as well (migration 048).
+ */
+function coreui_pftools_env_hint(PDO $pdo, int $uid, string $projectId, bool $compact, bool $canRun, bool $canProcs): string {
+  $now = '';
+  if ($canProcs) {
+    try {
+      coreui_pprocs_reap($pdo, $uid, $projectId);
+      $st = $pdo->prepare("SELECT command, port, status FROM stu_console_project_procs WHERE user_id=? AND project_id=?
+        AND status IN ('queued','running') ORDER BY id DESC LIMIT 1");
+      $st->execute([$uid, $projectId]);
+      $row = $st->fetch(PDO::FETCH_ASSOC);
+      $now = is_array($row) ? 'Gerade laeuft: ' . $row['command'] . ($row['port'] !== null ? ' (Port ' . (int)$row['port'] . ')' : '') . '.'
+        : 'Gerade laeuft kein Prozess.';
+    } catch (Throwable $e) {
+      $now = '';
+    }
+  }
+  if ($compact) {
+    if (!$canRun && !$canProcs) return ' Ausfuehren und Prozesse sind in diesem Chat nicht verfuegbar.';
+    return ' Umgebung: Sandbox mit Python 3.12 und Node.js 24 (npm, npx) und Internet; die Person sieht Seiten im Tab Dateien unter Vorschau.'
+      . ($canProcs ? ' Prozesse und Server: [PROZESS_STARTEN: befehl], [SERVER_STARTEN: port befehl], [PROZESS_AUSGABE], '
+        . '[PROZESS_EINGABE: zeile], [PROZESS_BEENDEN], [SERVER_ABRUF: /pfad]. ' . $now : '');
+  }
+  $preview = 'Die Person sieht HTML-Seiten des Projekts im Tab Dateien unter "Vorschau"' . ($canProcs ? ', einen laufenden Server mit Port '
+    . 'dort unter "Prozesse" mit "Vorschau" (eine Adresse wie localhost:8000 erreicht sie nicht)' : '') . '. Du selbst siehst die Vorschau nicht.';
+  if (!$canRun && !$canProcs) {
+    return "UMGEBUNG: " . $preview . " Befehle, Tests und Prozesse sind in diesem Chat nicht verfuegbar (das Python-Werkzeug ist aus "
+      . "oder auf dem Server nicht eingerichtet); sag das, statt eine Ausfuehrung zu behaupten.\n";
+  }
+  $env = "UMGEBUNG: Zum Projekt gehoert ein Sandbox-Container mit Python 3.12 und Node.js 24 (npm, npx) und Internetzugang. "
+    . "Arbeitsordner sind die gespeicherten Projektdateien, das System ist schreibgeschuetzt, du arbeitest dort als einfacher Nutzer. "
+    . "Was ein Befehl an Dateien aendert, bleibt nicht erhalten; Projektdateien aenderst du mit den Werkzeugen oben. " . $preview . "\n";
+  if (!$canProcs) return $env;
+  return $env
+    . "PROZESSE (einer je Projekt; er laeuft weiter, hoechstens 30 Minuten, und endet nach 5 Minuten, in denen niemand hinsieht):\n"
+    . "- [PROZESS_STARTEN: befehl] startet ein Programm, das weiterlaeuft, zum Beispiel ein Spiel, das Eingaben erwartet.\n"
+    . "- [SERVER_STARTEN: port befehl] startet einen Entwicklungsserver, der auf diesem Port hoert, zum Beispiel "
+    . "[SERVER_STARTEN: 8000 python -m http.server 8000] oder [SERVER_STARTEN: 3000 npm start].\n"
+    . "- [PROZESS_AUSGABE] zeigt Zustand und neueste Ausgabe, [PROZESS_EINGABE: zeile] schickt eine Zeile an das Programm, "
+    . "[PROZESS_BEENDEN] beendet es mit echtem Exitcode.\n"
+    . "- [SERVER_ABRUF: /pfad] ruft eine Seite oder Schnittstelle des laufenden Servers ab (Status und Inhalt), zum Beispiel "
+    . "[SERVER_ABRUF: /] oder [SERVER_ABRUF: /api/daten].\n"
+    . "Fuer Tests und einmalige Befehle nimm [AUSFUEHREN: befehl], fuer Server und Programme, die weiterlaufen, die Prozesse. "
+    . "Nach dem Start eines Servers pruefst du ihn mit [SERVER_ABRUF: /], bevor du sagst, dass er laeuft. " . $now . "\n";
+}
+
+/**
+ * 0.7.91: outside a project, one line that the environment exists in project chats, so Mara does not
+ * deny it or claim it here. '' in the compact prompt, in other channels or without the Python tool.
+ */
+function coreui_pftools_outside_hint(PDO $pdo, string $channel, int $uid, bool $compact): string {
+  if ($channel !== 'console' || $compact || $uid <= 0 || !function_exists('ember_py_enabled') || !ember_py_enabled()
+      || !coreui_pfiles_schema_ready($pdo) || !coreui_pruns_ready($pdo)) {
+    return '';
+  }
+  return "PROJEKTE: In einem Projekt-Chat (ein Chat in einem Projekt der Seitenleiste) hast du eine Entwicklungsumgebung: Projektdateien "
+    . "lesen und aendern, Befehle und Tests ausfuehren, Programme und Entwicklungsserver starten (Sandbox mit Python 3.12 und Node.js 24, "
+    . "Vorschau im Tab Dateien). In diesem Chat gibt es sie nicht; braucht jemand das, schlag vor, in einem Projekt weiterzuarbeiten.";
 }
 
 /**
@@ -339,6 +632,8 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool):
 function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compact, bool $canRun = false): string {
   $projectId = coreui_pftools_project($pdo, $uid, $sessionId);
   if ($projectId === '') return '';
+  // 0.7.91: processes need what running needs ($canRun: the Python tool) and migration 048.
+  $canProcs = $canRun && coreui_pprocs_ready($pdo);
   try {
     $list = coreui_pfiles_list($pdo, $uid, $projectId);
   } catch (Throwable $e) {
@@ -372,7 +667,8 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
     return "PROJEKTDATEIEN: " . $files . " Lesen: [DATEI: pfad]. Gezielt aendern: [DATEI_AENDERN: pfad] mit Bloecken "
       . "<<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN]. "
       . "Neu oder ganz ersetzen: [DATEI_NEU: pfad] Inhalt [/DATEI_NEU]."
-      . ($canRun ? " Ausfuehren und testen: [AUSFUEHREN: befehl] (Sandbox mit Python 3.12)." : '') . $vcs;
+      . ($canRun ? " Ausfuehren und testen: [AUSFUEHREN: befehl]." : '')
+      . coreui_pftools_env_hint($pdo, $uid, $projectId, true, $canRun, $canProcs) . $vcs;
   }
   return "PROJEKTDATEIEN: " . $files . "\n"
     . "Du kannst die Dateien dieses Projekts selbst lesen und gezielt aendern, ein Werkzeug pro Schritt:\n"
@@ -385,6 +681,7 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
       . "Node.js 24 mit npm), zum Beispiel [AUSFUEHREN: python -m unittest -v] oder [AUSFUEHREN: npm test]; du bekommst die echte "
       . "Ausgabe und den Exitcode. "
       . "Nach einer Aenderung fuehrst du die Tests erneut aus. Was der Befehl an Dateien aendert, bleibt nicht erhalten.\n" : '')
+    . coreui_pftools_env_hint($pdo, $uid, $projectId, false, $canRun, $canProcs)
     . $vcs
     . "Aendere nur, was die Person moechte. Fuer kleine Aenderungen an vorhandenen Dateien nimm DATEI_AENDERN statt eines neuen Baus. "
     . "Jeder vorige Stand bleibt im Tab Dateien wiederherstellbar. Sag danach kurz, was du geaendert hast.";

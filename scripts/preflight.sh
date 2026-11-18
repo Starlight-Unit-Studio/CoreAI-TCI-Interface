@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.90: fixed revisions of skills, comparison, restoring, packages (P13 A).
+# CoreAI: TCI Interface 0.7.91: Mara knows the project environment and runs processes and development servers herself.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -245,6 +245,7 @@ UI_FILES=(
   scripts/project-procs-selftest.php
   scripts/project-procs-worker-selftest.py
   scripts/project-procs-ui-selftest.cjs
+  scripts/project-env-selftest.php
   scripts/sandbox-image-selftest.py
   database/migrations/049_project_versions.sql
   api/project_vcs_store.php
@@ -1550,6 +1551,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok "$project_procs_test"
   else
     fail "Project processes-self-test: ${project_procs_test:-Unknown error}"
+  fi
+
+  # 0.7.91: Mara knows the project environment and runs processes and development servers herself.
+  project_env_test=''
+  if project_env_test="$(compose exec -T php php scripts/project-env-selftest.php 2>&1)"; then
+    ok "$project_env_test"
+  else
+    fail "Project environment self-test: ${project_env_test:-Unknown error}"
   fi
 
   # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.

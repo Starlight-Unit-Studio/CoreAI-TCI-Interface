@@ -23,6 +23,8 @@ declare(strict_types=1);
  * 0.7.77 (P10 B): [AUSFUEHREN: befehl] runs a command on them in the sandbox container.
  * 0.7.81 (P11 B): [VERSION_SICHERN: ...], [ARBEITSSTAND: name] and [ZUSAMMENFUEHREN: name]
  * save versions and work on working states of the project.
+ * 0.7.91: [PROZESS_STARTEN: ...], [SERVER_STARTEN: port ...], [PROZESS_AUSGABE], [PROZESS_EINGABE: ...],
+ * [PROZESS_BEENDEN] and [SERVER_ABRUF: /pfad] run programs and development servers of the project.
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
@@ -38,6 +40,13 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
     'pvcs_commit'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_commit') ? coreui_pftools_extract_commit($r) : null,
     'pvcs_branch'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_branch') ? coreui_pftools_extract_branch($r) : null,
     'pvcs_merge'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_merge') ? coreui_pftools_extract_merge($r) : null,
+    // 0.7.91: processes of the project.
+    'pserver_start'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_server_start') ? coreui_pftools_extract_server_start($r) : null,
+    'pproc_start'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_proc_start') ? coreui_pftools_extract_proc_start($r) : null,
+    'pproc_input'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_proc_input') ? coreui_pftools_extract_proc_input($r) : null,
+    'pserver_fetch'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_server_fetch') ? coreui_pftools_extract_server_fetch($r) : null,
+    'pproc_output'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_proc_output') ? coreui_pftools_extract_proc_output($r) : null,
+    'pproc_stop'=>static fn(string $r): ?string => function_exists('coreui_pftools_extract_proc_stop') ? coreui_pftools_extract_proc_stop($r) : null,
     'skill'=>static fn(string $r): ?string => function_exists('coreui_skills_extract_marker') ? coreui_skills_extract_marker($r) : null,
     'browse'=>static fn(string $r): ?string => function_exists('ember_extract_browse_marker') ? ember_extract_browse_marker($r) : null,
     'web'=>static fn(string $r): ?string => function_exists('ember_extract_web_marker') ? ember_extract_web_marker($r) : null,
@@ -99,7 +108,9 @@ function coreui_agent_step_title(array $tool, int $step, int $max): string {
   $what = ['web'=>'Websuche', 'archive'=>'Archiv durchsucht', 'python'=>'Python-Rechnung', 'browse'=>'Browser-Recherche',
     'skill'=>'Skill geladen', 'image'=>'Bild', 'pfile_read'=>'Projektdatei lesen', 'pfile_edit'=>'Projektdatei aendern',
     'pfile_write'=>'Projektdatei schreiben', 'prun'=>'Projekt ausfuehren', 'pvcs_commit'=>'Version sichern',
-    'pvcs_branch'=>'Arbeitsstand', 'pvcs_merge'=>'Arbeitsstaende zusammenfuehren'];
+    'pvcs_branch'=>'Arbeitsstand', 'pvcs_merge'=>'Arbeitsstaende zusammenfuehren', 'pproc_start'=>'Prozess starten',
+    'pserver_start'=>'Server starten', 'pproc_output'=>'Prozessausgabe lesen', 'pproc_input'=>'Eingabe an den Prozess',
+    'pproc_stop'=>'Prozess beenden', 'pserver_fetch'=>'Server abrufen'];
   return 'Schritt ' . $step . ' von ' . $max . ': ' . ($what[(string)$tool['tool']] ?? 'Werkzeug');
 }
 
@@ -107,10 +118,15 @@ function coreui_agent_step_title(array $tool, int $step, int $max): string {
 function coreui_agent_step_note(array $tool): ?string {
   $input = trim((string)preg_replace('~\s+~u', ' ', (string)$tool['input']));
   if ($tool['tool'] === 'python' || $input === '') return null;
+  // 0.7.91: markers without text say what happens; an input line may be private (a password) and is not shown.
+  $fixed = ['pproc_output'=>'Ich lese die Ausgabe des laufenden Prozesses.', 'pproc_stop'=>'Ich beende den laufenden Prozess.',
+    'pproc_input'=>'Ich schicke eine Eingabe an den laufenden Prozess.'];
+  if (isset($fixed[(string)$tool['tool']])) return $fixed[(string)$tool['tool']];
   $prefix = ['web'=>'Ich suche nach: ', 'archive'=>'Ich schaue im Archiv nach: ', 'browse'=>'Ich recherchiere auf Webseiten: ',
     'skill'=>'Ich lade die Arbeitsanleitung: ', 'image'=>'Ich male: ', 'pfile_read'=>'Ich lese die Datei ',
     'pfile_edit'=>'Ich ändere die Datei ', 'pfile_write'=>'Ich schreibe die Datei ', 'prun'=>'Ich führe aus: ',
-    'pvcs_commit'=>'Ich sichere eine Version: ', 'pvcs_branch'=>'Ich arbeite auf dem Arbeitsstand ', 'pvcs_merge'=>'Ich führe den Arbeitsstand zusammen: '];
+    'pvcs_commit'=>'Ich sichere eine Version: ', 'pvcs_branch'=>'Ich arbeite auf dem Arbeitsstand ', 'pvcs_merge'=>'Ich führe den Arbeitsstand zusammen: ',
+    'pproc_start'=>'Ich starte: ', 'pserver_start'=>'Ich starte den Server: ', 'pserver_fetch'=>'Ich rufe beim Server ab: '];
   // An image shows its description without the size word.
   if ($tool['tool'] === 'image') $input = trim((string)preg_replace('~^(?:GROSS:\s*)?(?:ICH:\s*)?~u', '', $input));
   // A file change shows its path only, never the code.
@@ -137,6 +153,12 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'pvcs_commit' => 'Version gesichert: „' . $short . '“',
     'pvcs_branch' => 'Arbeitsstand: „' . $short . '“',
     'pvcs_merge' => 'Zusammengeführt: „' . $short . '“',
+    'pproc_start' => 'Prozess gestartet: „' . $short . '“',
+    'pserver_start' => 'Server gestartet: „' . $short . '“',
+    'pproc_output' => 'Prozessausgabe gelesen',
+    'pproc_input' => 'Eingabe an den Prozess: „' . $short . '“',
+    'pproc_stop' => 'Prozess beendet',
+    'pserver_fetch' => 'Server abgerufen: „' . $short . '“',
     default => 'Werkzeug',
   };
   return $what;
@@ -163,6 +185,11 @@ function coreui_agent_tool_menu(array $allowed): string {
   if (in_array('pvcs_commit', $allowed, true)) $lines[] = '[VERSION_SICHERN: kurze Beschreibung] um den Stand der Projektdateien als Version zu sichern';
   if (in_array('pvcs_branch', $allowed, true)) $lines[] = '[ARBEITSSTAND: name] um auf einen Arbeitsstand zu wechseln oder einen eigenen anzulegen';
   if (in_array('pvcs_merge', $allowed, true)) $lines[] = '[ZUSAMMENFUEHREN: name] um einen Arbeitsstand ohne Konflikte in den aktiven zusammenzufuehren';
+  if (in_array('pproc_start', $allowed, true)) {
+    $lines[] = '[PROZESS_STARTEN: befehl] um ein Programm zu starten, das weiterlaeuft; [SERVER_STARTEN: port befehl] fuer einen Entwicklungsserver';
+    $lines[] = '[PROZESS_AUSGABE] fuer Zustand und neueste Ausgabe, [PROZESS_EINGABE: zeile] fuer eine Eingabe, [PROZESS_BEENDEN] zum Beenden';
+    $lines[] = '[SERVER_ABRUF: /pfad] um eine Seite oder Schnittstelle des laufenden Servers abzurufen';
+  }
   return implode("\n", array_map(static fn(string $l): string => '- ' . $l, $lines));
 }
 
@@ -336,7 +363,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       }
       // No unverified second tool, no broken marker leaked as public prose.
       if ($final === '' || coreui_agent_next_tool($final,
-          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write','prun','pvcs_commit','pvcs_branch','pvcs_merge']) !== null
+          ['web','browse','python','archive','skill','image','pfile_read','pfile_edit','pfile_write','prun','pvcs_commit','pvcs_branch','pvcs_merge',
+            'pproc_start','pserver_start','pproc_output','pproc_input','pproc_stop','pserver_fetch']) !== null
           || preg_match('~\\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\\s+GROSS)?(?:\\s+ICH)?):|\\[/?PY\\]~iu', $final) === 1) {
         $final = $result; // Honest, deterministic fallback if the model fails.
         $record('model', 'info', 'Bildabschluss aus Werkzeugergebnis',
