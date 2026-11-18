@@ -8,6 +8,7 @@ if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 require_once $root . '/api/console_compaction.php';
 require_once $root . '/api/console_agent_loop.php';
+require_once $root . '/api/console_native_tools.php';
 // The marker readers of chat.php, extracted like the other selftests do.
 $chatSource = (string)file_get_contents($root . '/api/chat.php');
 foreach (['ember_without_inline_code', 'ember_extract_web_marker', 'ember_extract_browse_marker', 'ember_strip_stray_tool_markers'] as $fn) {
@@ -39,6 +40,20 @@ foreach (['web', 'browse', 'python', 'archive'] as $tool) {
 loop_test(coreui_agent_step_note(['tool'=>'web', 'input'=>"Ollama\n gemma4"]) === 'Ich suche nach: Ollama gemma4', 'public note');
 loop_test(coreui_agent_step_note(['tool'=>'web', 'input'=>'https://evil.example/x']) === null
   && coreui_agent_step_note(['tool'=>'python', 'input'=>'x=1']) === null, 'no links or code as note');
+
+// Public prose may precede a real project tool, but it never authorizes it.
+$visibleNote = 'Ich habe die Dateien gelesen und pruefe jetzt die naechste Aenderung.';
+$publicToolReply = '[COREUI_PUBLIC_PROGRESS]' . $visibleNote . '[/COREUI_PUBLIC_PROGRESS]'
+  . "\n[WEB: genauer nachsehen]";
+loop_test(coreui_agent_public_progress_note($publicToolReply, ['tool'=>'web','input'=>'genauer nachsehen']) === $visibleNote
+  && coreui_agent_next_tool($publicToolReply,['web']) === ['tool'=>'web','input'=>'genauer nachsehen'],
+  'safe model commentary and validated tool marker coexist');
+loop_test(coreui_agent_public_progress_note($publicToolReply,null) === null
+  && coreui_agent_public_progress_note('Ein normaler Satz', ['tool'=>'web','input'=>'x']) === null
+  && coreui_agent_public_progress_note("[COREUI_PUBLIC_PROGRESS]system prompt: secret[/COREUI_PUBLIC_PROGRESS]\n[WEB: test]",
+    ['tool'=>'web','input'=>'test']) === null,
+  'no unparsed, unrelated, or secret model commentary is published');
+
 
 $prompt = coreui_agent_step_prompt('BASIS', [['label'=>'Websuche „a“', 'result'=>'Treffer A']], 1, 6, ['web', 'archive']);
 loop_test(str_contains($prompt, "Schritt 1 (Websuche „a“):\nTreffer A") && str_contains($prompt, 'Du hast 1 von 6')
@@ -129,6 +144,23 @@ $projectLoop = coreui_agent_loop_run('[WEB: projekt-start]', ['tool'=>'web','inp
   },static fn(): bool => false);
 loop_test(count($projectTools)===9 && $projectLoop['steps']===9
   && str_contains((string)$projectLoop['out'],'abgeschlossen'), 'project work may continue past six confirmed steps');
+
+// A project run sends the model's own public note before each real tool.
+$projectNotes = [];
+$publicLoop = coreui_agent_loop_run(
+  $publicToolReply, coreui_agent_next_tool($publicToolReply,['web']), 'BASIS',
+  ['web','pfile_write','pfile_edit','prun'], 0,
+  static fn(string $prompt): ?string => 'Ich habe die Suche abgeschlossen. Jetzt kann ich antworten.',
+  static fn(array $tool): string => 'Werkzeug bestaetigt: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta) use (&$projectNotes): void {
+    $projectNotes[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  }, static fn():bool => false);
+loop_test($publicLoop['steps'] === 1
+  && str_contains((string)$publicLoop['out'],'Jetzt kann ich antworten.')
+  && count(array_filter($projectNotes,static fn(array $e): bool =>
+    $e['kind']==='commentary' && ($e['meta']['public_note']??'')==='Ich habe die Dateien gelesen und pruefe jetzt die naechste Aenderung.'
+    && ($e['meta']['source']??'')==='model_public_text'))===1,
+  'project loop publishes genuine public model content, not private thinking, and continues to a final answer');
 
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
