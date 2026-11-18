@@ -391,3 +391,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_7_91.txt
 * CHANGELOG_0_7_92.txt
 * CHANGELOG_0_7_93.txt
+* CHANGELOG_0_7_94.txt
