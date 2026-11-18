@@ -237,3 +237,12 @@ body.project-home-active .messages-area.is-welcome { display:block !important; }
  .project-directory-open {gap:11px}
  .project-directory-copy strong {font-size:16px}
 }
+
+/* The overview is project metadata, never substituted for the AI instructions. */
+.project-home-description {flex-basis:100%;font:400 17px/1.5 system-ui;color:#a9a9ad;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.project-home-description[hidden] {display:none!important}
+.project-modal textarea#projectSettingsDescription {resize:vertical;min-height:125px;max-height:36dvh}
+@media (max-width:620px) {
+  .project-home-description {font-size:16px}
+  .project-modal textarea#projectSettingsDescription {min-height:155px}
+}
