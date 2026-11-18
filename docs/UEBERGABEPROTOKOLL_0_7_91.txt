@@ -1,0 +1,53 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.91
+Datum: 18.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.90 nach PR #347
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"achja mara weiss nix von einer umgebung aus P10": Mara kannte im Projekt-Chat nur
+[AUSFUEHREN: befehl]; der kurze Prompt nannte nur Python 3.12, von Vorschau, Prozessen,
+Entwicklungsserver und den Eckdaten der Sandbox wusste sie nichts. Die Roadmap fuehrte unter P10
+"Mara startet Prozesse noch nicht selbst" als offen.
+
+UMSETZUNG
+- api/project_file_tools.php:
+  - Umgebung im Prompt (coreui_pftools_env_hint): Sandbox mit Python 3.12 und Node.js 24 (npm, npx)
+    und Internetzugang, schreibgeschuetztes System, einfacher Nutzer, gespeicherte Projektdateien als
+    Arbeitsordner, Aenderungen eines Befehls bleiben nicht erhalten, Vorschau der Person im Tab
+    Dateien (Seiten, laufender Server unter Prozesse; localhost erreicht die Person nicht), du
+    selbst siehst die Vorschau nicht, Prozesse mit Grenzen (einer je Projekt, 30 Minuten, 5 Minuten
+    ohne Blick), der gerade laufende Prozess. Kurze Fassung fuer kleine Cores. Ohne Python-Werkzeug:
+    Befehle, Tests und Prozesse sind nicht verfuegbar, keine behauptete Ausfuehrung.
+  - Ausserhalb eines Projekts (coreui_pftools_outside_hint): eine Zeile, dass Projekt-Chats diese
+    Umgebung haben (nur privater Chat, nicht im kurzen Prompt, nur mit Python-Werkzeug).
+  - Werkzeuge (coreui_pftools_proc): [PROZESS_STARTEN: befehl] (Port aus dem Befehl:
+    http.server N, --port N, -p N, PORT=N), [SERVER_STARTEN: port befehl], [PROZESS_AUSGABE],
+    [PROZESS_EINGABE: zeile], [PROZESS_BEENDEN], [SERVER_ABRUF: /pfad] (lokale Adresse davor wird
+    weggelassen). Sie warten auf den Worker (Uebernahme bis 20 s, erste Ausgabe 3 s, Eingabe 3 s,
+    Beenden 10 s), nennen einen nicht uebernommenen Prozess nicht laufend, und das Warten ist im
+    Test ersetzbar. Fehler als Saetze fuer Mara.
+- api/console_agent_loop.php: Erkennung der Marker, Schritt-Titel, Arbeitsweg-Notizen (eine
+  Eingabezeile wird nicht gezeigt), Bezeichnungen im naechsten Prompt, Werkzeugliste, keine
+  Prozessmarker im Bildabschluss.
+- api/chat.php: Angebot im Projekt-Chat mit Python-Werkzeug und Migration 047 und 048
+  (COREUI_PFTOOLS_PROC_KINDS), erster Schritt, Weiterleitung, nicht ausgefuehrte Marker werden aus
+  der Antwort entfernt, Zeile ausserhalb eines Projekts in beiden Prompt-Aufbauten.
+- Preflights: Pflichtdatei und Lauf von scripts/project-env-selftest.php (englische Meldung).
+- README, docs/CAPABILITIES.md, ROADMAP (P10), Feature-Matrix CF-035.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Sandbox-Image, Worker, Datenbank (keine Migration),
+  Oberflaeche, Prozess-Speicher (api/project_procs_store.php).
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Mit einem echten Core im Chat (lokal oder Cloud) auf dem echten Server; der ganze Zug ist im
+  Selbsttest mit einem vorgegebenen Core geprueft.
+
+NAECHSTER SCHRITT
+- P13 B (getrennte Rechte, Verbesserungsvorschlaege von Mara mit Diff) auf Auftrag.
+
+Version: 0.7.91

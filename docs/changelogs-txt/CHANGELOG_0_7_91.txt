@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.91
+Datum: 18.11.2026
+
+MARA KENNT IHRE PROJEKTUMGEBUNG (P10)
+- Im Projekt-Chat beschreibt Maras Prompt jetzt die Umgebung aus P10:
+  Sandbox mit Python 3.12 und Node.js 24 (npm, npx) und Internetzugang,
+  schreibgeschuetztes System, gespeicherte Projektdateien als
+  Arbeitsordner, Aenderungen eines Befehls bleiben nicht erhalten, die
+  Vorschau im Tab Dateien (HTML-Seiten, ein laufender Server unter
+  Prozesse) und der gerade laufende Prozess.
+- Der kurze Prompt fuer kleine Cores nennt nicht mehr nur Python 3.12.
+- Ohne Python-Werkzeug sagt der Prompt, dass Befehle, Tests und Prozesse
+  in diesem Chat nicht verfuegbar sind; Mara behauptet keine Ausfuehrung.
+- Ausserhalb eines Projekts sagt ihr eine Zeile, dass Projekt-Chats diese
+  Umgebung haben.
+
+MARA STARTET PROZESSE SELBST (CF-035, CF-040)
+- [PROZESS_STARTEN: befehl] startet ein Programm, das weiterlaeuft; ein
+  Port im Befehl (http.server 8000, --port 5173, PORT=3000) macht es zum
+  Server.
+- [SERVER_STARTEN: port befehl] startet einen Entwicklungsserver auf
+  diesem Port.
+- [PROZESS_AUSGABE] liest Zustand und neueste Ausgabe,
+  [PROZESS_EINGABE: zeile] beantwortet das Programm (der Arbeitsweg zeigt
+  die Zeile nicht), [PROZESS_BEENDEN] beendet es mit echtem Exitcode.
+- [SERVER_ABRUF: /pfad] ruft eine Seite oder Schnittstelle des laufenden
+  Servers ab (Status, Typ, Inhalt); eine lokale Adresse davor wie
+  http://localhost:8000 wird weggelassen.
+- Die Werkzeuge warten auf den Sandbox-Dienst, nennen einen nicht
+  uebernommenen Prozess nie "laufend" und sagen Mara, dass die Person den
+  Server ueber die Vorschau sieht, nicht ueber localhost.
+- Angeboten im Projekt-Chat mit Python-Werkzeug und Migration 048;
+  nicht ausgefuehrte Marker erreichen den Chat nicht.
+
+TESTS
+- Neu: scripts/project-env-selftest.php (Marker, Ports, Texte,
+  Arbeitsschleife, Sicherheitsnetz, Hinweise, Verdrahtung, Werkzeuge mit
+  SQLite und nachgestelltem Worker, ein ganzer Zug von Mara; MariaDB mit
+  COREUI_SELFTEST_DB=1; mit COREUI_SELFTEST_SANDBOX=1 Ende zu Ende mit
+  echtem Worker und Docker), in beiden Preflights.

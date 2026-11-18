@@ -1,4 +1,17 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Version main: 0.7.90, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.91).
+ZIEL 0.7.91: Mara kennt ihre Projektumgebung aus P10 (Sandbox, Vorschau,
+laufender Prozess) und startet, liest, beantwortet und beendet Prozesse
+und Entwicklungsserver im Projekt-Chat selbst ([PROZESS_STARTEN:],
+[SERVER_STARTEN:], [PROZESS_AUSGABE], [PROZESS_EINGABE:],
+[PROZESS_BEENDEN], [SERVER_ABRUF:]). Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_91.txt.
+Naechster Schritt: P13 B (Rechte, Verbesserungsvorschlaege von Mara).
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.92.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Version main: 0.7.89, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.90).
 ZIEL 0.7.90: Roadmap P13 Schritt A (CF-045, CF-046), feste Revisionen
 jeder Skill-Aenderung samt Dateien, Verlauf, Vergleich, Wiederherstellen,
