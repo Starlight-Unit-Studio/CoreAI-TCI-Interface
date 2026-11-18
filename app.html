@@ -197,6 +197,7 @@
       <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
         <div class="projects-nav-heading">
           <button id="sidebarProjectsToggle" class="sidebar-section-toggle" type="button" data-sidebar-fold="projects" aria-expanded="true" aria-controls="projectsNavList"><svg class="sidebar-chevron-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg><span id="projectsNavTitle">Projekte</span></button>
+          <button id="projectsDirectoryBtn" type="button" aria-label="Alle Projekte öffnen" title="Alle Projekte">Alle</button>
           <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt" title="Neues Projekt"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></button>
         </div>
         <div class="projects-nav-list" id="projectsNavList"></div>
@@ -305,6 +306,14 @@
           <button type="button" class="welcome-prompt" data-welcome-prompt="Kannst du einen Text von mir sprachlich überarbeiten?">
             <span class="welcome-prompt-icon" aria-hidden="true">≋</span><span>Kannst du einen Text von mir überarbeiten?</span>
           </button>
+        </div>
+      </section>
+      <section class="project-directory project-home" id="coreuiProjectDirectory" hidden aria-label="Alle Projekte">
+        <div class="project-home-content">
+          <button class="project-directory-drawer" id="projectDirectoryDrawer" type="button" aria-label="Seitenleiste öffnen">☰</button>
+          <header class="project-directory-header"><h1>Projekte</h1><button id="projectDirectoryCreate" type="button">Neues Projekt</button></header>
+          <div class="project-directory-tools"><label class="project-directory-search">Suchen<input id="projectDirectorySearch" type="search" placeholder="In Projekten suchen" autocomplete="off"></label><label class="project-directory-sort">Sortieren<select id="projectDirectorySort"><option value="newest">Neueste</option><option value="name">Name</option><option value="oldest">Älteste</option></select></label></div>
+          <div class="project-directory-list" id="projectDirectoryList" aria-live="polite"></div>
         </div>
       </section>
       <section class="project-home" id="coreuiProjectHome" hidden aria-label="Projektstartseite">
