@@ -146,7 +146,7 @@ function env_schema(PDO $pdo, bool $procs = true): void {
   $pdo->sqliteCreateFunction('NOW', static fn(): string => gmdate('Y-m-d H:i:s'), 0);
   $pdo->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER)');
   $pdo->exec('CREATE TABLE stu_console_media (user_id INTEGER, kind TEXT, file_size INTEGER)');
-  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
   $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT, archived_at TEXT, created_at TEXT, updated_at TEXT)');
   $pdo->exec('CREATE TABLE stu_console_project_files (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id INTEGER NOT NULL, path TEXT NOT NULL,
     content TEXT NOT NULL, size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, created_at TEXT, updated_at TEXT, UNIQUE (project_id, path))');
@@ -229,7 +229,7 @@ $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_E
 env_schema($pdo);
 $pdo->exec('INSERT INTO stu_users VALUES (7, 0), (9, 0)');
 $a = str_repeat('a', 32); $b = str_repeat('b', 32); $c = str_repeat('c', 32);
-$ins = $pdo->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)');
+$ins = $pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)');
 foreach ([[$a, 7, 'Server'], [$b, 7, 'Spiel'], [$c, 9, 'Fremd']] as $row) $ins->execute([$row[0], $row[1], $row[2], 'open', '', null, '2026-11-18']);
 $st = $pdo->prepare('INSERT INTO stu_console_sessions VALUES (?,?,?,?,?,?,?)');
 foreach ([['cs_server', 7, $a], ['cs_game', 7, $b], ['cs_free', 7, null], ['cs_other', 9, $c]] as $row) {
@@ -341,7 +341,7 @@ env_test($tool('cs_free', 'pproc_start', 'python app.py') === 'Projektdateien gi
 $old = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 env_schema($old, false);
 $old->exec('INSERT INTO stu_users VALUES (7, 0)');
-$old->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)')->execute([$a, 7, 'Alt', 'open', '', null, '2026-11-18']);
+$old->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)')->execute([$a, 7, 'Alt', 'open', '', null, '2026-11-18']);
 $old->prepare('INSERT INTO stu_console_sessions VALUES (?,?,?,?,?,?,?)')->execute(['cs_old', 7, $a, 'Alt', null, '2026-11-18', '2026-11-18']);
 coreui_pfiles_write($old, 7, $a, 'app.py', "print(1)\n", 'build');
 env_test(coreui_pftools_run($old, 7, 'cs_old', ['tool'=>'pproc_start', 'input'=>'python app.py'])
