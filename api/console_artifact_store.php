@@ -80,8 +80,7 @@ function coreui_console_artifact_validate_manifest(array $job): array {
   if ($raw === null || $raw === '') return [];
   $manifest = json_decode((string)$raw, true, 32, JSON_THROW_ON_ERROR);
   if (!is_array($manifest) || ($manifest['version'] ?? null) !== 1
-      || !is_array($manifest['files'] ?? null) || !array_is_list($manifest['files'])
-      || count($manifest['files']) > 10) throw new RuntimeException('artifact_invalid_manifest');
+      || !is_array($manifest['files'] ?? null) || !array_is_list($manifest['files'])) throw new RuntimeException('artifact_invalid_manifest');
   $files = [];
   $seen = [];
   $total = 0;
