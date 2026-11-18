@@ -13,11 +13,15 @@ const store=read('api/console_project_store.php');
 const knowledge=read('api/knowledge_store.php');
 const prompts=read('api/chat.php');
 const migration=read('database/migrations/037_chat_projects.sql');
+const descriptionMigration=read('database/migrations/055_project_descriptions.sql');
 assert(!html.includes('project-mode-switch') && !html.includes('Work wird separat entwickelt'), 'CoreAI chat already is the work area');
 assert(!css.includes('project-mode-switch'), 'no dead separate mode CSS remains');
 for (const id of ['projectsCreateBtn','projectsNavList','coreuiProjectHome','projectTabChats',
   'projectTabSources','projectSourceFile','projectModalSettings','projectSettingsInstructions',
-  'projectSettingsMode','projectComposerSlot','projectModalShare','projectHomeDrawerToggle']) {
+  'projectSettingsMode','projectSettingsDescription','projectHomeDescription',
+  'projectComposerSlot','projectModalShare','projectHomeDrawerToggle',
+  'coreuiProjectDirectory','projectDirectoryList','projectDirectorySearch',
+  'projectDirectorySort','projectHomeBreadcrumbBack','projectSettingsCancel']) {
   assert(html.includes('id="'+id+'"'), 'missing project control: '+id);
 }
 assert(css.includes('.project-modal-scrim[hidden]') && css.includes('#projectSourcesPanel[hidden]'),
@@ -51,6 +55,17 @@ assert(store.includes('coreui_project_session_scope') && store.includes('coreui_
 assert(knowledge.includes('s.project_id IS NULL'), 'global RAG must exclude project files');
 assert(prompts.includes('COREUI_PROJECT_ISOLATED') && prompts.includes('projectKnowledgeBlock'), 'AI must honor isolated project mode');
 assert(migration.includes('stu_console_projects') && migration.includes('project_id'), 'migration needs project and source scope');
+assert(descriptionMigration.includes('ADD COLUMN IF NOT EXISTS description') &&
+  store.includes('description=?') && api.includes("$body['description']"),
+  'project descriptions must be stored separately from AI instructions');
+assert(js.includes("$('projectSettingsDescription').value") &&
+  js.includes("$('projectHomeDescription').textContent") &&
+  js.includes("description:$('projectSettingsDescription').value"),
+  'details dialog saves descriptions and project page displays them');
+assert(js.includes("$('projectDirectorySearch').addEventListener('input',renderDirectory)") &&
+  js.includes("$('projectDirectorySort').addEventListener('change',renderDirectory)") &&
+  js.includes("$('projectsDirectoryBtn').addEventListener('click',openDirectory)"),
+  'mobile project directory search, sort and navigation are connected');
 assert(js.includes('ICON_FOLDER_CLOSED') && js.includes('ICON_FOLDER_OPEN') &&
   js.includes('setFolderExpanded(p.id, !folderIsExpanded(p.id))') &&
   js.includes('children.hidden = !expanded'),
@@ -59,12 +74,12 @@ assert(js.includes('localStorage.setItem(FOLDER_STATE_KEY') &&
   js.includes("toggle.setAttribute('aria-expanded'") &&
   js.includes("toggle.setAttribute('aria-controls'"),
   'fold status must persist as an accessible local UI preference');
-assert(js.includes('setFolderExpanded(p.id,!folderIsExpanded(p.id))') &&
-  js.includes("label:'Projektstartseite'") &&
+assert(js.includes("openProject(p.id);") &&
+  js.includes("label:'Projekt öffnen'") &&
   js.includes("showFloatingMenu(options,'project',projectActions(p))") &&
   js.includes("showFloatingMenu($('projectHomeMore'),'project',projectActions(p))") &&
   js.includes("chatApp(); if (app && app.select) app.select(s.id);"),
-  'folder title must fold chats and both project ellipsis buttons must open real actions');
+  'project title must open the workspace while the chevron toggles chats');
 assert(js.includes("var viewport = window.visualViewport") &&
   js.includes("floatingAnchor.contains(e.target)") &&
   js.includes("document.addEventListener('scroll',updateFloatingMenuPosition,true)") &&
