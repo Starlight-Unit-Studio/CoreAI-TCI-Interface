@@ -137,7 +137,9 @@ class ArtifactTests(unittest.TestCase):
         m = self.collect()
         self.assertEqual(len(m['files']), 25)
         self.assertNotIn('file_count_limit', m['warnings'])
-        self.assertEqual(len(self.php(m)), 25)
+        result = self.php(m)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(json.loads(result.stdout)), 25)
 
     def test_total_limit(self):
         for i in range(4): (self.out / str(i)).write_bytes(b'abcd')
