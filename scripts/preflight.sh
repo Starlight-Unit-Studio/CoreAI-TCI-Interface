@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.94: P10 live workflow, verified artifacts and honest server status.
+# CoreAI: TCI Interface 0.7.95: mandatory preflight sync after every source change.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -60,6 +60,14 @@ check_service() {
 }
 
 printf 'CoreAI: TCI Interface Compose-Preflight, Version %s\n\n' "$VERSION"
+# PREFLIGHT_SYNC_GATE: verify both shipping modes and registered regressions
+# before any host checks; a failed contract is a blocking release defect.
+preflight_sync_report=''
+if preflight_sync_report="$(python3 "$PROJECT_ROOT/scripts/preflight-sync-selftest.py" 2>&1)"; then
+  ok "$preflight_sync_report"
+else
+  fail "Preflight sync contract: ${preflight_sync_report:-Unknown error}"
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   fail 'var/compose.env is missing. Run scripts/install.sh.'
@@ -505,6 +513,7 @@ UI_FILES=(
   api/console_insights.php
   api/console_insights_store.php
   js/coreui-insights.js
+  scripts/preflight-sync-selftest.py
   scripts/contextual-project-selftest.php
   scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
