@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.94
+Datum: 18.11.2026
+
+P10: NACHPRUEFBARE PROJEKTARBEIT (ISSUE #349)
+- Zehn-Dateien-Limit im Python-Ausgabe-Worker und im PHP-Artefakt-
+  Manifest entfernt. Der Chat zeigt alle bestaetigten Dateien an.
+  Sandbox-Byte-, Inhalts-, Verzeichnis- und Sicherheitsgrenzen bleiben.
+- Im Projekt-Chat arbeitet Maras Werkzeugschleife bei vorhandenen
+  Projektwerkzeugen ueber sechs Schritte hinaus. Abbruch, echte Laufzeit
+  und fehlender Fortschritt stoppen kontrolliert; Dateien bleiben erhalten.
+- Fehlerhafte Werkzeugergebnisse werden nicht mehr pauschal als Erfolg
+  protokolliert. Fehlgeschlagen und unbestaetigt sind getrennt.
+- Entwicklungsserver: Prozess-ID, Port und echter HTTP-Abruf auf /
+  als Erfolgsvoraussetzung; nur ein gestarteter Prozess reicht nicht.
+- Erfundenes [linux-shell: ...] ist KEIN ausgefuehrtes Werkzeug.
+- Uebernahme bisheriger Chat-Downloads in einen Projekt-Workspace:
+  expliziter Button, CSRF, Kontobindung, Pruefsummen, Transaktion,
+  sichere Projektdateien und Navigationswechsel. Kein Auto-Import.
+
+TESTS UND STATUS
+- Python-Worker/PHP-Manifest-Test mit 25 Dateien, Projekt-Loop-Test
+  mit mehr als sechs Schritten sowie P10-Server-/Marker-Regressionen
+  ergaenzt. Die GitHub-Source-Checks sind keine Runtime-Tests.
+- VOR MERGE: PHP-Lint, Python- und JS-Checks, Version-Guard,
+  relevante Selbsttests und Netcup-/Android-Livetest noch noetig.
+- OFFEN #349: durable Resume bei Worker-Ausfall, weitere native
+  Werkzeugformat-Reparaturen, umfassende reale End-to-End-Abnahme.
