@@ -20,3 +20,9 @@ Quality gates
 
 This is a proposed draft PR build. Production and Android end-to-end validation
 have not yet been performed. CoreAI Holo theme overlay remains a separate pass.
+
+Sidebar navigation refinement (operator request)
+- The Projects entry in the chat drawer is one direct directory link.
+- Per-project folders, expand arrows and nested project chat lists are removed from the drawer.
+- Protected locked chats remain available under a separate area.
+- Sidebar folding and project UI contracts updated to reflect the new navigation.
