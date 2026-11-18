@@ -56,7 +56,7 @@ for migration in "${migrations[@]}"; do
     -- "$query" 2>/dev/null || true)"
   applied="$(printf '%s' "$applied" | tr -d '[:space:]')"
   if [[ "$applied" == '1' ]]; then
-    printf '[CoreAI: TCI Interface] Migration bereits aktiv: %s\n' "$version"
+    printf '[CoreAI: TCI Interface] Migration already applied: %s\n' "$version"
     continue
   fi
   printf '[CoreAI: TCI Interface] Wende Migration an: %s\n' "$version"
