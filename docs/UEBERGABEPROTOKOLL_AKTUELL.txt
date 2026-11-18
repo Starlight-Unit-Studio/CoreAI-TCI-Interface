@@ -1,4 +1,23 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Geplant: CoreAI 0.7.96, Branch fix/terminal-english-preflight-0-7-96
+ZIEL: Terminal bei Setup, Datenbankmigrationen und Compose-/Native-
+Preflight durchgehend Englisch, auch wenn PHP-Selbsttests deutsche
+Beschreibungen produzieren. Diese darf der Preflight nicht mehr als
+erfolgreiche Statusmeldung ungeprueft weiterreichen.
+TECHNIK: 93 bisherige dynamische Status-Ausgaben auf feste,
+aussagekraeftige englische Meldungen nach echtem Test-Erfolg
+umgestellt. Verbliebene deutsche Migrations- und Installer-Zeilen
+uebersetzt. Eigener Terminal-English-Guard als Selbsttest in beiden
+Preflights und in globaler GitHub-Preflight-CI Pflicht.
+REGEL: AGENTS.md, CLAUDE.md, docs/VERSIONING_POLICY.md.
+STATUS: PR und GitHub-Selbsttests noch abzuwarten; echter Host-
+Preflight und integrierter Updater muessen live abgenommen werden.
+Keine Modelfile-, Datenbank-, Berechtigungs- oder Test-Bypasses.
+Nach Merge: naechste Version 0.7.97.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_96.txt.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Branch: fix/preflight-sync-gate-0-7-95 | geplante Version 0.7.95
 Basis: main 0.7.94 (laut Repository).
 AUFTRAG: Preflight muss nach jeder Aenderung auf Stand gehalten und real

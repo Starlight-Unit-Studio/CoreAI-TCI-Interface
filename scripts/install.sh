@@ -738,7 +738,7 @@ if ! is_enabled "$SKIP_BOOTSTRAP"; then
     || die 'COREUI_ADMIN_GENDER must be empty, m or f.'
 fi
 
-log "Preparing isolated parallel operation for CoreAI: TCI Interface $COREUI_VERSION vor."
+log "Preparing isolated parallel operation for CoreAI: TCI Interface $COREUI_VERSION."
 ensure_docker
 prepare_permissions
 log 'Updating numeric content cache fingerprints for CSS and JavaScript.'

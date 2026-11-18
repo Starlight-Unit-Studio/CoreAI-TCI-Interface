@@ -40,6 +40,13 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - **Preflight FAIL = nicht releasefaehig.** Auch der integrierte Updater und die anderen Nutzer sind Release-Verbraucher: Kein defekter Commit auf `main`, kein Preflight-Bypass und kein erzwungener Updater-Erfolg. Bei Testaenderungen immer die urspruengliche Schutzabsicht beibehalten.
 - Ein widerspruechliches altes Limit (z.B. Ablehnung von Projektplaenen ueber 12.000 Byte nach Abschaffung dieser Produktgrenze) muss durch einen Test ersetzt werden, der **vollstaendige Daten** verifiziert, nicht stilles Abschneiden legitimiert.
 
+## Terminal output language (operator rule, 18.11.2026)
+
+- **All operator-visible output in setup, installation, migration, Compose/Native preflight, update and uninstall terminals must be English.** This applies equally to diagnostic summaries from PHP/Python selftests; the application UI's separate language selection is irrelevant.
+- Never forward arbitrary selftest **success stdout** directly through `ok "$test_output"`. Use a stable, meaningful English success label **after** the test actually passes; on failures keep the real failing exit status and actionable diagnostics.
+- After editing an installer, migration, updater, preflight or invoked selftest, run `python3 scripts/terminal-language-selftest.py` together with the changed script's real tests. Keep `scripts/terminal-language-selftest.py` registered in both preflights and in the unconditional Preflight Sync CI gate. A localized output regression blocks the PR.
+- Do not weaken diagnostic exit codes, replace real tests with fake success messages, or silently discard relevant error details. Third-party diagnostic streams can have their own locale, but all CoreAI-authored terminal output is English.
+
 ## Versionierung und Abnahme
 
 - **Jeder Merge nach `main` benoetigt eine neue numerische Version**, auch rein dokumentarische Merger. Es gilt `docs/VERSIONING_POLICY.md`.

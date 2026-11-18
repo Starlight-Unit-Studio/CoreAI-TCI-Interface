@@ -40,6 +40,8 @@ def verify(root: Path) -> list[str]:
             failures.append(f"{rel}: release preflight sync invocation missing")
         if 'scripts/preflight-sync-selftest.py' not in body:
             failures.append(f"{rel}: preflight contract runner not called")
+        if 'scripts/terminal-language-selftest.py' not in body or 'terminal_language_report=' not in body:
+            failures.append(f"{rel}: English-language terminal diagnostic guard not called")
         for test in REQUIRED_TESTS:
             if not (root / test).is_file():
                 failures.append(f"{test}: missing")

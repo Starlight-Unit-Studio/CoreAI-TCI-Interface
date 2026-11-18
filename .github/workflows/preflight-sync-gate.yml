@@ -18,8 +18,10 @@ jobs:
         run: |
           set -eu
           bash -n scripts/preflight.sh scripts/preflight-native.sh
-          python3 -m py_compile scripts/preflight-sync-selftest.py
+          python3 -m py_compile scripts/preflight-sync-selftest.py scripts/terminal-language-selftest.py
           python3 scripts/preflight-sync-selftest.py
+          python3 scripts/terminal-language-selftest.py
+          bash -n setup.sh scripts/install.sh scripts/install-native.sh scripts/migrate.sh
       - name: PHP syntax of plan build and workflow regression contracts
         run: |
           set -eu

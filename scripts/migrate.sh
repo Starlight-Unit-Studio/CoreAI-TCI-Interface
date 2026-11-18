@@ -59,10 +59,10 @@ for migration in "${migrations[@]}"; do
     printf '[CoreAI: TCI Interface] Migration already applied: %s\n' "$version"
     continue
   fi
-  printf '[CoreAI: TCI Interface] Wende Migration an: %s\n' "$version"
+  printf '[CoreAI: TCI Interface] Applying migration: %s\n' "$version"
   compose exec -T database sh -ec \
     'exec mariadb --protocol=socket -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"' \
     < "$migration"
 done
 
-printf '[CoreAI: TCI Interface] Alle Datenbankmigrationen sind aktuell.\n'
+printf '[CoreAI: TCI Interface] All database migrations are up to date.\n'
