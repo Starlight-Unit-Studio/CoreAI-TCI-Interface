@@ -38,3 +38,9 @@ Invariants
 - Keep security checks, full Preflight sync, a version bump for each merge.
 
 Next version after merging this branch: 0.7.98.
+
+Sidebar navigation refinement (operator request)
+- The Projects entry in the chat drawer is one direct directory link.
+- Per-project folders, expand arrows and nested project chat lists are removed from the drawer.
+- Protected locked chats remain available under a separate area.
+- Sidebar folding and project UI contracts updated to reflect the new navigation.
