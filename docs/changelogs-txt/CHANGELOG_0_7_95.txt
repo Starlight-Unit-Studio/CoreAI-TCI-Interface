@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.95
+Datum: 18.11.2026
+
+PREFLIGHT_SYNC_GATE // VERBINDLICHE BETREIBERREGEL
+- Nach JEDER Aenderung: betroffene Tests in beiden Preflight-Modi
+  kontrollieren, Soll-Verhalten ggf. mitziehen, konkrete Offline-Tests
+  selbst ausfuehren und dokumentieren. Kein grüner Check ohne Lauf.
+- Jeder Pull Request durchlaeuft den neuen globalen Preflight-Sync-CI-
+  Job (ohne Pfadfilter), unabhaengig von der Groesse der Aenderung.
+- Beide Preflights rufen einen gemeinsamen Offline-Vertragswächter auf.
+  Er prueft Testdateien, deren Registrierungen in beiden Betriebsarten,
+  Regel-Dateien und die neuen Langplan-Garantien.
+- Preflight-Fehler blockieren Merge und Freigabe. Tests duerfen nicht
+  abgeschaltet, abgeschwaecht oder zu Warnungen gemacht werden.
+
+AKTUELLER FEHLER GEFIXT
+- In zwei Projektselbsttests blieb die alte Ablehnung ab 12.000 Bytes
+  stehen, nachdem das willkuerliche Limit aufgehoben worden war.
+- Neue Assertions pruefen, dass vollstaendig gespeicherte Plaene
+  ueber 12.000/13.000 Bytes inklusive letztem Abschnitt im Build-
+  Auftrag erhalten bleiben, statt abgewiesen oder abgeschnitten zu werden.
+- Keine Produktsicherheitspruefungen entfernt, keine neuen Dateilimits.
+
+PRUEFSTATUS
+- Vorgesehen: CI-PHP-/Python-Syntax und Offline-Regressionssuite.
+- Vollstaendiger Compose-/Native-Livetest und integrierter Updater auf
+  dem produktiven Host bleiben vor Freigabe zu verifizieren.
