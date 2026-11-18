@@ -144,6 +144,15 @@ $repairSmall = coreui_native_tool_repair_prompt('multiple_tool_blocks', 'VORHER-
 native_assert(str_contains($repair, '[COREUI_PLAN_AND_BUILD]') && str_contains($repair, 'VORHER-ANTWORT')
   && str_contains($repair, 'genau EINEM') && !str_contains($repairSmall, 'VORHER-ANTWORT'),
   'The correction names the reason and omits the old reply for a small context window');
+// A rejected continuation must never be repaired as a brand-new plan.
+$malformedContinue = "[COREUI_PLAN_CONTINUE]\nIch moechte den gespeicherten Plan erweitern.";
+$continueFix = coreui_native_tool_repair_prompt('invalid_plan_continue_marker', $malformedContinue);
+native_assert(str_contains($continueFix, "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen.")
+  && !str_contains($continueFix, "[COREUI_PLAN_SAVE]\n# Titel"),
+  'a malformed PLAN_CONTINUE must target the existing private checkpoint');
+native_assert(coreui_native_tool_reply_shape(
+  "[COREUI_PLAN_CONTINUE]\nWeiter schreiben.\n[/COREUI_PLAN_CONTINUE]") !== 'tool_body_too_short',
+  'short continuation instructions are not rejected as short Markdown plans');
 native_assert(!coreui_native_tool_attempt('Ganz normale Antwort ohne Werkzeug.')
   && coreui_native_tool_attempt("Ich speichere.\n**[COREUI_PLAN_SAVE]**\n# x"),
   'Tool attempts are detected without flagging ordinary prose');
