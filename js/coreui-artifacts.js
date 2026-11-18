@@ -345,7 +345,9 @@
     section.className = 'msg-artifacts';
     section.setAttribute('aria-label', 'Erzeugte Dateien');
     var seen = new Set();
-    (Array.isArray(files) ? files : []).slice(0, 10).forEach(function (file) {
+    // Render the entire verified manifest. The former 10-card slice hid files
+    // after a successful multi-source build without telling the operator.
+    (Array.isArray(files) ? files : []).forEach(function (file) {
       if (!validFile(file) || seen.has(file.id)) return;
       seen.add(file.id);
       // Only verified Markdown files use the embedded safe viewer.
