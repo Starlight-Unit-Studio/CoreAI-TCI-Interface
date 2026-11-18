@@ -417,10 +417,13 @@
           var added = Array.isArray(data.saved) ? data.saved.length : 0;
           note.textContent = added + ' Projektdateien übernommen.';
           if (window.CoreAIProjects && typeof window.CoreAIProjects.refresh === 'function') {
-            window.CoreAIProjects.refresh();
-          }
-          if (window.CoreAIProjects && typeof window.CoreAIProjects.openProject === 'function') {
-            window.CoreAIProjects.openProject(data.project_id);
+            Promise.resolve(window.CoreAIProjects.refresh()).then(function () {
+              if (typeof window.CoreAIProjects.openProject === 'function') {
+                window.CoreAIProjects.openProject(data.project_id);
+              }
+            }).catch(function () {
+              note.textContent += ' Projektliste bitte neu laden.';
+            });
           }
         }).catch(function (error) {
           note.textContent = error && error.message ? error.message : 'Projektübernahme fehlgeschlagen.';
