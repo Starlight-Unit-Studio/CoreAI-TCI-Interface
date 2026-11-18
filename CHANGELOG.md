@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.94 - 18.11.2026
+
+- **P10 practical failures, draft fixes:** Remove the remaining downstream 10-output limits in the Python artifact worker, PHP manifest validation and generated-file card view. Previously a successful project with more than ten sources could be silently truncated or hidden after creation.
+- **Autonomous project tool work:** A linked project chat no longer uses the arbitrary six-tool turn ceiling. It keeps the existing serial model queue and instead checks cancellation, a real wall-clock resource budget and repeated non-progress. Tool events distinguish verified success, unverified state and errors rather than marking every tool request successful.
+- **Development-server proof:** Starting a process is not proof of a working development server. The server-start tool now supplies the process ID, port and the outcome of an actual GET / through the isolated worker, and only logs success for a successful HTTP response. Unrecognized model-authored `[linux-shell: ...]` is explicitly reported as not executed.
+- **Import existing chat projects:** In the chat's generated file section, **Import into project** explicitly creates/uses an owner-scoped project workspace for that chat and imports verified downloaded ZIP/text sources transactionally, with CSRF and checksum checks. The action is optional; producing a download alone never changes a chat's project assignment.
+- **Test fixtures:** Regression cases for 25 generated artifacts through worker/PHP, more than six chained project tools, invalid shell markers and verified server startup. Static checks only in the GitHub branch, no productive server or end-to-end live acceptance yet.
+- **Outstanding P10 work:** Durable automatic resumption after killed workers, broader model-native tool protocol correction and real Android/Netcup acceptance remain open under issue #349; this is not yet a claim that every P10 scenario passes.
+
 ## 0.7.93 - 18.11.2026
 
 - **Autonomous plan-to-build handoff (P10):** A complete, durably saved Markdown project plan is a checkpoint, not necessarily a final answer. When the original authenticated user request explicitly authorizes creating the project, the existing model-controlled build-intent selector now authorizes the same turn to continue directly to the verified project writer. No manual `continue` is needed for that transition.
