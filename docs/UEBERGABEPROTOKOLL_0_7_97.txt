@@ -1,0 +1,40 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.97
+Date: 2026-11-18
+Base: main 0.7.96
+Branch: feat/mobile-project-navigation-claude-reference
+Draft PR: #357
+
+Operator request
+Build a mobile project workflow following the operator's own five Claude
+screenshots as functional UI references. Do not source substitute images online.
+Start with navigation and layout parity; apply CoreAI Holo design afterward.
+
+Implementation on branch
+- Tapping the project title opens its workspace; the chevron is for chat folding.
+- Directory page: project cards, search, sort, pins and action menu.
+- Project breadcrumb, mobile project sheet, simple name/description modal.
+- Existing advanced CoreAI settings remain available under a disclosure.
+- Migration 055, scoped API and store persist description independently from
+  instructions and without bypassing account/project authorization.
+- Project navigation/source edits are checked by updated regression contracts.
+- Native and Compose Preflights both register the UI contract.
+
+Validation
+- The GitHub Actions version, cache and fixture failures from the initial draft
+  were identified and addressed in the feature branch. Re-run CI against the
+  final head and inspect the resulting workflow checks before merge.
+- The isolated local container has no working GitHub DNS access, so a real
+  local browser run was not performed from this chat.
+- Do not represent static source checks as a successful Android device test.
+- The PR is intentionally a draft. Holo theme pass and end-to-end Android
+  navigation, project file preview, persistence, user rights and actual server
+  migration still need acceptance testing.
+
+Invariants
+- No added Chat/Work switch or dead scheduled-project features.
+- No modification of Ollama models, account permissions, sandbox policy or
+  operator's installed CoreAI server.
+- Use native project storage; preserve unsaved file confirmation.
+- Keep security checks, full Preflight sync, a version bump for each merge.
+
+Next version after merging this branch: 0.7.98.
