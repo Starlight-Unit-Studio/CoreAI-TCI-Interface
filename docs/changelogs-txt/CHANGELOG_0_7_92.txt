@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.92
+Datum: 18.11.2026
+
+P10: KEIN WILLKUERLICHES DATEIANZAHL-LIMIT
+- Die fest eingebauten Grenzen von neun Projekt-Quelldateien pro ZIP
+  sowie zehn Artefakten samt Archiv wurden im gemeinsamen Manifest,
+  Quelltext-Sammler und sicheren Projekt-ZIP-Writer entfernt.
+- Auch die 12.000-Byte-Sperre fuer bereits fertig gespeicherte,
+  genehmigte Projektplaene im Baupfad ist entfernt.
+- Sichere Dateinamen, Inhaltepruefung, echtes Sandbox-Budget und
+  ZIP-Integritaetskontrolle bleiben bestehen.
+- Regressionen fuer 10 und 25 Quelldateien sowie die schrittweise
+  Zusammenstellung vervollstaendigter Dateien sind hinzugefuegt.
+
+BEKANNTE OFFENE P10-ARBEIT
+- Autonome Fortsetzung nach Planerstellung statt Antwortende.
+- Werkzeugprotokoll-Korrektur, Workspace-/Artefakt-Unterscheidung,
+  echter Entwicklungsserverstart mit Prozess- und HTTP-Nachweis.
+- GitHub Issue #349.
+
+TESTSTATUS
+- GitHub-Branch; PHP-Lint und E2E-Sandbox-Test vor Merge noch
+  ausstehend. Keine Live-Abnahme und kein produktiver Fix behauptet.

@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.92
+Datum: 18.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.91
+Branch: fix/p10-remove-artificial-file-count-limit-0-7-92
+
+AUFTRAG
+Betreiber: "mach die begrenzung bitte komplett weg", bezogen auf
+die willkuerliche Neun-Dateien-Schranke im Projekt-ZIP-Writer;
+anschliessend fehlende Autonomie und P10-Praxistestfehler korrigieren.
+
+UMSETZUNG
+- api/console_native_tools.php: Planmanifest nicht mehr nach
+  neun Dateien ablehnen; die 12.000-Byte-Bausperre auf
+  fertig gespeicherte Plaene entfernt.
+- api/console_data_link_bridge.php: Projektmanifest,
+  Quelle-Collector, Mehrfachantwort-Fortsetzung und
+  Quelltext-/ZIP-Writer nicht mehr nach Dateianzahl blockieren.
+- scripts/local-file-tool-selftest.php:
+  10 und 25 Quellen inklusive schrittweiser ZIP-Zusammenstellung.
+- scripts/model-project-intent-selftest.php:
+  Plan mit 25 Modulen und zusaetzlichem CSS-Asset.
+
+UNVERAENDERT
+- Modell- und Ollama-Parameter, SYSTEM-/Modelfiles, serielle Queue,
+  Rechte, Sandbox-Isolation, sichere Dateinamen, Source-Validatoren,
+  ZIP-Integritaet, bestehende Nutzerplaene/Uploads.
+
+OFFEN
+- Lokale PHP-Syntax, Selbsttests, Version-Guard und der reale
+  Android-/Server-Livetest vor produktivem Merge erforderlich.
+- P10 Follow-up: Issue #349 mit Plan->Build->Dateien->Tests->Server
+  ohne "continue", echter Prozess-/HTTP-Verifikation, Markerfehlern
+  und Artefakt-/Projekt-Workspace-Handoff. Gehoert in einen
+  separaten anschliessenden PR.
+- Voruebergehende echte Grenzen fuer RAM, Sandbox-Ausfuehrung und
+  Dateigroesse sind Ressourcenlimits, keine Dateianzahl-Grenzen.
+
+Nach Merge: naechste Version 0.7.93.

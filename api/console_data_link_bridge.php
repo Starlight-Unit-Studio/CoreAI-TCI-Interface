@@ -20,7 +20,7 @@ function coreui_console_inline_link_present(string $reply): bool {
 }
 
 /**
- * Dedicated, bounded contract for a requested multi-file ZIP project. The
+ * Dedicated, verified contract for a requested multi-file ZIP project. The
  * language model writes source files, not an additional Python program to
  * create those files. Our existing inert source bridge handles verification,
  * writing and ZIP packaging. Single-file/generic Python tasks are untouched.
@@ -30,7 +30,7 @@ function coreui_console_multifile_source_directive(string $request): ?string {
   $spec = coreui_console_project_request_spec($request);
   if ($spec === null || !$spec['zip_requested']) return null;
   $names = array_values($spec['requested']);
-  if (count($names) < 2 || count($names) > 9) return null;
+  if (count($names) < 2) return null;
   return "COREUI QUELLDATEIEN: Erzeuge fuer diesen Dateiauftrag die VOLLSTAENDIGEN "
     . "Quelltexte als separate Markdown-Codebloecke. Pflichtdateien: "
     . implode(', ', $names) . ". Fuer JEDE der genannten Dateien schreibe "
@@ -63,7 +63,6 @@ function coreui_console_project_request_spec(string $request): ?array {
     $key = strtolower((string)$name);
     if (!isset($requested[$key])) $requested[$key] = (string)$name;
   }
-  if (count($requested) > 10) return null;
 
   $zipRequested = preg_match('~\b(?:zip|archiv)\b~iu', $request) === 1;
   // Common browser-game ZIP requests name the game, not its three source files.
@@ -72,7 +71,6 @@ function coreui_console_project_request_spec(string $request): ?array {
       && preg_match('~\b(?:snake|browser[\s-]*game|browser[\s-]*spiel|web[\s-]*spiel|webapp|mini[\s-]*game)\b~iu', $request) === 1) {
     $requested = ['index.html'=>'index.html', 'style.css'=>'style.css', 'game.js'=>'game.js'];
   }
-  if ($zipRequested && count($requested) > 9) return null;
   $zipName = 'projekt.zip';
   if (preg_match('~(?<![A-Za-z0-9._-])([A-Za-z0-9][A-Za-z0-9._-]{0,90}\.zip)' . $fileEnd . '~i',
       $request, $zipMatch)) $zipName = $zipMatch[1];
@@ -109,8 +107,8 @@ function coreui_console_local_homepage_zip_request(string $request): string {
 
 /** Compute only the payload needed for the deterministic, server-owned
  * Python file writer. A model-supplied Python script does NOT get this
- * allowance. With at most nine verified 150k sources, the writer stays well
- * under MariaDB MEDIUMTEXT and the isolated worker's resource boundaries. */
+ * allowance. File count is not capped: the final writer must still fit the
+ * sandbox's real code and resource budget. */
 function coreui_console_trusted_project_writer_budget(array $files, int $modelCodeBudget): int {
   $bytes = 0;
   foreach ($files as $source) {
@@ -140,7 +138,6 @@ function coreui_console_project_files_python(array $files, array $spec, int $max
   } else {
     $selected = $files;
   }
-  if (count($selected) > ($zipRequested ? 9 : 10)) return null;
 
   $total = 0;
   foreach ($selected as $key => $file) {
@@ -208,7 +205,6 @@ function coreui_console_project_fences_python(string $reply, string $request, in
   if (!preg_match_all('~(?<ticks>`{3,})(?<info>[^\r\n`]{0,150})\r?\n(?<body>.*?)\r?\n\k<ticks>(?!`)~s',
       $reply, $fences, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)) return null;
   $files = [];
-  $total = 0;
   foreach ($fences as $fence) {
     $info = trim($fence['info'][0]);
     // Never infer a safe basename from an explicit unsafe path.
@@ -256,8 +252,6 @@ function coreui_console_project_fences_python(string $reply, string $request, in
     // Model-supplied extras are inert but are not part of the user's project.
     if ($requested !== [] && !isset($requested[$key])) continue;
     if (isset($files[$key]) || $body === '' || strlen($body) > 150000) return null;
-    $total += strlen($body);
-    if ($total > 512000 || count($files) >= 10) return null;
     $files[$key] = ['name'=>$requested[$key] ?? $name,'bytes'=>$body];
   }
   if ($files === []) return null;
@@ -284,7 +278,7 @@ function coreui_console_merge_project_fences(string $first, string $second, stri
   if ($one === null || $two === null) return null;
 
   $wanted = array_keys($spec['requested']);
-  if (count($wanted) < 2 || count($wanted) > 9) return null;
+  if (count($wanted) < 2) return null;
 
   $merged = [];
   foreach ([$one['source_files'], $two['source_files']] as $batch) {
@@ -307,7 +301,7 @@ function coreui_console_project_source_progress(array $replies, string $request,
   $spec = coreui_console_project_request_spec($request);
   if ($spec === null || !$spec['zip_requested']) return null;
   $wanted = array_keys($spec['requested']);
-  if (count($wanted) < 2 || count($wanted) > 9) return null;
+  if (count($wanted) < 2) return null;
   $sources = [];
   foreach ($replies as $reply) {
     if (!is_string($reply)) continue;

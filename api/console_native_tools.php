@@ -483,7 +483,6 @@ function coreui_native_plan_source_manifest(string $markdown): ?array {
     if (isset($seen[$lower])) continue;
     $seen[$lower] = true;
     $files[] = $name;
-    if (count($files) > 9) return null;
   }
   if ($files === []) return [];
   $hasHtml = (bool)array_filter($files,
@@ -505,7 +504,6 @@ function coreui_native_plan_source_manifest(string $markdown): ?array {
     $files[] = $name;
     $seen[$name] = true;
   }
-  if (count($files) > 9) return null;
   // Deterministic output order, even if the plan first mentions about.html.
   usort($files, static function(string $a,string $b): int {
     if (strcasecmp($a,'index.html')===0) return -1;
@@ -525,8 +523,7 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
   if ($source !== '' && coreui_plan_is_draft_markdown($source)) return null;
   // Never silently omit part of an approved plan; explicit guidance to split.
   // Keep the complete approved plan in each bounded, serial source task.
-  // Reject oversized plans rather than silently dropping requirements.
-  if (strlen($source) > 12000) return null;
+  // Preserve the complete approved plan; select file-relevant sections per model call.
   // Fail closed on unsupported app stacks. Do not quietly relabel React,
   // server code or a mobile APK as a working static three-file ZIP.
   // "kein React, kein PHP" describes a static site and must not block it.
@@ -544,7 +541,7 @@ function coreui_native_tool_build_request(PDO $pdo, int $uid, string $sessionId,
     // No filenames in the plan: preserve the legacy minimal static bundle.
     $files = ['index.html','style.css','main.js'];
   }
-  if (count($files) < 2 || count($files) > 9) return null;
+  if (count($files) < 2) return null;
   foreach ($files as $filename) {
     if (!preg_match('~^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg|py)$~iD',$filename))
       return null;
@@ -673,17 +670,9 @@ function coreui_native_tool_apply(
         . 'Ich starte damit keine Dateierstellung und gebe keinen fertigen ZIP-Download vor. '
         . 'Zuerst muss die Planung abgeschlossen und als neue fertige Version gespeichert werden.';
     }
-    if ($lastPlan && strlen((string)$lastPlan['markdown']) > 12000) {
-      return 'Der fertig gespeicherte Projektplan umfasst '
-        . strlen((string)$lastPlan['markdown']) . ' Bytes und ueberschreitet '
-        . 'das derzeitige Limit von 12000 Bytes pro Projektauftrag. '
-        . 'Ich schneide ihn nicht ab und gebe kein unvollstaendiges ZIP aus. '
-        . 'Die Umsetzung muss in kleinere Projektabschnitte aufgeteilt werden.';
-    }
     if ($lastPlan && coreui_native_plan_source_manifest((string)$lastPlan['markdown']) === null) {
-      return 'Der Projektplan enthaelt mehr als neun unterschiedliche Quelldateien. '
-        . 'Der Dateigenerator nimmt hoechstens neun sichere Dateien pro ZIP an. '
-        . 'Die Planung muss in mehrere verifizierbare Dateipakete aufgeteilt werden.';
+      return 'Der Projektplan enthaelt keine sicher nutzbare Quelldateiliste. '
+        . 'Die Planung muss korrigiert werden, bevor Dateien erzeugt werden.';
     }
     return 'Die Projektquellen konnten nicht sicher zusammengestellt werden. '
       . 'Entweder ist die Dateiliste ungueltig oder der gespeicherte Plan '
