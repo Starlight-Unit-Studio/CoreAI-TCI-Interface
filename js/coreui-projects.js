@@ -119,7 +119,8 @@
     knowledge_file_too_large:'Die Datei ist zu groß.',
     knowledge_text_too_short:'Das Dokument enthält zu wenig lesbaren Text.',
     csrf_failed:'Die Sitzung wurde geändert. Bitte Seite neu laden.',
-    project_source_failed:'Die Projektdatei konnte nicht verarbeitet werden.'
+    project_source_failed:'Die Projektdatei konnte nicht verarbeitet werden.',
+    project_description_too_long:'Die Projektbeschreibung ist zu lang.'
   };
   function chatApp() { return window.CoreAIChatApp || null; }
   function fail(err) { var m=err && err.message || 'Unbekannter Fehler'; return ERR[m] || m; }
@@ -278,6 +279,8 @@
   function renderHeader() {
     var p=selected();if(!p)return;
     $('projectHomeName').textContent=p.name;
+    var description=$('projectHomeDescription');
+    if(description){description.textContent=p.description||'';description.hidden=!p.description;}
     var breadcrumb=$('projectHomeBreadcrumbName');
     if(breadcrumb)breadcrumb.textContent=p.name;
     $('projectHomeMode').textContent=p.context_mode==='isolated'?'KONTEXT // ISOLIERT':'KONTEXT // STANDARD';
@@ -534,6 +537,7 @@
     if(which==='create') {$('projectCreateName').value='';$('projectCreateMode').value='open';}
     if(which==='settings' && p) {
       $('projectSettingsName').value=p.name;
+      $('projectSettingsDescription').value=p.description||'';
       $('projectSettingsInstructions').value=p.instructions_md||'';
       $('projectSettingsMode').value=p.context_mode;
       $('projectSettingsModeHint').textContent=p.context_mode==='isolated'
@@ -612,7 +616,8 @@
     var p=projects.find(function(item){return item.id===modalProjectId;});
     if(!p)return;
     post({action:'project_update',project_id:p.id,name:$('projectSettingsName').value,
-      instructions_md:$('projectSettingsInstructions').value}).then(refresh).then(function(){closeModal();})
+      instructions_md:$('projectSettingsInstructions').value,
+      description:$('projectSettingsDescription').value}).then(refresh).then(function(){closeModal();})
       .catch(modalError);
   });
   $('projectSettingsDelete').addEventListener('click',deleteProject);
