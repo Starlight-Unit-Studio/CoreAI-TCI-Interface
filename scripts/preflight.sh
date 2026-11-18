@@ -69,6 +69,14 @@ else
   fail "Preflight sync contract: ${preflight_sync_report:-Unknown error}"
 fi
 
+# TERMINAL_ENGLISH_GATE: catch mixed-language installer/preflight output.
+terminal_language_report=''
+if terminal_language_report="$(python3 "$PROJECT_ROOT/scripts/terminal-language-selftest.py" 2>&1)"; then
+  ok 'English terminal diagnostics verified.'
+else
+  fail "English terminal diagnostics check: ${terminal_language_report:-Unknown error}"
+fi
+
 if [[ ! -f "$ENV_FILE" ]]; then
   fail 'var/compose.env is missing. Run scripts/install.sh.'
 fi
@@ -514,6 +522,7 @@ UI_FILES=(
   api/console_insights_store.php
   js/coreui-insights.js
   scripts/preflight-sync-selftest.py
+  scripts/terminal-language-selftest.py
   scripts/contextual-project-selftest.php
   scripts/model-project-intent-selftest.php
   scripts/native-tools-selftest.php
