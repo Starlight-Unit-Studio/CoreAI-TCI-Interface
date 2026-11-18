@@ -41,7 +41,39 @@ UNVERAENDERT
   Oberflaeche, Prozess-Speicher (api/project_procs_store.php).
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer api/project_file_tools.php, api/console_agent_loop.php, api/chat.php und
+  scripts/project-env-selftest.php, node --check fuer js/console-gate.js, bash -n fuer beide
+  Preflights: ohne Fehler. Version-Guard (0.7.90 auf 0.7.91), Branding, Cache-Fingerabdruecke (nach
+  scripts/cache-bust.py), tci-language, terran-terminology, terminal-language: OK.
+- scripts/project-env-selftest.php (neu): OK mit SQLite, mit MariaDB (Migration 044 bis 048) und Ende
+  zu Ende mit dem echten Worker und Docker (COREUI_SELFTEST_SANDBOX=1, ember-py:2): Mara startet den
+  Server mit [SERVER_STARTEN: 8000 python app.py], liest sein JSON mit [SERVER_ABRUF: /api/zahl],
+  aendert index.html mit [DATEI_AENDERN:] und bekommt die neue Seite ausgeliefert, beendet ihn mit
+  Exitcode 143, beantwortet ein Programm mit [PROZESS_EINGABE: Mara], das mit Exitcode 3 endet;
+  danach kein Container uebrig. Zweimal gelaufen, zuletzt auf dem Stand dieses PRs.
+- Bestehende Tests mit wortwoertlichen Pruefungen von chat.php (project-runs, project-file-tools,
+  project-merge) unveraendert gruen: die alten Werkzeuglisten bleiben, die Prozesse kommen ueber
+  COREUI_PFTOOLS_PROC_KINDS dazu. project-procs-selftest.php mit MariaDB gruen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*): 201 bestanden, 14 fehlgeschlagen. Die 14 sind
+  dieselben wie auf 0.7.90 (gleicher Baum wie main nach PR #347; dort 200 bestanden): browse-image ohne
+  Python-Playwright, browse-live-ui, chat-menu-ui, image-progress-ui, long-chat, model-library-ui,
+  pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui, settings-tabs-ui,
+  update-ui, voice-samples-ui. Der zusaetzlich bestandene ist der neue Selbsttest. Kein neuer
+  Fehlschlag.
+- 30 gezielt eingebaute Fehler in project_file_tools.php, console_agent_loop.php und chat.php: 29
+  erkannt (Port aus dem Befehl, Portbereich, Port vorne, lokale Adresse, Text fuer wartende
+  Prozesse, Warten auf den Worker, falscher Arbeitsweg-Eintrag, Server ohne Port, alte Ausgabe nach
+  einer Eingabe, Warten auf Exitcode und Antwort, Abruf ohne Port, beendeter Prozess als laufender,
+  Prozesse ohne Migration 048, Versprechen ohne Python-Werkzeug, Zeile ausserhalb im kurzen Prompt,
+  Binaerdaten als Text, laufender Prozess nicht genannt, localhost erreichbar, keine Weiterleitung,
+  keine Migrationspruefung, kurzer Prompt nur mit Python, Eingabezeile im Arbeitsweg, Server-Marker
+  nicht erkannt, Prozessmarker im Bildabschluss, Marker im Chat, Angebot ohne Migration, Zeile
+  ausserhalb im zweiten Prompt, chat.php leitet nicht weiter). Der eine nicht erkannte aendert
+  nichts am Verhalten: "wartend" wird vorher abgefangen, und "wartend mit Beendenwunsch" gibt es
+  nicht, weil Beenden einen wartenden Prozess sofort beendet.
+- Dabei gefunden und behoben: ohne Migration 048 bekam Mara bei [PROZESS_AUSGABE] "Datenbankfehler"
+  statt des Satzes; die Pruefung im Werkzeug war da, der Test prueft das jetzt.
+- GitHub-Pruefungen fuer 75491dce ohne Fehler.
 
 NICHT GETESTET
 - Mit einem echten Core im Chat (lokal oder Cloud) auf dem echten Server; der ganze Zug ist im
