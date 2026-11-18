@@ -99,29 +99,8 @@
   // rather than immediately making the project ellipsis appear broken.
   window.addEventListener('resize',updateFloatingMenuPosition);
   document.addEventListener('scroll',updateFloatingMenuPosition,true);
-  // Sidebar folding is a local UI preference, never server-side project state.
-  var FOLDER_STATE_KEY = 'coreai.project-folder-folded.v1';
-  var folderState = Object.create(null);
-  try {
-    var savedFolderState = JSON.parse(localStorage.getItem(FOLDER_STATE_KEY) || '{}');
-    if (savedFolderState && typeof savedFolderState === 'object' && !Array.isArray(savedFolderState)) {
-      Object.keys(savedFolderState).forEach(function(id) {
-        if (/^[a-f0-9]{32}$/.test(id) && typeof savedFolderState[id] === 'boolean') {
-          folderState[id] = savedFolderState[id];
-        }
-      });
-    }
-  } catch (e) {}
-  function folderIsExpanded(id) {
-    return Object.prototype.hasOwnProperty.call(folderState, id) ? folderState[id] : id === current;
-  }
-  function setFolderExpanded(id, expanded) {
-    folderState[id] = !!expanded;
-    try { localStorage.setItem(FOLDER_STATE_KEY, JSON.stringify(folderState)); } catch (e) {}
-  }
+  // Projects have a single directory link; folder state is no longer used.
   var ICON_FOLDER_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z"/></svg>';
-  var ICON_FOLDER_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11V6a2 2 0 0 1 2-2h5l2 3h6a2 2 0 0 1 2 2v2"/><path d="M5 11h16l-2 9H3l2-9Z"/></svg>';
-  var ICON_FOLDER_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
   var ERR = {
     project_name_required:'Bitte einen Projektnamen eingeben.',
     project_not_found:'Das Projekt wurde nicht gefunden.',
@@ -158,71 +137,8 @@
     if (floatingAnchor && list.contains(floatingAnchor)) dismissFloatingMenu();
     var scrollTop = list.scrollTop;
     list.replaceChildren();
-    projects.forEach(function(p) {
-      var expanded = folderIsExpanded(p.id);
-      var row = el('div', 'project-nav-row project-nav-folder-row' +
-        (p.id === current ? ' active' : '') + (expanded ? ' is-expanded' : ''));
-      var childrenId = 'project-nav-children-' + p.id;
-      var toggle = action('', function() {
-        setFolderExpanded(p.id, !folderIsExpanded(p.id));
-        renderSidebar();
-        var replacement = document.getElementById('project-nav-toggle-' + p.id);
-        if (replacement) replacement.focus({preventScroll:true});
-      }, 'project-nav-folder-toggle');
-      toggle.id = 'project-nav-toggle-' + p.id;
-      toggle.setAttribute('aria-expanded', String(expanded));
-      toggle.setAttribute('aria-controls', childrenId);
-      toggle.setAttribute('aria-label', (expanded ? 'Projektordner zuklappen: ' : 'Projektordner aufklappen: ') + p.name);
-      toggle.title = expanded ? 'Ordner zuklappen' : 'Ordner aufklappen';
-      var chevron = el('span', 'project-nav-chevron');
-      chevron.innerHTML = ICON_FOLDER_CHEVRON;
-      toggle.appendChild(chevron);
-      var icon = el('span', 'project-nav-folder');
-      icon.innerHTML = expanded ? ICON_FOLDER_OPEN : ICON_FOLDER_CLOSED;
-      toggle.appendChild(icon);
-      row.appendChild(toggle);
-      // The project name opens its workspace. The independent chevron expands chats.
-      var open = action('',function(){
-        openProject(p.id);
-      },'project-nav-open');
-      open.appendChild(label(p.name, 'project-nav-label'));
-      open.setAttribute('aria-label','Projekt öffnen: '+p.name);
-      row.appendChild(open);
-      var options = action('···', function(e) {
-        e.stopPropagation();
-        showFloatingMenu(options,'project',projectActions(p));
-      }, 'project-nav-menu');
-      options.setAttribute('aria-label', 'Projektaktionen: ' + p.name);
-      options.setAttribute('aria-haspopup','menu');
-      options.setAttribute('aria-expanded','false');
-      row.appendChild(options);
-      list.appendChild(row);
-
-      var children = el('div', 'project-nav-children');
-      children.id = childrenId;
-      children.hidden = !expanded;
-      if (expanded) {
-        var chats = sessions.filter(function(s) {
-          return s.project_id === p.id && !s.archived;
-        });
-        if(!chats.length) {
-          children.appendChild(el('span','project-nav-empty','Keine Chats'));
-        }
-        chats.slice(0, 8).forEach(function(s) {
-          var entry = action('◯  ' + (s.title || 'Chat'), function() {
-            var app = chatApp(); if (app && app.select) app.select(s.id);
-          }, 'project-nav-chat');
-          entry.title = s.title || 'Chat';
-          children.appendChild(entry);
-        });
-        if (chats.length > 8) {
-          children.appendChild(action('Weitere Chats in der Projektstartseite', function() {
-            openProject(p.id);
-          }, 'project-nav-chat project-nav-more'));
-        }
-      }
-      list.appendChild(children);
-    });
+    // Only protected chats keep their existing unlock entry here.
+    // All projects and their chats are accessible via the separate directory page.
     // The protected folder remains conditional: zero locked chats means no row.
     if (lockedChats.length) {
       var lockedRow = el('div', 'project-nav-row project-nav-locked');
@@ -606,7 +522,7 @@
     }).then(refresh).catch(function(e){alert(fail(e));});
   }
   $('projectsCreateBtn').addEventListener('click',function(){openModal('create');});
-  $('projectsDirectoryBtn').addEventListener('click',openDirectory);
+  $('sidebarProjectsToggle').addEventListener('click',openDirectory);
   $('projectDirectoryCreate').addEventListener('click',function(){openModal('create');});
   $('projectDirectoryDrawer').addEventListener('click',function(){var a=chatApp();if(a&&a.openDrawer)a.openDrawer();});
   $('projectDirectorySearch').addEventListener('input',renderDirectory);
@@ -624,7 +540,6 @@
     if(!name){modalError(new Error('project_name_required'));return;}
     post({action:'project_create',name:name,context_mode:mode}).then(function(d){
       closeModal();
-      setFolderExpanded(d.project.id,true);
       return refresh().then(function(){openProject(d.project.id);});
     }).catch(modalError);
   });
