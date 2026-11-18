@@ -62,4 +62,4 @@ fi
 printf '\nHinweis:\n'
 printf '%s\n' 'For two distinct model names, OLLAMA_MAX_LOADED_MODELS=2 is the relevant upper limit.'
 printf '%s\n' 'OLLAMA_NUM_PARALLEL=1 vermeidet zusaetzliche Kontextkopien je Modell.'
-printf '%s\n' 'Bei zu wenig RAM oder VRAM reiht Ollama Anforderungen in die Warteschlange ein.'
+printf '%s\n' 'With insufficient RAM or VRAM, Ollama queues incoming requests.'
