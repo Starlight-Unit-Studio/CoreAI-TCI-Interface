@@ -321,7 +321,7 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     return "ARBEITSWEISE: Du arbeitest selbststaendig. Fehlt dir aktuelles oder genaues Wissen, suche ohne Nachfrage; "
       . "nach Suchtreffern kannst du mit [WEB: WEITER] bei Bedarf die naechste Gruppe abrufen oder genauer suchen; "
       . "Namensgleiche nicht ohne Identitaetsbeleg zusammenfuehren. "
-      . "Du darfst bis zu " . (COREUI_AGENT_MAX_STEPS - 1) . " weitere Schritte machen, bevor du antwortest."
+      . "Pruefe echte Werkzeugergebnisse statt angenommener Erfolge. In Projektauftraegen arbeite nach dem Plan weiter bis das Ergebnis geprueft ist."
       . ($archive ? ' Aelteres aus diesem Chat findest du mit [ARCHIV: Stichworte].' : '');
   }
   return "ARBEITSWEISE (selbststaendig wie ein Agent): Dein Trainingswissen hat einen Stichtag; das heutige Datum steht oben. "
@@ -331,7 +331,8 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     . "Treffergruppe derselben Suche, genauere Websuche, "
     . "mit [PY] rechnen" . ($archive ? ', mit [ARCHIV: Stichworte] in der Mitschrift dieses Chats nachsehen' : '') . "). "
     . "Suchtreffer sind keine gelesenen Webseiten; Namensgleiche nicht ohne belegte Verbindung verwechseln. "
-    . "Hoechstens " . COREUI_AGENT_MAX_STEPS . " Schritte pro Antwort. Fuer Smalltalk, Meinungen und sicheres Wissen brauchst du keine Werkzeuge.";
+    . "Fuer Projektauftraege mache die notwendigen, bestaetigten Arbeitsschritte eigenstaendig weiter, ohne nach jeder Datei auf 'continue' zu warten. "
+    . "Ein Befehl, HTTP-Abruf oder Dateischritt gilt nur mit echtem Werkzeugergebnis als gelungen. Fuer Smalltalk, Meinungen und sicheres Wissen brauchst du keine Werkzeuge.";
 }
 
 /**
