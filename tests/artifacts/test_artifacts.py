@@ -132,11 +132,12 @@ class ArtifactTests(unittest.TestCase):
         self.assertEqual([f['name'] for f in m['files']], ['good'])
         self.assertIn('file_size_limit', m['warnings'])
 
-    def test_count_limit(self):
-        for i in range(12): (self.out / str(i)).write_bytes(b'x')
+    def test_more_than_ten_sources_preserve_every_verified_artifact(self):
+        for i in range(25): (self.out / str(i)).write_bytes(b'x')
         m = self.collect()
-        self.assertEqual(len(m['files']), 10)
-        self.assertIn('file_count_limit', m['warnings'])
+        self.assertEqual(len(m['files']), 25)
+        self.assertNotIn('file_count_limit', m['warnings'])
+        self.assertEqual(len(self.php(m)), 25)
 
     def test_total_limit(self):
         for i in range(4): (self.out / str(i)).write_bytes(b'abcd')
