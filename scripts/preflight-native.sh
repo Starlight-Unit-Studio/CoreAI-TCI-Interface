@@ -47,7 +47,7 @@ printf 'CoreAI: TCI Interface Native-Preflight, Version %s\n' "$VERSION"
 # before any host checks; a failed contract is a blocking release defect.
 preflight_sync_report=''
 if preflight_sync_report="$(python3 "$PROJECT_ROOT/scripts/preflight-sync-selftest.py" 2>&1)"; then
-  ok "$preflight_sync_report"
+  ok 'Preflight synchronization rules verified.'
 else
   fail "Preflight sync contract: ${preflight_sync_report:-Unknown error}"
 fi
@@ -634,7 +634,7 @@ fi
 # 0.7.77 (P10 B): project runs in the worker; with Docker and the sandbox image real runs in the sandbox.
 project_runs_worker_test=''
 if project_runs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-runs-worker-selftest.py" 2>&1)"; then
-  ok "$project_runs_worker_test"
+  ok 'Project execution worker self-test passed.'
 else
   fail "Project runs worker-self-test: ${project_runs_worker_test:-Unknown error}"
 fi
@@ -642,7 +642,7 @@ fi
 # 0.7.78 (P10 C): processes in the worker; with Docker and the sandbox image real processes and a server.
 project_procs_worker_test=''
 if project_procs_worker_test="$(python3 "$PROJECT_ROOT/scripts/project-procs-worker-selftest.py" 2>&1)"; then
-  ok "$project_procs_worker_test"
+  ok 'Project process worker self-test passed.'
 else
   fail "Project processes worker-self-test: ${project_procs_worker_test:-Unknown error}"
 fi
@@ -650,7 +650,7 @@ fi
 # 0.7.79: the Dockerfile, one tag everywhere and, with Docker, Node.js tests behind the sandbox walls.
 sandbox_image_test=''
 if sandbox_image_test="$(python3 "$PROJECT_ROOT/scripts/sandbox-image-selftest.py" 2>&1)"; then
-  ok "$sandbox_image_test"
+  ok 'Project sandbox image self-test passed.'
 else
   fail "Sandbox-Image-self-test: ${sandbox_image_test:-Unknown error}"
 fi
@@ -963,28 +963,28 @@ if command -v php >/dev/null 2>&1; then
   fi
 
   if native_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/native-tools-selftest.php" 2>&1)"; then
-    ok "$native_test"
+    ok 'Native tool parsing and persistence self-test passed.'
   else
     fail "Native Tools: $native_test"
   fi
 
   project_intent_test=''
   if project_intent_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-project-intent-selftest.php" 2>&1)"; then
-    ok "$project_intent_test"
+    ok 'Model-driven project build intent self-test passed.'
   else
     fail "Model-driven project implementation: ${project_intent_test:-Unknown error}"
   fi
 
   plan_auto_test=''
   if plan_auto_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/plan-autocontinue-selftest.php" 2>&1)"; then
-    ok "$plan_auto_test"
+    ok 'Autonomous Markdown planning self-test passed.'
   else
     fail "Autonomous Markdown planning: ${plan_auto_test:-Unknown error}"
   fi
 
   project_test=''
   if project_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/contextual-project-selftest.php" 2>&1)"; then
-    ok "$project_test"
+    ok 'Model-driven project handoff self-test passed.'
   else
     fail "Model-driven project handover: ${project_test:-Unknown error}"
   fi
@@ -1226,7 +1226,7 @@ if command -v php >/dev/null 2>&1; then
   if account_page_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-page-selftest.php" 2>&1)"; then
     ok 'Account: unique usernames, reserved names and plans (Free, Go, Plus, Pro with enforced rules) verified.'
   else
-    fail "Konto-self-test: ${account_page_test:-Unknown error}"
+    fail "Account self-test: ${account_page_test:-Unknown error}"
   fi
 
   # 0.6.87: chat menu and Archivierte Chats: pin order, archive search and filters, files, search, Markdown.
@@ -1273,7 +1273,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.28: Settings > Speicher: the limit for all accounts and per account, usage, Dateien and Bilder, favourites, deleting.
   storage_test=''
   if storage_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/storage-selftest.php" 2>&1)"; then
-    ok "$storage_test"
+    ok 'Storage management self-test passed.'
   else
     fail "Storage-self-test: ${storage_test:-Unknown error}"
   fi
@@ -1281,7 +1281,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.30: Settings > Nutzung: plan and daily limit window, tokens by Core, tools, skills, messages by kind, top chats.
   usage_page_test=''
   if usage_page_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/usage-page-selftest.php" 2>&1)"; then
-    ok "$usage_page_test"
+    ok 'Usage information self-test passed.'
   else
     fail "Usage-self-test: ${usage_page_test:-Unknown error}"
   fi
@@ -1289,7 +1289,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.32: Settings > Datenkontrollen: archive and delete all chats (never locked or busy ones), the page.
   data_controls_test=''
   if data_controls_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/data-controls-selftest.php" 2>&1)"; then
-    ok "$data_controls_test"
+    ok 'Data control self-test passed.'
   else
     fail "Data controls-self-test: ${data_controls_test:-Unknown error}"
   fi
@@ -1297,7 +1297,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.38: Deep Research runs: plan, Starten, Bearbeiten, Abbrechen, Stopp, sources, chat deletion.
   deep_research_test=''
   if deep_research_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/deep-research-selftest.php" 2>&1)"; then
-    ok "$deep_research_test"
+    ok 'Deep research self-test passed.'
   else
     fail "Deep-Research-self-test: ${deep_research_test:-Unknown error}"
   fi
@@ -1305,7 +1305,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.69 (P09): project files: paths, revisions, conflicts, search, ZIP, builds in project chats, limits.
   project_files_test=''
   if project_files_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-files-selftest.php" 2>&1)"; then
-    ok "$project_files_test"
+    ok 'Project file management self-test passed.'
   else
     fail "Project files-self-test: ${project_files_test:-Unknown error}"
   fi
@@ -1313,7 +1313,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.73 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
   project_file_tools_test=''
   if project_file_tools_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-file-tools-selftest.php" 2>&1)"; then
-    ok "$project_file_tools_test"
+    ok 'Project file tools self-test passed.'
   else
     fail "File tools-self-test: ${project_file_tools_test:-Unknown error}"
   fi
@@ -1321,7 +1321,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.74 (P09 C): a chat branches off at one of Mara’s replies; the original stays unchanged.
   chat_branch_test=''
   if chat_branch_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/chat-branch-selftest.php" 2>&1)"; then
-    ok "$chat_branch_test"
+    ok 'Conversation branch self-test passed.'
   else
     fail "Chat branch-self-test: ${chat_branch_test:-Unknown error}"
   fi
@@ -1329,7 +1329,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.75 (P10 A): the preview of a web project in an origin of its own.
   project_preview_test=''
   if project_preview_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-preview-selftest.php" 2>&1)"; then
-    ok "$project_preview_test"
+    ok 'Project preview self-test passed.'
   else
     fail "Project preview-self-test: ${project_preview_test:-Unknown error}"
   fi
@@ -1337,14 +1337,14 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.77 (P10 B): commands on project files in the sandbox, and Mara’s [AUSFUEHREN:].
   project_runs_test=''
   if project_runs_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-runs-selftest.php" 2>&1)"; then
-    ok "$project_runs_test"
+    ok 'Project execution self-test passed.'
   else
     fail "Project runs-self-test: ${project_runs_test:-Unknown error}"
   fi
 
   project_procs_test=''
   if project_procs_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-procs-selftest.php" 2>&1)"; then
-    ok "$project_procs_test"
+    ok 'Project processes self-test passed.'
   else
     fail "Project processes-self-test: ${project_procs_test:-Unknown error}"
   fi
@@ -1352,7 +1352,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.91: Mara knows the project environment and runs processes and development servers herself.
   project_env_test=''
   if project_env_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-env-selftest.php" 2>&1)"; then
-    ok "$project_env_test"
+    ok 'Project development environment self-test passed.'
   else
     fail "Project environment self-test: ${project_env_test:-Unknown error}"
   fi
@@ -1360,7 +1360,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.
   project_vcs_test=''
   if project_vcs_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-vcs-selftest.php" 2>&1)"; then
-    ok "$project_vcs_test"
+    ok 'Project version history self-test passed.'
   else
     fail "Project versions-self-test: ${project_vcs_test:-Unknown error}"
   fi
@@ -1368,7 +1368,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.81 (P11 B): merging working states with conflicts, Mara with versions; the Git export with git where it exists.
   project_merge_test=''
   if project_merge_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/project-merge-selftest.php" 2>&1)"; then
-    ok "$project_merge_test"
+    ok 'Project merge self-test passed.'
   else
     fail "Merge-self-test: ${project_merge_test:-Unknown error}"
   fi
@@ -1376,7 +1376,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.82 (P11 C): the lifetime of the files Mara made: notes of deleted files, the retention, kept files.
   artifact_lifecycle_test=''
   if artifact_lifecycle_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/artifact-lifecycle-selftest.php" 2>&1)"; then
-    ok "$artifact_lifecycle_test"
+    ok 'Generated artifact lifecycle self-test passed.'
   else
     fail "Retention-self-test: ${artifact_lifecycle_test:-Unknown error}"
   fi
@@ -1384,7 +1384,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.83 (P12 A): the account's own skills: store, companion files, Mara’s library and loading.
   skill_packages_test=''
   if skill_packages_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/skill-packages-selftest.php" 2>&1)"; then
-    ok "$skill_packages_test"
+    ok 'Custom skill package self-test passed.'
   else
     fail "Own skills-self-test: ${skill_packages_test:-Unknown error}"
   fi
@@ -1392,7 +1392,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.84 (P12 B): shared skills, precedence and the skills fixed for a chat.
   skill_sharing_test=''
   if skill_sharing_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/skill-sharing-selftest.php" 2>&1)"; then
-    ok "$skill_sharing_test"
+    ok 'Shared skill permissions self-test passed.'
   else
     fail "Shared skills-self-test: ${skill_sharing_test:-Unknown error}"
   fi
@@ -1400,7 +1400,7 @@ if command -v php >/dev/null 2>&1; then
   # 0.7.90 (P13 A): fixed revisions of skills, restoring, export and import of packages.
   skill_revisions_test=''
   if skill_revisions_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/skill-revisions-selftest.php" 2>&1)"; then
-    ok "$skill_revisions_test"
+    ok 'Skill revisions self-test passed.'
   else
     fail "Skill revisions self-test: ${skill_revisions_test:-Unknown error}"
   fi
@@ -1410,7 +1410,7 @@ if command -v php >/dev/null 2>&1; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
       warn "$profile_reference_test"
     else
-      ok "$profile_reference_test"
+      ok 'Profile reference image self-test passed.'
     fi
   else
     fail "Profile reference-self-test: ${profile_reference_test:-Unknown error}"
@@ -1923,10 +1923,10 @@ if command -v php >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/account-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'Account: name, username, email, plan and creator profile verified in browser.'
       else
-        fail 'Konto: UI test failed.'
+        fail 'Account UI test failed.'
       fi
     else
-      ok 'Konto: UI test skipped (Playwright for Node.js is not installed).'
+      ok 'Account UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.5.83: update window (Inhaber) and "Bitte auf Neustart warten"; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
@@ -2020,7 +2020,7 @@ if command -v php >/dev/null 2>&1; then
   thinking_selftest=''
   if thinking_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/thinking-sanitize-selftest.php" 2>&1)"; then
     thinking_selftest="${thinking_selftest//$'\r'/}"
-    ok "$thinking_selftest"
+    ok 'Thinking settings self-test passed.'
   else
     thinking_selftest="${thinking_selftest//$'\r'/}"
     fail "$thinking_selftest"
@@ -2029,7 +2029,7 @@ if command -v php >/dev/null 2>&1; then
   reply_selftest=''
   if reply_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/reply-pipeline-selftest.php" 2>&1)"; then
     reply_selftest="${reply_selftest//$'\r'/}"
-    ok "$reply_selftest"
+    ok 'Reply pipeline self-test passed.'
   else
     reply_selftest="${reply_selftest//$'\r'/}"
     fail "$reply_selftest"
@@ -2038,7 +2038,7 @@ if command -v php >/dev/null 2>&1; then
   session_selftest=''
   if session_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/session-selftest.php" 2>&1)"; then
     session_selftest="${session_selftest//$'\r'/}"
-    ok "$session_selftest"
+    ok 'Chat sessions self-test passed.'
   else
     session_selftest="${session_selftest//$'\r'/}"
     fail "$session_selftest"
@@ -2047,13 +2047,13 @@ if command -v php >/dev/null 2>&1; then
 
   personal_selftest=''
   if personal_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/personalization-selftest.php" 2>&1)"; then
-    ok "$personal_selftest"
+    ok 'Personalization self-test passed.'
   else
     fail "$personal_selftest"
   fi
 
   if skills_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/skills-selftest.php" 2>&1)"; then
-    ok "$skills_selftest"
+    ok 'Skill library self-test passed.'
   else
     fail "$skills_selftest"
   fi
@@ -2061,7 +2061,7 @@ if command -v php >/dev/null 2>&1; then
   profile_knowledge_selftest=''
   if profile_knowledge_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/profile-knowledge-selftest.php" 2>&1)"; then
     profile_knowledge_selftest="${profile_knowledge_selftest//$'\r'/}"
-    ok "$profile_knowledge_selftest"
+    ok 'Profile and knowledge self-test passed.'
   else
     profile_knowledge_selftest="${profile_knowledge_selftest//$'\r'/}"
     fail "$profile_knowledge_selftest"
@@ -2070,7 +2070,7 @@ if command -v php >/dev/null 2>&1; then
   attachment_pipeline_selftest=''
   if attachment_pipeline_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/attachment-pipeline-selftest.php" 2>&1)"; then
     attachment_pipeline_selftest="${attachment_pipeline_selftest//$'\r'/}"
-    ok "$attachment_pipeline_selftest"
+    ok 'Attachment pipeline self-test passed.'
   else
     attachment_pipeline_selftest="${attachment_pipeline_selftest//$'\r'/}"
     fail "$attachment_pipeline_selftest"
@@ -2079,7 +2079,7 @@ if command -v php >/dev/null 2>&1; then
   python_worker_selftest=''
   if python_worker_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/python-worker-selftest.php" 2>&1)"; then
     python_worker_selftest="${python_worker_selftest//$'\r'/}"
-    ok "$python_worker_selftest"
+    ok 'Python worker self-test passed.'
   else
     python_worker_selftest="${python_worker_selftest//$'\r'/}"
     fail "$python_worker_selftest"
@@ -2088,7 +2088,7 @@ if command -v php >/dev/null 2>&1; then
   account_security_selftest=''
   if account_security_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/account-security-selftest.php" 2>&1)"; then
     account_security_selftest="${account_security_selftest//$'\r'/}"
-    ok "$account_security_selftest"
+    ok 'Account security self-test passed.'
   else
     account_security_selftest="${account_security_selftest//$'\r'/}"
     fail "$account_security_selftest"
@@ -2097,7 +2097,7 @@ if command -v php >/dev/null 2>&1; then
   logo_selftest=''
   if logo_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/logo-alpha-selftest.php" 2>&1)"; then
     logo_selftest="${logo_selftest//$'\r'/}"
-    ok "$logo_selftest"
+    ok 'Branding and logo self-test passed.'
   else
     logo_selftest="${logo_selftest//$'\r'/}"
     fail "$logo_selftest"
@@ -2106,7 +2106,7 @@ if command -v php >/dev/null 2>&1; then
   frontend_selftest=''
   if frontend_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/frontend-regression-selftest.php" 2>&1)"; then
     frontend_selftest="${frontend_selftest//$'\r'/}"
-    ok "$frontend_selftest"
+    ok 'Frontend regression self-test passed.'
   else
     frontend_selftest="${frontend_selftest//$'\r'/}"
     fail "$frontend_selftest"
@@ -2114,15 +2114,15 @@ if command -v php >/dev/null 2>&1; then
 
   md_preview_test=''
   if md_preview_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/markdown-preview-selftest.php" 2>&1)"; then
-    ok "$md_preview_test"
+    ok 'Markdown preview self-test passed.'
   else
-    fail "Markdown-Vorschau: ${md_preview_test:-Unknown error}"
+    fail "Markdown preview: ${md_preview_test:-Unknown error}"
   fi
 
   message_actions_selftest=''
   if message_actions_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/message-actions-selftest.php" 2>&1)"; then
     message_actions_selftest="${message_actions_selftest//$'\r'/}"
-    ok "$message_actions_selftest"
+    ok 'Message actions self-test passed.'
   else
     message_actions_selftest="${message_actions_selftest//$'\r'/}"
     fail "$message_actions_selftest"
@@ -2257,7 +2257,7 @@ if command -v php >/dev/null 2>&1; then
       ok "Ollama model available: $MODEL_NAME"
       model_audit=''
       if model_audit="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/model-live-audit.php" "$MODEL_NAME" 2>&1)"; then
-        ok "$model_audit"
+        ok 'Installed Ollama model configuration audit passed.'
       else
         fail "${model_audit:-Ollama Modelfile could not be verified.}"
       fi
@@ -2267,7 +2267,7 @@ if command -v php >/dev/null 2>&1; then
 
     generator_audit=''
     if generator_audit="$(python3 -I "$PROJECT_ROOT/scripts/ensure-generator-core.py" --check 2>&1)"; then
-      ok "$generator_audit"
+      ok 'TCI Core Generator audit passed.'
     else
       generator_code=$?
       if (( generator_code == 3 )); then
@@ -2356,7 +2356,7 @@ if command -v php >/dev/null 2>&1; then
   pdf_selftest=''
   if pdf_selftest="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/pdf-selftest.php" 2>&1)"; then
     pdf_selftest="${pdf_selftest//$'\r'/}"
-    ok "$pdf_selftest"
+    ok 'PDF processing self-test passed.'
   else
     pdf_selftest="${pdf_selftest//$'\r'/}"
     fail "$pdf_selftest"
