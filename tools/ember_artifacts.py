@@ -14,7 +14,6 @@ import stat
 from pathlib import Path
 from typing import Any
 
-MAX_FILES = 10
 MAX_FILE_BYTES = 25 * 1024 * 1024
 MAX_TOTAL_BYTES = 100 * 1024 * 1024
 MAX_ENTRIES = 256
@@ -109,10 +108,6 @@ def collect_outputs(output: str | Path, base: str | Path, job_id: int,
                     if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
                         warn("non_regular_or_link")
                         continue
-                    if len(result["files"]) >= MAX_FILES:
-                        warn("file_count_limit")
-                        stopped = True
-                        return
                     if before.st_size > MAX_FILE_BYTES:
                         warn("file_size_limit")
                         continue
@@ -252,7 +247,7 @@ def recover_workspace_outputs(workspace: str | Path, output: str | Path) -> int:
                 nonlocal copied, examined, total
                 with os.scandir(directory_fd) as entries:
                     for entry in entries:
-                        if copied >= MAX_FILES or examined >= MAX_ENTRIES:
+                        if examined >= MAX_ENTRIES:
                             return
                         examined += 1
                         name = entry.name
