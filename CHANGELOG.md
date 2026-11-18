@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.96 - 18.11.2026
+
+- **English-only terminal output:** Installer, migration and both Preflight variants now present CoreAI-authored operator status messages in English, independent from the application's UI language. Replaced raw selftest success stdout with explicit English pass labels after each real test completes.
+- **Migration output:** Removed the remaining German progress and completion messages emitted by `scripts/migrate.sh` during setup/update. Corrected a mixed-language installer status line and account/Markdown preview diagnostic prefixes in both Preflights.
+- **Guard against recurrence:** Expanded the existing `scripts/terminal-language-selftest.py` to catch unreviewed raw PHP/Python selftest success text as well as non-English migration messages. Both Preflights execute this check and the unconditional Preflight Sync GitHub workflow runs it on every PR.
+- **Permanent policy:** Documented the mandatory English CLI contract in `AGENTS.md`, `CLAUDE.md` and `docs/VERSIONING_POLICY.md`. All existing exit codes, security checks and test execution remain unchanged. Full host Preflight and owner updater still need live verification.
+
 ## 0.7.95 - 18.11.2026
 
 - **Preflight Sync Gate:** After every change, contributors must inspect both Compose and Native preflight requirements, synchronize affected test expectations and execute real offline regressions. The gate runs on every pull request regardless of changed paths and cannot substitute for a live host preflight.
