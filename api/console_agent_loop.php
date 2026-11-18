@@ -173,6 +173,30 @@ function coreui_agent_tool_result_state(array $tool, string $result): string {
   return 'success';
 }
 
+/**
+ * Public outcome of a confirmed tool return, with no raw stdout, source code
+ * or model-internal reasoning. Only facts established by the tool state are
+ * announced; the entire project is not declared finished by an exit code.
+ */
+function coreui_agent_public_result_note(array $tool, string $state): ?string {
+  $kind = (string)($tool['tool'] ?? '');
+  if ($state === 'error') {
+    return 'Der Werkzeugschritt ist fehlgeschlagen. Ich werte den Fehler aus, bevor ich eine Korrektur versuche.';
+  }
+  if ($state === 'info' && in_array($kind, ['pserver_start','pproc_start','pserver_fetch'], true)) {
+    return 'Das Werkzeug hat den angeforderten Prozess oder Server noch nicht als erfolgreich bestätigt. Ich prüfe den tatsächlichen Zustand.';
+  }
+  if ($state !== 'success') return null;
+  return match ($kind) {
+    'prun' => 'Der ausgeführte Befehl endete mit Exitcode 0. Ich prüfe, ob damit alle Anforderungen erfüllt sind.',
+    'pserver_start' => 'Der Entwicklungsserver wurde gestartet und war beim HTTP-Test erreichbar. Ich überprüfe anschließend seine Ausgabe.',
+    'pserver_fetch' => 'Der Server hat einen erfolgreichen HTTP-Status geliefert. Ich werte die erhaltene Antwort aus.',
+    'pproc_start' => 'Der Prozess wurde gestartet. Sein späteres Ergebnis muss ich gesondert prüfen.',
+    'pproc_stop' => 'Die Anforderung zum Beenden des Prozesses wurde verarbeitet.',
+    default => null,
+  };
+}
+
 /** Label of a step inside the next prompt (pure); the prompt numbers the steps itself. */
 function coreui_agent_step_label(array $tool, int $step, int $max, string $state = 'success'): string {
   $input = (string)$tool['input'];
@@ -409,6 +433,11 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $state = coreui_agent_tool_result_state($tool, $result);
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
       'reason'=>$state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state]);
+    if ($projectWorkflow) {
+      $outcomeNote = coreui_agent_public_result_note($tool, $state);
+      if ($outcomeNote !== null) $record('commentary','info','Mara ordnet das Werkzeugergebnis ein',
+        ['public_note'=>$outcomeNote,'source'=>'verified_tool_result']);
+    }
     $steps[] = ['label'=>coreui_agent_step_label($tool, $used, $maxSteps, $state),
       'result'=>$result,'state'=>$state];
     // Repeating the same unsuccessful command with the same response cannot
