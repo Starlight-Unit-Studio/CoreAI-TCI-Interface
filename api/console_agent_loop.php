@@ -273,7 +273,8 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
     . "(z.B. eigener Internetauftritt, Funktion, Ort und Zeitpunkt). Erfinde keine Biografien, "
     . "keine historischen Archive und keine Zitate. Ordne jede konkrete Behauptung einer "
     . "wirklich vorhandenen Quelle zu; sonst benenne die Unsicherheit.\n"
-    . ($max > 0 ? 'Du hast ' . $used . ' von ' . $max . " Arbeitsschritten genutzt.\n"\n      : 'Du hast bisher ' . $used . " Arbeitsschritte genutzt. Setze den Projektauftrag ohne Nutzer-Nachricht fort, bis er wirklich verifiziert ist.\n")
+    . ($max > 0 ? 'Du hast ' . $used . ' von ' . $max . " Arbeitsschritten genutzt.\n"
+      : 'Du hast bisher ' . $used . " Arbeitsschritte genutzt. Setze den Projektauftrag ohne Nutzer-Nachricht fort, bis er wirklich verifiziert ist.\n")
     . ($last
       ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
         . "Sag offen, was offen geblieben ist.\n"
