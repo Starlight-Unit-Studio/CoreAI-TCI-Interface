@@ -1,0 +1,42 @@
+name: Preflight Sync Gate
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  preflight-sync-gate:
+    name: preflight-sync-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, zip, curl, gd
+          coverage: none
+      - name: Verify both release preflight variants and test registration
+        run: |
+          set -eu
+          bash -n scripts/preflight.sh scripts/preflight-native.sh
+          python3 -m py_compile scripts/preflight-sync-selftest.py
+          python3 scripts/preflight-sync-selftest.py
+      - name: PHP syntax of plan build and workflow regression contracts
+        run: |
+          set -eu
+          for file in api/console_native_tools.php api/console_build_intent.php api/console_data_link_bridge.php \
+            scripts/model-project-intent-selftest.php scripts/contextual-project-selftest.php \
+            scripts/native-tools-selftest.php scripts/plan-autocontinue-selftest.php \
+            scripts/agent-loop-selftest.php scripts/project-files-selftest.php \
+            scripts/project-env-selftest.php; do
+            php -l "$file"
+          done
+      - name: Offline preflight regression suite (no production database)
+        run: |
+          set -eu
+          php scripts/model-project-intent-selftest.php
+          php scripts/contextual-project-selftest.php
+          php scripts/native-tools-selftest.php
+          php scripts/plan-autocontinue-selftest.php
+          php scripts/agent-loop-selftest.php
+          php scripts/project-files-selftest.php
+          php scripts/project-env-selftest.php
