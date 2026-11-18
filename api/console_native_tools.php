@@ -457,15 +457,15 @@ function coreui_native_tool_repair_prompt(string $shape, string $previous, bool 
   $resume = coreui_native_plan_continue_marker_attempt($previous)
     && preg_match_all('~(?mi)^[ \\t]*\\[(?:COREUI[/_][A-Z_]+)\\][ \\t]*$~', $previous) === 1;
   $example = $resume
-    ? "[COREUI_PLAN_CONTINUE]\\nGespeicherten Entwurf fortsetzen.\\n[/COREUI_PLAN_CONTINUE]\\n"
-    : "[COREUI_PLAN_SAVE]\\n# Titel\\n## Abschnitt\\n- Anforderungen und Abnahmekriterien konkret beschreiben.\\n[/COREUI_PLAN_SAVE]\\n";
+    ? "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen.\n[/COREUI_PLAN_CONTINUE]\n"
+    : "[COREUI_PLAN_SAVE]\n# Titel\n## Abschnitt\n- Anforderungen und Abnahmekriterien konkret beschreiben.\n[/COREUI_PLAN_SAVE]\n";
   $prompt = "\n\n[COREUI WERKZEUGKORREKTUR]\nDeine letzte Antwort wollte ein CoreAI-Werkzeug "
     . "nutzen, war aber nicht sicher lesbar. Grund: " . $why . "\n"
     . "Triff deine Entscheidung jetzt erneut. Antworte ENTWEDER normal ohne jeden COREUI-Marker "
     . "ODER ausschliesslich mit genau EINEM vollstaendigen Block, erste Zeile der oeffnende, "
     . "letzte Zeile der passende schliessende Marker, zum Beispiel:\n"
     . $example
-    . ($resume ? "Verwende den bereits gespeicherten Entwurf. Starte keinen neuen PLAN_SAVE-Block.\\n" : '')
+    . ($resume ? "Verwende den bereits gespeicherten Entwurf. Starte keinen neuen PLAN_SAVE-Block.\n" : '')
     . "Erlaubte Werkzeuge: PLAN_SAVE, PLAN_APPEND, PLAN_CONTINUE, PLAN_AND_BUILD, PROJECT_BUILD. "
     . "Kein Codeblock und kein zweiter Block.\n";
   $previous = trim($previous);
