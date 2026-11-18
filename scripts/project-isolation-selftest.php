@@ -36,6 +36,19 @@ $st->execute([3,'console',9,'cs_proj_c1','Someone','person','OtherAccount Secret
 project_assert(coreui_project_session_scope($pdo,7,'cs_proj_a1')['mode']==='isolated','isolation flag');
 project_assert(coreui_project_session_scope($pdo,7,'cs_proj_b1')['mode']==='open','standard mode');
 project_assert(coreui_project_session_scope($pdo,7,'cs_proj_c1')['available']===false,'cross-account session denied');
+$updated=coreui_project_update($pdo,7,$b,'Test B','', 'Game');
+project_assert($updated['description']==='Game','description persisted separately from instructions');
+project_assert($updated['instructions_md']==='','description did not modify AI instructions');
+$list=coreui_project_list($pdo,7);
+project_assert(count(array_filter($list,static fn(array $item): bool => ($item['id'] ?? '')===$b && ($item['description'] ?? '')==='Game'))===1,
+  'description appears in the owner-scoped project list');
+try {
+  coreui_project_update($pdo,7,$c,'Cross-account','', 'Forbidden');
+  project_assert(false,'cross-account description edit must be denied');
+} catch (RuntimeException $e) {
+  project_assert($e->getMessage()==='project_not_found','cross-account description edit remains blocked');
+}
+
 $ctx=coreui_project_context_block($pdo,7,'cs_proj_a1');
 project_assert(str_contains($ctx,'AlphaProject ChatFact'),'same-project chat visible');
 project_assert(!str_contains($ctx,'OtherProject') && !str_contains($ctx,'OtherAccount'),'other chats excluded');
