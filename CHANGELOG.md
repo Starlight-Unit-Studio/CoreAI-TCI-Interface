@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.88 - 18.11.2026
+
+- **Terminal-only English output:** Completed the translation of operator-facing installer and preflight messages, including the remaining lock-namespace failure, `stack.sh`, MariaDB migrations, host-update diagnostics, manual updates, swap helpers, Ollama report, Python-worker entrypoint and uninstall. Commands, environment variables, installer paths and data-retention safeguards remain unchanged.
+- **Safety confirmation:** The interactive uninstall confirmation phrases now use English; the destructive purge still requires an exact confirmation, and the existing safety regression was updated to check the English phrase. The browser-triggered uninstall remains archive-only.
+- **Revert unintended UI override:** Restored `js/coreui-update.js`, the update Settings card and the existing update UI test to their pre-0.7.87 content instead of forcing the golden update window to English. Reverted the two always-English UI regression checks. The app's separate DE/EN language preference logic is left untouched.
+- **Prevent repeat regressions:** The installer CI now checks Bash syntax for operator scripts, the uninstall and host-swap safety suites, and a static English-terminal-output guard. No changes to local Cores, model prompts or database schema.
+
 ## 0.7.87 - 17.11.2026
 
 - **Installer regression hotfix:** Fixed the offline voice-service self-test still expecting the old German optional-build warning after the 0.7.86 installer translated it to English. The test now recognizes the actual English warning without changing optional voice behavior.
