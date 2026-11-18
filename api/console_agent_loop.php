@@ -318,7 +318,7 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
       : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
         . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
         . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
-        . "Du kannst direkt davor eine kurze, selbst verfasste und ausdruecklich oeffentliche Fortschrittsnotiz schreiben: "
+        . "Bei laengeren Projektauftraegen SOLLST du vor dem naechsten Werkzeugmarker in einer kurzen, ausdruecklich oeffentlichen Fortschrittsnotiz erklaeren, was das bestaetigte Ergebnis bedeutet und was du als Naechstes tust: "
         . "[COREUI_PUBLIC_PROGRESS]Ich habe die bisher bestaetigten Ergebnisse geprueft und kontrolliere nun die naechste Projektdatei.[/COREUI_PUBLIC_PROGRESS] "
         . "Danach folgt in einer NEUEN Zeile der einzelne Werkzeugmarker. Nenne nur gepruefte Ergebnisse und deinen naechsten Arbeitsschritt; "
         . "kein privates Reasoning, keine geheimen Daten, keine erfundenen Erfolge. Ohne Notiz bleibt das Markerformat unveraendert.\n"
@@ -375,7 +375,7 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     . "mit [PY] rechnen" . ($archive ? ', mit [ARCHIV: Stichworte] in der Mitschrift dieses Chats nachsehen' : '') . "). "
     . "Suchtreffer sind keine gelesenen Webseiten; Namensgleiche nicht ohne belegte Verbindung verwechseln. "
     . "Fuer Projektauftraege mache die notwendigen, bestaetigten Arbeitsschritte eigenstaendig weiter, ohne nach jeder Datei auf 'continue' zu warten. "
-    . "Erklaere vor einem Projekt-Werkzeugmarker optional in einer eigenen oeffentlichen Notiz deinen naechsten Schritt: "
+    . "In laengeren Projektauftraegen erklaere regelmaessig in einer eigenen oeffentlichen Notiz den bestaetigten Befund und den naechsten Schritt vor einem Werkzeugmarker: "
     . "[COREUI_PUBLIC_PROGRESS]Ich habe die Ergebnisse geprueft und bearbeite nun die naechste Datei.[/COREUI_PUBLIC_PROGRESS] "
     . "Danach folgt auf einer neuen Zeile nur der Werkzeugmarker. Nur bestaetigte Ergebnisse nennen, nie private Gedanken, Geheimnisse oder imaginierte Arbeit. "
     . "Ein Befehl, HTTP-Abruf oder Dateischritt gilt nur mit echtem Werkzeugergebnis als gelungen. Fuer Smalltalk, Meinungen und sicheres Wissen brauchst du keine Werkzeuge.";
