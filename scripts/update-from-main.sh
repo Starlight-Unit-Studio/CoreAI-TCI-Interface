@@ -29,7 +29,7 @@ git clone --quiet --depth 1 --single-branch --branch main -- "$REPOSITORY" "$TMP
   || die 'Unable to download from GitHub. The existing installation remains unchanged.'
 SOURCE="$TMP_DIR/source"
 COMMIT="$(git -C "$SOURCE" rev-parse --verify HEAD)"
-[[ "$COMMIT" =~ ^[a-f0-9]{40}$ ]] || die 'Ungueltiger Git-Commit.'
+[[ "$COMMIT" =~ ^[a-f0-9]{40}$ ]] || die 'Invalid Git commit.'
 for file in VERSION app.html compose.yaml scripts/install.sh scripts/preflight.sh \
     api/console_artifacts.php api/console_artifact.php \
     api/console_data_link_bridge.php database/migrations/011_console_artifacts.sql; do
