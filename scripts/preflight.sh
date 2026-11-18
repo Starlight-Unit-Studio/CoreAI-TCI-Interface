@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.89: test results of P12 B recorded after its merge.
+# CoreAI: TCI Interface 0.7.90: fixed revisions of skills, comparison, restoring, packages (P13 A).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -269,6 +269,10 @@ UI_FILES=(
   css/coreui-chat-skills.css
   scripts/skill-sharing-selftest.php
   scripts/skill-sharing-ui-selftest.cjs
+  database/migrations/054_skill_revisions.sql
+  api/skill_revisions_store.php
+  scripts/skill-revisions-selftest.php
+  scripts/skill-revisions-ui-selftest.cjs
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
@@ -1588,6 +1592,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Shared skills-self-test: ${skill_sharing_test:-Unknown error}"
   fi
 
+  # 0.7.90 (P13 A): fixed revisions of skills, restoring, export and import of packages.
+  skill_revisions_test=''
+  if skill_revisions_test="$(compose exec -T php php scripts/skill-revisions-selftest.php 2>&1)"; then
+    ok "$skill_revisions_test"
+  else
+    fail "Skill revisions self-test: ${skill_revisions_test:-Unknown error}"
+  fi
+
   profile_reference_test=''
   if profile_reference_test="$(compose exec -T php php scripts/profile-reference-selftest.php 2>&1)"; then
     if [[ "$profile_reference_test" == PARTIAL:* ]]; then
@@ -2026,6 +2038,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Merge: UI test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.7.90 (P13 A): history, comparison, restoring, conflicts, export and import in Settings > Skills.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/skill-revisions-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Skills: history, comparison, restoring, conflicts, export and import verified in browser.'
+      else
+        fail 'Skill revisions: UI test failed.'
+      fi
+    else
+      warn 'Skill revisions: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.84 (P12 B): Gemeinsam, precedence, sharing, and "Skills für diesen Chat" in the + menu.
     if node -e "require('playwright')" >/dev/null 2>&1; then

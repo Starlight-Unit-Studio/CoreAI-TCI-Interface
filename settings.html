@@ -6,7 +6,7 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.7.89" />
+  <meta name="application-version" content="0.7.90" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
@@ -16,11 +16,11 @@
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=1183734819028702551490676" />
   <link rel="stylesheet" href="./css/coreui-settings-theme.css?v=1142906450847234350551167" />
-  <script src="./js/console-gate.js?v=1138583022987583957907130"></script>
+  <script src="./js/console-gate.js?v=0651914905710192147071600"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="./css/coreui-softglass.css?v=0628592918051344087306671" />
-  <link rel="stylesheet" href="./css/coreui-skills-settings.css?v=0660538258764134128739149" />
+  <link rel="stylesheet" href="./css/coreui-skills-settings.css?v=0460716281769593269690612" />
 </head>
 <body class="settings-body">
   <svg class="cfg-sprite" aria-hidden="true" focusable="false">
@@ -101,7 +101,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.89</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.7.90</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -827,9 +827,15 @@
         <section class="cfg-view" id="view-skills" role="tabpanel" aria-labelledby="tab-skills" tabindex="-1" hidden>
           <header class="cfg-view-head">
             <div><span class="cfg-kicker">COREAI // SKILLS</span><h2>Skills</h2><p>Arbeitsanleitungen, die Mara bei passenden Aufträgen selbst lädt: deine eigenen mit Referenzen, Vorlagen, Skripten und Daten, gemeinsame und die mitgelieferten. Welche ein Chat immer nutzt, legst du im Chat über „+“ fest.</p></div>
-            <button class="settings-action" id="skNew" type="button">NEUER SKILL</button>
+            <div class="sk-head-actions">
+              <!-- 0.7.90 (P13 A): a skill package (ZIP with SKILL.md) comes in here. -->
+              <button class="settings-action" id="skImport" type="button">IMPORTIEREN</button>
+              <input id="skImportFile" type="file" accept=".zip,application/zip" hidden />
+              <button class="settings-action" id="skNew" type="button">NEUER SKILL</button>
+            </div>
           </header>
           <p class="sec-status" id="skStatus" role="status" aria-live="polite">Skills werden geladen …</p>
+          <div class="sk-import-box" id="skImportBox" hidden></div>
           <div class="sk-main" id="skMain" hidden>
             <label class="st-search sk-search" for="skSearch"><svg aria-hidden="true"><use href="#i-search" /></svg><span class="visually-hidden">Skills durchsuchen</span><input id="skSearch" type="search" placeholder="Skills durchsuchen" autocomplete="off" maxlength="80" /></label>
             <h3 class="sec-heading">Deine Skills</h3>
@@ -1837,7 +1843,7 @@
   <script src="./js/coreui-recordings.js?v=1017337787241714945048880"></script>
   <script src="./js/coreui-voice-settings.js?v=0153288903194027999711245"></script>
   <script src="./js/coreui-storage-settings.js?v=0671440510981101533915395"></script>
-  <script src="./js/coreui-skills-settings.js?v=0522495968769626880186282"></script>
+  <script src="./js/coreui-skills-settings.js?v=0259624619577888752725163"></script>
   <script src="./js/coreui-keyboard-settings.js?v=0462958741389577493789578"></script>
   <script src="./js/coreui-usage-settings.js?v=0648388245073259716193645"></script>
   <script src="./js/coreui-data-controls.js?v=1166361519104893881241691"></script>

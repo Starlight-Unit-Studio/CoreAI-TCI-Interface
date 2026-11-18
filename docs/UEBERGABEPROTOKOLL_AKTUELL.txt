@@ -1,4 +1,16 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Version main: 0.7.89, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.90).
+ZIEL 0.7.90: Roadmap P13 Schritt A (CF-045, CF-046), feste Revisionen
+jeder Skill-Aenderung samt Dateien, Verlauf, Vergleich, Wiederherstellen,
+kein unbemerktes Ueberschreiben, Export und Import als ZIP mit SKILL.md.
+Migration 054_skill_revisions.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_90.txt.
+Naechster Schritt: P13 B (Rechte, Verbesserungsvorschlaege von Mara).
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.91.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Version main: 0.7.88, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.89).
 ZIEL 0.7.89: Testergebnisse von 0.7.84 (P12 B) nachgetragen, nachdem PR
 #340 vor dem Ende der Tests gemergt worden war (auf main 0.7.88: keine

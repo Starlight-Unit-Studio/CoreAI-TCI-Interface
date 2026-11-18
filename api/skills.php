@@ -391,7 +391,9 @@ function coreui_skills_prepare(PDO $pdo, string $request, string $channel = 'con
   $selected = array_slice($selected, 0, max(count($pinned), min(4, $maxOptional)));
   foreach ($selected as $id) {
     if (function_exists('coreui_work_record')) {
-      coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id]);
+      // 0.7.90 (P13 A): an own skill names the revision this turn uses (the title stays for the statistics).
+      $revision = (int)(coreui_skills_own()[$id]['revision'] ?? 0);
+      coreui_work_record($pdo, 'tool', 'info', 'Skill geladen: ' . $id, ['source'=>$id] + ($revision > 0 ? ['revision'=>$revision] : []));
     }
   }
   $GLOBALS['COREUI_SKILLS_LOADED'] = $selected;

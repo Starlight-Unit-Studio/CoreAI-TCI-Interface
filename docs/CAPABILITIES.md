@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.89. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.7.90. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 Mara's OpenPet v2 chat Pet uses separate animation states for working, tool-waiting, reviewing, completing, errors, waving and dragging, plus idle gaze poses. Touch controls support tapping, double-tapping and dragging; legacy Pets remain compatible.
 
@@ -58,6 +58,9 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Give each own skill a precedence (High, Normal or Low): when more skills fit a request than the context window takes, the higher precedence loads first. Naming a skill with `/skill short-name` still comes before everything.
 - The owner and admins can share their own skills with every account (never a project skill). Every signed-in account sees them under **Settings > Skills > Shared** with who shared them, can read them as text and switch each one off for itself; guests get none, and a skill disappears when its owner is no longer owner or admin. When two skills share a short name, a project skill serves first, then your own, then a shared one (higher precedence, then the older one), and the page says which one serves instead.
 - **Skills for this chat** in the **+** menu of the input field fixes up to three skills for one chat: your own, project, shared or built-in ones, and for a short name that exists more than once exactly one variant. Mara always has them in that chat and uses exactly that variant, as many as the context window takes (she is told about the rest); they show above the input field and can be removed there. **Let Mara choose** clears the choice; a fixed skill that was deleted meanwhile is named and dropped on the next save.
+- Every change of an own skill (saving it, a companion file, restoring, importing) is kept as a fixed revision with all its files. **History** in the skill editor shows who changed what and when, **Compare** shows any two revisions line by line, and **Restore** brings an earlier revision back as a new revision on top, so nothing is lost (the last 100 revisions are kept). A save after someone else's change is refused with a notice: the text stays in the editor, and the person can compare it with the newer revision, save anyway or reload.
+- **Export** downloads a skill, or one of its revisions, as a ZIP with `SKILL.md` (front matter with name, title, description, triggers, requires and priority, then the instruction) and its companion files. **Import** takes such a package, including the plain `SKILL.md` format with only a name and a description: as a new skill, as a new revision of your own skill with the same short name, or under another short name. Packages with paths that leave the package, links, binary or oversized files are refused and nothing changes; files outside the four folders are skipped and named.
+- When Mara uses one of your own skills, the work view records its revision, and a change made during her turn does not reach that turn.
 - Use observable plan, build and work-event steps without pretending that a named Skill automatically installs its own executable program.
 
 ### 4. Projects, sources and memory
@@ -143,7 +146,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 | Topic | Source of truth |
 | --- | --- |
 | Conversation and tool loop | [chat.php](../api/chat.php), [console_agent_loop.php](../api/console_agent_loop.php), [console_work_store.php](../api/console_work_store.php) |
-| Skills and generated work | [skills.php](../api/skills.php), [skill_packages_store.php](../api/skill_packages_store.php), [skill_packages.php](../api/skill_packages.php), [console_native_tools.php](../api/console_native_tools.php), [console_artifact_store.php](../api/console_artifact_store.php) |
+| Skills and generated work | [skills.php](../api/skills.php), [skill_packages_store.php](../api/skill_packages_store.php), [skill_packages.php](../api/skill_packages.php), [skill_revisions_store.php](../api/skill_revisions_store.php), [console_native_tools.php](../api/console_native_tools.php), [console_artifact_store.php](../api/console_artifact_store.php) |
 | Research | [console_web_research.php](../api/console_web_research.php), [coreai_deep_research.py](../tools/coreai_deep_research.py), [Hybrid architecture](DEEP_RESEARCH_HYBRID_ARCHITECTURE.md) |
 | Projects and files | [console_project_store.php](../api/console_project_store.php), [project_files_store.php](../api/project_files_store.php) |
 | Models and permissions | [core_tier_variants.php](../api/core_tier_variants.php), [model_catalog.php](../api/model_catalog.php), [user_settings.php](../api/user_settings.php) |
