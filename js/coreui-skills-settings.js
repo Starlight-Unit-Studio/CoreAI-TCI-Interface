@@ -39,12 +39,29 @@
     csrf_failed: 'Die Sitzung wurde erneuert. Bitte die Seite neu laden.',
     skill_share_forbidden: 'Nur der Inhaber und Admins können Skills mit allen Konten teilen.',
     skill_share_project: 'Ein Projekt-Skill lässt sich nicht teilen.',
-    invalid_skill_priority: 'Unbekannter Vorrang.'
+    invalid_skill_priority: 'Unbekannter Vorrang.',
+    // 0.7.90 (P13 A): revisions and packages.
+    skill_conflict: 'Jemand hat diesen Skill inzwischen geändert.',
+    skill_revision_not_found: 'Diese Revision gibt es nicht mehr.',
+    invalid_skill_revision: 'Unbekannte Revision.',
+    skill_revision_damaged: 'Diese Revision ist beschädigt.',
+    skill_package_missing: 'Bitte eine ZIP-Datei wählen.',
+    skill_package_invalid: 'Das ist kein gültiges Skill-Paket.',
+    skill_package_too_large: 'Das Paket ist zu groß (höchstens 2 MB, 100 Einträge, 1 MB entpackt).',
+    skill_package_unsafe: 'Das Paket enthält einen Pfad, der aus dem Paket herausführt, oder einen Link. Es wurde nichts übernommen.',
+    skill_package_no_skill_md: 'Im Paket fehlt die Datei SKILL.md.',
+    skill_package_bad_skill_md: 'Der Kopf der SKILL.md ist fehlerhaft (zwischen den Linien mit ---).',
+    skill_package_format: 'Das Paket stammt aus einer neueren CoreAI-Version.',
+    invalid_skill_import_mode: 'Unbekannte Import-Art.',
+    zip_unavailable: 'Auf dem Server fehlt die ZIP-Unterstützung.'
   };
+  var SKIP = {outside_folders: 'außerhalb der vier Ordner', outside_skill: 'außerhalb des Skill-Ordners', invalid_skill_path: 'ungültiger Dateiname'};
+  var FIELD = {slug: 'Kennung', title: 'Name', description: 'Beschreibung', triggers: 'Auslöser', requires_tools: 'Voraussetzungen',
+    requires: 'Voraussetzungen', priority: 'Vorrang', project_id: 'Gilt für', enabled: 'Aktiv', shared: 'Geteilt'};
   // 0.7.84 (P12 B): precedence of a skill.
   var PRIORITY = {high: 'Hoch', normal: 'Normal', low: 'Niedrig'};
   var state = {csrf: '', ready: true, skills: [], builtin: [], projects: [], tools: {}, q: '', edit: null, file: null, busy: false,
-    loaded: false, searchTimer: 0, sharing: false, canShare: false, shared: []};
+    loaded: false, searchTimer: 0, sharing: false, canShare: false, shared: [], conflict: null, revisions: {}};
 
   function el(tag, cls, text) {
     var node = document.createElement(tag);
@@ -54,7 +71,8 @@
   }
   function errText(err) {
     var code = err && err.message || '';
-    return ERRORS[code] || 'Das hat nicht geklappt (' + (code || 'unbekannter Fehler') + ').';
+    var text = ERRORS[code] || 'Das hat nicht geklappt (' + (code || 'unbekannter Fehler') + ').';
+    return err && err.data && err.data.path ? text + ' (' + err.data.path + ')' : text;
   }
   function status(text, error) {
     var s = $('skStatus');
@@ -72,7 +90,11 @@
     }
     return fetch(url, opts).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
-        if (!r.ok || !d || d.ok !== true) throw new Error((d && d.error) || ('http_' + r.status));
+        if (!r.ok || !d || d.ok !== true) {
+          var err = new Error((d && d.error) || ('http_' + r.status));
+          err.data = d || {};
+          throw err;
+        }
         if (d.csrf_token) state.csrf = d.csrf_token;
         return d;
       });
@@ -87,6 +109,7 @@
       if (!state.ready) { status(ERRORS.skill_migration_required, true); $('skMain').hidden = true; $('skNew').disabled = true; return; }
       state.skills = d.skills || []; state.builtin = d.builtin || []; state.projects = d.projects || []; state.tools = d.tools || {};
       state.sharing = d.sharing === true; state.canShare = d.can_share === true; state.shared = d.shared || [];
+      state.revisionsReady = d.revisions === true;
       status(note || '');
       $('skMain').hidden = !!state.edit;
       renderList();
@@ -260,6 +283,307 @@
     box.appendChild(panel);
   }
 
+  // --- Revisions (0.7.90, P13 A) ------------------------------------------------------------------------
+  function lines(text) { return !text ? [] : String(text).replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n'); }
+  /** Myers' shortest edit between two lists of lines, as + / - / ' ' steps; null when too large. */
+  function diffLines(a, b) {
+    var n = a.length, m = b.length, max = n + m;
+    if (max > 4000) return null;
+    var v = {1: 0}, trace = [], d, k, x, y;
+    outer:
+    for (d = 0; d <= max; d++) {
+      trace.push(Object.assign({}, v));
+      for (k = -d; k <= d; k += 2) {
+        x = (k === -d || (k !== d && v[k - 1] < v[k + 1])) ? v[k + 1] : v[k - 1] + 1;
+        y = x - k;
+        while (x < n && y < m && a[x] === b[y]) { x++; y++; }
+        v[k] = x;
+        if (x >= n && y >= m) break outer;
+      }
+    }
+    var ops = [];
+    x = n; y = m;
+    for (d = trace.length - 1; d >= 0; d--) {
+      var vd = trace[d];
+      k = x - y;
+      var prevK = (k === -d || (k !== d && vd[k - 1] < vd[k + 1])) ? k + 1 : k - 1;
+      var prevX = vd[prevK], prevY = prevX - prevK;
+      while (x > prevX && y > prevY) { ops.push({t: ' ', text: a[x - 1]}); x--; y--; }
+      if (d > 0) {
+        if (x === prevX) ops.push({t: '+', text: b[y - 1]});
+        else ops.push({t: '-', text: a[x - 1]});
+      }
+      x = prevX; y = prevY;
+    }
+    return ops.reverse();
+  }
+  function diffBox(before, after) {
+    var box = el('div', 'sk-diff');
+    var ops = diffLines(lines(before), lines(after));
+    if (ops === null) { box.appendChild(el('p', 'sk-empty', 'Zu groß für einen Zeilenvergleich.')); return box; }
+    if (!ops.some(function (o) { return o.t !== ' '; })) { box.appendChild(el('p', 'sk-empty', 'Keine Änderung.')); return box; }
+    ops.forEach(function (o) {
+      box.appendChild(el('div', 'sk-diff-line' + (o.t === '+' ? ' is-add' : o.t === '-' ? ' is-del' : ''), (o.t === ' ' ? '  ' : o.t + ' ') + o.text));
+    });
+    return box;
+  }
+  function changeSummary(ch) {
+    var fields = (ch.fields || []).map(function (f) { return FIELD[f] || f; });
+    if (ch.body) fields.push('Anleitung');
+    var parts = fields.length ? ['Geändert: ' + fields.join(', ')] : [];
+    var f = ch.files || {}, bits = [];
+    if (f.added && f.added.length) bits.push(f.added.length + ' neu');
+    if (f.changed && f.changed.length) bits.push(f.changed.length + ' geändert');
+    if (f.removed && f.removed.length) bits.push(f.removed.length + ' entfernt');
+    if (bits.length) parts.push('Dateien: ' + bits.join(', '));
+    return parts.join(' · ');
+  }
+  function when(ts) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(ts || '');
+    return m ? m[3] + '.' + m[2] + '.' + m[1] + ', ' + m[4] + ':' + m[5] : String(ts || '');
+  }
+  function fetchRevision(id, rev) {
+    var key = id + '@' + rev;
+    if (state.revisions[key]) return Promise.resolve(state.revisions[key]);
+    return request('GET', 'revision', '&id=' + encodeURIComponent(id) + '&rev=' + encodeURIComponent(rev)).then(function (d) {
+      state.revisions[key] = d.revision;
+      return d.revision;
+    });
+  }
+  function exportLink(id, rev, label) {
+    var a = el('a', 'settings-action sk-small', label);
+    a.href = API + '?action=export&id=' + encodeURIComponent(id) + (rev ? '&rev=' + encodeURIComponent(rev) : '');
+    // No download attribute: the server sends the file as an attachment with its name (wochenbericht.zip);
+    // with the attribute, the browser would name it after the address instead.
+    return a;
+  }
+  function subPage(label, onBack, heading) {
+    var box = $('skEdit');
+    box.textContent = '';
+    box.hidden = false;
+    $('skMain').hidden = true;
+    var bar = el('div', 'pz-sub-bar');
+    var back = el('button', 'sec-back', '');
+    back.type = 'button'; back.id = 'skBack';
+    back.innerHTML = '<svg aria-hidden="true"><use href="#i-back" /></svg>';
+    back.appendChild(document.createTextNode(label));
+    back.addEventListener('click', onBack);
+    bar.appendChild(back);
+    box.appendChild(bar);
+    box.appendChild(el('h3', 'sk-edit-title', heading));
+    return box;
+  }
+  function renderHistory() {
+    var sk = state.edit;
+    var box = subPage(sk.title, function () { renderEdit(); }, 'Verlauf von „' + sk.title + '“');
+    var panel = el('section', 'settings-panel cfg-card wide sk-form sk-history');
+    panel.id = 'skHistoryPanel';
+    panel.appendChild(el('p', 'sk-empty', 'Wird geladen …'));
+    box.appendChild(panel);
+    request('GET', 'history', '&id=' + encodeURIComponent(sk.id)).then(function (d) {
+      state.history = d;
+      panel.textContent = '';
+      panel.appendChild(el('p', 'pz-lead', 'Jede Änderung ist eine feste Revision. Wiederherstellen legt eine neue Revision obendrauf, '
+        + 'nichts geht verloren. Es bleiben die letzten ' + d.keep + '.'));
+      if (!d.revisions.length) { panel.appendChild(el('p', 'sk-empty', 'Noch keine Revisionen. Die erste entsteht beim nächsten Speichern.')); return; }
+      var have = d.revisions.map(function (r) { return r.rev; });
+      d.revisions.forEach(function (r) {
+        var row = el('div', 'sec-row sk-rev-row' + (r.current ? ' is-current' : ''));
+        row.setAttribute('data-rev', r.rev);
+        var copy = el('div', 'sec-copy');
+        copy.appendChild(el('strong', '', 'Revision ' + r.rev + ' · ' + r.label + (r.current ? ' · aktuell' : '')));
+        copy.appendChild(el('small', '', 'von ' + r.by + ' · ' + when(r.created_at)));
+        var detail = [r.note, changeSummary(r.changes)].filter(Boolean).join(' · ');
+        if (detail) copy.appendChild(el('small', 'sk-desc', detail));
+        row.appendChild(copy);
+        var tools = el('div', 'sk-file-actions');
+        if (have.indexOf(r.rev - 1) >= 0) {
+          var cmp = el('button', 'settings-action sk-small', 'VERGLEICHEN'); cmp.type = 'button';
+          cmp.addEventListener('click', function () { renderCompare(r.rev - 1, r.rev); });
+          tools.appendChild(cmp);
+        }
+        tools.appendChild(exportLink(sk.id, r.rev, 'ZIP'));
+        if (!r.current) {
+          var back = el('button', 'settings-action sk-small', 'WIEDERHERSTELLEN'); back.type = 'button';
+          back.addEventListener('click', function () {
+            if (!window.confirm('Revision ' + r.rev + ' wiederherstellen? Sie kommt als neue Revision obendrauf; alle anderen bleiben.')) return;
+            request('POST', 'restore', '', {id: sk.id, rev: r.rev, base_revision: d.revision}).then(function (res) {
+              state.edit = res.skill; state.pendingDraft = null; state.conflict = null;
+              renderEdit();
+              status('Revision ' + r.rev + ' ist wiederhergestellt, jetzt Revision ' + res.skill.revision + '.');
+            }).catch(function (err) {
+              status(errText(err), true);
+              if (err.message === 'skill_conflict') renderHistory();
+            });
+          });
+          tools.appendChild(back);
+        }
+        row.appendChild(tools);
+        panel.appendChild(row);
+      });
+    }).catch(function (err) { panel.textContent = ''; status(errText(err), true); });
+  }
+  function fieldValue(key, rev) {
+    var v = rev[key];
+    if (key === 'priority') return PRIORITY[v || 'normal'] || v;
+    if (key === 'enabled' || key === 'shared') return v ? 'ja' : 'nein';
+    if (Array.isArray(v)) return v.map(function (t) { return key === 'requires' ? (state.tools[t] || t) : t; }).join(', ') || '(keine)';
+    return v == null || v === '' ? '(leer)' : String(v);
+  }
+  /** Two revisions side by side; with a draft, the current revision against the editor's text. */
+  function renderCompare(fromRev, toRev, draft) {
+    var sk = state.edit;
+    var box = draft ? subPage(sk.title, function () { renderEdit(); }, 'Was sich geändert hat')
+      : subPage('Verlauf', function () { renderHistory(); }, 'Vergleich');
+    var panel = el('section', 'settings-panel cfg-card wide sk-form sk-compare');
+    panel.id = 'skCompare';
+    box.appendChild(panel);
+    if (!draft && state.history && state.history.revisions.length > 1) {
+      var pick = el('div', 'sk-cmp-pick');
+      var make = function (id, value, label) {
+        var sel = el('select'); sel.id = id;
+        state.history.revisions.forEach(function (r) { var o = el('option', '', 'Revision ' + r.rev); o.value = r.rev; sel.appendChild(o); });
+        sel.value = String(value);
+        pick.appendChild(field(label, '', sel));
+        return sel;
+      };
+      var a = make('skCmpFrom', fromRev, 'VON');
+      var b = make('skCmpTo', toRev, 'BIS');
+      var redo = function () { renderCompare(Number(a.value), Number(b.value)); };
+      a.addEventListener('change', redo); b.addEventListener('change', redo);
+      panel.appendChild(pick);
+    }
+    var body = el('div', 'sk-cmp-body');
+    body.appendChild(el('p', 'sk-empty', 'Wird geladen …'));
+    panel.appendChild(body);
+    Promise.all([fetchRevision(sk.id, fromRev), draft ? Promise.resolve(draft) : fetchRevision(sk.id, toRev)]).then(function (pair) {
+      var a = pair[0], b = pair[1];
+      body.textContent = '';
+      body.appendChild(el('p', 'pz-lead', 'Revision ' + a.rev + ' → ' + (draft ? 'deine Fassung im Editor' : 'Revision ' + b.rev)));
+      var changed = 0;
+      ['title', 'slug', 'description', 'triggers', 'requires', 'priority', 'enabled', 'shared'].forEach(function (key) {
+        var before = fieldValue(key, a), after = fieldValue(key, b);
+        if (before === after) return;
+        changed++;
+        var row = el('div', 'sk-cmp-field');
+        row.setAttribute('data-field', key);
+        row.appendChild(el('strong', '', FIELD[key] + ': '));
+        row.appendChild(el('del', '', before));
+        row.appendChild(document.createTextNode(' → '));
+        row.appendChild(el('ins', '', after));
+        body.appendChild(row);
+      });
+      if (!changed) body.appendChild(el('p', 'sk-empty', 'Keine Änderung an den Angaben.'));
+      body.appendChild(el('h4', 'sk-cmp-head', 'Anleitung'));
+      body.appendChild(diffBox(a.body, b.body));
+      body.appendChild(el('h4', 'sk-cmp-head', 'Begleitdateien'));
+      var files = function (r) { var m = {}; (r.files || []).forEach(function (f) { m[f.path] = f.content; }); return m; };
+      var fa = files(a), fb = b.files ? files(b) : fa;
+      var paths = Object.keys(fa).concat(Object.keys(fb)).filter(function (p, i, all) { return all.indexOf(p) === i; }).sort();
+      var any = 0;
+      paths.forEach(function (path) {
+        var was = path in fa, is = path in fb;
+        if (was && is && fa[path] === fb[path]) return;
+        any++;
+        var label = !was ? 'neu' : !is ? 'entfernt' : 'geändert';
+        var head = el('p', 'sk-cmp-file', path + ' · ' + label);
+        head.setAttribute('data-file', path);
+        body.appendChild(head);
+        body.appendChild(diffBox(was ? fa[path] : '', is ? fb[path] : ''));
+      });
+      if (!any) body.appendChild(el('p', 'sk-empty', 'Keine Änderung an den Begleitdateien.'));
+    }).catch(function (err) { body.textContent = ''; status(errText(err), true); });
+  }
+  /** Someone saved in between: say so, keep the text, and let the person decide. */
+  function conflictBox(form) {
+    var c = state.conflict;
+    var box = el('div', 'sk-conflict');
+    box.id = 'skConflict';
+    box.setAttribute('role', 'alert');
+    box.appendChild(el('p', '', 'Jemand hat diesen Skill inzwischen geändert (jetzt Revision ' + c.revision + '). Deine Änderungen stehen noch im Editor.'));
+    var actions = el('div', 'sk-actions');
+    var look = el('button', 'settings-action sk-small', 'UNTERSCHIEDE ANSEHEN'); look.type = 'button'; look.id = 'skConflictDiff';
+    look.addEventListener('click', function () {
+      var dr = state.pendingDraft;
+      renderCompare(c.revision, null, {rev: 'Entwurf', title: dr.title, slug: dr.slug, description: dr.description,
+        triggers: String(dr.triggers || '').split(',').map(function (t) { return t.trim().toLowerCase(); }).filter(Boolean),
+        requires: dr.requires, priority: dr.priority, enabled: dr.enabled, shared: dr.shared, body: dr.body, files: null});
+    });
+    var force = el('button', 'settings-action sk-small', 'TROTZDEM SPEICHERN'); force.type = 'button'; force.id = 'skConflictSave';
+    force.addEventListener('click', function () {
+      state.edit.revision = c.revision;
+      state.conflict = null;
+      form.requestSubmit();
+    });
+    var drop = el('button', 'settings-action sk-small sk-danger', 'VERWERFEN UND NEU LADEN'); drop.type = 'button'; drop.id = 'skConflictDrop';
+    drop.addEventListener('click', function () {
+      state.conflict = null; state.pendingDraft = null;
+      var id = state.edit.id;
+      state.edit = null;
+      openSkill(id);
+    });
+    actions.appendChild(look); actions.appendChild(force); actions.appendChild(drop);
+    box.appendChild(actions);
+    return box;
+  }
+
+  // --- Import (0.7.90, P13 A) ----------------------------------------------------------------------------
+  function upload(file, mode, slug) {
+    var fd = new FormData();
+    fd.append('package', file);
+    fd.append('mode', mode);
+    if (slug) fd.append('slug', slug);
+    return fetch(API + '?action=import', {method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: {'X-CoreUI-CSRF': state.csrf}, body: fd})
+      .then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (!r.ok || !d || d.ok !== true) { var err = new Error((d && d.error) || ('http_' + r.status)); err.data = d || {}; throw err; }
+          return d;
+        });
+      });
+  }
+  function importFile(file, mode, slug) {
+    var box = $('skImportBox');
+    box.hidden = true; box.textContent = '';
+    status('„' + file.name + '“ wird geprüft …');
+    upload(file, mode, slug).then(function (d) {
+      var note = '„' + d.skill.title + '“ ist ' + (d.created ? 'importiert.' : 'als Revision ' + d.skill.revision + ' übernommen.');
+      if (d.skipped && d.skipped.length) {
+        note += ' Nicht übernommen: ' + d.skipped.map(function (x) { return x.name + ' (' + (SKIP[x.reason] || x.reason) + ')'; }).join(', ') + '.';
+      }
+      if (d.ignored && d.ignored.length) note += ' Übergangen: ' + d.ignored.join(', ') + '.';
+      load(note);
+    }).catch(function (err) {
+      if (err.message === 'skill_exists' && err.data && err.data.slug) { status(''); importChoice(file, err.data); return; }
+      status(errText(err), true);
+    });
+  }
+  function importChoice(file, info) {
+    var box = $('skImportBox');
+    box.textContent = '';
+    box.hidden = false;
+    box.appendChild(el('p', '', 'Den Skill „' + info.title + '“ (' + info.slug + ') hast du schon. Wie soll „' + file.name + '“ übernommen werden?'));
+    var actions = el('div', 'sk-actions');
+    var update = el('button', 'settings-action', 'ALS NEUE REVISION ÜBERNEHMEN'); update.type = 'button'; update.id = 'skImportUpdate';
+    update.addEventListener('click', function () { importFile(file, 'update', ''); });
+    var rename = el('button', 'settings-action', 'UNTER ANDERER KENNUNG'); rename.type = 'button'; rename.id = 'skImportRename';
+    var cancel = el('button', 'settings-action sk-small', 'ABBRECHEN'); cancel.type = 'button'; cancel.id = 'skImportCancel';
+    cancel.addEventListener('click', function () { box.hidden = true; box.textContent = ''; });
+    rename.addEventListener('click', function () {
+      if (box.querySelector('#skImportSlug')) return;
+      var row = el('div', 'sk-import-rename');
+      var input = el('input'); input.id = 'skImportSlug'; input.type = 'text'; input.maxLength = 64; input.spellcheck = false;
+      input.value = info.slug + '-kopie';
+      var create = el('button', 'settings-action', 'ANLEGEN'); create.type = 'button'; create.id = 'skImportCreate';
+      create.addEventListener('click', function () { importFile(file, 'new', input.value.trim()); });
+      row.appendChild(field('NEUE KENNUNG', '', input));
+      row.appendChild(create);
+      box.appendChild(row);
+      input.focus();
+    });
+    actions.appendChild(update); actions.appendChild(rename); actions.appendChild(cancel);
+    box.appendChild(actions);
+  }
+
   // --- The editor ---------------------------------------------------------------------------------------
   function blank() {
     return {id: '', slug: '', title: '', description: '', triggers: [], requires: [], project: null, enabled: true, body: '', files: [], missing: [],
@@ -275,7 +599,7 @@
       .then(function () { state.busy = false; });
   }
   function closeEdit(note) {
-    state.edit = null; state.file = null;
+    state.edit = null; state.file = null; state.pendingDraft = null; state.conflict = null; state.history = null;
     $('skEdit').hidden = true; $('skEdit').textContent = '';
     $('skMain').hidden = false;
     status(note || '');
@@ -303,15 +627,19 @@
     back.addEventListener('click', function () { closeEdit(); });
     bar.appendChild(back);
     box.appendChild(bar);
-    box.appendChild(el('h3', 'sk-edit-title', sk.id ? sk.title : 'Neuer Skill'));
+    var heading = el('h3', 'sk-edit-title', sk.id ? sk.title : 'Neuer Skill');
+    // 0.7.90 (P13 A): the revision the editor shows; a draft kept through a conflict wins over it.
+    if (sk.id && sk.revision > 0) heading.appendChild(el('small', 'sk-rev', 'Revision ' + sk.revision));
+    box.appendChild(heading);
+    var v = state.pendingDraft && state.pendingDraft.id === sk.id ? state.pendingDraft : null;
 
     var form = el('form', 'settings-panel cfg-card wide sk-form');
     form.id = 'skForm';
-    var title = el('input'); title.id = 'skTitle'; title.type = 'text'; title.maxLength = 80; title.value = sk.title; title.required = true;
-    var slug = el('input'); slug.id = 'skSlug'; slug.type = 'text'; slug.maxLength = 64; slug.value = sk.slug; slug.required = true;
+    var title = el('input'); title.id = 'skTitle'; title.type = 'text'; title.maxLength = 80; title.value = v ? v.title : sk.title; title.required = true;
+    var slug = el('input'); slug.id = 'skSlug'; slug.type = 'text'; slug.maxLength = 64; slug.value = v ? v.slug : sk.slug; slug.required = true;
     slug.autocomplete = 'off'; slug.spellcheck = false; slug.placeholder = 'zum-beispiel-wochenbericht';
-    var desc = el('input'); desc.id = 'skDescription'; desc.type = 'text'; desc.maxLength = 300; desc.value = sk.description; desc.required = true;
-    var triggers = el('input'); triggers.id = 'skTriggers'; triggers.type = 'text'; triggers.value = sk.triggers.join(', ');
+    var desc = el('input'); desc.id = 'skDescription'; desc.type = 'text'; desc.maxLength = 300; desc.value = v ? v.description : sk.description; desc.required = true;
+    var triggers = el('input'); triggers.id = 'skTriggers'; triggers.type = 'text'; triggers.value = v ? v.triggers : sk.triggers.join(', ');
     triggers.placeholder = 'wochenbericht, statusbericht';
     form.appendChild(field('NAME', 'So erscheint der Skill in der Liste.', title));
     form.appendChild(field('KENNUNG', 'Mara lädt den Skill mit [SKILL: kennung]; du kannst ihn mit /skill kennung vorgeben.', slug));
@@ -323,7 +651,7 @@
     reqBox.appendChild(el('small', '', 'Werkzeuge, die der Skill braucht. Fehlt eines in einem Chat, sagt Mara das statt ein Ergebnis zu behaupten.'));
     Object.keys(state.tools).forEach(function (key) {
       var l = el('label', 'sk-check');
-      var c = el('input'); c.type = 'checkbox'; c.value = key; c.checked = sk.requires.indexOf(key) >= 0; c.setAttribute('data-tool', key);
+      var c = el('input'); c.type = 'checkbox'; c.value = key; c.checked = (v ? v.requires : sk.requires).indexOf(key) >= 0; c.setAttribute('data-tool', key);
       l.appendChild(c); l.appendChild(el('span', '', state.tools[key]));
       reqBox.appendChild(l);
     });
@@ -334,7 +662,7 @@
     state.projects.forEach(function (p) {
       var o = el('option', '', 'Nur Projekt „' + p.name + '“'); o.value = p.id; scope.appendChild(o);
     });
-    scope.value = sk.project ? sk.project.id : '';
+    scope.value = v ? v.project_id : (sk.project ? sk.project.id : '');
     form.appendChild(field('GILT FÜR', 'Ein Projekt-Skill steht Mara nur in den Chats dieses Projekts zur Verfügung.', scope));
 
     var on = el('label', 'setting-row sk-on');
@@ -342,7 +670,7 @@
     onCopy.appendChild(el('strong', '', 'AKTIV'));
     onCopy.appendChild(el('small', '', 'Nur aktive Skills bietet CoreAI Mara an.'));
     var sw = el('span', 'settings-switch');
-    var enabled = el('input'); enabled.type = 'checkbox'; enabled.id = 'skEnabled'; enabled.checked = sk.enabled;
+    var enabled = el('input'); enabled.type = 'checkbox'; enabled.id = 'skEnabled'; enabled.checked = v ? v.enabled : sk.enabled;
     sw.appendChild(enabled); sw.appendChild(el('i'));
     on.appendChild(onCopy); on.appendChild(sw);
     form.appendChild(on);
@@ -350,7 +678,7 @@
     // 0.7.84 (P12 B): precedence, and sharing for the Inhaber and Admins.
     var prio = el('select'); prio.id = 'skPriority';
     Object.keys(PRIORITY).forEach(function (key) { var o = el('option', '', PRIORITY[key]); o.value = key; prio.appendChild(o); });
-    prio.value = sk.priority || 'normal';
+    prio.value = v ? v.priority : (sk.priority || 'normal');
     if (state.sharing) {
       form.appendChild(field('VORRANG', 'Passen mehr Skills, als ins Kontextfenster passen, kommen die mit hohem Vorrang zuerst. '
         + 'Haben zwei gemeinsame Skills dieselbe Kennung, gilt der mit höherem Vorrang.', prio));
@@ -363,7 +691,7 @@
       var shareHint = el('small', '', '');
       shareCopy.appendChild(shareHint);
       var shareSw = el('span', 'settings-switch');
-      share = el('input'); share.type = 'checkbox'; share.id = 'skShare'; share.checked = !!sk.shared;
+      share = el('input'); share.type = 'checkbox'; share.id = 'skShare'; share.checked = v ? !!v.shared : !!sk.shared;
       shareSw.appendChild(share); shareSw.appendChild(el('i'));
       shareRow.appendChild(shareCopy); shareRow.appendChild(shareSw);
       form.appendChild(shareRow);
@@ -378,7 +706,7 @@
       syncShare();
     }
 
-    var bodyInput = el('textarea', 'sk-body'); bodyInput.id = 'skBody'; bodyInput.rows = 12; bodyInput.value = sk.body || ''; bodyInput.spellcheck = true;
+    var bodyInput = el('textarea', 'sk-body'); bodyInput.id = 'skBody'; bodyInput.rows = 12; bodyInput.value = v ? v.body : (sk.body || ''); bodyInput.spellcheck = true;
     bodyInput.placeholder = 'Was Mara Schritt für Schritt tun soll. Begleitdateien nennst du mit ihrem Pfad, zum Beispiel templates/bericht.md.';
     var count = el('small', 'sk-count');
     var updateCount = function () {
@@ -395,9 +723,21 @@
       warn.id = 'skMissing';
       form.appendChild(warn);
     }
+    if (state.conflict) form.appendChild(conflictBox(form));
     var actions = el('div', 'sk-actions');
     var save = el('button', 'settings-action', sk.id ? 'SPEICHERN' : 'ANLEGEN'); save.type = 'submit'; save.id = 'skSave';
     actions.appendChild(save);
+    if (sk.id && state.revisionsReady) {
+      var hist = el('button', 'settings-action', 'VERLAUF'); hist.type = 'button'; hist.id = 'skHistory';
+      hist.addEventListener('click', renderHistory);
+      actions.appendChild(hist);
+    }
+    if (sk.id) {
+      var exp = exportLink(sk.id, 0, 'EXPORTIEREN');
+      exp.id = 'skExport';
+      exp.classList.remove('sk-small');
+      actions.appendChild(exp);
+    }
     if (sk.id) {
       var del = el('button', 'settings-action sk-danger', 'LÖSCHEN'); del.type = 'button'; del.id = 'skDelete';
       del.addEventListener('click', function () {
@@ -413,18 +753,45 @@
       if (state.busy) return;
       var requires = Array.prototype.slice.call(reqBox.querySelectorAll('input[type=checkbox]:checked')).map(function (c) { return c.value; });
       state.busy = true; save.disabled = true;
-      request('POST', 'save', '', {id: sk.id, title: title.value, slug: slug.value, description: desc.value, triggers: triggers.value,
+      var payload = {id: sk.id, title: title.value, slug: slug.value, description: desc.value, triggers: triggers.value,
         requires: requires, project_id: scope.value, enabled: enabled.checked, body: bodyInput.value,
-        priority: prio.value, shared: share ? share.checked : false}).then(function (d) {
+        priority: prio.value, shared: share ? share.checked : false};
+      if (sk.id && state.revisionsReady) payload.base_revision = sk.revision || 0;
+      request('POST', 'save', '', payload).then(function (d) {
         var created = !sk.id;
-        state.edit = d.skill;
+        state.edit = d.skill; state.pendingDraft = null; state.conflict = null;
         renderEdit();
         status(created ? 'Der Skill ist angelegt. Jetzt kannst du Begleitdateien hinzufügen.' : 'Gespeichert.');
-      }).catch(function (err) { status(errText(err), true); })
-        .then(function () { state.busy = false; save.disabled = false; });
+      }).catch(function (err) {
+        if (err.message === 'skill_conflict') {
+          // Keep what the person wrote, say what happened and let them decide.
+          state.pendingDraft = Object.assign({}, payload);
+          state.conflict = {revision: Number(err.data.revision || 0)};
+          status('');
+          renderEdit();
+          return;
+        }
+        status(errText(err), true);
+      }).then(function () { state.busy = false; save.disabled = false; });
     });
     box.appendChild(form);
     if (sk.id) box.appendChild(renderFiles(sk));
+  }
+
+  /** 0.7.90: a change names the revision it starts from, where the server keeps revisions. */
+  function withBase(sk, payload) {
+    if (state.revisionsReady) payload.base_revision = sk.revision || 0;
+    return payload;
+  }
+  /** 0.7.90: a file change after someone else's: say so; the next try saves on top of the new revision. */
+  function fileError(sk, err) {
+    if (err.message === 'skill_conflict' && err.data && err.data.revision) {
+      sk.revision = Number(err.data.revision);
+      status('Jemand hat diesen Skill inzwischen geändert (jetzt Revision ' + sk.revision + '). Deine Datei steht noch im Formular; '
+        + 'speicherst du sie noch einmal, kommt sie auf die neue Revision.', true);
+      return;
+    }
+    status(errText(err), true);
   }
 
   function renderFiles(sk) {
@@ -447,8 +814,9 @@
       var del = el('button', 'settings-action sk-small sk-danger', 'LÖSCHEN'); del.type = 'button';
       del.addEventListener('click', function () {
         if (!window.confirm(f.path + ' löschen?')) return;
-        request('POST', 'file_delete', '', {id: sk.id, path: f.path}).then(function (d) { state.edit = d.skill; state.file = null; renderEdit(); status('Die Datei wurde gelöscht.'); })
-          .catch(function (err) { status(errText(err), true); });
+        request('POST', 'file_delete', '', withBase(sk, {id: sk.id, path: f.path})).then(function (d) {
+          state.edit = d.skill; state.file = null; renderEdit(); status('Die Datei wurde gelöscht.');
+        }).catch(function (err) { fileError(sk, err); });
       });
       var tools = el('div', 'sk-file-actions');
       tools.appendChild(edit); tools.appendChild(del);
@@ -485,12 +853,12 @@
       e.preventDefault();
       if (state.busy) return;
       state.busy = true; save.disabled = true;
-      request('POST', 'file_save', '', {id: sk.id, path: folder.value + '/' + name.value.trim(), content: content.value,
-        old_path: editing ? editing.path : ''}).then(function (d) {
+      request('POST', 'file_save', '', withBase(sk, {id: sk.id, path: folder.value + '/' + name.value.trim(), content: content.value,
+        old_path: editing ? editing.path : ''})).then(function (d) {
         state.edit = d.skill; state.file = null;
         renderEdit();
         status('Die Datei ist gespeichert.');
-      }).catch(function (err) { status(errText(err), true); })
+      }).catch(function (err) { fileError(sk, err); })
         .then(function () { state.busy = false; save.disabled = false; });
     });
     wrap.appendChild(form);
@@ -503,6 +871,13 @@
     status('');
     renderEdit();
     $('skTitle').focus();
+  });
+  // 0.7.90 (P13 A): importing a package.
+  $('skImport').addEventListener('click', function () { if (state.ready) $('skImportFile').click(); });
+  $('skImportFile').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (file) importFile(file, 'new', '');
   });
   $('skSearch').addEventListener('input', function () {
     clearTimeout(state.searchTimer);

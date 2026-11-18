@@ -15,6 +15,8 @@ declare(strict_types=1);
  */
 require_once __DIR__ . '/console_project_store.php';
 require_once __DIR__ . '/skills.php';
+// 0.7.90 (P13 A): fixed revisions and packages.
+require_once __DIR__ . '/skill_revisions_store.php';
 
 const COREUI_SKILLPKG_MAX = 50;
 const COREUI_SKILLPKG_FILES = 20;
@@ -33,9 +35,11 @@ const COREUI_SKILLPKG_PRIORITY = ['high' => 1, 'normal' => 0, 'low' => -1];
 const COREUI_SKILLPKG_VARIANT_RANK = ['project' => 0, 'own' => 1, 'shared' => 2];
 
 function coreui_skillpkg_ready(PDO $pdo): bool {
-  static $memo = [];
-  $key = spl_object_id($pdo);
-  if (!array_key_exists($key, $memo)) {
+  // 0.7.90: a WeakMap, so a new connection never inherits the answer of a freed one with the same object id.
+  static $memo = null;
+  $memo ??= new WeakMap();
+  $key = $pdo;
+  if (!isset($memo[$key])) {
     try {
       $pdo->query('SELECT id, user_id, slug, body, requires_tools, project_id, enabled FROM stu_skill_packages LIMIT 0');
       $pdo->query('SELECT skill_id, path, kind, content FROM stu_skill_package_files LIMIT 0');
@@ -49,9 +53,11 @@ function coreui_skillpkg_ready(PDO $pdo): bool {
 
 /** 0.7.84 (P12 B): migration 053 (shared skills, precedence, opt-outs, skills fixed for a chat). */
 function coreui_skillpkg_sharing_ready(PDO $pdo): bool {
-  static $memo = [];
-  $key = spl_object_id($pdo);
-  if (!array_key_exists($key, $memo)) {
+  // 0.7.90: a WeakMap, so a new connection never inherits the answer of a freed one with the same object id.
+  static $memo = null;
+  $memo ??= new WeakMap();
+  $key = $pdo;
+  if (!isset($memo[$key])) {
     try {
       $pdo->query('SELECT shared, priority FROM stu_skill_packages LIMIT 0');
       $pdo->query('SELECT user_id, skill_id FROM stu_skill_package_optouts LIMIT 0');
@@ -206,6 +212,7 @@ function coreui_skillpkg_public(PDO $pdo, array $row, bool $full = false): array
     'triggers'=>coreui_skillpkg_triggers((string)$row['triggers']), 'requires'=>coreui_skillpkg_requires((string)$row['requires_tools']),
     'project'=>$project, 'enabled'=>(int)$row['enabled'] === 1, 'files'=>$files,
     'shared'=>(int)($row['shared'] ?? 0) === 1, 'priority'=>coreui_skillpkg_priority_name((int)($row['priority'] ?? 0)),
+    'revision'=>(int)($row['revision'] ?? 0),
     'missing'=>coreui_skillpkg_missing((string)$row['body'], array_column($files, 'path')),
     'created_at'=>(string)$row['created_at'], 'updated_at'=>(string)$row['updated_at']];
   if ($full) $out['body'] = (string)$row['body'];
@@ -232,65 +239,92 @@ function coreui_skillpkg_get(PDO $pdo, int $uid, string $id): array {
   return coreui_skillpkg_public($pdo, coreui_skillpkg_row($pdo, $uid, $id), true);
 }
 
-/** Creates ($id '') or changes a skill. $data: slug, title, description, body, triggers, requires, project_id, enabled. */
-function coreui_skillpkg_save(PDO $pdo, int $uid, string $id, array $data): array {
-  if (!coreui_skillpkg_ready($pdo)) throw new RuntimeException('skill_migration_required');
+/** The checked details of a skill, as the editor or a package gives them (slug, title, description, body, triggers, requires, priority). */
+function coreui_skillpkg_validated(PDO $pdo, int $uid, array $data): array {
   $slug = coreui_skillpkg_slug($data['slug'] ?? '');
   $title = coreui_skillpkg_text((string)($data['title'] ?? ''), 80, 'invalid_skill_title');
   $description = coreui_skillpkg_text((string)($data['description'] ?? ''), 300, 'invalid_skill_description');
   $body = coreui_skillpkg_text((string)($data['body'] ?? ''), 100000, 'invalid_skill_body', false);
   if (strlen($body) > COREUI_SKILLPKG_BODY_BYTES) throw new InvalidArgumentException('skill_body_too_large');
-  $triggers = implode(', ', coreui_skillpkg_triggers($data['triggers'] ?? ''));
-  $requires = implode(',', coreui_skillpkg_requires($data['requires'] ?? []));
+  return ['slug'=>$slug, 'title'=>$title, 'description'=>$description, 'body'=>$body,
+    'triggers'=>implode(', ', coreui_skillpkg_triggers($data['triggers'] ?? '')),
+    'requires'=>implode(',', coreui_skillpkg_requires($data['requires'] ?? [])),
+    'priority'=>coreui_skillpkg_priority($data['priority'] ?? 'normal')];
+}
+
+/**
+ * Creates ($id '') or changes a skill. $data: slug, title, description, body, triggers, requires,
+ * project_id, enabled, shared, priority, and base_revision (0.7.90: the revision the editor loaded;
+ * a change is refused when someone saved in between). Every change is a new revision.
+ */
+function coreui_skillpkg_save(PDO $pdo, int $uid, string $id, array $data): array {
+  if (!coreui_skillpkg_ready($pdo)) throw new RuntimeException('skill_migration_required');
+  $clean = coreui_skillpkg_validated($pdo, $uid, $data);
   $project = trim((string)($data['project_id'] ?? ''));
   $project = $project === '' ? null : (string)coreui_project_require($pdo, $uid, $project)['id'];
   $enabled = !empty($data['enabled']) ? 1 : 0;
   // 0.7.84 (P12 B): precedence and sharing (migration 053); a project skill is never shared.
   $sharing = coreui_skillpkg_sharing_ready($pdo);
-  $priority = coreui_skillpkg_priority($data['priority'] ?? 'normal');
   $shared = !empty($data['shared']) ? 1 : 0;
   if ($shared === 1) {
     if (!$sharing) throw new RuntimeException('skill_migration_required');
     if ($project !== null) throw new InvalidArgumentException('skill_share_project');
     if (!coreui_skillpkg_can_share($pdo, $uid)) throw new RuntimeException('skill_share_forbidden');
   }
-  $same = $pdo->prepare('SELECT id FROM stu_skill_packages WHERE user_id = ? AND slug = ?');
-  $same->execute([$uid, $slug]);
-  $other = $same->fetchColumn();
-  if ($other !== false && (string)$other !== $id) throw new RuntimeException('skill_exists');
-  if ($id === '') {
-    $count = $pdo->prepare('SELECT COUNT(*) FROM stu_skill_packages WHERE user_id = ?');
-    $count->execute([$uid]);
-    if ((int)$count->fetchColumn() >= COREUI_SKILLPKG_MAX) throw new RuntimeException('skill_limit');
-    $id = bin2hex(random_bytes(16));
-    $pdo->prepare('INSERT INTO stu_skill_packages (id, user_id, slug, title, description, body, triggers, requires_tools, project_id, enabled,
-      created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)')
-      ->execute([$id, $uid, $slug, $title, $description, $body, $triggers, $requires, $project, $enabled]);
-  } else {
-    coreui_skillpkg_row($pdo, $uid, $id);
-    $pdo->prepare('UPDATE stu_skill_packages SET slug = ?, title = ?, description = ?, body = ?, triggers = ?, requires_tools = ?, project_id = ?,
-      enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?')
-      ->execute([$slug, $title, $description, $body, $triggers, $requires, $project, $enabled, $id, $uid]);
-  }
-  if ($sharing) {
-    $pdo->prepare('UPDATE stu_skill_packages SET shared = ?, priority = ? WHERE id = ? AND user_id = ?')->execute([$shared, $priority, $id, $uid]);
-  }
+  $id = coreui_skillpkg_atomic($pdo, static function () use ($pdo, $uid, $id, $data, $clean, $project, $enabled, $sharing, $shared): string {
+    $same = $pdo->prepare('SELECT id FROM stu_skill_packages WHERE user_id = ? AND slug = ?');
+    $same->execute([$uid, $clean['slug']]);
+    $other = $same->fetchColumn();
+    if ($other !== false && (string)$other !== $id) throw new RuntimeException('skill_exists');
+    if ($id === '') {
+      $count = $pdo->prepare('SELECT COUNT(*) FROM stu_skill_packages WHERE user_id = ?');
+      $count->execute([$uid]);
+      if ((int)$count->fetchColumn() >= COREUI_SKILLPKG_MAX) throw new RuntimeException('skill_limit');
+      $id = bin2hex(random_bytes(16));
+      $pdo->prepare('INSERT INTO stu_skill_packages (id, user_id, slug, title, description, body, triggers, requires_tools, project_id, enabled,
+        created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)')
+        ->execute([$id, $uid, $clean['slug'], $clean['title'], $clean['description'], $clean['body'], $clean['triggers'], $clean['requires'], $project, $enabled]);
+      $expected = 0;
+      $kind = 'create';
+    } else {
+      $row = coreui_skillpkg_row($pdo, $uid, $id);
+      coreui_skillrev_check($pdo, $row, $data['base_revision'] ?? null);
+      $expected = coreui_skillrev_baseline($pdo, $id, $uid, $row);
+      $pdo->prepare('UPDATE stu_skill_packages SET slug = ?, title = ?, description = ?, body = ?, triggers = ?, requires_tools = ?, project_id = ?,
+        enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?')
+        ->execute([$clean['slug'], $clean['title'], $clean['description'], $clean['body'], $clean['triggers'], $clean['requires'], $project, $enabled, $id, $uid]);
+      $kind = 'save';
+    }
+    if ($sharing) {
+      $pdo->prepare('UPDATE stu_skill_packages SET shared = ?, priority = ? WHERE id = ? AND user_id = ?')->execute([$shared, $clean['priority'], $id, $uid]);
+    }
+    coreui_skillrev_record($pdo, $id, $uid, $kind, '', coreui_skillrev_ready($pdo) ? $expected : null);
+    return $id;
+  });
   return coreui_skillpkg_get($pdo, $uid, $id);
 }
 
 function coreui_skillpkg_delete(PDO $pdo, int $uid, string $id): void {
   if (!coreui_skillpkg_ready($pdo)) throw new RuntimeException('skill_migration_required');
   coreui_skillpkg_row($pdo, $uid, $id);
-  $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ?')->execute([$id]);
-  if (coreui_skillpkg_sharing_ready($pdo)) {
-    // 0.7.84: chats that fixed it name it as gone; nobody keeps an opt-out of nothing.
-    $pdo->prepare('DELETE FROM stu_skill_package_optouts WHERE skill_id = ?')->execute([$id]);
-  }
-  $pdo->prepare('DELETE FROM stu_skill_packages WHERE id = ? AND user_id = ?')->execute([$id, $uid]);
+  coreui_skillpkg_atomic($pdo, static function () use ($pdo, $uid, $id): void {
+    $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ?')->execute([$id]);
+    if (coreui_skillpkg_sharing_ready($pdo)) {
+      // 0.7.84: chats that fixed it name it as gone; nobody keeps an opt-out of nothing.
+      $pdo->prepare('DELETE FROM stu_skill_package_optouts WHERE skill_id = ?')->execute([$id]);
+    }
+    if (coreui_skillrev_ready($pdo)) {
+      // 0.7.90: its revisions and their contents go with it.
+      $pdo->prepare('DELETE FROM stu_skill_revision_files WHERE skill_id = ?')->execute([$id]);
+      $pdo->prepare('DELETE FROM stu_skill_revisions WHERE skill_id = ?')->execute([$id]);
+      $pdo->prepare('DELETE FROM stu_skill_blobs WHERE skill_id = ?')->execute([$id]);
+    }
+    $pdo->prepare('DELETE FROM stu_skill_packages WHERE id = ? AND user_id = ?')->execute([$id, $uid]);
+  });
 }
 
-/** Writes a companion file (text, at most 8 KB); $oldPath renames it. */
-function coreui_skillpkg_file_save(PDO $pdo, int $uid, string $id, $path, $content, $oldPath = ''): array {
+/** Writes a companion file (text, at most 8 KB); $oldPath renames it; $base as for saving. A new revision. */
+function coreui_skillpkg_file_save(PDO $pdo, int $uid, string $id, $path, $content, $oldPath = '', $base = null): array {
   if (!coreui_skillpkg_ready($pdo)) throw new RuntimeException('skill_migration_required');
   coreui_skillpkg_row($pdo, $uid, $id);
   [$path, $kind] = coreui_skillpkg_path($path);
@@ -298,28 +332,42 @@ function coreui_skillpkg_file_save(PDO $pdo, int $uid, string $id, $path, $conte
   $content = str_replace("\r\n", "\n", $content);
   if (strlen($content) > COREUI_SKILLPKG_FILE_BYTES) throw new InvalidArgumentException('skill_file_too_large');
   $oldPath = trim((string)$oldPath);
-  $files = array_column(coreui_skillpkg_files($pdo, $id), 'path');
-  if ($oldPath !== '' && $oldPath !== $path) {
-    if (!in_array($oldPath, $files, true)) throw new RuntimeException('skill_file_not_found');
-    if (in_array($path, $files, true)) throw new RuntimeException('skill_file_exists');
-    $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ? AND path = ?')->execute([$id, $oldPath]);
-    $files = array_values(array_diff($files, [$oldPath]));
-  }
-  if (!in_array($path, $files, true) && count($files) >= COREUI_SKILLPKG_FILES) throw new RuntimeException('skill_files_limit');
-  $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ? AND path = ?')->execute([$id, $path]);
-  $pdo->prepare('INSERT INTO stu_skill_package_files (skill_id, path, kind, content, size_bytes, sha256, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)')->execute([$id, $path, $kind, $content, strlen($content), hash('sha256', $content)]);
-  $pdo->prepare('UPDATE stu_skill_packages SET updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$id]);
+  coreui_skillpkg_atomic($pdo, static function () use ($pdo, $uid, $id, $path, $kind, $content, $oldPath, $base): void {
+    $row = coreui_skillpkg_row($pdo, $uid, $id);
+    coreui_skillrev_check($pdo, $row, $base);
+    $files = array_column(coreui_skillpkg_files($pdo, $id), 'path');
+    if ($oldPath !== '' && $oldPath !== $path) {
+      if (!in_array($oldPath, $files, true)) throw new RuntimeException('skill_file_not_found');
+      if (in_array($path, $files, true)) throw new RuntimeException('skill_file_exists');
+    }
+    $expected = coreui_skillrev_baseline($pdo, $id, $uid, $row);
+    if ($oldPath !== '' && $oldPath !== $path) {
+      $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ? AND path = ?')->execute([$id, $oldPath]);
+      $files = array_values(array_diff($files, [$oldPath]));
+    }
+    if (!in_array($path, $files, true) && count($files) >= COREUI_SKILLPKG_FILES) throw new RuntimeException('skill_files_limit');
+    $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ? AND path = ?')->execute([$id, $path]);
+    $pdo->prepare('INSERT INTO stu_skill_package_files (skill_id, path, kind, content, size_bytes, sha256, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)')->execute([$id, $path, $kind, $content, strlen($content), hash('sha256', $content)]);
+    $pdo->prepare('UPDATE stu_skill_packages SET updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$id]);
+    coreui_skillrev_record($pdo, $id, $uid, 'file', ($oldPath !== '' && $oldPath !== $path ? $oldPath . ' umbenannt in ' : '') . $path,
+      coreui_skillrev_ready($pdo) ? $expected : null);
+  });
   return coreui_skillpkg_get($pdo, $uid, $id);
 }
 
-function coreui_skillpkg_file_delete(PDO $pdo, int $uid, string $id, $path): array {
+function coreui_skillpkg_file_delete(PDO $pdo, int $uid, string $id, $path, $base = null): array {
   if (!coreui_skillpkg_ready($pdo)) throw new RuntimeException('skill_migration_required');
   coreui_skillpkg_row($pdo, $uid, $id);
   [$path] = coreui_skillpkg_path($path);
-  $st = $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ? AND path = ?');
-  $st->execute([$id, $path]);
-  if ($st->rowCount() !== 1) throw new RuntimeException('skill_file_not_found');
+  coreui_skillpkg_atomic($pdo, static function () use ($pdo, $uid, $id, $path, $base): void {
+    $row = coreui_skillpkg_row($pdo, $uid, $id);
+    coreui_skillrev_check($pdo, $row, $base);
+    if (!in_array($path, array_column(coreui_skillpkg_files($pdo, $id), 'path'), true)) throw new RuntimeException('skill_file_not_found');
+    $expected = coreui_skillrev_baseline($pdo, $id, $uid, $row);
+    $pdo->prepare('DELETE FROM stu_skill_package_files WHERE skill_id = ? AND path = ?')->execute([$id, $path]);
+    coreui_skillrev_record($pdo, $id, $uid, 'file', $path . ' gelöscht', coreui_skillrev_ready($pdo) ? $expected : null);
+  });
   return coreui_skillpkg_get($pdo, $uid, $id);
 }
 
@@ -430,7 +478,8 @@ function coreui_skillpkg_for_chat(PDO $pdo, int $uid, string $projectId, string 
     $out[(string)$slug] = ['title'=>(string)$row['title'], 'description'=>(string)$row['description'],
       'triggers'=>coreui_skillpkg_triggers((string)$row['triggers']), 'requires'=>coreui_skillpkg_requires((string)$row['requires_tools']),
       'body'=>(string)$row['body'], 'files'=>$files, 'project'=>$row['project_id'] !== null, 'variant'=>(string)$row['variant'],
-      'owner'=>(string)($row['owner'] ?? ''), 'priority'=>(int)($row['priority'] ?? 0), 'pinned'=>!empty($row['pinned']), 'id'=>(string)$row['id']];
+      'owner'=>(string)($row['owner'] ?? ''), 'priority'=>(int)($row['priority'] ?? 0), 'pinned'=>!empty($row['pinned']), 'id'=>(string)$row['id'],
+      'revision'=>(int)($row['revision'] ?? 0)];
   }
   ksort($out, SORT_STRING);
   return $out;

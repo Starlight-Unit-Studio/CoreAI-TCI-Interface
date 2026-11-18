@@ -1,0 +1,71 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.90
+Datum: 18.11.2026
+
+FESTE REVISIONEN VON SKILLS (ROADMAP P13, SCHRITT A, CF-045)
+- Jede Aenderung eines eigenen Skills (Speichern, Begleitdatei anlegen,
+  aendern, umbenennen, loeschen, Wiederherstellen, Import) wird als feste
+  Revision mit Angaben, Anleitung und allen Begleitdateien gesichert.
+  Speichern ohne Aenderung legt keine an.
+- Inhalte je Skill einmal gespeichert; die letzten 100 Revisionen
+  bleiben. Ein Skill von vor dieser Version bekommt bei der naechsten
+  Aenderung seinen Stand als Revision 1 ("Stand vor den Revisionen").
+
+VERLAUF, VERGLEICH, WIEDERHERSTELLEN
+- Der Editor zeigt die Revision und hat "Verlauf": wer, wann, was
+  (Angaben, Anleitung, Dateien neu, geaendert, entfernt), jede Revision
+  auch als ZIP.
+- "Vergleichen": zwei frei waehlbare Revisionen Zeile fuer Zeile, mit
+  Angaben und Begleitdateien.
+- "Wiederherstellen" fragt vorher und legt die Revision als neue obendrauf;
+  die dazwischen bleiben. Ein inzwischen geloeschtes Projekt, Teilen ohne
+  Recht oder eine vergebene Kennung kommen nicht still zurueck.
+
+KEIN UNBEMERKTES UEBERSCHREIBEN
+- Jede Aenderung nennt ihre Ausgangsrevision. Hat inzwischen jemand
+  gespeichert, wird sie abgewiesen; der Text bleibt im Editor, mit
+  "Unterschiede ansehen", "Trotzdem speichern" und "Verwerfen und neu
+  laden". Bei Begleitdateien ebenso, der naechste Versuch speichert auf
+  die neue Revision.
+
+PAKETE (CF-046)
+- "Exportieren": der Skill oder eine Revision als ZIP mit einem Ordner:
+  SKILL.md (Kopf mit name, title, description, triggers, requires,
+  priority, Format, darunter die Anleitung) und die Begleitdateien.
+- "Importieren" unter Einstellungen > Skills: neu, als neue Revision des
+  eigenen Skills gleicher Kennung oder unter anderer Kennung; auch das
+  schlichte SKILL.md anderer Werkzeuge mit name und description.
+- Abgewiesen ohne Aenderung: kein ZIP, keine oder zwei SKILL.md, Pfade
+  aus dem Paket heraus, absolute Pfade, Links, Binaer- oder zu grosse
+  Dateien, mehr als 20 Dateien, mehr als 100 Eintraege oder 1 MB
+  entpackt, neueres Format, fehlerhafter Kopf. Dateien ausserhalb der
+  vier Ordner und unbekannte Angaben werden uebersprungen und genannt.
+
+MARA BEHAELT IHRE REVISION
+- "Skill geladen" nennt in den Details die Revision eines eigenen Skills;
+  eine Aenderung waehrend ihres Zugs erreicht diesen Zug nicht.
+
+BEHOBEN
+- Die Bereitschaftspruefungen des Skill-Speichers merken sich ihre
+  Antwort je Verbindung in einer WeakMap; vorher konnte eine neue
+  Verbindung die Antwort einer freigegebenen mit gleicher Objektnummer
+  erben.
+- Der Export-Link hat kein download-Attribut mehr, damit der Browser die
+  Datei nach dem Server benennt (wochenbericht.zip) und nicht nach der
+  Adresse.
+
+DATENBANK
+- Migration 054_skill_revisions (Revisionszaehler, Revisionen, ihre
+  Dateien, Inhalte nach SHA-256; alles geht mit dem Skill).
+
+NOCH NICHT (P13 B)
+- Getrennte Rechte (Lesen, Nutzen, Aendern, Teilen) und
+  Verbesserungsvorschlaege von Mara als pruefbarer Diff.
+
+TESTS
+- scripts/skill-revisions-selftest.php (SQLite; MariaDB mit
+  COREUI_SELFTEST_DB=1, Migration 052 bis 054, 054 zweimal) und
+  scripts/skill-revisions-ui-selftest.cjs (Playwright), in beiden
+  Preflights mit englischen Terminal-Meldungen.
+
+NICHT GETESTET
+- Export und Import auf dem echten Server mit echten Paketen.

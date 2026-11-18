@@ -49,3 +49,33 @@
 }
 .sk-view-file summary { cursor: pointer; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
 .sk-view-file pre { margin-top: 6px; }
+/* 0.7.90 (P13 A): revisions, comparison, conflicts and import. */
+.sk-head-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.sk-rev { margin-left: 10px; font-size: 12px; font-weight: 600; color: var(--muted, #66728a); }
+.sk-rev-row { gap: 10px; }
+.sk-rev-row.is-current .sec-copy strong { color: var(--cx, #356fdc); }
+.sk-conflict, .sk-import-box {
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
+  border: 1px solid var(--amb, #e29b39); background: var(--panel-solid, #fbfdff); color: var(--txt, #101626);
+}
+.sk-conflict[hidden], .sk-import-box[hidden] { display: none; }
+.sk-conflict p, .sk-import-box p { margin: 0; overflow-wrap: anywhere; }
+.sk-import-rename { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.sk-import-rename .sk-field { flex: 1 1 220px; }
+.sk-cmp-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sk-cmp-field { overflow-wrap: anywhere; font-size: 13px; }
+.sk-cmp-field del { color: var(--red, #d4505d); }
+.sk-cmp-field ins { color: var(--green, #2f9d62); text-decoration: none; }
+.sk-cmp-head { margin: 8px 0 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted, #66728a); }
+.sk-cmp-file { margin: 6px 0 0; font: 600 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.sk-diff {
+  max-height: 360px; overflow: auto; border: 1px solid var(--line, rgba(91, 146, 255, .25)); background: var(--panel-solid, #fbfdff);
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.sk-diff .sk-empty { margin: 6px 10px; }
+.sk-diff-line { padding: 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--txt, #101626); }
+.sk-diff-line.is-add { background: rgba(47, 157, 98, .14); }
+.sk-diff-line.is-del { background: rgba(212, 80, 93, .14); }
+@media (max-width: 640px) {
+  .sk-cmp-pick { grid-template-columns: 1fr; }
+}

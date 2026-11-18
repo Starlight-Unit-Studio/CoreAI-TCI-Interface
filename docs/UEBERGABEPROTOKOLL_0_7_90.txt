@@ -1,0 +1,49 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.90
+Datum: 18.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.89 nach PR #346
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"go": Roadmap P13, Skill-Lebenszyklus vervollstaendigen (CF-045 bis CF-047). Abnahme P13: Ein
+vollstaendiger Skill wird exportiert, wieder importiert und auf einen frueheren Stand zurueckgesetzt.
+Laufende Auftraege behalten ihre ausgewaehlte Revision samt Ressourcen. Aufgeteilt: Schritt A
+Revisionen, Vergleich, Wiederherstellen, Konflikte, Export und Import; Schritt B getrennte Rechte und
+Verbesserungsvorschlaege von Mara, auf Auftrag.
+
+UMSETZUNG
+- database/migrations/054_skill_revisions.sql: stu_skill_packages.revision, stu_skill_blobs (je Skill
+  nach SHA-256), stu_skill_revisions (Nummer, Konto, Art create/save/file/restore/import, Notiz,
+  Angaben als JSON, Anleitung als Inhalt), stu_skill_revision_files; Fremdschluessel mit CASCADE auf
+  den Skill, Konto mit SET NULL.
+- api/skill_revisions_store.php (neu): Bereitschaft, Transaktion, Schnappschuss je Aenderung
+  (keine leere Revision, Zaehler nur von der erwarteten Revision aus, hoechstens 100, verwaiste
+  Inhalte gehen mit), Bestand vor den Revisionen, Ausgangspruefung, Verlauf mit Aenderungen,
+  Revision lesen, Wiederherstellen als neue Revision (Projekt, Teilen, Kennung geprueft), SKILL.md
+  schreiben und lesen (JSON-Notation, schlichtes YAML anderer Werkzeuge, Listen), Paket lesen
+  (Pfade, Links, Groessen, Anzahl, Text), Export, Import (neu, Aktualisieren, andere Kennung).
+- api/skill_packages_store.php: Speichern, Dateien und Loeschen in Transaktionen mit Revision und
+  Ausgangsrevision; gemeinsame Pruefung coreui_skillpkg_validated; Revision in Liste und Chat;
+  WeakMap fuer die Bereitschaft.
+- api/skills.php: Arbeitsereignis "Skill geladen" mit der Revision in den Details.
+- api/skill_packages.php: history, revision, restore, export (ZIP-Download), import (Upload mit
+  CSRF), base_revision bei save, file_save, file_delete; 409 mit aktueller Revision; Name des
+  vorhandenen Skills beim Import.
+- settings.html, js/coreui-skills-settings.js, css/coreui-skills-settings.css: Importieren in der
+  Kopfzeile mit Auswahl (neue Revision, andere Kennung, Abbrechen), Revision im Editor, Verlauf,
+  Vergleich mit Zeilenvergleich, Wiederherstellen, Konfliktfeld, Exportieren.
+- Preflights (englische Meldungen, wie seit 0.7.88 fuer das Terminal festgelegt), Doku.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Ollama, mitgelieferter Skill-Katalog.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+
+NICHT GETESTET
+- Export und Import auf dem echten Server mit echten Paketen.
+
+NAECHSTER SCHRITT
+- P13 B (getrennte Rechte, Verbesserungsvorschlaege von Mara mit Diff) auf Auftrag.
+
+Version: 0.7.90
