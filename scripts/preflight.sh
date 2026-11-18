@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.87: installer and preflight source-contract regression repair.
+# CoreAI: TCI Interface 0.7.88: English operator terminal diagnostics and UI language boundary.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
