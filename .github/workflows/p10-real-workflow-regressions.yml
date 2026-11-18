@@ -1,0 +1,50 @@
+name: P10 Project Runtime and Artifact Regressions
+on:
+  pull_request:
+    paths:
+      - 'api/console_agent_loop.php'
+      - 'api/console_native_tools.php'
+      - 'api/project_file_tools.php'
+      - 'api/project_files_store.php'
+      - 'api/project_files.php'
+      - 'api/console_artifact_store.php'
+      - 'tools/ember_artifacts.py'
+      - 'tests/artifacts/**'
+      - 'scripts/agent-loop-selftest.php'
+      - 'scripts/project-env-selftest.php'
+      - 'scripts/project-files-selftest.php'
+      - 'scripts/native-tools-selftest.php'
+      - '.github/workflows/p10-real-workflow-regressions.yml'
+  workflow_dispatch:
+jobs:
+  p10-runtime-regressions:
+    name: p10-runtime-regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, zip, curl, gd
+          coverage: none
+      - name: Syntax of changed runtime files
+        run: |
+          set -eu
+          php -l api/console_agent_loop.php
+          php -l api/console_native_tools.php
+          php -l api/project_file_tools.php
+          php -l api/project_files_store.php
+          php -l api/project_files.php
+          php -l api/console_artifact_store.php
+          python3 -m py_compile tools/ember_artifacts.py tests/artifacts/test_artifacts.py
+          node --check js/coreui-artifacts.js
+      - name: Project plan, tool execution, file import and HTTP proof
+        run: |
+          set -eu
+          php scripts/native-tools-selftest.php
+          php scripts/agent-loop-selftest.php
+          php scripts/project-files-selftest.php
+          php scripts/project-env-selftest.php
+      - name: Verified multi-file output and PHP artifact contract
+        run: python3 -m unittest discover -v -s tests/artifacts -p 'test_artifacts.py'
