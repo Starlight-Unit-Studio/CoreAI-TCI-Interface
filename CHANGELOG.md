@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.7.89 - 18.11.2026
+
+- **Test results of 0.7.84 (P12 B) recorded:** Pull request #340 was merged before its full test run had finished. The run was completed on main 0.7.88 and is recorded in `docs/UEBERGABEPROTOKOLL_0_7_84.txt`: 198 self tests pass, 14 fail exactly as before in this environment (no new failure; `voice-input` is green again), all 29 deliberately introduced faults in the shared skills, the fixed skills of a chat and their pages are caught, and the new browser test passes five times in a row.
+- **Comments restored:** The 0.7.88 release step had renamed two comments that mark the 0.7.84 additions (the chat page loading the skills of a chat, the section "Gemeinsam" in Settings > Skills) to 0.7.88; they say 0.7.84 again. No behaviour changes.
+
 ## 0.7.88 - 18.11.2026
 
 - **Terminal-only English output:** Completed the translation of operator-facing installer and preflight messages, including the remaining lock-namespace failure, `stack.sh`, MariaDB migrations, host-update diagnostics, manual updates, swap helpers, Ollama report, Python-worker entrypoint and uninstall. Commands, environment variables, installer paths and data-retention safeguards remain unchanged.

@@ -1,3 +1,15 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Version main: 0.7.88, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.89).
+ZIEL 0.7.89: Testergebnisse von 0.7.84 (P12 B) nachgetragen, nachdem PR
+#340 vor dem Ende der Tests gemergt worden war (auf main 0.7.88: keine
+neuen Fehlschlaege, 29 von 29 Fehlereinbauten erkannt); zwei vom
+Release-Schritt 0.7.88 umbenannte Kommentare zurueckgesetzt.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_89.txt.
+Naechster Schritt: P13 (Skill-Lebenszyklus) auf Auftrag.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.7.90.
+--- VORHERIGER STAND ---
+
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 17.11.2026
 Version main: 0.7.83, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.84).
 ZIEL 0.7.84: Roadmap P12 Schritt B (CF-044), gemeinsame Skills von

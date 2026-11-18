@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.89
+Datum: 18.11.2026
+
+TESTERGEBNISSE ZU 0.7.84 (P12 B) NACHGETRAGEN
+- PR #340 wurde gemergt, bevor die gesamte Testreihe fertig war. Sie
+  wurde auf main 0.7.88 nachgeholt und steht in
+  docs/UEBERGABEPROTOKOLL_0_7_84.txt: 198 Selbsttests bestanden, 14
+  fehlgeschlagen wie bisher in dieser Umgebung (kein neuer
+  Fehlschlag; voice-input ist wieder gruen), alle 29 gezielt
+  eingebauten Fehler bei gemeinsamen und festgelegten Skills erkannt,
+  der neue Oberflaechentest fuenfmal hintereinander gruen.
+
+KOMMENTARE ZURUECKGESETZT
+- Der Release-Schritt von 0.7.88 hatte zwei Kommentare, die die
+  Ergaenzungen von 0.7.84 markieren (Chat-Seite laedt die Skills eines
+  Chats, Bereich "Gemeinsam" unter Einstellungen > Skills), auf 0.7.88
+  umbenannt. Sie nennen wieder 0.7.84. Kein geaendertes Verhalten.
