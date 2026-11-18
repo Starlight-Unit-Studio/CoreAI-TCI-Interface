@@ -374,7 +374,60 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     static fn(string $task): string => 'BUILD MUST NOT RUN',true);
   native_assert(is_string($noBuild) && str_contains($noBuild,'vorzeitig abgebrochen'),
     'Truncated PROJECT_BUILD calls must never execute');
-  echo "Plan persistence (SQLite fixture): OK\n";
+
+  // A real build request must not stop at its Markdown plan. The existing
+  // model-controlled intent selector authorizes the continuation for the
+  // very same owner, chat, message and freshly persisted plan version.
+  $autoBuildCalls = 0;
+  $decisionCalls = 0;
+  $completed = coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
+    static function(string $task) use (&$autoBuildCalls): string {
+      $autoBuildCalls++;
+      native_assert(str_contains($task,'[COREUI_PLANUNGSKONTEXT]')
+        && str_contains($task,'index.html'),
+        'Plan build lost the owner-approved source list');
+      return 'VERIFIED PROJECT CREATED';
+    },false,
+    static function(string $prompt) use (&$decisionCalls): array {
+      $decisionCalls++;
+      native_assert(str_contains($prompt,'START_BUILD')
+        && str_contains($prompt,'Erstelle die Homepage'),
+        'Build-intent selector was not asked about the original user request');
+      return ['text'=>'START_BUILD','ok'=>true];
+    },'Erstelle die Homepage jetzt vollstaendig mit allen Dateien');
+  native_assert($completed==='VERIFIED PROJECT CREATED'
+    && $autoBuildCalls===1 && $decisionCalls===1,
+    'Explicit build request must flow directly from saved plan into the writer');
+
+  // A plan-only request remains inert even if a valid plan is saved.
+  $planOnlyBuildCalls = 0;
+  $planSaved = coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
+    static function(string $task) use (&$planOnlyBuildCalls): string {
+      $planOnlyBuildCalls++;
+      return 'MUST NOT BUILD';
+    },false,
+    static fn(string $prompt): array => ['text'=>'CHAT','ok'=>true],
+    'Schreibe nur einen Projektplan, keinen Code');
+  native_assert(is_string($planSaved)
+    && str_contains($planSaved,'abgeschlossene Markdown-Version')
+    && $planOnlyBuildCalls===0,
+    'A plan-only task must never be silently escalated into a project build');
+
+  // An invalid or incomplete classifier response fails closed without losing
+  // the completed plan and without running the project writer.
+  $invalidBuildCalls=0;
+  $invalidDecision = coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
+    static function(string $task) use (&$invalidBuildCalls): string {
+      $invalidBuildCalls++;
+      return 'MUST NOT BUILD';
+    },false,
+    static fn(string $prompt): array => ['text'=>'Maybe later','ok'=>true],
+    'Erstelle die Homepage jetzt vollstaendig');
+  native_assert(is_string($invalidDecision)
+    && str_contains($invalidDecision,'abgeschlossene Markdown-Version')
+    && $invalidBuildCalls===0,
+    'Unknown model intent must not authorize a build');
+  echo "Plan persistence and authorized plan-to-build (SQLite fixture): OK\n";
 } else {
   echo "Plan persistence SQLite fixture: SKIP (pdo_sqlite unavailable)\n";
 }
