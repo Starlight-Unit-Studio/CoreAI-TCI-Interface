@@ -67,7 +67,7 @@ $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_E
 $pdo->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER)');
 $pdo->exec('CREATE TABLE stu_console_media (user_id INTEGER, kind TEXT, file_size INTEGER)');
 $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT,
-  instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
 $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT,
   archived_at TEXT, created_at TEXT, updated_at TEXT)');
 $pdo->exec('CREATE TABLE stu_console_project_files (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id INTEGER NOT NULL,
@@ -79,7 +79,7 @@ $pdo->exec('CREATE TABLE stu_console_project_file_revisions (id INTEGER PRIMARY 
   UNIQUE (file_id, revision))');
 $pdo->exec('INSERT INTO stu_users VALUES (7, 4), (9, 4)');
 $a = str_repeat('a', 32); $b = str_repeat('b', 32); $c = str_repeat('c', 32);
-$st = $pdo->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)');
+$st = $pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)');
 $st->execute([$a, 7, 'Spiel A', 'isolated', '', null, '2026-11-15']);
 $st->execute([$b, 7, 'Projekt B', 'open', '', null, '2026-11-15']);
 $st->execute([$c, 9, 'Fremdes Konto', 'open', '', null, '2026-11-15']);
