@@ -244,6 +244,21 @@ pf_test(str_contains($api, 'stu_require_csrf();') && str_contains($api, "header(
   && !str_contains($api, "'inline'"), 'API: CSRF on writes, files only as text downloads');
 pf_test(str_contains($chat, "require_once __DIR__ . '/project_files_store.php';")
   && str_contains($chat, 'coreui_pfiles_import_build($pdo, $uid, $sessionId, $insertedId,'), 'chat: builds in project chats are imported');
+$ui = (string)file_get_contents($root . '/js/coreui-artifacts.js');
+pf_test(str_contains($api, "case 'import_chat':")
+  && str_contains($api, "stu_require_csrf();")
+  && str_contains($api, 'coreui_pfiles_promote_chat_artifacts(')
+  && str_contains($ui, 'In Projekt übernehmen')
+  && str_contains($ui, "action: 'import_chat'")
+  && str_contains($ui, 'window.CoreAIProjects.openProject(data.project_id)'),
+  'operator explicitly promotes verified chat outputs into the current project workflow');
+$store = (string)file_get_contents($root . '/api/project_files_store.php');
+pf_test(str_contains($store, 'coreui_console_artifact_select_sql()')
+  && str_contains($store, 'coreui_console_artifact_open_verified($verified)')
+  && str_contains($store, 'coreui_project_assign($pdo,$uid,$sessionId,')
+  && str_contains($store, "ROLLBACK TO SAVEPOINT coreui_promote_artifacts"),
+  'project import is owner-scoped, checksum-verified and transactionally rollback-safe');
+
 pf_test(preg_match("~INSERT INTO stu_schema_migrations \\(version\\) VALUES \\('044_project_files'\\)~", $migration) === 1
   && str_contains($migration, 'COLLATE utf8mb4_bin') && str_contains($migration, 'ON DELETE CASCADE'), 'migration 044 registers itself');
 foreach (['config/nginx.conf.template', 'config/runtime/nginx.conf.template'] as $conf) {
