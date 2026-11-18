@@ -1,0 +1,42 @@
+COREAI: TCI INTERFACE // HANDOVER 0.7.88
+Date: 18 November 2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Base: main 0.7.87 (PR #344 merged)
+Branch: fix/terminal-output-language-0.7.88
+
+REQUEST CLARIFICATION
+User explicitly meant the terminal screenshots of installer and preflight,
+not the language of the gold update window. The update modal must not be
+forced to English by installer text changes.
+
+SOURCE FINDINGS
+- Installer and both large preflight files were mostly translated by 0.7.86,
+  but remaining German errors and auxiliary command output were missed.
+- In particular, stack management, database migration, host swap, manual
+  source updates, Ollama report, Python worker entrypoint and uninstaller
+  still emitted German diagnostic messages.
+- PR #344 introduced an unrelated fixed-English update modal and
+  English-only browser assertions.
+
+IMPLEMENTATION
+- Translate operator-facing terminal diagnostics throughout the listed
+  installer and helper scripts.
+- Restore the update UI script, related Settings card and browser
+  selftest to the content before the unrelated 0.7.87 UI translation.
+- Remove the English-only UI testing workflow and static test.
+- Preserve the language preference implementation elsewhere in CoreAI.
+- CLI uninstall exact confirmation tokens translated to English with the
+  existing strict confirmation and guard tests retained.
+- Extend installer CI for Bash checks, terminal-language regression and
+  uninstall / host-swap safety contracts.
+- Version and browser cache fingerprints updated for release 0.7.88.
+
+VERIFICATION
+- Run the dedicated installer CI and existing checks before merging.
+- A live server preflight and terminal smoke test are still required
+  after the new release is installed.
+
+SAFETY AND LIMITS
+- No model, database schema, permission or worker runtime behavior changed.
+- Terminal logs emitted by Docker, package managers and systemd may use
+  the operating system locale; this task covers CoreAI-owned messages.
