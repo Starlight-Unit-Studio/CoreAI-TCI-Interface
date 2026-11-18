@@ -162,6 +162,13 @@ loop_test($publicLoop['steps'] === 1
     && ($e['meta']['source']??'')==='model_public_text'))===1,
   'project loop publishes genuine public model content, not private thinking, and continues to a final answer');
 
+loop_test(str_contains((string)coreui_agent_public_result_note(['tool'=>'prun','input'=>'npm test'],'success'), 'Exitcode 0')
+  && str_contains((string)coreui_agent_public_result_note(['tool'=>'pserver_start','input'=>'8000 app.py'],'success'),'HTTP-Test')
+  && str_contains((string)coreui_agent_public_result_note(['tool'=>'pserver_start','input'=>'8000 app.py'],'info'),'nicht als erfolgreich bestätigt')
+  && str_contains((string)coreui_agent_public_result_note(['tool'=>'pfile_edit','input'=>'main.js'],'error'),'fehlgeschlagen')
+  && coreui_agent_public_result_note(['tool'=>'pfile_read','input'=>'index.html'],'success')===null,
+  'public completion commentary only states real tool status, not invented file content');
+
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
 loop_test($r['browse'] === 'Ollama Bibliothek gemma4 Tags lesen' && $r['out'] === null && count($tools) === 1, 'hand over to the browser');
