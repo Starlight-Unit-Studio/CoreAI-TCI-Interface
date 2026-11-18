@@ -147,11 +147,19 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     static function(string $q): array { throw new RuntimeException('Draft not allowed'); });
   intent_assert($notReady['status']==='ineligible',
     'A newer draft must invalidate a previous completed plan');
-  $large=str_repeat("L",12500);
+  // No arbitrary 12,000-byte ceiling: the plan must reach the trusted
+  // per-file build context intact, including its final requirements.
+  $large="# Grosser Projektplan\n- index.html\n- style.css\n- main.js\n"
+    .str_repeat("Vollstaendige Anforderung. ",520)
+    ."\n## Letzte Abnahmeanforderung\nEND_OF_APPROVED_PLAN_12500";
+  intent_assert(strlen($large)>12000,'Regression fixture must exceed the former plan ceiling');
   $insert->execute([str_repeat('c',32),7,$sid,11,null,5,'Anime-Welt Tagebuch',
     $large,strlen($large),hash('sha256',$large)]);
-  intent_assert(coreui_native_tool_build_request($pdo,7,$sid,
-    'Setze eine statische Website um.')===null,
-    'Oversized plans must not be silently truncated');
+  $largeBuild=coreui_native_tool_build_request($pdo,7,$sid,
+    'Setze eine statische Website um.');
+  intent_assert(is_string($largeBuild)
+    && str_contains($largeBuild,$large)
+    && substr_count($largeBuild,'END_OF_APPROVED_PLAN_12500')===1,
+    'Approved plans over 12000 bytes must be preserved completely');
   echo "Model-selected six-page plan build OK: real SQL fixture, safe decision, unchanged full plan, no duplicate builds\n";
 } else echo "Model project intent fixture SKIP (pdo_sqlite missing)\n";
