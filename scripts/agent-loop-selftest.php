@@ -143,7 +143,7 @@ loop_test(str_contains((string)$r['out'], 'alle 6 Arbeitsschritte genutzt'), 'on
 
 // Cancel and an empty model answer stop the loop.
 [$r, $tools] = $run(['[WEB: b]', 'fertig'], '[WEB: a]', static fn(): bool => true);
-loop_test(count($tools) === 1, 'cancel stops after the running step');
+loop_test(count($tools) === 0, 'already-cancelled run cannot start another tool');
 [$r] = $run([null], '[WEB: a]');
 loop_test($r['out'] === null, 'no answer from the Core ends the loop');
 
