@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.93 - 18.11.2026
+
+- **Autonomous plan-to-build handoff (P10):** A complete, durably saved Markdown project plan is a checkpoint, not necessarily a final answer. When the original authenticated user request explicitly authorizes creating the project, the existing model-controlled build-intent selector now authorizes the same turn to continue directly to the verified project writer. No manual `continue` is needed for that transition.
+- **Plan-only security:** A user who requested planning, an incomplete plan, cancellation or an invalid/ambiguous classifier response never triggers an automatic build. Ownership, session, source message and saved plan-version checks remain mandatory.
+- **Tool guidance and tests:** Clearer compact/full prompt distinction between planning and approved building. Regression tests exercise successful direct continuation, plan-only requests, and failure-closed classifier output with SQLite fixtures.
+- **Still open:** Persisted long-running workflow checkpoints, robust malformed-marker recovery, project-workspace handoff, actual server/HTTP verification and full live P10 acceptance remain in issue #349. PHP lint and end-to-end tests pending.
+
 ## 0.7.92 - 18.11.2026
 
 - **Unrestricted project source count (P10):** Removed the arbitrary nine-source ZIP limit and tenth-artifact slot restriction from approved manifests, file-collector paths, and the trusted ZIP writer. The requested files are validated individually; ZIP integrity and sandbox budgets remain enforced.

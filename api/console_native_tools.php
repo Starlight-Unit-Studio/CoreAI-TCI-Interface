@@ -99,10 +99,13 @@ function coreui_native_tools_prompt(bool $compact = false): string {
     return "\n[COREUI TOOLS] Du DARFST selbst entscheiden, ob ein Werkzeug notwendig ist. "
       . "Antworte normal ODER nur mit genau EINEM vollstaendigen Block:\n"
       . "[COREUI_PLAN_SAVE]\n# Titel\nMarkdown-Plan\n[/COREUI_PLAN_SAVE]\n"
+      . "[COREUI_PLAN_AND_BUILD]\n# Titel\nFertiger Plan\n[/COREUI_PLAN_AND_BUILD]\n"
       . "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen\n[/COREUI_PLAN_CONTINUE]\n"
       . "[COREUI_PROJECT_BUILD]\nKurzer Projektauftrag\n[/COREUI_PROJECT_BUILD]\n"
-      . "PROJECT_BUILD nur, wenn der Nutzer die Umsetzung verlangt oder freigibt. CoreAI erzeugt "
-      . "dann jede Datei einzeln und prueft das ZIP. Keine erfundenen Dateien, Links oder Host-Befehle.\n";
+      . "Nur einen Plan verlangt: PLAN_SAVE. Projekt UMSETZEN verlangt: PLAN_AND_BUILD, "
+      . "oder PLAN_SAVE fuer laengere Plaene; nach gesichertem Abschluss prueft CoreAI "
+      . "die ausdrueckliche Bau-Freigabe und arbeitet weiter. Der Writer validiert "
+      . "jede Datei und das ZIP. Keine erfundenen Dateien, Links oder Host-Befehle.\n";
   }
   return "\n[COREUI TOOLS] Du DARFST selbst entscheiden, ob ein Werkzeug notwendig ist. "
     . "Antworte normal ODER mit genau EINEM vollstaendigen Werkzeugblock. Nur eine optionale, oeffentliche Fortschrittszeile darf unmittelbar davor stehen:\n"
@@ -114,10 +117,12 @@ function coreui_native_tools_prompt(bool $compact = false): string {
     . "SAVE speichert eine .md-Datei, APPEND versioniert sie, AND_BUILD speichert und baut, "
     . "BUILD startet den geprueften Projekt-Writer. Nur bauen, wenn der Nutzer die "
     . "Umsetzung verlangt oder freigibt. Bei Fragen normal antworten. "
-    . "Plane bei einem Projektauftrag eigenstaendig mit PLAN_SAVE: direkt mit "
-    . "[COREUI_PLAN_SAVE] beginnen (ausser wenn eine einzelne oeffentliche "
-    . "COREUI_PUBLIC_PROGRESS-Zeile davorsteht). Markdown ab # Titel ausgeben "
-    . "und exakt mit [/COREUI_PLAN_SAVE] abschliessen. "
+    . "Bei reiner PLANUNG benutze PLAN_SAVE. Bei einer ausdruecklich verlangten "
+    . "UMSETZUNG waehle PLAN_AND_BUILD fuer einen abgeschlossenen Plan. Fuer laengere "
+    . "Plaene zuerst PLAN_SAVE; nach dem gesicherten Abschluss darf CoreAI den "
+    . "ausdruecklichen Umsetzungsauftrag selbststaendig weiterfuehren. Jeder "
+    . "Block beginnt direkt mit seinem Marker (ausser einer einzelnen "
+    . "COREUI_PUBLIC_PROGRESS-Zeile) und endet mit dem passenden Endmarker. "
     . "Beginne mit einem kompakten speicherbaren Grundplan und ergaenze "
     . "weitere Abschnitte spaeter ueber PLAN_APPEND. Ein ungeschlossener "
     . "Block bleibt ein Entwurf. Setze ihn mit begrenzten Modellschritten selbststaendig fort. "
@@ -648,12 +653,33 @@ function coreui_native_tool_apply(
           . 'Der Markdown-Download ist vorhanden; die Planung ist noch nicht abgeschlossen. '
           . 'Es wurde kein Projektbau gestartet.';
       }
-      return 'Ich habe den Projektplan als abgeschlossene Markdown-Version v'
-        . (int)$saved['version'] . ' gespeichert. '
-        . ($autoSegments > 0
-          ? $autoSegments . ' weitere Teilabschnitte habe ich eigenstaendig erstellt. '
-          : '')
-        . 'Die Datei ist als geschuetzter Download verfuegbar.';
+      // A saved plan is a checkpoint, not necessarily the end of the user's task.
+      // Recheck the ORIGINAL user's explicit build authorization with the
+      // existing model-controlled selector. Never infer authority from keywords.
+      $approvedBuild = false;
+      if (in_array($kind,['PLAN_SAVE','PLAN_APPEND'],true)
+          && $planGenerate !== null && trim($planGoal) !== ''
+          && (!function_exists('ember_agent_cancel_requested') || !ember_agent_cancel_requested())) {
+        $choice = coreui_build_intent_select($pdo,$uid,$sessionId,$turnId,$planGoal,$planGenerate);
+        $approvedBuild = ($choice['status'] ?? '') === 'build'
+          && (int)($choice['plan_version'] ?? 0) === (int)$saved['version'];
+        if (function_exists('coreui_work_record')) {
+          coreui_work_record($pdo,'tool',$approvedBuild ? 'info' : 'success',
+            $approvedBuild ? 'Fertiger Plan: freigegebene Umsetzung wird fortgesetzt'
+              : 'Markdown-Projektplan abgeschlossen',
+            ['reason'=>$approvedBuild ? 'approved_plan_autobuild'
+              : 'plan_saved_without_build_authorization',
+             'plan_version'=>(int)$saved['version']]);
+        }
+      }
+      if (!$approvedBuild) {
+        return 'Ich habe den Projektplan als abgeschlossene Markdown-Version v'
+          . (int)$saved['version'] . ' gespeichert. '
+          . ($autoSegments > 0
+            ? $autoSegments . ' weitere Teilabschnitte habe ich eigenstaendig erstellt. '
+            : '')
+          . 'Die Datei ist als geschuetzter Download verfuegbar.';
+      }
     }
     $description = 'Setze den gespeicherten Plan als vollstaendiges statisches Webprojekt um.';
   } else {

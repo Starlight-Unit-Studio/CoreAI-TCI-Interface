@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.93
+Datum: 18.11.2026
+
+P10: FERTIGER PROJEKTPLAN IST NICHT DAS ENDE DES AUFTRAGS
+- Nach komplett gespeicherter Markdown-Planversion prueft die bestehende
+  modellgesteuerte, eigentuemergebundene Bau-Freigabe nochmals die
+  urspruengliche Nachricht.
+- Bei ausdruecklichem Projektbau geht es im selben Antwortzug direkt
+  zum geprueften Projekt-Writer. Kein "continue" fuer diese Uebergabe.
+- Reine Planungsauftraege, ungueltige/ambivalente Entscheiderausgaben,
+  unvollstaendige Plaene und abgebrochene Laeufe starten keinen Build.
+- Kompakte und normale Werkzeuganweisungen erklaeren PLAN_SAVE,
+  PLAN_AND_BUILD sowie den autorisierten Folgeprozess.
+- Neue SQLite-Selbsttests fuer genehmigte Weiterarbeit und Ablehnungen.
+
+NOCH OFFEN
+- Dauerhafte, ausfallsichere Agentenlauf-Checkpoints und Tool-Protokoll-
+  Reparatur, Zuordnung von Chat-Artefakten zu echtem Projekt-Workspace,
+  beweisbarer Entwicklungsserver und automatische HTTP-Pruefung,
+  siehe GitHub Issue #349.
+- Vor Merge PHP-Lint, Regressionstests und Netcup-Livetest durchfuehren.

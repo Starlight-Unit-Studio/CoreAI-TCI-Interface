@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.93
+Datum: 18.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: 0.7.92 (Draft PR #350, noch nicht auf main)
+Branch: fix/p10-autonomous-plan-to-build-0-7-93
+
+AUFTRAG
+Betreiber: "fehlende Autonomie (zum beispiel nach projektplan.md
+Erstellung direkt weiterarbeiten statt: ende) und alles?"
+
+UMSETZUNG
+- api/console_native_tools.php: Nach dem sicheren Speichern eines
+  fertigen PLAN_SAVE/PLAN_APPEND wird der urspruengliche Nutzerauftrag
+  durch coreui_build_intent_select mit dem bereits zugaenglichen
+  Model-Inferenz-Callback erneut geprueft. Nur das Ergebnis START_BUILD
+  mit uebereinstimmender versionierter Plan-ID des authentifizierten
+  Accounts/Chats fuehrt in denselben sicheren Projekt-Writer-Pfad.
+- Ein rein erbetener Plan, ein unvollstaendiger Entwurf, ein abgebrochener
+  Durchlauf oder eine ungueltige Entscheidung fuehrt keine Dateiaktion aus.
+- Werkzeug-Menue in kurzer und langer Variante korrigiert: PLAN_AND_BUILD
+  fuer ausdruecklich gewuenschte Umsetzung, PLAN_SAVE fuer Planung bzw.
+  lange Plaene. Korrekte Abschlussmarker und ein Block je Werkzeugaufruf.
+- scripts/native-tools-selftest.php: Test fuer genehmigten automatischen
+  Build und verweigerte nicht-autorisierte/unklare Folgeaktionen.
+
+UNVERAENDERT
+- SYSTEM/Modelfile, Rechte, gewoehnliche Modellparameter, globale
+  serielle Ollama-Queue, Sandbox-/Dateivalidierung und Nutzerdaten.
+
+OFFEN VOR MERGE
+- PHP-Lint, die betroffenen Selbsttests, Versionierungs-Guard,
+  Android- und echte Backend-Livetests. Noch keine produktive Abnahme.
+- Weiterhin Issue #349: Persistente Werkzeug-/Workflow-Checkpoints
+  nach Unterbrechung; konkrete Marker-Fehlerbehebung, Datei-/Workspace-
+  Handoff, Prozessstatus/HTTP-Pruefung und echte autonome Testphase.
+
+VERSION
+- Nach 0.7.92 folgt 0.7.93; nach Merge 0.7.94.
