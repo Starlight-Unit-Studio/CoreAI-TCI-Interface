@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.92 - 18.11.2026
+
+- **Unrestricted project source count (P10):** Removed the arbitrary nine-source ZIP limit and tenth-artifact slot restriction from approved manifests, file-collector paths, and the trusted ZIP writer. The requested files are validated individually; ZIP integrity and sandbox budgets remain enforced.
+- **Approved plans:** Removed the unrelated 12,000-byte plan-build gate. Completed plans can now provide their full approved filename manifest; model prompts still use relevant sections to respect actual context windows.
+- **Regression tests:** Added coverage for ten and 25 source files, including incremental named-source recovery. A real PHP/worker validation is still required before production merge.
+- **Next P10 work:** Autonomous plan-to-build continuation, protocol error recovery, project workspace handoff, and verified server starts remain tracked in issue #349.
+
 ## 0.7.91 - 18.11.2026
 
 - **Mara knows her project environment (P10):** In a project chat her prompt now describes the environment that came with P10: the sandbox with Python 3.12 and Node.js 24 (npm, npx) and internet access, a read-only system, saved project files as the working folder, changes made by a command that are not kept, the **Preview** the person sees in the Files tab (HTML pages, and a running server under **Processes**), and the process running now. The short prompt for small Cores no longer says "Python 3.12" only. Without the Python tool the prompt says that commands, tests and processes are not available in this chat, so Mara does not claim to run anything. Outside a project one line tells her that project chats have this environment.
