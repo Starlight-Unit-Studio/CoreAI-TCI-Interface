@@ -70,6 +70,7 @@ const sidebarFold=read('js/coreui-sidebar-fold.js');
 assert(html.includes('class="sidebar-projects-link"') &&
   !html.includes('id="projectsDirectoryBtn"') &&
   !html.includes('data-sidebar-fold="projects"') &&
+  /<\/section>\s*<section class="locked-chats-nav"[^>]*>\s*<div class="projects-nav-list" id="projectsNavList"/.test(html) &&
   !sidebarFold.includes("'pinned','projects','recent'"),
   'projects must be a single link, not an expanding section');
 const sidebarBlock=js.slice(js.indexOf('function renderSidebar()'),js.indexOf('function refreshLocked()'));
