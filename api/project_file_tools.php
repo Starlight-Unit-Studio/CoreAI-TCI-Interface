@@ -399,15 +399,35 @@ function coreui_pftools_proc(PDO $pdo, int $uid, string $projectId, string $kind
       $proc = coreui_pftools_proc_poll($pdo, $uid, $projectId, $proc, 6, static fn(array $p): bool => !coreui_pprocs_active((string)$p['status']), $sleep);
     }
     $server = $proc['port'] !== null;
+    $verification = '';
+    $verifiedHttp = false;
+    // A running process is NOT proof of a responsive HTTP server. Verify it
+    // against the worker-isolated localhost path before claiming "started".
+    if ($kind === 'pserver_start' && $proc['status'] === 'running') {
+      try {
+        $reply = coreui_pprocs_fetch($pdo,$uid,$projectId,(int)$proc['id'],'GET','/',null,'',$sleep);
+        $status = (int)$reply['status'];
+        $verifiedHttp = $status >= 200 && $status < 400;
+        $verification = "\nHTTP-Pruefung GET /: " . $status
+          . ($verifiedHttp ? ' (Server erreichbar).' : ' (Serverprozess laeuft, aber Startseite nicht erfolgreich).');
+      } catch (RuntimeException $e) {
+        $verification = "\nHTTP-Pruefung GET / fehlgeschlagen (" . $e->getMessage()
+          . "). Serverprozess nicht als HTTP-bereit bestaetigt; pruefe Ausgabe und Port.";
+      }
+    }
     if ($proc['status'] === 'running') {
-      coreui_pftools_record($pdo, 'success', $server ? 'Server gestartet, Port ' . (int)$proc['port'] : 'Prozess gestartet', ['count'=>1]);
+      coreui_pftools_record($pdo, $kind !== 'pserver_start' || $verifiedHttp ? 'success' : 'info',
+        !$server ? 'Prozess gestartet' : ($verifiedHttp ? 'Server verifiziert, Port ' . (int)$proc['port']
+          : 'Serverprozess gestartet, HTTP noch nicht verifiziert'),
+        ['count'=>1,'process_id'=>(int)$proc['id'],'port'=>$proc['port'],'http_verified'=>$verifiedHttp]);
     } elseif ($proc['status'] === 'queued') {
       coreui_pftools_record($pdo, 'info', 'Prozess wartet auf den Sandbox-Dienst', ['count'=>1]);
     } else {
       coreui_pftools_record($pdo, $proc['status'] === 'error' ? 'error' : 'info', $proc['status'] === 'error' ? 'Prozess nicht gestartet'
         : 'Prozess gleich wieder beendet, Exitcode ' . (int)$proc['exit_code'], ['count'=>1]);
     }
-    return coreui_pftools_proc_text($proc, coreui_pftools_proc_tail($proc));
+    return coreui_pftools_proc_text($proc, coreui_pftools_proc_tail($proc))
+      . "\nProzess-ID: " . (int)$proc['id'] . $verification;
   }
   if ($kind === 'pproc_output') {
     $proc = coreui_pftools_proc_current($pdo, $uid, $projectId, true);
