@@ -125,14 +125,22 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     'Cross-account project plan leaked into model task');
   dispatch_assert(coreui_native_tool_build_request($pdo,$uid,$session,'React Projekt')===null,
     'Unsupported React framework was silently treated as static HTML');
-  // Never invent a complete build from a truncated 13k-byte plan.
-  $oversized=str_repeat('X',13000);
+  // No arbitrary source-plan size ceiling: a complete, SHA-verified 13k+
+  // plan must be passed to the verified build path without losing its tail.
+  $oversized="# Vollstaendiger Plan\n- index.html\n- style.css\n- main.js\n"
+    .str_repeat('Detaillierte Anforderungen. ',520)
+    ."\n## Ende\nEND_OF_APPROVED_PLAN_13000";
+  dispatch_assert(strlen($oversized)>13000,
+    'Regression fixture must exceed the former 12000-byte ceiling');
   $stmt->execute([
     str_repeat('b',32),$uid,$session,102,null,2,'Long Plan',
     $oversized,strlen($oversized),hash('sha256',$oversized)
   ]);
-  dispatch_assert(coreui_native_tool_build_request($pdo,$uid,$session,$description)===null,
-    'Oversized saved plan was silently truncated for a project build');
+  $bigRequest=coreui_native_tool_build_request($pdo,$uid,$session,$description);
+  dispatch_assert(is_string($bigRequest)
+    && str_contains($bigRequest,$oversized)
+    && substr_count($bigRequest,'END_OF_APPROVED_PLAN_13000')===1,
+    'Complete large plans must not be rejected or silently truncated');
   echo "Model project dispatch with real SQL fixture and one safe callback: OK\n";
 } else {
   echo "Model project dispatch SQL fixture: SKIP (pdo_sqlite unavailable)\n";
