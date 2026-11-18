@@ -423,6 +423,7 @@
     var order=$('projectDirectorySort').value;
     var entries=projects.filter(function(p){return String(p.name||'').toLocaleLowerCase().includes(term);});
     entries.sort(function(a,b){
+      if(Boolean(a.pinned)!==Boolean(b.pinned))return a.pinned?-1:1;
       if(order==='name')return String(a.name).localeCompare(String(b.name),'de');
       var diff=new Date(a.created_at||0)-new Date(b.created_at||0);
       return order==='oldest'?diff:-diff;
@@ -446,6 +447,8 @@
     });
   }
   function openDirectory() {
+    var files=filesTab();
+    if(files&&files.dirtyProject()&&!files.leave())return;
     dismissFloatingMenu();
     restoreComposer();
     directoryVisible=true;
@@ -609,7 +612,7 @@
     post({action:'project_create',name:name,context_mode:mode}).then(function(d){
       closeModal();
       setFolderExpanded(d.project.id,true);
-      return refresh().then(function(){renderSidebar();});
+      return refresh().then(function(){openProject(d.project.id);});
     }).catch(modalError);
   });
   $('projectSettingsSave').addEventListener('click',function(){
