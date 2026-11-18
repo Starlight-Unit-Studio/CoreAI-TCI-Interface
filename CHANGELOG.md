@@ -2,7 +2,7 @@
 
 ## 0.7.97 - 18.11.2026
 
-- **Mobile project navigation:** Project names now open the workspace directly; the separate chevron expands its chat list. A searchable and sortable project directory offers visible cards, pinning, project actions and a back breadcrumb.
+- **Mobile project navigation:** The chat sidebar now has one direct **Projekte** link to the dedicated directory, without expanding project folders or nested chat lists. A searchable and sortable directory offers project cards, pinning, project actions and a back breadcrumb. Locked chats remain accessible separately.
 - **Project details:** A compact mobile editor shows the project name and a separately stored description, with Save and Cancel. Existing model instructions, memory mode and Space placeholders remain under advanced settings.
 - **Scoped metadata migration:** Database migration 055 adds an optional project description without converting it into prompt instructions. Project APIs validate updates and retain user/project ownership checks.
 - **Touch navigation:** Project actions use a mobile bottom sheet with an overlay and explicit close control. Folder and chat actions remain separate.
