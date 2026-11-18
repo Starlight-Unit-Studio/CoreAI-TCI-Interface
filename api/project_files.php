@@ -30,6 +30,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/project_files_store.php';
+require_once __DIR__ . '/console_artifact_store.php';
+require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/project_preview_store.php';
 require_once __DIR__ . '/project_runs_store.php';
 require_once __DIR__ . '/project_procs_store.php';
@@ -208,6 +210,17 @@ try {
   $content = $body['content'] ?? null;
   if (in_array($action, ['create', 'save'], true) && !is_string($content)) throw new InvalidArgumentException('invalid_content');
   switch ($action) {
+    case 'import_chat':
+      // A deliberate user action, authenticated with the account's CSRF token.
+      // Never create a project merely because Mara generated a download.
+      if (coreui_guest_is($pdo, $uid)) stu_json(['ok'=>false, 'error'=>'guests_not_allowed'], 403);
+      $messageId = filter_var($body['message_id'] ?? null, FILTER_VALIDATE_INT);
+      if ($messageId === false || $messageId === null || (int)$messageId < 1) {
+        throw new InvalidArgumentException('invalid_message');
+      }
+      $result = coreui_pfiles_promote_chat_artifacts($pdo, $uid, (int)$messageId,
+        (string)($body['project_name'] ?? ''));
+      stu_json(['ok'=>true] + $result, 201);
     case 'create':
       $result = coreui_pfiles_write($pdo, $uid, $projectId, $path, $content, 'create', ['create_only'=>true]);
       stu_json(['ok'=>true, 'file'=>$result['file']], 201);
@@ -271,9 +284,9 @@ try {
     stu_json(['ok'=>false, 'error'=>'project_files_failed'], 500);
   }
   $status = match (true) {
-    in_array($error, ['project_not_found', 'file_not_found', 'revision_not_found', 'run_not_found', 'proc_not_found',
+    in_array($error, ['project_not_found', 'artifact_not_found', 'file_not_found', 'revision_not_found', 'run_not_found', 'proc_not_found',
       'branch_not_found', 'commit_not_found'], true) => 404,
-    in_array($error, ['file_exists', 'file_changed', 'run_busy', 'no_files', 'proc_busy', 'proc_not_running', 'proc_no_port',
+    in_array($error, ['file_exists', 'file_changed', 'no_artifacts', 'no_complete_artifacts', 'no_usable_project_files', 'run_busy', 'no_files', 'proc_busy', 'proc_not_running', 'proc_no_port',
       'input_busy', 'fetch_busy', 'nothing_to_commit', 'branch_exists', 'branch_active', 'branch_limit', 'history_full',
       'already_current', 'already_merged', 'merge_same', 'merge_changed', 'merge_unresolved'], true) => 409,
     in_array($error, ['run_limit', 'proc_limit', 'proc_active_limit'], true) => 429,
