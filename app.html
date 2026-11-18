@@ -785,13 +785,16 @@
       <div id="projectModalSettings" hidden>
         <label>Name <input type="text" id="projectSettingsName" maxlength="80"/></label>
         <label>Beschreibung <textarea id="projectSettingsDescription" maxlength="2000" rows="4" placeholder="Worum geht es in diesem Projekt?"></textarea></label>
-        <label>Anweisungen <small>Lege den Kontext fest und passe an, wie Mara in diesem Projekt antwortet.</small>
-          <textarea id="projectSettingsInstructions" maxlength="12000" rows="5"></textarea>
-        </label>
-        <label>Erinnerung <select id="projectSettingsMode" disabled><option value="open">Standard</option><option value="isolated">Nur projektbezogen</option></select></label>
-        <p class="project-modal-hint" id="projectSettingsModeHint"></p>
-        <label>Zugriff auf den Space <select disabled><option>Deaktiviert</option></select></label>
-        <p class="project-modal-hint">Eine Space-Anbindung kann später eingerichtet werden.</p>
+        <details class="project-details-advanced" id="projectDetailsAdvanced">
+          <summary>Weitere Projekteinstellungen</summary>
+          <label>Anweisungen <small>Lege den Kontext fest und passe an, wie Mara in diesem Projekt antwortet.</small>
+            <textarea id="projectSettingsInstructions" maxlength="12000" rows="5"></textarea>
+          </label>
+          <label>Erinnerung <select id="projectSettingsMode" disabled><option value="open">Standard</option><option value="isolated">Nur projektbezogen</option></select></label>
+          <p class="project-modal-hint" id="projectSettingsModeHint"></p>
+          <label>Zugriff auf den Space <select disabled><option>Deaktiviert</option></select></label>
+          <p class="project-modal-hint">Eine Space-Anbindung kann später eingerichtet werden.</p>
+        </details>
         <div class="project-details-footer"><button class="project-modal-primary" id="projectSettingsSave" type="button">Speichern</button><button class="project-modal-secondary" id="projectSettingsCancel" type="button">Abbrechen</button></div>
         <button class="project-modal-danger project-settings-danger" id="projectSettingsDelete" type="button">Projekt löschen</button>
       </div>
