@@ -13,11 +13,17 @@ on:
       - 'scripts/voice-service-selftest.py'
       - 'tests/update-runner-selftest.sh'
       - 'tests/update-auto-selftest.py'
-      - 'js/coreui-update.js'
-      - 'settings.html'
-      - 'app.html'
-      - 'scripts/update-ui-selftest.cjs'
-      - 'scripts/update-english-selftest.cjs'
+      - 'scripts/stack.sh'
+      - 'scripts/migrate.sh'
+      - 'scripts/update-from-main.sh'
+      - 'scripts/uninstall.sh'
+      - 'scripts/swap.sh'
+      - 'scripts/lib/host-swap.sh'
+      - 'scripts/ollama-parallel-report.sh'
+      - 'docker/pyworker/entrypoint.sh'
+      - 'tests/uninstall-runner-selftest.sh'
+      - 'tests/host-swap-selftest.sh'
+      - 'scripts/terminal-language-selftest.py'
       - '.github/workflows/installer-preflight-contract.yml'
   push:
     branches: [main]
@@ -32,11 +38,17 @@ on:
       - 'scripts/voice-service-selftest.py'
       - 'tests/update-runner-selftest.sh'
       - 'tests/update-auto-selftest.py'
-      - 'js/coreui-update.js'
-      - 'settings.html'
-      - 'app.html'
-      - 'scripts/update-ui-selftest.cjs'
-      - 'scripts/update-english-selftest.cjs'
+      - 'scripts/stack.sh'
+      - 'scripts/migrate.sh'
+      - 'scripts/update-from-main.sh'
+      - 'scripts/uninstall.sh'
+      - 'scripts/swap.sh'
+      - 'scripts/lib/host-swap.sh'
+      - 'scripts/ollama-parallel-report.sh'
+      - 'docker/pyworker/entrypoint.sh'
+      - 'tests/uninstall-runner-selftest.sh'
+      - 'tests/host-swap-selftest.sh'
+      - 'scripts/terminal-language-selftest.py'
       - '.github/workflows/installer-preflight-contract.yml'
 
 permissions:
@@ -58,16 +70,28 @@ jobs:
           bash -n scripts/preflight.sh
           bash -n scripts/preflight-native.sh
           bash -n scripts/coreai-updater.sh
+          bash -n scripts/stack.sh
+          bash -n scripts/migrate.sh
+          bash -n scripts/update-from-main.sh
+          bash -n scripts/uninstall.sh
+          bash -n scripts/swap.sh
+          bash -n scripts/lib/host-swap.sh
+          bash -n scripts/ollama-parallel-report.sh
+          bash -n docker/pyworker/entrypoint.sh
           bash -n tests/update-runner-selftest.sh
+          bash -n tests/uninstall-runner-selftest.sh
+          bash -n tests/host-swap-selftest.sh
       - name: Verify Python source syntax
         run: |
           python3 -m py_compile scripts/voice-service-selftest.py scripts/lib/coreai_update_state.py tests/update-auto-selftest.py
-      - name: English update window and cache fingerprint
+      - name: English terminal diagnostics
+        run: python3 scripts/terminal-language-selftest.py
+      - name: Uninstall and host-swap safety contracts
         run: |
-          node --check js/coreui-update.js
-          node --check scripts/update-ui-selftest.cjs
-          node scripts/update-english-selftest.cjs
-          python3 scripts/cache-bust.py --verify
+          sudo bash tests/uninstall-runner-selftest.sh
+          bash tests/host-swap-selftest.sh
+      - name: Verify asset fingerprints
+        run: python3 scripts/cache-bust.py --verify
       - name: Voice service and optional-install contract
         run: python3 scripts/voice-service-selftest.py
       - name: Host updater and installation progress contract

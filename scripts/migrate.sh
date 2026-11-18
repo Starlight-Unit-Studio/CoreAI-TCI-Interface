@@ -8,7 +8,7 @@ COMPOSE_FILE="$PROJECT_ROOT/compose.yaml"
 COMPOSE_PROJECT='ember-coreui'
 
 [[ -f "$ENV_FILE" ]] || {
-  printf '[CoreAI: TCI Interface] FEHLER: var/compose.env fehlt. Fuehre zuerst scripts/install.sh aus.\n' >&2
+  printf '[CoreAI: TCI Interface] ERROR: var/compose.env is missing. Run scripts/install.sh first.\n' >&2
   exit 1
 }
 
@@ -17,7 +17,7 @@ if docker compose version >/dev/null 2>&1; then
 elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_CMD=(docker-compose)
 else
-  printf '[CoreAI: TCI Interface] FEHLER: Docker Compose fehlt.\n' >&2
+  printf '[CoreAI: TCI Interface] ERROR: Docker Compose is missing.\n' >&2
   exit 1
 fi
 
@@ -34,7 +34,7 @@ for _try in {1..75}; do
     break
   fi
   if [[ "$_try" == '75' ]]; then
-    printf '[CoreAI: TCI Interface] FEHLER: MariaDB wurde nicht rechtzeitig bereit.\n' >&2
+    printf '[CoreAI: TCI Interface] ERROR: MariaDB did not become ready before the timeout.\n' >&2
     exit 1
   fi
   sleep 2
@@ -43,7 +43,7 @@ done
 shopt -s nullglob
 migrations=("$PROJECT_ROOT"/database/migrations/*.sql)
 (( ${#migrations[@]} > 0 )) || {
-  printf '[CoreAI: TCI Interface] FEHLER: Keine SQL-Migrationen gefunden.\n' >&2
+  printf '[CoreAI: TCI Interface] ERROR: No SQL migrations were found.\n' >&2
   exit 1
 }
 
@@ -56,7 +56,7 @@ for migration in "${migrations[@]}"; do
     -- "$query" 2>/dev/null || true)"
   applied="$(printf '%s' "$applied" | tr -d '[:space:]')"
   if [[ "$applied" == '1' ]]; then
-    printf '[CoreAI: TCI Interface] Migration bereits aktiv: %s\n' "$version"
+    printf '[CoreAI: TCI Interface] Migration already applied: %s\n' "$version"
     continue
   fi
   printf '[CoreAI: TCI Interface] Wende Migration an: %s\n' "$version"

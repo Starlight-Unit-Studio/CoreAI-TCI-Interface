@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.88
+Date: 18 November 2026
+
+SCOPE CORRECTION
+- The user's request concerned terminal output during installation and
+  preflight, not the gold update modal.
+- Remove the unrelated always-English UI override introduced in 0.7.87.
+- Restore the pre-0.7.87 update UI and its original browser test.
+- Keep CoreAI application UI language preferences independent.
+
+ENGLISH TERMINAL DIAGNOSTICS
+- Remaining German status and error output translated in stack.sh,
+  migrate.sh, preflight.sh, coreai-updater.sh, update-from-main.sh,
+  swap.sh, lib/host-swap.sh, ollama-parallel-report.sh, uninstall.sh
+  and docker/pyworker/entrypoint.sh.
+- Interactive CLI uninstall confirmation prompts and exact phrases are now
+  in English; safety checks and purge protection are still enforced.
+- No changes to server commands, database migrations, model parameters,
+  chat, API permissions or persistent account data.
+
+REGRESSION PREVENTION
+- Added scripts/terminal-language-selftest.py to flag German terminal
+  messages in supported installer/operator scripts.
+- CI checks Bash syntax and runs the existing uninstall, host-swap,
+  voice-service and host-updater regression suites.
+- Native package manager or system-service messages may still follow
+  their own locale; CoreAI cannot translate third-party tool output.
+
+Version: 0.7.88

@@ -85,7 +85,7 @@ local_commit() {
 ensure_dirs() {
   local dir
   for dir in "$PROJECT_ROOT/var" "$UPDATE_DIR" "$REQUEST_DIR" "$BACKUP_DIR"; do
-    [[ ! -L "$dir" ]] || die "Unsicherer symbolischer Pfad: $dir"
+    [[ ! -L "$dir" ]] || die "Unsafe symbolic link path: $dir"
   done
   install -d -m 0750 -o root -g 33 "$UPDATE_DIR"
   install -d -m 0770 -o 33 -g 33 "$REQUEST_DIR"

@@ -12,7 +12,7 @@ case "${1:-status}" in
     command -v sysctl >/dev/null 2>&1 && sysctl vm.swappiness || true
     ;;
   ensure)
-    [[ "${EUID:-$(id -u)}" -eq 0 ]] || { coreui_swap_warn 'Bitte als root ausfuehren.'; exit 1; }
+    [[ "${EUID:-$(id -u)}" -eq 0 ]] || { coreui_swap_warn 'Run as root.'; exit 1; }
     coreui_ensure_host_swap
     ;;
   *)

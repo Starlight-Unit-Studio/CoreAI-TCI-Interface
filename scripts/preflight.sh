@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.87: installer and preflight source-contract regression repair.
+# CoreAI: TCI Interface 0.7.88: English operator terminal diagnostics and UI language boundary.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -2386,7 +2386,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   if [[ -n "$LOCK_NAMESPACE" && "$LOCK_NAMESPACE" != 'ember' && "$LOCK_NAMESPACE" != 'stu' ]]; then
     ok "Eigener MariaDB-Lock-Namespace aktiv: $LOCK_NAMESPACE"
   else
-    fail 'Kein sicherer CoreAI: TCI Interface-Lock-Namespace aktiv.'
+    fail 'No secure CoreAI: TCI Interface lock namespace is active.'
   fi
 
   for writable_dir in \
