@@ -60,7 +60,7 @@ fi
 # Redirecting stdin does NOT disconnect /dev/tty. On an SSH terminal
 # this would still prompt the operator and could purge the fixture.
 # Check the guard contract without executing the destructive branch.
-if ! grep -Fq "expected='COREAI DATEN ENDGUELTIG LOESCHEN'" "$ORIGINAL" \
+if ! grep -Fq "expected='COREAI DELETE ALL DATA PERMANENTLY'" "$ORIGINAL" \
    || ! grep -Fq '[[ -r /dev/tty && -w /dev/tty ]] || die' "$ORIGINAL" \
    || ! grep -Fq '[[ "$typed" == "$expected" ]] || die' "$ORIGINAL"; then
   echo 'Runner missing interactive purge confirmation guards' >&2; exit 1
