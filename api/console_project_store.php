@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 function coreui_project_schema_ready(PDO $pdo): bool {
   try {
-    $pdo->query('SELECT id, user_id, name, context_mode, instructions_md, pinned_at FROM stu_console_projects LIMIT 0');
+    $pdo->query('SELECT id, user_id, name, description, context_mode, instructions_md, pinned_at FROM stu_console_projects LIMIT 0');
     $pdo->query('SELECT project_id FROM stu_console_sessions LIMIT 0');
     return true;
   } catch (Throwable $e) { return false; }
@@ -31,7 +31,7 @@ function coreui_project_require(PDO $pdo, int $uid, string $projectId): array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
   $projectId = coreui_project_id($projectId);
   if ($projectId === '' || $uid <= 0) throw new InvalidArgumentException('invalid_project');
-  $st = $pdo->prepare('SELECT id, name, context_mode, instructions_md, pinned_at, created_at FROM stu_console_projects WHERE user_id=? AND id=? LIMIT 1');
+  $st = $pdo->prepare('SELECT id, name, description, context_mode, instructions_md, pinned_at, created_at FROM stu_console_projects WHERE user_id=? AND id=? LIMIT 1');
   $st->execute([$uid, $projectId]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
   if (!is_array($row)) throw new RuntimeException('project_not_found');
@@ -40,7 +40,7 @@ function coreui_project_require(PDO $pdo, int $uid, string $projectId): array {
 
 function coreui_project_list(PDO $pdo, int $uid): array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
-  $st = $pdo->prepare('SELECT p.id, p.name, p.context_mode, p.instructions_md, p.pinned_at, p.created_at, '
+  $st = $pdo->prepare('SELECT p.id, p.name, p.description, p.context_mode, p.instructions_md, p.pinned_at, p.created_at, '
     . '(SELECT COUNT(*) FROM stu_console_sessions s WHERE s.project_id=p.id AND s.user_id=p.user_id '
     . 'AND s.archived_at IS NULL) AS chat_count FROM stu_console_projects p '
     . 'WHERE p.user_id=? ORDER BY (p.pinned_at IS NULL), p.pinned_at DESC, p.created_at DESC');
@@ -64,12 +64,14 @@ function coreui_project_create(PDO $pdo, int $uid, string $name, string $mode): 
   return coreui_project_require($pdo,$uid,$id);
 }
 
-function coreui_project_update(PDO $pdo, int $uid, string $projectId, string $name, string $instructions): array {
+function coreui_project_update(PDO $pdo, int $uid, string $projectId, string $name, string $instructions, string $description = ''): array {
   coreui_project_require($pdo,$uid,$projectId);
   $name = coreui_project_name($name);
   if (mb_strlen($instructions,'UTF-8') > 12000) throw new InvalidArgumentException('project_instructions_too_long');
-  $st = $pdo->prepare('UPDATE stu_console_projects SET name=?,instructions_md=? WHERE id=? AND user_id=?');
-  $st->execute([$name,$instructions,$projectId,$uid]);
+  $description = trim($description);
+  if (mb_strlen($description,'UTF-8') > 2000) throw new InvalidArgumentException('project_description_too_long');
+  $st = $pdo->prepare('UPDATE stu_console_projects SET name=?,instructions_md=?,description=? WHERE id=? AND user_id=?');
+  $st->execute([$name,$instructions,$description,$projectId,$uid]);
   return coreui_project_require($pdo,$uid,$projectId);
 }
 
