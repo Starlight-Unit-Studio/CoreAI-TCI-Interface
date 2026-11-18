@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.95: mandatory preflight sync after every source change.
+# CoreAI: TCI Interface 0.7.96: mandatory preflight sync after every source change.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
