@@ -371,6 +371,15 @@ function ember_extract_explicit_reply_candidate(string $source): string {
  * `[WEB: ...]`-Befehl") and stay; before 0.5.76 they left "``" behind.
  */
 function ember_strip_stray_tool_markers(string $out): string {
+  // An unsupported shell-shaped marker is NOT an executed command. A model
+  // must not smuggle an invented operation into a human-visible success story.
+  // Do not treat examples inside code fences or inline code as tool requests.
+  $plain = (string)preg_replace('~```[\s\S]*?```|`[^`\r\n]*`~u', '', $out);
+  if (preg_match('~(?mi)^[ \t]*\\[linux[-_ ]shell[ \t]*:[^\\]\r\n]*\\][ \t]*$~u', $plain) === 1) {
+    return 'Der Befehl wurde NICHT ausgefuehrt: [linux-shell] ist kein CoreAI-Werkzeug. '
+      . 'Es gibt deshalb keinen bestaetigten Prozess oder Serverstart. '
+      . 'In einem Projekt-Chat kann ich das freigegebene Prozesswerkzeug verwenden.';
+  }
   // 0.7.73: a project file block (closed, or cut off at the end) never reaches the chat.
   $out = (string)preg_replace('~\[\s*(DATEI_(?:AENDERN|NEU))\s*:[^\]\r\n]*\][\s\S]*?(?:\[\s*/\s*\1\s*\]|\z)~u', '', $out);
   $out = (string)preg_replace('~\[\s*DATEI\s*:[^\]\r\n]*\]~u', '', $out);
