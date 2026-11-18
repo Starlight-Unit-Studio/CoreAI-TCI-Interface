@@ -238,6 +238,8 @@ UI_FILES=(
   css/coreui-project-files.css
   scripts/project-files-selftest.php
   scripts/project-files-ui-selftest.cjs
+  scripts/project-ui-selftest.cjs
+  database/migrations/055_project_descriptions.sql
   scripts/api-allowlist-selftest.cjs
   database/migrations/045_project_files_mara.sql
   api/project_file_tools.php
@@ -2005,6 +2007,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Deep Research: UI test skipped (Playwright for Node.js is not installed).'
+    fi
+    # Project UX regression: directory, direct open, mobile details, persistence and permissions.
+    if node "$PROJECT_ROOT/scripts/project-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Projects: directory, navigation and scoped descriptions verified.'
+    else
+      fail 'Projects: UI contract test failed.'
     fi
     # 0.7.69 (P09): the tab Dateien on the project page; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
