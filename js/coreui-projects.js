@@ -5,7 +5,7 @@
   var $ = function (id) { return document.getElementById(id); };
   if (!$('coreuiProjectHome') || !$('projectsNavList')) return;
   var projects = [], sessions = [], lockedChats = [], lockedExpanded = false, current = null, tab = 'chats', sources = [];
-  var csrf = '', busy = false;
+  var csrf = '', busy = false, directoryVisible = false;
   var api = './api';
   var modalProjectId = '';
   var composer = document.querySelector('.app-shell > .composer');
@@ -259,7 +259,10 @@
       var app=chatApp();
       if(app && app.getSessions) sessions=app.getSessions();
       if(current && !selected()) closeHome();
-      if(!current) {
+      if(!current && !directoryVisible) {
+        var directoryLink=false;
+        try{directoryLink=new URLSearchParams(location.search).get('projects')==='1';}catch(e){}
+        if(directoryLink){openDirectory();}
         var linkedProject='';
         try {linkedProject=new URLSearchParams(location.search).get('project')||'';}catch(e){}
         if(linkedProject && projects.some(function(p){return p.id===linkedProject;})) {
@@ -268,6 +271,7 @@
       }
       renderSidebar();
       if(current) {renderHeader();renderChats();}
+      if(directoryVisible)renderDirectory();
       return refreshLocked();
     });
   }
@@ -409,6 +413,46 @@
     } catch(e){sourceStatus(processed+' hochgeladen. Fehler: '+fail(e));}
     finally{busy=false;$('projectSourceFile').value='';}
   }
+  function renderDirectory() {
+    var list=$('projectDirectoryList');if(!list)return;
+    list.replaceChildren();
+    var term=String($('projectDirectorySearch').value||'').trim().toLocaleLowerCase();
+    var order=$('projectDirectorySort').value;
+    var entries=projects.filter(function(p){return String(p.name||'').toLocaleLowerCase().includes(term);});
+    entries.sort(function(a,b){
+      if(order==='name')return String(a.name).localeCompare(String(b.name),'de');
+      var diff=new Date(a.created_at||0)-new Date(b.created_at||0);
+      return order==='oldest'?diff:-diff;
+    });
+    if(!entries.length){list.appendChild(el('p','project-empty',term?'Keine passenden Projekte.':'Noch keine Projekte.'));return;}
+    entries.forEach(function(p){
+      var row=el('article','project-directory-card');
+      var main=action('',function(){openProject(p.id);},'project-directory-open');
+      var icon=el('span','project-directory-icon');icon.innerHTML=ICON_FOLDER_CLOSED;
+      main.appendChild(icon);
+      var copy=el('span','project-directory-copy');
+      copy.appendChild(el('strong','',p.name));
+      var date=p.created_at?new Date(p.created_at):null;
+      copy.appendChild(el('small','',date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('de-DE'):'Projekt'));
+      main.appendChild(copy);row.appendChild(main);
+      var menu=action('···',function(e){e.stopPropagation();showFloatingMenu(menu,'project',projectActions(p));},'project-directory-options');
+      menu.setAttribute('aria-label','Projektaktionen: '+p.name);row.appendChild(menu);
+      var pin=action(p.pinned?'★':'☆',function(e){e.stopPropagation();runAction('pin',p.id);},'project-directory-pin');
+      pin.setAttribute('aria-label',p.pinned?'Projekt loslösen: '+p.name:'Projekt anpinnen: '+p.name);
+      row.appendChild(pin);list.appendChild(row);
+    });
+  }
+  function openDirectory() {
+    dismissFloatingMenu();
+    restoreComposer();
+    directoryVisible=true;
+    $('coreuiProjectHome').hidden=true;
+    $('coreuiProjectDirectory').hidden=false;
+    document.body.classList.add('project-home-active');
+    renderDirectory();
+    var app=chatApp();if(app&&app.closeDrawer)app.closeDrawer();
+    try{history.replaceState(null,'',location.pathname+'?projects=1');}catch(e){}
+  }
   function openProject(id) {
     if(!projects.some(function(p){return p.id===id;}))return;
     // Unsaved edits of another project are only dropped after a confirmation;
@@ -419,6 +463,8 @@
     // into whichever unrelated session happened to be active before opening.
     var app=chatApp();
     if(!app||!app.prepareProjectDraft||!app.prepareProjectDraft(id))return;
+    directoryVisible=false;
+    $('coreuiProjectDirectory').hidden=true;
     current=id;tab='chats';sourceStatus('');
     mountComposer();
     $('coreuiProjectHome').hidden=false;
@@ -430,10 +476,10 @@
     if(app.closeDrawer)app.closeDrawer();
   }
   function closeHome() {
-    if(!current && $('coreuiProjectHome').hidden)return;
+    if(!current && !directoryVisible && $('coreuiProjectHome').hidden)return;
     dismissFloatingMenu();
     restoreComposer();
-    current=null;$('coreuiProjectHome').hidden=true;
+    current=null;directoryVisible=false;$('coreuiProjectDirectory').hidden=true;$('coreuiProjectHome').hidden=true;
     document.body.classList.remove('project-home-active');
     $('projectHomePopover').hidden=true;
     $('projectHomeMore').setAttribute('aria-expanded','false');
@@ -540,9 +586,14 @@
     }).then(refresh).catch(function(e){alert(fail(e));});
   }
   $('projectsCreateBtn').addEventListener('click',function(){openModal('create');});
+  $('projectsDirectoryBtn').addEventListener('click',openDirectory);
+  $('projectDirectoryCreate').addEventListener('click',function(){openModal('create');});
+  $('projectDirectoryDrawer').addEventListener('click',function(){var a=chatApp();if(a&&a.openDrawer)a.openDrawer();});
+  $('projectDirectorySearch').addEventListener('input',renderDirectory);
+  $('projectDirectorySort').addEventListener('change',renderDirectory);
   $('projectHomeDrawerToggle').addEventListener('click',function(){var app=chatApp();if(app&&app.openDrawer)app.openDrawer();});
   var projectBreadcrumb=$('projectHomeBreadcrumbBack');
-  if(projectBreadcrumb)projectBreadcrumb.addEventListener('click',function(){var app=chatApp();if(app&&app.openDrawer)app.openDrawer();});
+  if(projectBreadcrumb)projectBreadcrumb.addEventListener('click',openDirectory);
   var modalCancel=$('projectSettingsCancel');
   if(modalCancel)modalCancel.addEventListener('click',closeModal);
   $('projectModalClose').addEventListener('click',closeModal);
@@ -578,7 +629,7 @@
   $('projectSourceFile').addEventListener('change',function(){uploadFiles(Array.from(this.files||[]));});
   // The shared CoreAI composer sends via CoreAIChatApp.sendMessage with the
   // project ID bound in prepareProjectDraft; no parallel event listener.
-  window.CoreAIProjects={refresh:refresh,openProject:openProject,closeHome:closeHome,
+  window.CoreAIProjects={refresh:refresh,openProject:openProject,openDirectory:openDirectory,closeHome:closeHome,
     updateSessions:updateSessions,assignChat:assignChat,refreshLocked:refreshLocked};
   refresh().catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
 })();
