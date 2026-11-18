@@ -1,0 +1,20 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.96
+Date: 2026-11-18
+
+English terminal diagnostics
+- Installer, migration runner and both Preflight variants display
+  reviewed, clear English status messages for completed selftests.
+- PHP/Python selftests remain executed and verified, but their
+  localized stdout is no longer printed as an operator success label.
+- Migrator reports 'Applying migration' and 'All database migrations
+  are up to date' in English, no SQL or data migration changes.
+- Fixed mixed-language setup and account/Markdown diagnostic labels.
+- A regression gate checks German text and unreviewed raw success
+  streams, invoked by both Preflights and unconditional GitHub CI.
+- Permanent developer policy in AGENTS.md, CLAUDE.md and version policy.
+
+Safety and validation
+- No changes to test outcomes, exit codes, account security,
+  installed Ollama models, user data or sandbox permissions.
+- Host Preflight and integrated updater require real live verification
+  after GitHub tests pass; a green CI does not prove host success.
