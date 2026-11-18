@@ -29,10 +29,12 @@ intent_assert(coreui_native_plan_source_manifest(
   )===['index.html','about.html','gallery.html','portfolio.html',
     'faq.html','contact.html','styles.css','app.js'],
   'Explicit CSS/JS names must not get overwritten by default style.css/main.js');
+$manyManifest = array_merge(['index.html'], array_map(
+  static fn(int $n): string => 'module' . $n . '.js', range(1, 25)));
 intent_assert(coreui_native_plan_source_manifest(
-  "# Plan\n- index.html\n- ".implode("\n- ",[
-    'a.html','b.html','c.html','d.html','e.html','f.html','g.html','h.html','i.html'])
-  )===null,'More than nine files must fail closed');
+  "# Plan\n- ".implode("\n- ", $manyManifest)) === array_merge(
+  $manyManifest, ['style.css']),
+  'Plans with more than nine safe sources must retain the entire manifest');
 intent_assert(coreui_native_plan_source_manifest(
   "# Plan\n- /etc/passwd\n- ../../../secret.php"
   )===[],'Unsafe path and PHP entries must be rejected');
