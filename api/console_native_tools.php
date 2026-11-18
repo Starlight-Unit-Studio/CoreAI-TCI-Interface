@@ -419,7 +419,11 @@ function coreui_native_tool_reply_shape(string $reply): string {
   if (!in_array($opens[0], $known, true)) return 'tool_name_unknown';
   if ($closes === []) return 'tool_block_unclosed';
   if (count($closes) > 1 || $closes[0] !== $opens[0]) return 'tool_markers_mismatched';
-  if (preg_match('~\[COREUI_[A-Z_]+\][ \t]*\n([\s\S]*?)\n[ \t]*\[/COREUI_~', $text, $inner) === 1
+  // PLAN_CONTINUE is a request to resume the owner's persisted draft, not
+  // a new Markdown plan. Its body is intentionally short and is not validated
+  // by the 96-byte requirements for an actual PLAN_SAVE document.
+  if (!in_array($opens[0], ['PLAN_CONTINUE','PLANCONTINUE'], true)
+      && preg_match('~\[COREUI_[A-Z_]+\][ \t]*\n([\s\S]*?)\n[ \t]*\[/COREUI_~', $text, $inner) === 1
       && !coreui_native_recovered_body_ok($opens[0], trim($inner[1]))) return 'tool_body_too_short';
   return 'tool_text_around_block';
 }
@@ -447,12 +451,21 @@ function coreui_native_tool_repair_prompt(string $shape, string $previous, bool 
     'tool_body_too_short'=>'Der Inhalt war zu kurz. Ein Plan beginnt mit # Titel und hat ## Abschnitte oder Listenpunkte.',
     'tool_text_around_block'=>'Vor oder nach dem Block stand Text mit Klammern, Links oder Codebloecken.',
   ][$shape] ?? 'Die Form des Werkzeugblocks war nicht eindeutig.';
+  // Do not redirect a malformed request to resume an already owned plan
+  // into a new PLAN_SAVE. Only a single, unmistakable continuation attempt
+  // gets this narrowly scoped correction; mixed tool blocks stay ambiguous.
+  $resume = coreui_native_plan_continue_marker_attempt($previous)
+    && preg_match_all('~(?mi)^[ \\t]*\\[(?:COREUI[/_][A-Z_]+)\\][ \\t]*$~', $previous) === 1;
+  $example = $resume
+    ? "[COREUI_PLAN_CONTINUE]\\nGespeicherten Entwurf fortsetzen.\\n[/COREUI_PLAN_CONTINUE]\\n"
+    : "[COREUI_PLAN_SAVE]\\n# Titel\\n## Abschnitt\\n- Anforderungen und Abnahmekriterien konkret beschreiben.\\n[/COREUI_PLAN_SAVE]\\n";
   $prompt = "\n\n[COREUI WERKZEUGKORREKTUR]\nDeine letzte Antwort wollte ein CoreAI-Werkzeug "
     . "nutzen, war aber nicht sicher lesbar. Grund: " . $why . "\n"
     . "Triff deine Entscheidung jetzt erneut. Antworte ENTWEDER normal ohne jeden COREUI-Marker "
     . "ODER ausschliesslich mit genau EINEM vollstaendigen Block, erste Zeile der oeffnende, "
     . "letzte Zeile der passende schliessende Marker, zum Beispiel:\n"
-    . "[COREUI_PLAN_SAVE]\n# Titel\n## Abschnitt\n- Punkt\n[/COREUI_PLAN_SAVE]\n"
+    . $example
+    . ($resume ? "Verwende den bereits gespeicherten Entwurf. Starte keinen neuen PLAN_SAVE-Block.\\n" : '')
     . "Erlaubte Werkzeuge: PLAN_SAVE, PLAN_APPEND, PLAN_CONTINUE, PLAN_AND_BUILD, PROJECT_BUILD. "
     . "Kein Codeblock und kein zweiter Block.\n";
   $previous = trim($previous);
