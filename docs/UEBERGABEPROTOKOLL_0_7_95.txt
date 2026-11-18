@@ -1,0 +1,48 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.95
+Datum: 18.11.2026
+Basis: main 0.7.94
+Branch: fix/preflight-sync-gate-0-7-95
+
+BETREIBER-AUFTRAG
+"wir brauchen ne regel das preflight nach jeder aenderung angepasst
+und getestet wird" – auch fuer andere CoreAI-Betreiber und den
+integrierten Updater muss jeder Release-Stand gesund sein.
+
+URSACHE DES LIVE-FEHLERS
+- Entfernte kuenstliche 12k-Planbausperre in 0.7.92/0.7.94.
+- Zwei veraltete negative Regressionen erwarten weiterhin, dass
+  plans >12000 Bytes von coreui_native_tool_build_request abgelehnt
+  werden, obwohl die Funktion sie absichtlich vollstaendig akzeptiert.
+- Compose-Preflight meldete daher genau zwei Fehler und der Updater
+  verweigerte die Abnahme.
+
+KORREKTUREN
+- Alte Assertions durch Positivchecks fuer originale Langplanbytes
+  inkl. tail sentinel und Planpruefsumme ersetzt.
+- AGENTS.md / CLAUDE.md / docs/VERSIONING_POLICY.md:
+  PREFLIGHT_SYNC_GATE nach jeder Aenderung, Tests in beiden Modi,
+  echte Syntax/Regression, Fail=Release-Blocker, keine Assertions
+  deaktivieren, keine unechten Live-Erfolge.
+- scripts/preflight.sh und scripts/preflight-native.sh:
+  zuerst Offline-Vertragscheck; beide Modi behalten ihre bisherigen
+  vollstaendigen Hostchecks und Testregistrierungen.
+- scripts/preflight-sync-selftest.py: kontrolliert Test-Existenz,
+  Registrierung in beiden Preflights, alte Limits und Regel-Dateien.
+- .github/workflows/preflight-sync-gate.yml: PR ohne Pfadfilter;
+  PHP-Lint und Offline-Testausfuehrung einschliesslich beider
+  relevanter Langplan-Faelle.
+
+NICHT ANGEFASST
+- Ollama-Modelfile/System, globale serielle Modelqueue,
+  Sandbox-/Accountrechte, bestehende Projektdateien, Userdaten,
+  Installationsprozesse, produktive Datenbank.
+- Die lokale Versionskontrolle bleibt verbindlich; GitHub CI ersetzt
+  den echten Host-Preflight nicht.
+
+NOCH ABZUNEHMEN
+- Actions gruen inklusive Preflight-Sync-Gate und Version Guard;
+  danach voller Compose-/Native-Preflight am Server und Update ueber
+  integrierten Updater testen. Keinen Merge oder Produktivtest
+  als durchgefuehrt deklarieren, bevor dies wirklich geschehen ist.
+
+Naechster Versionsschritt nach Merge: 0.7.96.

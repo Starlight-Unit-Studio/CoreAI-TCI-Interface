@@ -58,6 +58,16 @@ Stand: 04.11.2026
 - `AGENTS.md` und `CLAUDE.md` enthalten diese Repo-Regeln fuer Coding-Assistenten. `scripts/version-merge-check.py` prueft die Dokumentationsstruktur vor dem Merge.
 - Der kanonische README-One-Liner laedt `https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh`. Alte Repository-Weiterleitungen sind kein Grund, den offiziellen Pfad falsch zu dokumentieren.
 
+## PREFLIGHT_SYNC_GATE: Pflicht bei jeder Aenderung (18.11.2026)
+
+1. **Nach jeder Aenderung** das betroffene Verhalten mit den Selbsttests in `scripts/preflight.sh` und `scripts/preflight-native.sh` abgleichen. Betroffene Testannahmen und Sollwerte korrigieren; neue Funktionen mit Regressionen in beiden Installationsarten abdecken. Bei unveraendertem Vertrag ist keine kuenstliche Test-Umschreibung noetig, die unveraenderte Gueltigkeit muss aber geprueft werden.
+2. **Direkt nach dem Patch** Syntax und relevante Offline-Selbsttests ausfuehren, nicht erst nach dem Merge. Bei Testfehlern reparieren und die Tests erneut ausfuehren. Im PR dokumentieren, was real lief und was mangels Host nicht testbar war.
+3. **Jeder PR** durchlaeuft den `preflight-sync-gate` ohne Dateipfad-Filter: Er prueft beide Preflight-Shells, deren grundlegende Testverdrahtung und die Offline-Regressionen. Gruene fremde Tests ersetzen den gezielten Test eines geaenderten Moduls nicht.
+4. **Vor dem Merge** alle vorgeschriebenen Checks grün; **vor produktiver Freigabe** auf dem echten Zielsystem den vollstaendigen Compose- bzw. Native-Preflight ausfuehren. Host-, Docker-, Datenbank- und Netzwerkpruefungen sind nicht durch einen CI-Selbsttest ersetzbar. Kein defektes Release fuer den integrierten Updater.
+5. Fehlgeschlagene Tests werden niemals auskommentiert, entfernt oder zu Warnungen herabgestuft. Wenn ein Verhalten absichtlich geaendert wurde, muss der Test das **neue korrekte Verhalten samt Integritaets-/Sicherheitsgarantie** absichern. Der dokumentierte Status darf keinen nicht gelaufenen Live-Test als bestanden bezeichnen.
+
+Dies ist eine **zusaetzliche** Preflight-/Release-Anforderung. Die bestehende Regel, dass der lokale Versionierungs-Guard nicht durch GitHub Actions ersetzt werden darf, bleibt bestehen.
+
 ## Verpflichtender Check VOR jedem Merge
 
 - **Auch das neueste `docs/UEBERGABEPROTOKOLL_*.txt` und die Main-Merge-Chronik lesen.** Wenn das Protokoll eine aufgrund bereits nachgezaehlter Merges verbindliche naechste Version nennt, diese nicht durch blindes Fortschreiben von `VERSION` ignorieren. Historische Schritte nie als erfundene ZIP-Releases oder nachtraeglich umbenannte PRs ausgeben.

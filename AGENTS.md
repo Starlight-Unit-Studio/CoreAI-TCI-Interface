@@ -31,6 +31,15 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 4. Geplante Funktionen nicht als implementiert darstellen. Hardwareangaben nicht als getestete Mindestwerte ausgeben, wenn sie nicht live gemessen wurden. Fuer Planung `ROADMAP.md` und Fach-Dokumentation nutzen.
 5. Der offizielle README-One-Liner muss gut sichtbar bleiben und `https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh` verwenden.
 
+## PREFLIGHT_SYNC_GATE: Nach jeder Aenderung (Betreiberregel 18.11.2026)
+
+- **Jede** Code-, Konfigurations-, UI-, Installer-, API- und Testaenderung erfordert einen Abgleich der passenden Selbsttests mit dem neuen SOLL-Verhalten, **vor dem Commit**. Bei Dokumentationsaenderungen den Preflight-Vertrag zumindest pruefen. Ein neues Verhalten bekommt einen positiven Test und, wo relevant, einen negativen Sicherheits-/Fehlerfall.
+- Immer **beide** Preflights (`scripts/preflight.sh` fuer Compose und `scripts/preflight-native.sh` fuer Native) sowie deren Testregistrierung pruefen. Betroffene Test-Erwartungen aktualisieren, veraltete Assertions suchen und neue Tests in beide Varianten eintragen, sofern die Funktion in beiden existiert. Keine blosse Versions-/Kommentaraenderung als Testabnahme ausgeben.
+- Nach jeder Aenderung die geaenderten Dateien syntaktisch pruefen und die betroffenen Offline-Selbsttests **tatsaechlich ausfuehren**, mit Ergebnis/Fehler im PR. Der globale `preflight-sync-gate` laeuft bei jedem PR automatisch. Bei Fehlern reparieren und erneut testen; keine Assertions entfernen, auskommentieren oder Warnungen statt Fehlern verwenden, um CI gruen zu machen.
+- Vor dem Merge alle erforderlichen CI-Pruefungen bestehen lassen. Vor produktiver Freigabe den vollstaendigen zum Deployment passenden Preflight in der echten Umgebung testen. Host-/Container-/Netzwerk- und Datenbankchecks koennen nur dort als bestanden gelten, nicht in GitHub Actions.
+- **Preflight FAIL = nicht releasefaehig.** Auch der integrierte Updater und die anderen Nutzer sind Release-Verbraucher: Kein defekter Commit auf `main`, kein Preflight-Bypass und kein erzwungener Updater-Erfolg. Bei Testaenderungen immer die urspruengliche Schutzabsicht beibehalten.
+- Ein widerspruechliches altes Limit (z.B. Ablehnung von Projektplaenen ueber 12.000 Byte nach Abschaffung dieser Produktgrenze) muss durch einen Test ersetzt werden, der **vollstaendige Daten** verifiziert, nicht stilles Abschneiden legitimiert.
+
 ## Versionierung und Abnahme
 
 - **Jeder Merge nach `main` benoetigt eine neue numerische Version**, auch rein dokumentarische Merger. Es gilt `docs/VERSIONING_POLICY.md`.
@@ -38,7 +47,7 @@ Diese Regeln gelten fuer jede Arbeit im Repository **CoreAI: TCI Interface**, au
 - Vor Merge lokal `python3 scripts/version-merge-check.py --base-version <aktuelle-main-version>` ausfuehren.
 - **UI-Text-Regression:** Nach jeder Aenderung sichtbarer Formulierungen alle Testdateien nach den alten Texten durchsuchen, exakte Solltexte aktualisieren und die betroffenen Tests real ausfuehren. Assertions zu Funktionen, Berechtigungen, Kanon und Event-Kennungen nicht entfernen oder umgehen. Ein ungetesteter Sprachfix ist nicht mergefertig.
 - **PHP-Syntax ist ein Merge-Blocker:** Nach PHP-Textaenderungen alle geaenderten `.php`-Dateien mit `php -l` pruefen und die betroffenen Selbsttests laufen lassen. Bei fehlender PHP-Laufzeit PR als Draft belassen und NICHT mergen. Insbesondere Quotes und Konkatenation bei User-Textaenderungen pruefen.
-- Keine GitHub Actions als Voraussetzung. Keine nicht durchgefuehrten Tests als erfolgreich beschreiben.
+- Der lokale Versions-Guard bleibt auch ohne GitHub Actions verbindlich. Fuer neue PRs ist der zusaetzliche `preflight-sync-gate` in GitHub Actions ein verpflichtender Regressionstest; er ersetzt keine Live-Preflights. Keine nicht durchgefuehrten Tests als erfolgreich beschreiben.
 - Ein Merge ist nicht gleich Live-Deployment.
 
 ## Grenzen und Sicherheit
