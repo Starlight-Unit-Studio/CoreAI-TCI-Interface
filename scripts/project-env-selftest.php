@@ -340,7 +340,9 @@ coreui_pfiles_write($old, 7, $a, 'app.py', "print(1)\n", 'build');
 env_test(coreui_pftools_run($old, 7, 'cs_old', ['tool'=>'pproc_start', 'input'=>'python app.py'])
     === 'Das ging nicht: Prozesse sind auf diesem Server noch nicht eingerichtet (Migration 048).'
   && !str_contains(coreui_pftools_hint($old, 7, 'cs_old', false, true), 'PROZESS_STARTEN')
-  && str_contains(coreui_pftools_hint($old, 7, 'cs_old', false, true), '[AUSFUEHREN: befehl]'), 'without migration 048: runs yes, processes no');
+  && str_contains(coreui_pftools_hint($old, 7, 'cs_old', false, true), '[AUSFUEHREN: befehl]')
+  && coreui_pftools_run($old, 7, 'cs_old', ['tool'=>'pproc_output', 'input'=>'ausgabe'])
+    === 'Das ging nicht: Prozesse sind auf diesem Server noch nicht eingerichtet (Migration 048).', 'without migration 048: runs yes, processes no');
 foreach (array_column($GLOBALS['env_events'], 2) as $t) {
   env_test(preg_match('/^[a-zA-Z0-9 \-.,:()\/]{3,110}$/D', $t) === 1, 'work event title fits the work store: ' . $t);
 }
