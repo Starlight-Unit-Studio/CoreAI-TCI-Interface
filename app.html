@@ -321,7 +321,7 @@
           <button class="project-home-nav-toggle" id="projectHomeDrawerToggle" type="button" aria-label="Seitenleiste öffnen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
           <nav class="project-home-breadcrumb" aria-label="Projektpfad"><button type="button" id="projectHomeBreadcrumbBack">Projekte</button><span aria-hidden="true">/</span><span id="projectHomeBreadcrumbName"></span></nav>
           <header class="project-home-header">
-            <div class="project-home-title"><span class="project-home-kicker">PROJEKT</span><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 10V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M5 11h16l-2 9H3l2-9Z"/></svg></span><h2 id="projectHomeName"></h2><span class="project-home-mode" id="projectHomeMode"></span></div>
+            <div class="project-home-title"><span class="project-home-kicker">PROJEKT</span><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 10V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M5 11h16l-2 9H3l2-9Z"/></svg></span><h2 id="projectHomeName"></h2><span class="project-home-mode" id="projectHomeMode"></span><p class="project-home-description" id="projectHomeDescription" hidden></p></div>
             <div class="project-home-header-actions">
               <button type="button" id="projectHomeShare" aria-label="Projekt teilen" title="Projekt teilen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
               <button type="button" id="projectHomeMore" aria-label="Projektmenü" aria-expanded="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>
@@ -783,7 +783,8 @@
         <button class="project-modal-primary" id="projectCreateConfirm" type="button">Projekt erstellen</button>
       </div>
       <div id="projectModalSettings" hidden>
-        <label>Projektname <input type="text" id="projectSettingsName" maxlength="80"/></label>
+        <label>Name <input type="text" id="projectSettingsName" maxlength="80"/></label>
+        <label>Beschreibung <textarea id="projectSettingsDescription" maxlength="2000" rows="4" placeholder="Worum geht es in diesem Projekt?"></textarea></label>
         <label>Anweisungen <small>Lege den Kontext fest und passe an, wie Mara in diesem Projekt antwortet.</small>
           <textarea id="projectSettingsInstructions" maxlength="12000" rows="5"></textarea>
         </label>
