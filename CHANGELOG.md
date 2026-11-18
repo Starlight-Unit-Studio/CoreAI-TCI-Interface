@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.97 - 18.11.2026
+
+- **Mobile project navigation:** Project names now open the workspace directly; the separate chevron expands its chat list. A searchable and sortable project directory offers visible cards, pinning, project actions and a back breadcrumb.
+- **Project details:** A compact mobile editor shows the project name and a separately stored description, with Save and Cancel. Existing model instructions, memory mode and Space placeholders remain under advanced settings.
+- **Scoped metadata migration:** Database migration 055 adds an optional project description without converting it into prompt instructions. Project APIs validate updates and retain user/project ownership checks.
+- **Touch navigation:** Project actions use a mobile bottom sheet with an overlay and explicit close control. Folder and chat actions remain separate.
+- **Regression protections:** The project UI contract covers the new controls and description persistence; Compose and native Preflight register the test. SQLite fixtures were synchronized with the new schema.
+- **Validation status:** Changes are proposed in draft PR #357; no production server or actual Android end-to-end verification is claimed. A full Holo theme pass follows functional approval.
+
 ## 0.7.96 - 18.11.2026
 
 - **English-only terminal output:** Installer, migration and both Preflight variants now present CoreAI-authored operator status messages in English, independent from the application's UI language. Replaced raw selftest success stdout with explicit English pass labels after each real test completes.
