@@ -1,4 +1,19 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Version main: 0.7.91, Branch in Arbeit: fix/p10-remove-artificial-file-count-limit-0-7-92 (0.7.92).
+ZIEL 0.7.92: Kuenstliche Obergrenze von neun Projekt-Quelldateien/ZIP und
+12.000 Bytes fuer fertige Projektplaene entfernen. Sichere Dateinamen,
+Dateivalidierung, echte Sandbox-Ressourcengrenzen und ZIP-Pruefung behalten.
+BEREITS GEPRUEFT: Source-Analyse und Regressionstests im Branch verfasst.
+NICHT GEPRUEFT: PHP-Lint, Worker-Selbsttests und Live-Abnahme; vor
+Merge verbindlich nachholen. Kein Live-Fix behauptet.
+NAECHSTER SCHRITT: Issue #349, von Markdown-Plan zu Build/Test/Server autonom
+weiterarbeiten, persistente Checkpoints, Marker-Fehlerkorrektur und echte
+Prozess-/HTTP-Erfolgskontrolle, ohne Betreiber-Cores/Modelfile zu aendern.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_92.txt.
+Nach Merge naechste Version 0.7.93.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Version main: 0.7.90, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.7.91).
 ZIEL 0.7.91: Mara kennt ihre Projektumgebung aus P10 (Sandbox, Vorschau,
 laufender Prozess) und startet, liest, beantwortet und beendet Prozesse
