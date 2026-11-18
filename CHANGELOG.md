@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.95 - 18.11.2026
+
+- **Preflight Sync Gate:** After every change, contributors must inspect both Compose and Native preflight requirements, synchronize affected test expectations and execute real offline regressions. The gate runs on every pull request regardless of changed paths and cannot substitute for a live host preflight.
+- **Fix broken long-plan checks:** Replaced the obsolete 12,000-byte plan rejection assertions in model project-intent and project handoff selftests. They now require verified 12k+/13k+ plans to reach the approved builder completely, including final acceptance requirements. Prevents selftest-only failures that blocked healthy installed CoreAI updaters.
+- **Two-mode enforcement:** Both shipping preflights execute a new dependency-free contract test that validates required test registration and stale plan-limit assumptions. New regression workflow runs PHP syntax, project-planning, source/ZIP, agent-loop and development environment offline tests on every PR.
+- **Release safety:** A failing preflight blocks the merge/release; no bypass or downgrade of checks. Full Compose/Native host checks and live update validation remain required on the target machine.
+
 ## 0.7.94 - 18.11.2026
 
 - **P10 practical failures, draft fixes:** Remove the remaining downstream 10-output limits in the Python artifact worker, PHP manifest validation and generated-file card view. Previously a successful project with more than ten sources could be silently truncated or hidden after creation.
