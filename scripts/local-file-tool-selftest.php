@@ -243,9 +243,39 @@ local_file_test(coreui_console_project_fences_python(
   $reply . "\n### index.html\n```html\n<html>duplicate</html>\n```",
   $request) === null, 'duplicate files in one response must be rejected');
 $tooManyRequest = 'Erstelle a1.txt, a2.txt, a3.txt, a4.txt, a5.txt, a6.txt, a7.txt, a8.txt, a9.txt und a10.txt, packe sie in all.zip und stelle einen Download bereit.';
-local_file_test(coreui_console_multifile_source_directive($tooManyRequest) === null
-  && coreui_console_project_request_spec($tooManyRequest) === null,
-  'ZIP jobs must reserve the tenth artifact slot for the archive');
+$tenSpec = coreui_console_project_request_spec($tooManyRequest);
+local_file_test(is_array($tenSpec)
+  && count($tenSpec['requested']) === 10
+  && coreui_console_multifile_source_directive($tooManyRequest) !== null,
+  'A ZIP artifact does not consume an artificial source-file slot');
+
+// Regression: many verified source files are assembled without any count ceiling.
+$manyNames = [];
+$manyFiles = [];
+$manyReplies = [];
+for ($i = 1; $i <= 25; $i++) {
+  $filename = 'module' . $i . '.txt';
+  $manyNames[] = $filename;
+  $manyFiles[$filename] = ['name'=>$filename, 'bytes'=>'source-' . $i];
+  $manyReplies[] = '### ' . $filename . "\n" . "```text\nsource-" . $i . "\n```";
+}
+$manyRequest = 'Erstelle ' . implode(', ', $manyNames)
+  . ', packe sie in all.zip und stelle einen Download bereit.';
+$manySpec = coreui_console_project_request_spec($manyRequest);
+$manyWriter = is_array($manySpec)
+  ? coreui_console_project_files_python($manyFiles, $manySpec, 1000000) : null;
+local_file_test(is_array($manySpec)
+  && count($manySpec['requested']) === 25
+  && coreui_console_multifile_source_directive($manyRequest) !== null
+  && is_array($manyWriter) && $manyWriter['file_count'] === 26
+  && str_contains($manyWriter['code'], "zipfile.ZipFile"),
+  '25 separately verified sources must be eligible for a single ZIP without a file-count cap');
+$manyProgress = coreui_console_project_source_progress($manyReplies, $manyRequest, 1000000);
+local_file_test(is_array($manyProgress)
+  && $manyProgress['missing'] === []
+  && is_array($manyProgress['project'])
+  && $manyProgress['project']['file_count'] === 26,
+  'Incremental source accumulation must also accept more than nine files');
 local_file_test(coreui_console_project_fences_python($reply, $request, 500) === null,
   'generated server writer must respect the configured code-size limit');
 $oversizeSpec = coreui_console_project_request_spec($request);
