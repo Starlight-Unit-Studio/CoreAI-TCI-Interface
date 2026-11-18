@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.93: continue explicitly approved builds after completed plan checkpoints.
+# CoreAI: TCI Interface 0.7.94: P10 live workflow, verified artifacts and honest server status.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

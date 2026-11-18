@@ -406,6 +406,75 @@ function coreui_pfiles_import_entries(PDO $pdo, int $uid, string $projectId, arr
 }
 
 /**
+ * Explicitly promote verified download artifacts from one owned assistant
+ * message into a real project workspace. This does not run a command or trust
+ * user/model-provided file paths; the database and hashes are authoritative.
+ * The owning chat moves only after the operator presses the import action.
+ */
+function coreui_pfiles_promote_chat_artifacts(PDO $pdo, int $uid, int $messageId, string $name): array {
+  if ($uid <= 0 || $messageId <= 0) throw new InvalidArgumentException('invalid_message');
+  if (!coreui_pfiles_schema_ready($pdo) || !coreui_console_artifact_schema_ready($pdo)) {
+    throw new RuntimeException('artifact_migration_required');
+  }
+  $name = coreui_project_name($name);
+  $message = $pdo->prepare("SELECT m.session_id FROM stu_chat_messages m
+    JOIN stu_console_sessions s ON s.id=m.session_id AND s.user_id=m.user_id
+    WHERE m.id=? AND m.user_id=? AND m.channel='console'
+      AND m.reply_to_id IS NOT NULL AND m.deleted_at IS NULL LIMIT 1");
+  $message->execute([$messageId,$uid]);
+  $sessionId = $message->fetchColumn();
+  if (!is_string($sessionId) || $sessionId === '') throw new RuntimeException('artifact_not_found');
+
+  $st = $pdo->prepare(coreui_console_artifact_select_sql()
+    . " AND a.user_id=? AND a.message_id=? ORDER BY a.created_at,a.id");
+  $st->execute([$uid,$messageId]);
+  $records = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+  if ($records === []) throw new RuntimeException('no_artifacts');
+  $files = [];
+  foreach ($records as $row) {
+    if (!empty($row['partial'])) continue;
+    $verified = [
+      'storage_key'=>(string)$row['storage_key'],
+      'name'=>(string)$row['orig_name'],
+      'size_bytes'=>(int)$row['file_size'],
+      'sha256'=>(string)$row['sha256'],
+      'partial'=>false
+    ];
+    $fh = coreui_console_artifact_open_verified($verified);
+    fclose($fh);
+    $files[] = $verified;
+  }
+  if ($files === []) throw new RuntimeException('no_complete_artifacts');
+
+  $ownTransaction = !$pdo->inTransaction();
+  if ($ownTransaction) $pdo->beginTransaction();
+  else $pdo->exec('SAVEPOINT coreui_promote_artifacts');
+  try {
+    $scope = coreui_project_session_scope($pdo,$uid,$sessionId);
+    if (empty($scope['available'])) throw new RuntimeException('project_not_found');
+    if (($scope['id'] ?? '') !== '') {
+      $project = coreui_project_require($pdo,$uid,(string)$scope['id']);
+    } else {
+      $project = coreui_project_create($pdo,$uid,$name,'open');
+      coreui_project_assign($pdo,$uid,$sessionId,(string)$project['id']);
+    }
+    $imported = coreui_pfiles_import_build($pdo,$uid,$sessionId,$messageId,$files);
+    if (!is_array($imported) || ($imported['saved'] === [] && (int)$imported['unchanged'] === 0)) {
+      throw new RuntimeException('no_usable_project_files');
+    }
+    if ($ownTransaction) $pdo->commit();
+    else $pdo->exec('RELEASE SAVEPOINT coreui_promote_artifacts');
+    return ['project_id'=>(string)$project['id'],'project_name'=>(string)$project['name'],
+      'session_id'=>$sessionId,'saved'=>$imported['saved'],'unchanged'=>(int)$imported['unchanged'],
+      'skipped'=>$imported['skipped']];
+  } catch (Throwable $e) {
+    if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
+    elseif (!$ownTransaction) $pdo->exec('ROLLBACK TO SAVEPOINT coreui_promote_artifacts');
+    throw $e;
+  }
+}
+
+/**
  * After a Python job in a project chat: its text files and the text files in
  * its ZIPs become project files (loose files win over the same path in a ZIP).
  * $files are the verified artifact entries of the turn (storage_key, name,

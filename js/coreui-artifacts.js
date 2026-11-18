@@ -340,12 +340,14 @@
     return box;
   }
 
-  function render(files) {
+  function render(files, messageId) {
     var section = document.createElement('section');
     section.className = 'msg-artifacts';
     section.setAttribute('aria-label', 'Erzeugte Dateien');
     var seen = new Set();
-    (Array.isArray(files) ? files : []).slice(0, 10).forEach(function (file) {
+    // Render the entire verified manifest. The former 10-card slice hid files
+    // after a successful multi-source build without telling the operator.
+    (Array.isArray(files) ? files : []).forEach(function (file) {
       if (!validFile(file) || seen.has(file.id)) return;
       seen.add(file.id);
       // Only verified Markdown files use the embedded safe viewer.
@@ -372,6 +374,64 @@
         section.appendChild(card(file));
       }
     });
+    // Generated downloads do not imply a project workspace. The user can
+    // explicitly adopt the already SHA-verified files without reuploading.
+    var canImport = manage.can && /^[1-9][0-9]{0,15}$/.test(String(messageId || ''))
+      && (Array.isArray(files) ? files : []).some(function (file) {
+        return file && file.kind !== 'plan' && file.available === true
+          && file.deleted !== true && file.partial !== true && validFile(file);
+      });
+    if (canImport) {
+      var row = document.createElement('div');
+      row.className = 'msg-artifact-actions';
+      var take = document.createElement('button');
+      take.type = 'button';
+      take.className = 'msg-artifact-action is-preview';
+      take.textContent = 'In Projekt übernehmen';
+      var note = document.createElement('span');
+      note.className = 'msg-artifact-status';
+      note.setAttribute('role', 'status');
+      row.appendChild(take);
+      row.appendChild(note);
+      take.addEventListener('click', function () {
+        var name = window.prompt('Projektname für die vorhandenen Dateien:', 'Mara-Projekt');
+        if (name === null) return;
+        name = String(name).trim();
+        if (!name) { note.textContent = 'Bitte einen Projektnamen eingeben.'; return; }
+        take.disabled = true;
+        note.textContent = 'Dateien werden geprüft und übernommen ...';
+        var endpoint = new URL('project_files.php', api);
+        fetch(endpoint.href, {
+          method: 'POST', credentials: 'same-origin', cache: 'no-store', redirect: 'error',
+          headers: { 'Content-Type': 'application/json', 'X-CoreUI-CSRF': manage.csrf },
+          body: JSON.stringify({ action: 'import_chat', message_id: Number(messageId), project_name: name })
+        }).then(function (response) {
+          return response.json().catch(function () { return {}; }).then(function (data) {
+            if (!response.ok || !data || data.ok !== true || !/^[a-f0-9]{32}$/.test(data.project_id || '')) {
+              throw new Error(data && data.error ? 'Projektübernahme fehlgeschlagen: ' + String(data.error)
+                : 'Das Projekt konnte nicht übernommen werden.');
+            }
+            return data;
+          });
+        }).then(function (data) {
+          var added = Array.isArray(data.saved) ? data.saved.length : 0;
+          note.textContent = added + ' Projektdateien übernommen.';
+          if (window.CoreAIProjects && typeof window.CoreAIProjects.refresh === 'function') {
+            Promise.resolve(window.CoreAIProjects.refresh()).then(function () {
+              if (typeof window.CoreAIProjects.openProject === 'function') {
+                window.CoreAIProjects.openProject(data.project_id);
+              }
+            }).catch(function () {
+              note.textContent += ' Projektliste bitte neu laden.';
+            });
+          }
+        }).catch(function (error) {
+          note.textContent = error && error.message ? error.message : 'Projektübernahme fehlgeschlagen.';
+          take.disabled = false;
+        });
+      });
+      section.appendChild(row);
+    }
     return section;
   }
 
@@ -432,7 +492,7 @@
           manage.retention = Number(data.retention_days) > 0 ? Number(data.retention_days) : 0;
           rows.forEach(function (row, index) {
             if (row.isConnected && row.getAttribute('data-message-id') === ids[index]) {
-              place(row, render(data.artifacts[ids[index]] || []));
+              place(row, render(data.artifacts[ids[index]] || [], ids[index]));
             }
           });
         })

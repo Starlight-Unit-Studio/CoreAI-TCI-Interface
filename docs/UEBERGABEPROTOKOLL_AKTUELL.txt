@@ -1,4 +1,21 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Version geplant nach 0.7.93: 0.7.94 (gestapelter Draft PR).
+Branch: fix/p10-live-end-to-end-0-7-94.
+BASIS: 0.7.93 (Draft PR #351) auf 0.7.92 (Draft PR #350).
+ZIEL 0.7.94: Praxisbugs aus Issue #349: restliche zehn-Dateien-
+Schranken bis zur Downloadanzeige, Projekt-Werkzeugschleife ohne
+sechs-Schritte-Stopp, reale Server-HTTP-Erfolgskontrolle, ungueltigen
+linux-shell-Marker erkennen und ausdrueckliche uebernahme von
+Chat-Dateien in Projekt-Workspace per Mobil-Button.
+OFFEN: Realer PHP-/Sandbox-/Android-Livetest und dauerhafte Wiederaufnahme
+nach Worker-Abbruch sowie breitere native Tool-Protokollreparatur.
+Es wurde keine Live-Abnahme und kein produktiver Fix behauptet.
+Vor Merge zwingend: Lint, Regressionen, Version-Guard, Preflights.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_94.txt.
+Nach Merge naechste Version 0.7.95.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Version geplant nach 0.7.92: 0.7.93 (gestapelter PR).
 Branch: fix/p10-autonomous-plan-to-build-0-7-93.
 ZIEL 0.7.93: Fertiger projektplan.md beendet einen ausdruecklichen

@@ -1,0 +1,53 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.94
+Datum: 18.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: 0.7.93 (PR #351, Draft) nach 0.7.92 (PR #350, Draft).
+Branch: fix/p10-live-end-to-end-0-7-94
+
+AUFTRAG
+Issue #349 aus dem Live-Praxistest bearbeiten. Kein Planende nach
+projektplan.md, keine stillen Dateischnitte, keine erfundenen
+Werkzeugerfolge und ein wirklich nutzbarer Projekt-Workspace.
+
+BISHER IMPLEMENTIERT
+- tools/ember_artifacts.py: keine harte 10-Ausgabe-Dateien-Grenze;
+  echte Sandbox-Sicherheits- und Speichergrenzen unveraendert.
+- api/console_artifact_store.php: Manifest mit mehr als zehn echten,
+  validierten Dateien akzeptieren (SHA256- und Bytegrenzen bleiben).
+- js/coreui-artifacts.js: alle Downloadkarten anzeigen; optionaler
+  mobiler Uebernahmeknopf mit bestaetigtem Kontobenutzer und CSRF.
+- api/project_files_store.php und api/project_files.php: explizite,
+  transaktionale, eigentuemergebundene Uebernahme vorhandener
+  Chat-Artefakte in ein Projekt mit session.project_id; ZIP und
+  Textdateien werden ueber bestehende Validatoren importiert,
+  fremde/fehlende Artefakte bleiben gesperrt.
+- api/console_agent_loop.php: Projektwerkzeuge nicht nach sechs
+  Schritten abschneiden; kontrollierte Laufzeit, Stopp, Fortschritts-
+  Erkennung. Werkzeugaussagen werden am echten Ergebnis gemessen.
+  Standardrecherche behaelt das bisherige Verhalten.
+- api/project_file_tools.php: [SERVER_STARTEN] bestaetigt erst mit
+  tatsaechlichem HTTP-GET /; Prozess-ID, Port und Ergebnis im Text.
+- api/chat.php: [linux-shell: ...] aus Modelltext darf keinen
+  ausgefuehrten Befehl vortaeuschen.
+- Betroffene Selbsttests und Version/README/Changelog nachgezogen.
+
+NICHT ANGEFASST
+- Ollama-/TCI-Modelle, Modelfile/SYSTEM, globale serielle Queue,
+  Accountrechte, Sandboxed-Ausfuehrung, bestehende Nutzerdaten,
+  gewachsene Projektversions-Historie.
+
+OFFEN / VERBINDLICHE ABNAHME
+- Runtime-Tests wurden in dieser GitHub-Sitzung noch nicht ausgefuehrt;
+  Code-Review alleine ist kein PHP-Lint und kein Netcup-Livetest.
+- Vor Merge: php -l, node --check, Python-Pycompile und die
+  betroffenen Selftests, versions-merge-check --base-version 0.7.93,
+  Preflight und Netcup mit echtem Modell und Android-Chrome.
+- Issue #349 nicht als vollstaendig geschlossen markieren:
+  echte dauerhafte Wiederaufnahme mit DB-Checkpoints nach Worker-Ausfall,
+  robuste native Werkzeugformat-Reparatur inkl. invalid_plan_continue_marker
+  und tool_body_too_short sowie die komplette Autonomie-/Server-Liverunde
+  stehen noch aus.
+
+VERSION
+- Nach Merge von #350 (0.7.92) und #351 (0.7.93) kommt 0.7.94.
+- Naechster Versionsschritt danach: 0.7.95.

@@ -245,6 +245,12 @@ $looks = 0;
 $sleep = static function () use ($pdo, &$w, &$looks): void { $looks++; env_worker($pdo, $w); };
 $tool = static fn(string $sid, string $kind, string $input = ''): string => coreui_pftools_run($pdo, 7, $sid, ['tool'=>$kind, 'input'=>$input], $sleep);
 
+// A model's invented shell syntax must never become a claimed server start.
+$unknownTool = ember_strip_stray_tool_markers("Ich starte jetzt den Server.\n[linux-shell: npm run dev]");
+env_test(str_contains($unknownTool, 'NICHT ausgefuehrt')
+  && str_contains($unknownTool,'kein CoreAI-Werkzeug')
+  && !str_contains($unknownTool,'Ich starte jetzt'), 'invalid shell marker is not executable success');
+
 // The hint in a project chat: environment, preview, processes, what runs now.
 $hint = coreui_pftools_hint($pdo, 7, 'cs_server', false, true);
 env_test(str_contains($hint, 'UMGEBUNG: Zum Projekt gehoert ein Sandbox-Container mit Python 3.12 und Node.js 24 (npm, npx) und Internetzugang.')
@@ -274,9 +280,10 @@ $GLOBALS['env_python'] = true;
 // Start a server: the worker takes it, the first output comes, the port is the one Mara named.
 $GLOBALS['env_events'] = [];
 $started = $tool('cs_server', 'pserver_start', '8000 python app.py');
-env_test(str_starts_with($started, "Prozess: python app.py (Port 8000)\nLäuft.\n--- Ausgabe ---\nServer bereit") && $looks >= 1,
-  'Mara starts the server and reads its first line: ' . $started);
-env_test(env_titles() === ['Server gestartet, Port 8000'], 'work view: ' . json_encode(env_titles()));
+env_test(str_starts_with($started, "Prozess: python app.py (Port 8000)\nLäuft.\n--- Ausgabe ---\nServer bereit") && $looks >= 1
+  && str_contains($started, 'HTTP-Pruefung GET /: 200 (Server erreichbar).') && str_contains($started, 'Prozess-ID: '),
+  'Mara starts the server and verifies HTTP before success: ' . $started);
+env_test(env_titles() === ['Server verifiziert, Port 8000'], 'work view: ' . json_encode(env_titles()));
 env_test(str_contains(coreui_pftools_hint($pdo, 7, 'cs_server', false, true), 'Gerade laeuft: python app.py (Port 8000).'), 'the hint names what runs now');
 env_test($tool('cs_server', 'pproc_start', 'python app.py') === 'Das ging nicht: in diesem Projekt laeuft schon ein Prozess; lies ihn mit [PROZESS_AUSGABE] oder beende ihn mit [PROZESS_BEENDEN].',
   'one process per project');
@@ -401,7 +408,7 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
     coreui_pfiles_write($db, $uid, $pid, 'app.py', $app, 'build');
     coreui_pfiles_write($db, $uid, $pid, 'index.html', "<!doctype html><html><body><h1>Version 1</h1></body></html>", 'build');
     $mdbLook = static function () use ($db, &$w): void { env_worker($db, $w); };
-    $w = ['start'=>"Server bereit\n", 'fetch'=>['/api/zahl'=>[200, 'application/json', '{"zahl": 42}']]];
+    $w = ['start'=>"Server bereit\n", 'fetch'=>['/'=>[200,'text/html','<h1>OK</h1>'], '/api/zahl'=>[200, 'application/json', '{"zahl": 42}']]];
     $first = coreui_pftools_run($db, $uid, $sid, ['tool'=>'pserver_start', 'input'=>'8000 python app.py'], $mdbLook);
     env_test(str_starts_with($first, "Prozess: python app.py (Port 8000)\nLäuft.\n--- Ausgabe ---\nServer bereit"), 'MariaDB: start with a stand-in worker: ' . $first);
     env_test(str_contains(coreui_pftools_hint($db, $uid, $sid, false, true), 'Gerade laeuft: python app.py (Port 8000).')
@@ -432,7 +439,7 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
       // Mara starts the server herself and checks it.
       $GLOBALS['env_events'] = [];
       $start = $real('pserver_start', '8000 python app.py');
-      env_test(str_starts_with($start, "Prozess: python app.py (Port 8000)\nLäuft.") && env_titles() === ['Server gestartet, Port 8000'],
+      env_test(str_starts_with($start, "Prozess: python app.py (Port 8000)\nLäuft.") && env_titles() === ['Server verifiziert, Port 8000'],
         'sandbox: Mara starts the server: ' . $start . $log());
       $answer = $until(static function () use ($real) {
         $text = $real('pserver_fetch', '/api/zahl');

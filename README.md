@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.93`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.94`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -100,6 +100,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Set project-specific instructions, add private sources and use **open or isolated project context** with project-scoped RAG-Lite retrieval.
 - Use the same full composer in a project as in a regular chat: text, attachments, Core, Thinking, tools and voice.
 - Save text files Mara produces within a project into its **Files** tab, with a folder tree, filename/content search and line numbers.
+- **Import into project** on a generated file message explicitly moves that owned chat into a project workspace and imports its checksum-verified ZIP and text sources without a second upload; nothing is promoted automatically and files from other accounts are inaccessible.
 - Create, edit, rename, delete and download text files; compare revisions, restore earlier versions and export the current project as ZIP.
 - In a project chat, Mara reads a single project file, changes exact passages or writes a new file; every change is all-or-nothing, saved as a revision marked as hers and can be restored.
 - Preview an HTML page of a project in the **Files** tab: its stylesheets, scripts, SVG pictures and data files come from the project, links open its other pages, and script errors are listed with file and line. The preview shows the saved state, reloads after saving and runs isolated from the account (its own sandboxed origin, no access to cookies, chats or the API).
