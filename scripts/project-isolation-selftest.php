@@ -12,7 +12,7 @@ if (!in_array('sqlite',PDO::getAvailableDrivers(),true)) {
 }
 $pdo=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 $pdo->exec('CREATE TABLE stu_console_projects (id TEXT, user_id INTEGER, name TEXT, context_mode TEXT,
-  instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
 $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT, user_id INTEGER, project_id TEXT,
   title TEXT, archived_at TEXT, created_at TEXT, updated_at TEXT)');
 $pdo->exec('CREATE TABLE stu_user_knowledge_sources (uuid TEXT, user_id INTEGER, project_id TEXT,
@@ -22,7 +22,7 @@ $pdo->exec('CREATE TABLE stu_user_knowledge_chunks (source_uuid TEXT, user_id IN
 $pdo->exec('CREATE TABLE stu_chat_messages (id INTEGER, channel TEXT, user_id INTEGER,
   session_id TEXT, character_name TEXT, character_id TEXT, message TEXT, deleted_at TEXT, alliance_id TEXT)');
 $a=str_repeat('a',32);$b=str_repeat('b',32);$c=str_repeat('c',32);
-$st=$pdo->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)');
+$st=$pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)');
 $st->execute([$a,7,'Test A','isolated','Stay in A',null,'2026-01-01']);
 $st->execute([$b,7,'Test B','open','',null,'2026-01-01']);
 $st->execute([$c,9,'Other account','isolated','',null,'2026-01-01']);
