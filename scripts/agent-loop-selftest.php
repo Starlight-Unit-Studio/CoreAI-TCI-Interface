@@ -96,6 +96,40 @@ loop_test(count(array_filter($events, static fn(array $e): bool => $e[0] === 'to
 loop_test(str_contains($prompts[2], "Schritt 1 (Websuche: „gemma4 12b“):\nErgebnis 1") && str_contains($prompts[2], "Schritt 3 (Python-Rechnung):")
   && str_contains($prompts[2], 'Ergebnis 2 fuer gemma4 12b Groesse GB'), 'later prompts carry all results');
 
+// P10: tools must not be declared successful merely because the model asked.
+loop_test(coreui_agent_tool_result_state(['tool'=>'pserver_start','input'=>'8000 cmd'],
+  "Prozess: cmd (Port 8000)\nLäuft.\nHTTP-Pruefung GET /: 200 (Server erreichbar).") === 'success'
+  && coreui_agent_tool_result_state(['tool'=>'pserver_start','input'=>'8000 cmd'],
+    "Prozess: cmd (Port 8000)\nLäuft.\nHTTP-Pruefung GET / fehlgeschlagen (server_unreachable).") === 'info'
+  && coreui_agent_tool_result_state(['tool'=>'pserver_fetch','input'=>'/'], 'GET /: HTTP 404 (text/html)') === 'error'
+  && coreui_agent_tool_result_state(['tool'=>'prun','input'=>'npm test'], 'Beendet mit Exitcode 1.') === 'error'
+  && coreui_agent_tool_result_state(['tool'=>'pfile_write','input'=>'index.html'],
+    'Das ging nicht: datei nicht verfuegbar.') === 'error',
+  'tool status is based on real results, never a requested action');
+loop_test(str_starts_with(coreui_agent_step_label(['tool'=>'pserver_start','input'=>'8000 cmd'],1,0,'info'),
+  'Noch nicht bestaetigt: Server gestartet:'), 'the followup model cannot mistake an unverified server for proof');
+loop_test(str_contains(coreui_agent_step_prompt('B', [], 10, 0, ['web','pfile_write']), 'bisher 10 Arbeitsschritte')
+  && coreui_agent_step_title(['tool'=>'pfile_write','input'=>'x'],7,0) === 'Schritt 7: Projektdatei schreiben',
+  'project loop has no artificial six-file final step');
+$projectAllowed = ['web','pfile_write','pfile_edit','prun'];
+$projectResponses = [];
+for ($i=1; $i<=8; $i++) $projectResponses[] = '[WEB: neuer-schritt-' . $i . ']';
+$projectResponses[] = 'Projektauftrag abgeschlossen mit geprueften Werkzeugen.';
+$projectTools = [];
+$projectEvents = [];
+$projectLoop = coreui_agent_loop_run('[WEB: projekt-start]', ['tool'=>'web','input'=>'projekt-start'],
+  'BASIS', $projectAllowed,0,
+  static fn(string $prompt): ?string => array_shift($projectResponses),
+  static function(array $tool) use (&$projectTools): string {
+    $projectTools[]=$tool;
+    return 'Echtes Suchergebnis fuer ' . $tool['input'];
+  },
+  static function(string $kind,string $state,string $title,array $meta) use (&$projectEvents): void {
+    $projectEvents[]=[$kind,$state,$title];
+  },static fn(): bool => false);
+loop_test(count($projectTools)===9 && $projectLoop['steps']===9
+  && str_contains((string)$projectLoop['out'],'abgeschlossen'), 'project work may continue past six confirmed steps');
+
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
 loop_test($r['browse'] === 'Ollama Bibliothek gemma4 Tags lesen' && $r['out'] === null && count($tools) === 1, 'hand over to the browser');
