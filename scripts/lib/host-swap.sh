@@ -41,15 +41,15 @@ coreui_swap_status() {
   local proc_swaps="${1:-/proc/swaps}"
   local fstab="${2:-/etc/fstab}"
   if [[ ! -r "$proc_swaps" || ! -r "$fstab" ]]; then
-    coreui_swap_warn 'Swap-Status nicht vollstaendig lesbar.'
+    coreui_swap_warn 'Unable to read the complete swap status.'
     return 0
   fi
   if coreui_swap_has_active "$proc_swaps"; then
     coreui_swap_info 'Aktiver Swap vorhanden. Installer veraendert ihn nicht.'
   elif coreui_swap_has_fstab_entry "$fstab"; then
-    coreui_swap_warn 'Swap ist in /etc/fstab eingetragen, aber inaktiv. Keine automatische Aenderung.'
+    coreui_swap_warn 'Swap is listed in /etc/fstab but inactive. No automatic changes made.'
   else
-    coreui_swap_warn 'Kein aktiver oder in /etc/fstab eingetragener Swap vorhanden.'
+    coreui_swap_warn 'No active swap or swap entry in /etc/fstab was found.'
   fi
 }
 
@@ -71,7 +71,7 @@ coreui_ensure_host_swap() (
   esac
 
   if [[ ! -r "$proc_swaps" || ! -r "$fstab" || ! -w "$fstab" ]]; then
-    coreui_swap_warn 'Swap-Status oder /etc/fstab nicht sicher zugaenglich. Host bleibt unveraendert.'
+    coreui_swap_warn 'Swap status or /etc/fstab cannot be accessed safely. Host remains unchanged.'
     return 0
   fi
   if [[ "$swapfile" != /* || "$lockfile" != /* ]]; then
@@ -90,7 +90,7 @@ coreui_ensure_host_swap() (
   local cmd
   for cmd in flock findmnt df fallocate chmod mkswap swapon awk; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      coreui_swap_warn "Benoetigter Befehl fehlt: $cmd. Host bleibt unveraendert."
+      coreui_swap_warn "Required command is missing: $cmd. Host remains unchanged."
       return 0
     fi
   done
@@ -102,7 +102,7 @@ coreui_ensure_host_swap() (
     return 0
   fi
   if ! exec {lockfd}>"$lockfile"; then
-    coreui_swap_warn 'Host-Swap-Lock konnte nicht geoeffnet werden.'
+    coreui_swap_warn 'Could not open the host swap lock.'
     return 0
   fi
   if ! flock -x -w 20 "$lockfd"; then
@@ -119,7 +119,7 @@ coreui_ensure_host_swap() (
     return 0
   fi
   if [[ -e "$swapfile" || -L "$swapfile" ]]; then
-    coreui_swap_warn "Vorhandenes $swapfile wird niemals ueberschrieben."
+    coreui_swap_warn "Existing $swapfile will not be overwritten."
     return 0
   fi
 
@@ -127,7 +127,7 @@ coreui_ensure_host_swap() (
   fstype="$(findmnt -n -o FSTYPE -T "$directory" 2>/dev/null || true)"
   case "$fstype" in
     ext4|xfs) ;;
-    *) coreui_swap_warn "Dateisystem ${fstype:-unbekannt} nicht freigegeben (nur ext4/XFS)."; return 0 ;;
+    *) coreui_swap_warn "Filesystem ${fstype:-unknown} is unsupported (ext4/XFS only)."; return 0 ;;
   esac
 
   free_kib="$(df -Pk "$directory" 2>/dev/null | awk 'NR == 2 { print $4 }' || true)"
@@ -139,28 +139,28 @@ coreui_ensure_host_swap() (
 
   coreui_swap_info "Kein Swap gefunden. Lege ${size_gib} GiB unter $swapfile an."
   if ! (umask 077; fallocate -l "${size_gib}G" "$swapfile"); then
-    coreui_swap_warn 'Swapdatei konnte nicht erstellt werden.'
+    coreui_swap_warn 'Swap file could not be created.'
     [[ ! -f "$swapfile" ]] || rm -f -- "$swapfile" || true
     return 0
   fi
   if ! chmod 0600 "$swapfile" || ! mkswap "$swapfile" >/dev/null 2>&1; then
-    coreui_swap_warn 'Swapdatei konnte nicht initialisiert werden.'
+    coreui_swap_warn 'Swap file could not be initialized.'
     rm -f -- "$swapfile" || true
     return 0
   fi
   if ! swapon "$swapfile"; then
     # On an ambiguous partial activation, never delete a possibly active file.
     if awk -v path="$swapfile" 'NR > 1 && $1 == path { found = 1 } END { exit !found }' "$proc_swaps"; then
-      coreui_swap_warn 'Swap ist trotz Fehlerrueckgabe aktiv. Bitte Zustand manuell pruefen.'
+      coreui_swap_warn 'Swap is active despite the error return. Please verify its state manually.'
     else
-      coreui_swap_warn 'swapon fehlgeschlagen. Neue inaktive Datei wird entfernt.'
+      coreui_swap_warn 'swapon failed. Removing the new inactive swap file.'
       rm -f -- "$swapfile" || true
     fi
     return 0
   fi
 
   if ! printf '\n%s none swap sw 0 0\n' "$swapfile" >> "$fstab"; then
-    coreui_swap_warn 'Swap ist aktiv, /etc/fstab konnte aber nicht gesichert werden. Bitte manuell korrigieren.'
+    coreui_swap_warn 'Swap is active, but /etc/fstab could not be backed up. Please correct manually.'
     return 0
   fi
 
@@ -168,13 +168,13 @@ coreui_ensure_host_swap() (
       || coreui_swap_has_custom_swappiness "$(dirname -- "$sysctl_file")"; then
     coreui_swap_info 'Vorhandene Betreiber-Swappiness bleibt unangetastet.'
   elif (set -C; printf '# CoreUI-managed new swap only\nvm.swappiness=%s\n' "$swappiness" > "$sysctl_file"); then
-    chmod 0644 "$sysctl_file" || coreui_swap_warn 'Berechtigungen der sysctl-Datei konnten nicht gesetzt werden.'
+    chmod 0644 "$sysctl_file" || coreui_swap_warn 'Could not set permissions on the sysctl file.'
     if command -v sysctl >/dev/null 2>&1; then
       sysctl -w "vm.swappiness=$swappiness" >/dev/null \
-        || coreui_swap_warn 'Swappiness konnte nicht sofort aktiviert werden.'
+        || coreui_swap_warn 'Could not activate swappiness immediately.'
     fi
   else
-    coreui_swap_warn 'Swappiness-Konfiguration konnte nicht geschrieben werden; Swap bleibt aktiv.'
+    coreui_swap_warn 'Could not write the swappiness configuration; swap remains active.'
   fi
 
   coreui_swap_info "${size_gib} GiB Swap aktiv und fuer Neustarts in /etc/fstab hinterlegt."
