@@ -364,7 +364,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   // a place in NRW goes to the WDR place search in the browser, api/weather_live.php).
   if ($tool !== null && $route !== null) $tool = $route($tool);
   while ($tool !== null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS)) {
-    if ($cancelled()) { $stopReason = 'cancelled'; break; }
+    // Keep legacy image/research cancellation semantics, but never launch a new
+    // project command after an explicit cancellation.
+    if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
     if (microtime(true) >= $deadline) { $stopReason = 'time_budget'; break; }
     $title = coreui_agent_step_title($tool, $used + 1, $maxSteps);
     $note = coreui_agent_step_note($tool);
