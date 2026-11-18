@@ -171,3 +171,35 @@ body.project-home-active .messages-area.is-welcome { display:block !important; }
 }
 .project-chat-menu button:hover {background:#404043}
 .project-chat-menu button.danger {color:#ff8893}
+
+/* Mobile project navigation, phase A: reference layout without branded assets. */
+.project-home-breadcrumb {display:flex;align-items:center;gap:13px;min-width:0;color:#a9a9ae;font:500 15px/1.5 system-ui;margin:6px 0 26px;padding-left:54px}
+.project-home-breadcrumb button {border:0;background:transparent;color:#c7c7cb;cursor:pointer;padding:10px 2px;font:inherit;min-height:44px}
+.project-home-breadcrumb span:last-child {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.project-home-title {flex-wrap:wrap}
+.project-home-title .project-home-kicker {width:100%;font:500 11px/1.4 system-ui;color:#a6a6ad;letter-spacing:.1em}
+.project-home-title h2 {font:600 clamp(25px,4.5vw,39px)/1.2 Georgia,serif;white-space:normal;overflow-wrap:anywhere}
+.project-home-title .project-home-mode {font:400 13px/1.5 system-ui;color:#b2b2ba;white-space:nowrap}
+.project-home-tabs {overflow-x:auto;scrollbar-width:none}
+.project-home-tabs button {min-height:44px}
+.project-details-footer {display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.project-details-footer button {width:100%;margin:0;min-height:48px}
+.project-modal-secondary {background:#49494c;color:#f6f6f6;border:0;border-radius:14px;padding:13px 18px;font:500 16px system-ui;cursor:pointer}
+.project-settings-danger {display:block;margin:22px 0 0;background:transparent;color:#ff939b;border:1px solid #69464a}
+@media(max-width:620px) {
+  .project-home-content {padding:18px 20px 68px;max-width:100%;overflow-x:hidden}
+  .project-home-nav-toggle {top:12px;left:15px}
+  .project-home-breadcrumb {margin:0 0 42px;padding-left:50px;gap:10px}
+  .project-home-header {margin-top:0;align-items:flex-start;gap:6px;margin-bottom:32px}
+  .project-home-title {gap:8px;flex:1;min-width:0}
+  .project-home-title>span:not(.project-home-kicker):not(.project-home-mode) {display:none}
+  .project-home-title h2 {font:600 clamp(25px,7vw,38px)/1.2 Georgia,serif;flex-basis:100%}
+  .project-home-title .project-home-mode {flex-basis:100%}
+  .project-home-header-actions button {width:44px;height:44px}
+  .project-modal-scrim {padding:12px;align-items:center}
+  .project-modal {width:100%;max-height:min(85dvh,760px);border-radius:22px;padding:23px 18px 20px}
+  .project-modal header {margin-bottom:21px}
+  .project-modal input,.project-modal textarea {font-size:16px}
+  .project-floating-menu.project-folder-menu {position:fixed!important;top:auto!important;bottom:env(safe-area-inset-bottom,0px)!important;left:0!important;right:0!important;width:100%!important;max-width:none!important;max-height:min(70dvh,580px)!important;overflow-y:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));z-index:220}
+  .project-floating-menu.project-folder-menu button {min-height:56px;font:500 17px/1.45 system-ui;padding:13px 16px}
+}
