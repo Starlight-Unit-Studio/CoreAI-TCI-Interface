@@ -603,7 +603,7 @@
       || NARRATED[event.title] === 1 || !!event.meta.page_url
       || (event.kind === 'tool' && event.state === 'running'
         && event.title !== 'Websuche gestartet'
-        && !/^Schritt [0-9]+ von [0-9]+: /.test(event.title)));
+        && !/^Schritt [0-9]+(?: von [0-9]+)?: /.test(event.title)));
   }
   function stepLabel(event) {
     return displayTitle(event.title) + (event.meta.file_name ? ' · ' + event.meta.file_name : '');
