@@ -119,7 +119,7 @@ $projectTools = [];
 $projectEvents = [];
 $projectLoop = coreui_agent_loop_run('[WEB: projekt-start]', ['tool'=>'web','input'=>'projekt-start'],
   'BASIS', $projectAllowed,0,
-  static fn(string $prompt): ?string => array_shift($projectResponses),
+  static function(string $prompt) use (&$projectResponses): ?string { return array_shift($projectResponses); },
   static function(array $tool) use (&$projectTools): string {
     $projectTools[]=$tool;
     return 'Echtes Suchergebnis fuer ' . $tool['input'];
