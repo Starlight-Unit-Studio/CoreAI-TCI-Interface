@@ -135,8 +135,33 @@ function coreui_agent_step_note(array $tool): ?string {
   return strlen($note) >= 12 && strpbrk($note, '<>[]{}`$') === false && preg_match('~https?://~i', $note) !== 1 ? $note : null;
 }
 
+/**
+ * Confirm the result, not the intention. A rejected file operation and a
+ * running-but-unreachable server are not successful tool executions.
+ * Only server-owned results are evaluated; no model-authored assertion is proof.
+ */
+function coreui_agent_tool_result_state(array $tool, string $result): string {
+  $kind = (string)($tool['tool'] ?? '');
+  $result = trim($result);
+  if ($result === '') return 'error';
+  if (preg_match('~^(?:Das ging nicht:|Der Server wurde NICHT|Die Projektdatei konnte|Projektdateien gibt es nur|Unbekanntes |Die Datei .+ wurde NICHT)~u', $result)) return 'error';
+  if (str_starts_with($result, 'Gerade laeuft kein Prozess') || str_starts_with($result,'In diesem Projekt wurde noch kein Prozess')) return 'info';
+  if ($kind === 'pserver_start') {
+    if (!str_contains($result, "Läuft.")) return str_contains($result,'wartet') ? 'info' : 'error';
+    return preg_match('~HTTP-Pruefung GET /: (?:2\\d\\d|3\\d\\d) \\(Server erreichbar\\)~', $result) === 1 ? 'success' : 'info';
+  }
+  if ($kind === 'pproc_start') return str_contains($result,"Läuft.") ? 'success' : 'info';
+  if ($kind === 'pserver_fetch') {
+    if (!preg_match('~^GET [^\\n]+: HTTP (\\d{3})~', $result, $m)) return 'error';
+    return (int)$m[1] >= 200 && (int)$m[1] < 400 ? 'success' : 'error';
+  }
+  if ($kind === 'prun') return preg_match('~Exitcode 0\\b~', $result) === 1 ? 'success' : 'error';
+  if (preg_match('~(?:nicht geaendert|nicht gespeichert|nicht verfuegbar|noch keine Ausgabe|noch nicht uebernommen)~iu', $result)) return 'info';
+  return 'success';
+}
+
 /** Label of a step inside the next prompt (pure); the prompt numbers the steps itself. */
-function coreui_agent_step_label(array $tool, int $step, int $max): string {
+function coreui_agent_step_label(array $tool, int $step, int $max, string $state = 'success'): string {
   $input = (string)$tool['input'];
   $short = mb_strlen($input) > 80 ? mb_substr($input, 0, 77) . '…' : $input;
   $what = match ((string)$tool['tool']) {
@@ -161,7 +186,8 @@ function coreui_agent_step_label(array $tool, int $step, int $max): string {
     'pserver_fetch' => 'Server abgerufen: „' . $short . '“',
     default => 'Werkzeug',
   };
-  return $what;
+  return $state === 'error' ? 'Fehlgeschlagener Versuch: ' . $what
+    : ($state === 'info' ? 'Noch nicht bestaetigt: ' . $what : $what);
 }
 
 /** The markers Mara may use in the loop, in words (pure). */
