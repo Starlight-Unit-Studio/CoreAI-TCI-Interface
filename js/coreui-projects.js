@@ -168,16 +168,12 @@
       icon.innerHTML = expanded ? ICON_FOLDER_OPEN : ICON_FOLDER_CLOSED;
       toggle.appendChild(icon);
       row.appendChild(toggle);
-      // The folder and its title both fold; only the project actions
-      // expose a deliberate entry to the separate project start page.
+      // The project name opens its workspace. The independent chevron expands chats.
       var open = action('',function(){
-        setFolderExpanded(p.id,!folderIsExpanded(p.id));
-        renderSidebar();
+        openProject(p.id);
       },'project-nav-open');
       open.appendChild(label(p.name, 'project-nav-label'));
-      open.setAttribute('aria-expanded',String(expanded));
-      open.setAttribute('aria-controls',childrenId);
-      open.setAttribute('aria-label',(expanded?'Projektordner zuklappen: ':'Projektordner aufklappen: ')+p.name);
+      open.setAttribute('aria-label','Projekt öffnen: '+p.name);
       row.appendChild(open);
       var options = action('···', function(e) {
         e.stopPropagation();
@@ -278,6 +274,8 @@
   function renderHeader() {
     var p=selected();if(!p)return;
     $('projectHomeName').textContent=p.name;
+    var breadcrumb=$('projectHomeBreadcrumbName');
+    if(breadcrumb)breadcrumb.textContent=p.name;
     $('projectHomeMode').textContent=p.context_mode==='isolated'?'KONTEXT // ISOLIERT':'KONTEXT // STANDARD';
     $('projectHomeMode').title=p.context_mode==='isolated'?'Nur Projektwissen verwenden':'Normale Erinnerungen können verwendet werden';
     // The real composer is reused; no second project-only input exists.
@@ -462,8 +460,8 @@
   }
   function projectActions(p) {
     return [
-      {label:'Projektstartseite',run:function(){if(current!==p.id)openProject(p.id);}},
-      {label:'Projekt umbenennen',run:function(){openModal('settings',p.id);}},
+      {label:'Projekt öffnen',run:function(){openProject(p.id);}},
+      {label:'Details bearbeiten',run:function(){openModal('settings',p.id);}},
       {label:'Projekteinstellungen',run:function(){openModal('settings',p.id);}},
       {label:'Projekt teilen',run:function(){openModal('share',p.id);}},
       {label:p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen',run:function(){runAction('pin',p.id);}},
@@ -485,7 +483,7 @@
     $('projectModalCreate').hidden=which!=='create';
     $('projectModalSettings').hidden=which!=='settings';
     $('projectModalShare').hidden=which!=='share';
-    $('projectModalTitle').textContent=which==='create'?'Neues Projekt':which==='share'?'Projekt teilen':'Projekteinstellungen';
+    $('projectModalTitle').textContent=which==='create'?'Neues Projekt':which==='share'?'Projekt teilen':'Details bearbeiten';
     var p=projects.find(function(item){return item.id===modalProjectId;})||null;
     if(which==='create') {$('projectCreateName').value='';$('projectCreateMode').value='open';}
     if(which==='settings' && p) {
@@ -543,6 +541,10 @@
   }
   $('projectsCreateBtn').addEventListener('click',function(){openModal('create');});
   $('projectHomeDrawerToggle').addEventListener('click',function(){var app=chatApp();if(app&&app.openDrawer)app.openDrawer();});
+  var projectBreadcrumb=$('projectHomeBreadcrumbBack');
+  if(projectBreadcrumb)projectBreadcrumb.addEventListener('click',function(){var app=chatApp();if(app&&app.openDrawer)app.openDrawer();});
+  var modalCancel=$('projectSettingsCancel');
+  if(modalCancel)modalCancel.addEventListener('click',closeModal);
   $('projectModalClose').addEventListener('click',closeModal);
   $('projectModalScrim').addEventListener('click',function(e){if(e.target===this)closeModal();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();$('projectHomePopover').hidden=true;}});
