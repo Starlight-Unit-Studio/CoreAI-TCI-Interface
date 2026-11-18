@@ -58,6 +58,10 @@ Stand: 04.11.2026
 - `AGENTS.md` und `CLAUDE.md` enthalten diese Repo-Regeln fuer Coding-Assistenten. `scripts/version-merge-check.py` prueft die Dokumentationsstruktur vor dem Merge.
 - Der kanonische README-One-Liner laedt `https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh`. Alte Repository-Weiterleitungen sind kein Grund, den offiziellen Pfad falsch zu dokumentieren.
 
+## Terminal English release gate (18.11.2026)
+
+CoreAI's operator-facing installation/update, migration and both preflight outputs are English-only, independent from the UI localization. A raw PHP/Python selftest output must not become the success message; the calling preflight prints a reviewed English label when the test really passes, while failures remain actionable and blocking. Run `scripts/terminal-language-selftest.py` after each relevant change and through the unconditional CI and both preflight entrypoints. A language regression is a release blocker; preserving actual test exits and diagnostics remains mandatory.
+
 ## PREFLIGHT_SYNC_GATE: Pflicht bei jeder Aenderung (18.11.2026)
 
 1. **Nach jeder Aenderung** das betroffene Verhalten mit den Selbsttests in `scripts/preflight.sh` und `scripts/preflight-native.sh` abgleichen. Betroffene Testannahmen und Sollwerte korrigieren; neue Funktionen mit Regressionen in beiden Installationsarten abdecken. Bei unveraendertem Vertrag ist keine kuenstliche Test-Umschreibung noetig, die unveraenderte Gueltigkeit muss aber geprueft werden.
