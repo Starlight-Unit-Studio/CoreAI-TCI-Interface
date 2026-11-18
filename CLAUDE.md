@@ -18,6 +18,8 @@
 - Offizieller Installer: `https://raw.githubusercontent.com/Starlight-Unit-Studio/CoreAI-TCI-Interface/main/setup.sh`.
 - Jeder Merge erhaelt einen neuen numerischen Versionsstand. Der lokale Versions-Guard muss vor Merge bestehen; Tests nur als erfolgreich dokumentieren, wenn sie tatsaechlich ausgefuehrt wurden.
 
+**PREFLIGHT_SYNC_GATE (18.11.2026, verbindlich):** Nach **jeder** Aenderung die SOLL-Erwartungen und Testregistrierungen in `scripts/preflight.sh` und `scripts/preflight-native.sh` pruefen und, falls durch die Aenderung betroffen, mit aktualisieren. Syntaxtests und betroffene Offline-Selbsttests wirklich ausfuehren, im PR dokumentieren, anschliessend beim PR den globalen `preflight-sync-gate` bestehen lassen. Bei Fehlern kein Merge und kein Release; keine Tests auskommentieren, keine Sicherheitskontrollen aufweichen, keine ungetesteten Behauptungen. Der gesamte Compose-/Native-Preflight ist auf der realen Zielumgebung vor produktiver Freigabe nachzuholen. Aenderungen an Limits muessen die Vollstaendigkeit der Daten beweisen und duerfen keine alten Ablehnungs-Assertions behalten.
+
 **Kurzregel:** README = Anleitung. CHANGELOG = Geschichte. ROADMAP = Zukunft.
 
 **Sprach-/UI-Gate:** Bei geaenderten sichtbaren Texten auch alle Selbsttests mit wortwoertlichen Textvergleichen suchen, aktualisieren und vor Merge ausfuehren. Keine Assertions abschalten, um die Tests gruen zu bekommen. Ohne echte Testergebnisse PR als Draft belassen.
