@@ -24,7 +24,7 @@ install_runtime_file() {
     if install -m 0640 -o root -g 33 "$source_file" "$target_file" 2>/dev/null; then
       return 0
     fi
-    printf '[CoreAI: TCI Interface] WARNUNG: Dateisystem akzeptiert Gruppe 33 nicht; Runtime-Datei wird ohne Geheimnisse lesbar abgelegt.\n' >&2
+    printf '[CoreAI: TCI Interface] WARNING: Filesystem does not accept group 33; the runtime file will be readable without secrets.\n' >&2
   fi
   install -m 0644 "$source_file" "$target_file"
 }
@@ -60,7 +60,7 @@ remove_private_studio_lore_files() {
 }
 
 [[ -f "$ENV_FILE" ]] || {
-  printf '[CoreAI: TCI Interface] FEHLER: var/compose.env fehlt. Fuehre scripts/install.sh aus.\n' >&2
+  printf '[CoreAI: TCI Interface] ERROR: var/compose.env is missing. Run scripts/install.sh.\n' >&2
   exit 1
 }
 
@@ -68,11 +68,11 @@ render_runtime_files() (
   local nginx_tmp fpm_tmp
 
   [[ -f "$RUNTIME_NGINX_TEMPLATE" ]] || {
-    printf '[CoreAI: TCI Interface] FEHLER: Runtime-Nginx-Template fehlt.\n' >&2
+    printf '[CoreAI: TCI Interface] ERROR: Runtime Nginx template is missing.\n' >&2
     exit 1
   }
   [[ -f "$RUNTIME_FPM_TEMPLATE" ]] || {
-    printf '[CoreAI: TCI Interface] FEHLER: Runtime-PHP-FPM-Template fehlt.\n' >&2
+    printf '[CoreAI: TCI Interface] ERROR: Runtime PHP-FPM template is missing.\n' >&2
     exit 1
   }
 
@@ -84,11 +84,11 @@ render_runtime_files() (
   set +a
 
   [[ "${COREUI_BIND_ADDRESS:-}" == '127.0.0.1' || "${COREUI_BIND_ADDRESS:-}" == '0.0.0.0' ]] || {
-    printf '[CoreAI: TCI Interface] FEHLER: COREUI_BIND_ADDRESS in compose.env ist ungueltig.\n' >&2
+    printf '[CoreAI: TCI Interface] ERROR: COREUI_BIND_ADDRESS in compose.env is invalid.\n' >&2
     exit 1
   }
   valid_runtime_port "${COREUI_HTTP_PORT:-}" && valid_runtime_port "${COREUI_PHP_PORT:-}" || {
-    printf '[CoreAI: TCI Interface] FEHLER: Runtime-Ports in compose.env sind ungueltig.\n' >&2
+    printf '[CoreAI: TCI Interface] ERROR: Runtime ports in compose.env are invalid.\n' >&2
     exit 1
   }
 
@@ -130,7 +130,7 @@ if docker compose version >/dev/null 2>&1; then
 elif command -v docker-compose >/dev/null 2>&1; then
   COMPOSE_CMD=(docker-compose)
 else
-  printf '[CoreAI: TCI Interface] FEHLER: Docker Compose fehlt.\n' >&2
+  printf '[CoreAI: TCI Interface] ERROR: Docker Compose is missing.\n' >&2
   exit 1
 fi
 
