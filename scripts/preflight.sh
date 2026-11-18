@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.92: remove artificial source-file and approved-plan build limits.
+# CoreAI: TCI Interface 0.7.93: continue explicitly approved builds after completed plan checkpoints.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
