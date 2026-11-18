@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.96
+Date: 2026-11-18
+Base: main 0.7.95
+Branch: fix/terminal-english-preflight-0-7-96
+
+Operator requirement
+The setup/update terminal must be entirely in English, independent
+of the application's UI language. The recent live screenshot showed
+German again, despite the prior CLI English selftest.
+
+Root cause
+Existing terminal-language-selftest.py scanned German literals in
+visible shell statements but missed dynamic ok "$test_output".
+More than 90 occurrences in Compose and Native Preflight printed raw
+PHP/Python selftest success text, often in German. scripts/migrate.sh
+also directly emitted German SQL migration progress and final status.
+
+Implementation
+- Both Preflights: replace raw selftest success messages with reviewed
+  English descriptions, only after the selftest returns success.
+- scripts/migrate.sh: translate migration status lines.
+- scripts/install.sh: translate the remaining mixed-language log.
+- scripts/terminal-language-selftest.py: assert no raw dynamic
+  selftest success output and require English migration milestones.
+- Both Preflights and the unconditional preflight-sync GitHub
+  workflow execute the CLI English guard.
+- AGENTS.md, CLAUDE.md and docs/VERSIONING_POLICY.md establish
+  the persistent terminal-output policy.
+
+Acceptance requirements
+- GitHub Actions including preflight-sync, terminal-language,
+  version guard and install contracts must pass.
+- Full live Compose/Native Preflight appropriate for the setup
+  and integrated updater test on an actual server before release.
+- Never suppress tests or pretend a passing return code, and
+  preserve technical failure diagnostics.
+- No installed account, license or model changes.
+
+After merge the next version is 0.7.97.
