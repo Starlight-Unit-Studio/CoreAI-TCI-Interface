@@ -31,6 +31,7 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/project_files_store.php';
 require_once __DIR__ . '/console_artifact_store.php';
+require_once __DIR__ . '/console_session_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/project_preview_store.php';
 require_once __DIR__ . '/project_runs_store.php';
