@@ -1,4 +1,20 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Version geplant nach 0.7.92: 0.7.93 (gestapelter PR).
+Branch: fix/p10-autonomous-plan-to-build-0-7-93.
+ZIEL 0.7.93: Fertiger projektplan.md beendet einen ausdruecklichen
+Projektbau-Auftrag nicht mehr. Die bereits implementierte, modellgepruefte
+Build-Freigabe waehlt anhand der urspruenglichen authentifizierten Nutzer-
+Nachricht und Planversion im selben Zug den sicheren Datei-Writer.
+Plan-only, ungueltige Freigabe und unabgeschlossene Plaene bleiben ohne Build.
+TESTS: neue SQLite-Regressionen verfasst, PHP-Lint und E2E-Test ausstehend.
+BASIS: 0.7.92 (draft PR #350, noch nicht gemergt).
+OFFEN: P10 Issue #349 (mehrschrittige Checkpoints, nativer Tool-Flow,
+Workspace-Uebernahme, echter Server- und HTTP-Beweis).
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_93.txt.
+Nach Merge naechste Version 0.7.94.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Version main: 0.7.91, Branch in Arbeit: fix/p10-remove-artificial-file-count-limit-0-7-92 (0.7.92).
 ZIEL 0.7.92: Kuenstliche Obergrenze von neun Projekt-Quelldateien/ZIP und
 12.000 Bytes fuer fertige Projektplaene entfernen. Sichere Dateinamen,
