@@ -106,7 +106,7 @@ coreui_ensure_host_swap() (
     return 0
   fi
   if ! flock -x -w 20 "$lockfd"; then
-    coreui_swap_warn 'Host-Swap-Lock ist belegt. Erneute Pruefung beim naechsten Lauf.'
+    coreui_swap_warn 'Host swap lock is held. Will check again on the next run.'
     return 0
   fi
 
@@ -115,7 +115,7 @@ coreui_ensure_host_swap() (
     return 0
   fi
   if coreui_swap_has_fstab_entry "$fstab"; then
-    coreui_swap_warn 'Konfigurierte Swap-Partition/Datei ist inaktiv. Manuelle Pruefung statt Ueberschreiben.'
+    coreui_swap_warn 'Configured swap partition/file is inactive. Review it manually instead of overwriting it.'
     return 0
   fi
   if [[ -e "$swapfile" || -L "$swapfile" ]]; then
