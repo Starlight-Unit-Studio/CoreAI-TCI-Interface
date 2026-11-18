@@ -59,7 +59,7 @@ assert(descriptionMigration.includes('ADD COLUMN IF NOT EXISTS description') &&
   store.includes('description=?') && api.includes("$body['description']"),
   'project descriptions must be stored separately from AI instructions');
 assert(js.includes("$('projectSettingsDescription').value") &&
-  js.includes("$('projectHomeDescription').textContent") &&
+  js.includes('description.textContent=p.description') &&
   js.includes("description:$('projectSettingsDescription').value"),
   'details dialog saves descriptions and project page displays them');
 assert(js.includes("$('projectDirectorySearch').addEventListener('input',renderDirectory)") &&
