@@ -245,6 +245,12 @@ $looks = 0;
 $sleep = static function () use ($pdo, &$w, &$looks): void { $looks++; env_worker($pdo, $w); };
 $tool = static fn(string $sid, string $kind, string $input = ''): string => coreui_pftools_run($pdo, 7, $sid, ['tool'=>$kind, 'input'=>$input], $sleep);
 
+// A model's invented shell syntax must never become a claimed server start.
+$unknownTool = ember_strip_stray_tool_markers("Ich starte jetzt den Server.\n[linux-shell: npm run dev]");
+env_test(str_contains($unknownTool, 'NICHT ausgefuehrt')
+  && str_contains($unknownTool,'kein CoreAI-Werkzeug')
+  && !str_contains($unknownTool,'Ich starte jetzt'), 'invalid shell marker is not executable success');
+
 // The hint in a project chat: environment, preview, processes, what runs now.
 $hint = coreui_pftools_hint($pdo, 7, 'cs_server', false, true);
 env_test(str_contains($hint, 'UMGEBUNG: Zum Projekt gehoert ein Sandbox-Container mit Python 3.12 und Node.js 24 (npm, npx) und Internetzugang.')
