@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.7.88: English operator terminal diagnostics and UI language boundary.
+# CoreAI: TCI Interface 0.7.89: test results of P12 B recorded after its merge.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

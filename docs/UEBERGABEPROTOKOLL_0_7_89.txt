@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.89
+Datum: 18.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.7.88 nach PR #345 (darin PR #340 mit 0.7.84, P12 B)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+"achtung es gab wieder merges": Branch auf den neuen main-Stand setzen. PR #340 (0.7.84) war gemergt
+worden, waehrend seine Tests noch liefen; die Tests wurden auf main 0.7.88 nachgeholt und ihre
+Ergebnisse dokumentiert.
+
+UMSETZUNG
+- docs/UEBERGABEPROTOKOLL_0_7_84.txt: Abschnitt TESTS mit den Ergebnissen vor dem Merge und den
+  nachgeholten (Gesamtreihe, Fehlereinbauten, Wiederholungen).
+- app.html, settings.html: zwei Kommentare, die der Release-Schritt von 0.7.88 von 0.7.84 auf 0.7.88
+  umbenannt hatte, nennen wieder 0.7.84.
+- Version 0.7.89 in den Versionszeilen, CHANGELOG, TXT, INDEX, AKTUELL.
+
+UNVERAENDERT
+- Kein Code, keine Migration, kein Verhalten.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Auf main 0.7.88: gesamte Testreihe 198 bestanden, 14 fehlgeschlagen (bekannte Faelle, kein neuer);
+  skill-sharing und skill-packages (SQLite und MariaDB), beide Oberflaechentests gruen; 29 von 29
+  Fehlereinbauten erkannt; skill-sharing-ui fuenfmal gruen.
+- Fuer 0.7.89: Version-Guard (0.7.88 auf 0.7.89), Branding-Test, Cache-Fingerabdruecke.
+
+NAECHSTER SCHRITT
+- P12 ist abgenommen. Weiter mit der Roadmap (P13, Skill-Lebenszyklus) auf Auftrag.
+
+Version: 0.7.89
