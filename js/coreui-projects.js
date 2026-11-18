@@ -18,10 +18,11 @@
   function restoreComposer() {
     if (composer && composerMarker.parentNode) composerMarker.parentNode.insertBefore(composer, composerMarker.nextSibling);
   }
-  var floatingMenu = null, floatingAnchor = null;
+  var floatingMenu = null, floatingAnchor = null, floatingBackdrop = null;
   function dismissFloatingMenu() {
     if (floatingAnchor) floatingAnchor.setAttribute('aria-expanded','false');
     if (floatingMenu) floatingMenu.hidden = true;
+    if (floatingBackdrop) floatingBackdrop.hidden = true;
     floatingAnchor = null;
   }
   function placeFloatingMenu(menu,trigger) {
@@ -58,7 +59,18 @@
       document.body.appendChild(floatingMenu);
     }
     floatingMenu.className='project-floating-menu '+(kind==='chat'?'project-chat-menu':'project-folder-menu');
+    if(!floatingBackdrop){
+      floatingBackdrop=el('button','project-menu-backdrop');
+      floatingBackdrop.type='button';floatingBackdrop.hidden=true;
+      floatingBackdrop.setAttribute('aria-label','Projektmenü schließen');
+      floatingBackdrop.addEventListener('click',dismissFloatingMenu);
+      document.body.appendChild(floatingBackdrop);
+    }
+    floatingBackdrop.hidden=kind!=='project';
     floatingMenu.replaceChildren();
+    if(kind==='project'){
+      floatingMenu.appendChild(action('Schließen',dismissFloatingMenu,'project-menu-close'));
+    }
     actions.forEach(function(item){
       var control=action(item.label,function(event){event.stopPropagation();dismissFloatingMenu();item.run();},item.danger?'danger':'');
       control.setAttribute('role','menuitem');
@@ -547,6 +559,7 @@
         ? 'Nur Inhalte dieses Projekts. Der Erinnerungsmodus bleibt aus Sicherheitsgründen nach Erstellung unverändert.'
         : 'Dieses Projekt kann zusätzlich auf die normalen Erinnerungen zugreifen. Der Erinnerungsmodus bleibt unverändert.';
     }
+    var advanced=$('projectDetailsAdvanced');if(advanced)advanced.open=false;
     $('projectModalScrim').hidden=false;
     var focus=which==='create'?$('projectCreateName'):which==='settings'?$('projectSettingsName'):$('projectModalClose');
     if(focus)focus.focus();
