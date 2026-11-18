@@ -136,6 +136,19 @@ function coreui_agent_step_note(array $tool): ?string {
 }
 
 /**
+ * A deliberately public work update in the model's visible content, never
+ * private Ollama thinking. The note is accepted only before a real, parsed
+ * tool call; it never grants permission to execute a tool.
+ * The existing shared safety filter rejects credentials and private prompts.
+ */
+function coreui_agent_public_progress_note(string $reply, ?array $tool): ?string {
+  if ($tool === null || !function_exists('coreui_native_public_note_safe')) return null;
+  if (preg_match('~\\A[ \\t]*\\[COREUI_PUBLIC_PROGRESS\\]([^\\r\\n]{1,480})\\[/COREUI_PUBLIC_PROGRESS\\][ \\t]*\\r?\\n[ \\t]*(?=\\[)~u',
+      $reply, $matches) !== 1) return null;
+  return coreui_native_public_note_safe((string)$matches[1]);
+}
+
+/**
  * Confirm the result, not the intention. A rejected file operation and a
  * running-but-unreachable server are not successful tool executions.
  * Only server-owned results are evaluated; no model-authored assertion is proof.
@@ -280,7 +293,11 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
         . "Sag offen, was offen geblieben ist.\n"
       : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
         . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
-        . "Fehlt dir noch etwas Wichtiges, antworte NUR mit genau einem Marker fuer den naechsten Schritt:\n"
+        . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
+        . "Du kannst direkt davor eine kurze, selbst verfasste und ausdruecklich oeffentliche Fortschrittsnotiz schreiben: "
+        . "[COREUI_PUBLIC_PROGRESS]Ich habe die bisher bestaetigten Ergebnisse geprueft und kontrolliere nun die naechste Projektdatei.[/COREUI_PUBLIC_PROGRESS] "
+        . "Danach folgt in einer NEUEN Zeile der einzelne Werkzeugmarker. Nenne nur gepruefte Ergebnisse und deinen naechsten Arbeitsschritt; "
+        . "kein privates Reasoning, keine geheimen Daten, keine erfundenen Erfolge. Ohne Notiz bleibt das Markerformat unveraendert.\n"
         . coreui_agent_tool_menu($allowed) . "\n"
         . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
         . "fuer eine neue Richtung verwende andere Suchbegriffe. "
@@ -322,7 +339,8 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     return "ARBEITSWEISE: Du arbeitest selbststaendig. Fehlt dir aktuelles oder genaues Wissen, suche ohne Nachfrage; "
       . "nach Suchtreffern kannst du mit [WEB: WEITER] bei Bedarf die naechste Gruppe abrufen oder genauer suchen; "
       . "Namensgleiche nicht ohne Identitaetsbeleg zusammenfuehren. "
-      . "Pruefe echte Werkzeugergebnisse statt angenommener Erfolge. In Projektauftraegen arbeite nach dem Plan weiter bis das Ergebnis geprueft ist."
+      . "Pruefe echte Werkzeugergebnisse statt angenommener Erfolge. In Projektauftraegen arbeite nach dem Plan weiter bis das Ergebnis geprueft ist. "
+      . "Vor einem echten Werkzeugmarker kannst du mit [COREUI_PUBLIC_PROGRESS]ein kurzer oeffentlicher Arbeitsschritt[/COREUI_PUBLIC_PROGRESS] in einer eigenen Zeile Mara selbst sprechen lassen; niemals private Gedanken oder unbelegte Erfolge."
       . ($archive ? ' Aelteres aus diesem Chat findest du mit [ARCHIV: Stichworte].' : '');
   }
   return "ARBEITSWEISE (selbststaendig wie ein Agent): Dein Trainingswissen hat einen Stichtag; das heutige Datum steht oben. "
@@ -333,6 +351,9 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     . "mit [PY] rechnen" . ($archive ? ', mit [ARCHIV: Stichworte] in der Mitschrift dieses Chats nachsehen' : '') . "). "
     . "Suchtreffer sind keine gelesenen Webseiten; Namensgleiche nicht ohne belegte Verbindung verwechseln. "
     . "Fuer Projektauftraege mache die notwendigen, bestaetigten Arbeitsschritte eigenstaendig weiter, ohne nach jeder Datei auf 'continue' zu warten. "
+    . "Erklaere vor einem Projekt-Werkzeugmarker optional in einer eigenen oeffentlichen Notiz deinen naechsten Schritt: "
+    . "[COREUI_PUBLIC_PROGRESS]Ich habe die Ergebnisse geprueft und bearbeite nun die naechste Datei.[/COREUI_PUBLIC_PROGRESS] "
+    . "Danach folgt auf einer neuen Zeile nur der Werkzeugmarker. Nur bestaetigte Ergebnisse nennen, nie private Gedanken, Geheimnisse oder imaginierte Arbeit. "
     . "Ein Befehl, HTTP-Abruf oder Dateischritt gilt nur mit echtem Werkzeugergebnis als gelungen. Fuer Smalltalk, Meinungen und sicheres Wissen brauchst du keine Werkzeuge.";
 }
 
@@ -369,8 +390,12 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
     if (microtime(true) >= $deadline) { $stopReason = 'time_budget'; break; }
     $title = coreui_agent_step_title($tool, $used + 1, $maxSteps);
-    $note = coreui_agent_step_note($tool);
-    if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt', ['public_note'=>$note, 'source'=>'agent_loop']);
+    $publicNote = $projectWorkflow ? coreui_agent_public_progress_note($out, $tool) : null;
+    // A meaningful, safe model-authored public update takes priority over the
+    // generic tool label; do not show duplicate paragraphs for one step.
+    $note = $publicNote ?? coreui_agent_step_note($tool);
+    if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt',
+      ['public_note'=>$note,'source'=>$publicNote !== null ? 'model_public_text' : 'agent_loop']);
     if ($tool['tool'] === 'browse') {
       if (($tool['route'] ?? '') === 'wdr_place_search') {
         $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
