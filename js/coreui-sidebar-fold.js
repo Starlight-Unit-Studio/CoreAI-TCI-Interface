@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var key='coreui:sidebar:folds:v1';
-  var allowed=['pinned','projects','recent'];
+  var allowed=['pinned','recent'];
   var persisted={};
   try {
     var parsed=JSON.parse(localStorage.getItem(key)||'{}');
