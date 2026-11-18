@@ -143,6 +143,15 @@ skr_test($h['revision'] === 2 && $h['revisions'][0]['rev'] === 2 && $h['revision
 skr_test(skr_throws(static fn() => coreui_skillpkg_save($pdo, $uid, $id, ['base_revision'=>1, 'title'=>'Ueberschrieben'] + $base), 'skill_conflict')
   && coreui_skillpkg_get($pdo, $uid, $id)['title'] === 'Wochenbericht Team', 'a change after someone else\'s is refused, nothing overwritten');
 skr_test(skr_throws(static fn() => coreui_skillpkg_save($pdo, $uid, $id, ['base_revision'=>'zwei', 'title'=>'X'] + $base), 'skill_conflict'), 'a strange base counts as stale');
+// Between the check and the record someone else moved on: the record refuses too, with and without a change.
+skr_test(skr_throws(static fn() => coreui_skillrev_record($pdo, $id, $uid, 'save', '', 1), 'skill_conflict'), 'a stale record without a change is refused');
+$pdo->prepare("UPDATE stu_skill_packages SET description = 'Zwischendurch' WHERE id = ?")->execute([$id]);
+skr_test(skr_throws(static fn() => coreui_skillrev_record($pdo, $id, $uid, 'save', '', 1), 'skill_conflict'), 'a stale record with a change is refused');
+$pdo->prepare("UPDATE stu_skill_packages SET description = 'Fasst die Woche zusammen.' WHERE id = ?")->execute([$id]);
+// The edge: the content is back to what an older revision had, the counter is not; still a conflict.
+$pdo->prepare("UPDATE stu_skill_packages SET title = 'Wochenbericht', body = 'Nutze templates/bericht.md.' WHERE id = ?")->execute([$id]);
+skr_test(skr_throws(static fn() => coreui_skillrev_record($pdo, $id, $uid, 'save', '', 1), 'skill_conflict'), 'a stale record that looks unchanged is refused');
+$pdo->prepare("UPDATE stu_skill_packages SET title = 'Wochenbericht Team', body = 'Schreibe knapp.' WHERE id = ?")->execute([$id]);
 $s = coreui_skillpkg_save($pdo, $uid, $id, ['base_revision'=>2, 'title'=>'Wochenbericht Team', 'body'=>'Schreibe knapp.'] + $base);
 skr_test($s['revision'] === 2, 'no revision without a change');
 $s = coreui_skillpkg_file_save($pdo, $uid, $id, 'templates/bericht.md', "# Bericht\n", '', 2);
@@ -268,6 +277,8 @@ $bad = [
   [skr_zip($work, 'zuviele.zip', ['probe/SKILL.md'=>$good] + array_combine(array_map(static fn($i) => "probe/assets/d{$i}.txt", range(1, 21)), array_fill(0, 21, 'x'))),
     'skill_files_limit', ''],
   [skr_zip($work, 'eintraege.zip', ['probe/SKILL.md'=>$good] + array_combine(array_map(static fn($i) => "probe/sonst/d{$i}.txt", range(1, 100)), array_fill(0, 100, 'x'))),
+    'skill_package_too_large', ''],
+  [skr_zip($work, 'entpackt.zip', ['probe/SKILL.md'=>$good, 'probe/sonst/a.txt'=>str_repeat('a', 600000), 'probe/sonst/b.txt'=>str_repeat('b', 600000)]),
     'skill_package_too_large', ''],
   [skr_zip($work, 'format.zip', ['probe/SKILL.md'=>"---\nname: probe\ndescription: D\ncoreai_skill_format: 2\n---\nTu es."]), 'skill_package_format', 'SKILL.md'],
   [skr_zip($work, 'kopf.zip', ['probe/SKILL.md'=>"Kein Kopf"]), 'skill_package_bad_skill_md', 'SKILL.md'],
