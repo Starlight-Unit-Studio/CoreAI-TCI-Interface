@@ -610,9 +610,14 @@
   }
   function updateRun(run) {
     var count = run._runCount;
+    var operations = run._runOperations || 0;
+    var failed = run._runFailures || 0;
+    var caption = operations > 0
+      ? (operations === 1 ? '1 Werkzeugaktion' : operations + ' Werkzeugaktionen')
+        + (failed ? ' · ' + failed + ' fehlgeschlagen' : '') + ' · Details anzeigen'
+      : (count === 1 ? '1 technischer Schritt' : count + ' technische Schritte') + ' anzeigen';
     run._runToggle.textContent = '';
-    run._runToggle.appendChild(el('span','work-run-text',
-      (count === 1 ? '1 technischer Schritt' : count + ' technische Schritte') + ' anzeigen'));
+    run._runToggle.appendChild(el('span','work-run-text', caption));
     run._runToggle.appendChild(el('span','work-run-chevron','▸'));
     run._runToggle.setAttribute('aria-expanded', run._runOpen ? 'true' : 'false');
   }
@@ -765,7 +770,14 @@
       row.appendChild(icon);
       row.appendChild(info);
       var run = entries._openRun;
+      var completedAgentAction = event.kind === 'tool'
+        && (event.state === 'success' || event.state === 'error')
+        && /^Schritt [0-9]+(?: von [0-9]+)?: /.test(event.title);
       if (run) {
+        if (completedAgentAction) {
+          run._runOperations++;
+          if (event.state === 'error') run._runFailures++;
+        }
         entry.appendChild(row);
         entry.hidden = !run._runOpen;
         run._runMembers.push(entry);
@@ -780,6 +792,8 @@
         entry._runRow = row;
         entry._runMembers = [];
         entry._runCount = 1;
+        entry._runOperations = completedAgentAction ? 1 : 0;
+        entry._runFailures = completedAgentAction && event.state === 'error' ? 1 : 0;
         entry._runLatest = stepLabel(event);
         entry._runOpen = false;
         runToggle.addEventListener('click', function () { setRunOpen(entry, !entry._runOpen); });
