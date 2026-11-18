@@ -20,6 +20,8 @@
 
 **PREFLIGHT_SYNC_GATE (18.11.2026, verbindlich):** Nach **jeder** Aenderung die SOLL-Erwartungen und Testregistrierungen in `scripts/preflight.sh` und `scripts/preflight-native.sh` pruefen und, falls durch die Aenderung betroffen, mit aktualisieren. Syntaxtests und betroffene Offline-Selbsttests wirklich ausfuehren, im PR dokumentieren, anschliessend beim PR den globalen `preflight-sync-gate` bestehen lassen. Bei Fehlern kein Merge und kein Release; keine Tests auskommentieren, keine Sicherheitskontrollen aufweichen, keine ungetesteten Behauptungen. Der gesamte Compose-/Native-Preflight ist auf der realen Zielumgebung vor produktiver Freigabe nachzuholen. Aenderungen an Limits muessen die Vollstaendigkeit der Daten beweisen und duerfen keine alten Ablehnungs-Assertions behalten.
 
+**TERMINAL OUTPUT LANGUAGE (18.11.2026):** Installer, updater, migrations, both preflights and operator-visible selftest summaries must be English, independent of UI language. Never pipe model/worker/selftest success text directly into `ok "$var"`; emit a clear English summary only after the actual check passes. Run `python3 scripts/terminal-language-selftest.py` and keep the unconditional CI/Preflight Sync Gate. Do not discard real error information or bypass failures.
+
 **Kurzregel:** README = Anleitung. CHANGELOG = Geschichte. ROADMAP = Zukunft.
 
 **Sprach-/UI-Gate:** Bei geaenderten sichtbaren Texten auch alle Selbsttests mit wortwoertlichen Textvergleichen suchen, aktualisieren und vor Merge ausfuehren. Keine Assertions abschalten, um die Tests gruen zu bekommen. Ohne echte Testergebnisse PR als Draft belassen.
