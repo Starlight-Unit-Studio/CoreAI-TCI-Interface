@@ -246,3 +246,15 @@ body.project-home-active .messages-area.is-welcome { display:block !important; }
   .project-home-description {font-size:16px}
   .project-modal textarea#projectSettingsDescription {min-height:155px}
 }
+
+/* Project action-sheet scrim is independent of the chat message menus. */
+.project-menu-backdrop[hidden] {display:none!important}
+.project-menu-backdrop {position:fixed;inset:0;z-index:211;background:rgba(0,0,0,.56);border:0;cursor:default}
+.project-details-advanced {margin:2px 0 16px;border-top:1px solid #48484c;padding-top:14px}
+.project-details-advanced summary {cursor:pointer;font:500 15px/1.4 system-ui;color:#c9c9d0;padding:9px 2px;margin-bottom:11px}
+.project-details-advanced[open] summary {margin-bottom:22px}
+.project-floating-menu.project-folder-menu .project-menu-close {display:none}
+@media(max-width:620px) {
+  .project-floating-menu.project-folder-menu {z-index:220!important;box-shadow:0 -12px 45px #0009!important}
+  .project-floating-menu.project-folder-menu .project-menu-close {display:block;text-align:right;color:#bbb;border-bottom:1px solid #444;font-size:15px;min-height:44px}
+}
