@@ -35,7 +35,9 @@ GERMAN = re.compile(
     r"|geprueft|Pruefung|pruefen|fuer|fehlt|ausfuehren|geloescht"
     r"|nicht|Keine|Kein|einen|wurde|wird|werden|bereits|vorhanden"
     r"|gesichert|aufbewahrt|geoeffnet|geschuetzt|Bestaetigung\w*"
-    r"|Dateisystem|Schreibpfad|Abbruch|Deinstallation|Zusaetzliche)\b",
+    r"|Dateisystem|Schreibpfad|Abbruch|Deinstallation|Zusaetzliche"
+    r"|Konto|Dateien?|Projektdateien|Datenbankmigrationen|aktuell|Wende"
+    r"|Vorschau|Lebensdauer|Gespr[aä]ch|Sitzung|Geprueft|Erfolgreich)\b",
     re.IGNORECASE,
 )
 failures: list[str] = []
@@ -49,6 +51,20 @@ for source in SCRIPTS:
             continue
         if OUTPUT.search(line) and GERMAN.search(line):
             failures.append(f"{source}:{number}: {line.strip()[:170]}")
+        # Directly forwarding a model/selftest success message can reintroduce
+        # German text even when no German literal occurs in the preflight.
+        if source in ("scripts/preflight.sh", "scripts/preflight-native.sh") and re.search(
+            r"^\s*ok\s+\"\$[A-Za-z_][A-Za-z_0-9]*\"\s*$", line
+        ):
+            failures.append(
+                f"{source}:{number}: raw selftest output must use a stable English label"
+            )
+
+# The installer prints un-captured migration progress verbatim.
+migration = (ROOT / "scripts/migrate.sh").read_text(encoding="utf-8")
+if ("Applying migration:" not in migration
+        or "All database migrations are up to date." not in migration):
+    failures.append("scripts/migrate.sh: English migration progress is missing")
 
 if failures:
     print("English terminal diagnostics regression:", file=sys.stderr)
