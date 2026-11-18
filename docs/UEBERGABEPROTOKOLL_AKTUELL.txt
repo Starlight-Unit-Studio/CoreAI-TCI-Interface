@@ -1,4 +1,23 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
+Branch: fix/preflight-sync-gate-0-7-95 | geplante Version 0.7.95
+Basis: main 0.7.94 (laut Repository).
+AUFTRAG: Preflight muss nach jeder Aenderung auf Stand gehalten und real
+getestet werden, damit es keine wiederkehrenden Updater-Blockaden gibt.
+UMSETZUNG: PREFLIGHT_SYNC_GATE in AGENTS.md, CLAUDE.md und der
+Versionierungsrichtlinie. Beide Preflight-Skripte rufen den neuen
+Offline-Vertragsguard auf; unbedingter CI-Pull-Request-Job prueft die
+Testverdrahtung und fuehrt betroffene PHP-Selbsttests aus.
+REGRESSION 0.7.94: Zwei alte Tests erwarteten Ablehnung langer Plaene,
+obwohl die Produktgrenze absichtlich aufgehoben wurde. Ersetzt durch
+Pruefung, dass lange genehmigte Plaene inklusive Schlussanforderung
+vollstaendig im gesicherten Build-Pfad erhalten bleiben.
+STATUS: Umsetzung im Branch; CI und echter Host-/Update-Test ausstehend.
+Ein Merge ist KEINE behauptete produktive Live-Abnahme.
+NAECHSTE VERSION nach Merge: 0.7.96.
+Dokument: docs/UEBERGABEPROTOKOLL_0_7_95.txt.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 18.11.2026
 Version geplant nach 0.7.93: 0.7.94 (gestapelter Draft PR).
 Branch: fix/p10-live-end-to-end-0-7-94.
 BASIS: 0.7.93 (Draft PR #351) auf 0.7.92 (Draft PR #350).
