@@ -225,7 +225,7 @@ backup="$(json "$ST" backup)"
 gzip -dc "$APP/$backup" | grep -q 'CREATE DATABASE ember_coreui' || fail 'backup content'
 [[ "$(stat -c '%a' "$APP/$backup")" == '600' ]] || fail 'backup is root only'
 [[ "$(sed -n '1p' <(grep -n 'stack exec' "$LOG" | cut -d: -f1))" -lt "$(grep -n '^setup' "$LOG" | cut -d: -f1)" ]] || fail 'backup before setup'
-grep -q 'Update angefordert von Konto 5' "$APP/var/update/update.log" || fail 'update log'
+grep -q 'Update requested by account 5' "$APP/var/update/update.log" || fail 'update log'
 [[ -f "$APP/var/update/update.log.1" ]] || fail 'previous log kept'
 # The window has nothing to offer afterwards (installed commit = main).
 [[ "$(json "$AV" latest_commit)" == "$B" && "$(cat "$APP/var/dev_source_commit")" == "$B" ]] || fail 'check after update'

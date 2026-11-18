@@ -10,9 +10,13 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.7.86`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.7.87`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
+
+**English update experience:** The owner update modal, progress/status screen, and related Settings card use English, including labels and errors. Previous German update logs remain available as originally recorded.
+
+**Installer regression protection:** A dedicated CI workflow now executes the offline voice-service and host-update preflight contracts on setup and updater changes, rather than only checking source syntax.
 
 **Installation language:** The official setup one-liner, Docker and native installers, and the installer preflight reports, and host updater status messages use English for user-facing output. Existing environment variables and command names are unchanged.
 

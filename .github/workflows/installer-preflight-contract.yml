@@ -1,0 +1,81 @@
+name: Installer and Preflight Source Contracts
+
+on:
+  pull_request:
+    paths:
+      - 'setup.sh'
+      - 'scripts/install.sh'
+      - 'scripts/install-native.sh'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - 'scripts/coreai-updater.sh'
+      - 'scripts/lib/coreai_update_state.py'
+      - 'scripts/voice-service-selftest.py'
+      - 'tests/update-runner-selftest.sh'
+      - 'tests/update-auto-selftest.py'
+      - 'js/coreui-update.js'
+      - 'settings.html'
+      - 'app.html'
+      - 'scripts/update-ui-selftest.cjs'
+      - 'scripts/update-english-selftest.cjs'
+      - '.github/workflows/installer-preflight-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'setup.sh'
+      - 'scripts/install.sh'
+      - 'scripts/install-native.sh'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - 'scripts/coreai-updater.sh'
+      - 'scripts/lib/coreai_update_state.py'
+      - 'scripts/voice-service-selftest.py'
+      - 'tests/update-runner-selftest.sh'
+      - 'tests/update-auto-selftest.py'
+      - 'js/coreui-update.js'
+      - 'settings.html'
+      - 'app.html'
+      - 'scripts/update-ui-selftest.cjs'
+      - 'scripts/update-english-selftest.cjs'
+      - '.github/workflows/installer-preflight-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  installer-preflight-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify Bash source syntax
+        run: |
+          bash -n setup.sh
+          bash -n scripts/install.sh
+          bash -n scripts/install-native.sh
+          bash -n scripts/preflight.sh
+          bash -n scripts/preflight-native.sh
+          bash -n scripts/coreai-updater.sh
+          bash -n tests/update-runner-selftest.sh
+      - name: Verify Python source syntax
+        run: |
+          python3 -m py_compile scripts/voice-service-selftest.py scripts/lib/coreai_update_state.py tests/update-auto-selftest.py
+      - name: English update window and cache fingerprint
+        run: |
+          node --check js/coreui-update.js
+          node --check scripts/update-ui-selftest.cjs
+          node scripts/update-english-selftest.cjs
+          python3 scripts/cache-bust.py --verify
+      - name: Voice service and optional-install contract
+        run: python3 scripts/voice-service-selftest.py
+      - name: Host updater and installation progress contract
+        run: sudo bash tests/update-runner-selftest.sh
+      - name: Automatic update and preflight failure contract
+        run: python3 tests/update-auto-selftest.py
+      - name: Verify merge version
+        if: github.event_name == 'pull_request'
+        run: |
+          base_version="$(git show origin/main:VERSION | tr -d '\r\n')"
+          python3 scripts/version-merge-check.py --base-version "$base_version"
