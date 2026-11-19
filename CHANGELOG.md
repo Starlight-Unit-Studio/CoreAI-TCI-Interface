@@ -4,6 +4,9 @@
 
 - **Autonomous planning continuation:** Removed the four-call and 240-second production cutoffs. Mara continues a server-owned project-planning turn while each result adds verified, versioned Markdown, until it is explicitly complete or a genuine failure/cancellation prevents progress. Finite rounds remain available for deterministic tests.
 - **Preflight diagnostics:** Both Docker and native host Preflight now preserve PHP stderr and report process exit status for nine project/skill tests instead of hiding silent failures behind `Unknown error`.
+- **Eight Preflight regressions repaired:** Project and skill SQLite fixtures now include the `description` column required by the real project schema. Positional test inserts were made schema-explicit, while production ownership checks remain strict.
+- **Schema drift guard:** The mandatory Preflight sync test now compares the production project-readiness columns against all affected SQLite fixtures, preventing this recurring breakage.
+- **Project work duration:** Removed a separate ten-minute project-agent cutoff; cancellation, stalled work and actual errors still terminate safely.
 - **Real regression coverage:** Added a six-checkpoint planner test and an offline GitHub workflow that runs all nine reported project and skill selftests separately, revealing actual assertion failures or process exits.
 - **Verification scope:** GitHub's offline tests are distinct from host MariaDB, Ollama and sandbox checks; runtime rollout still requires server Preflight.
 
