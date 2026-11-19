@@ -5253,11 +5253,14 @@ function ember_build_chat_prompt(
   $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
   $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
-  // 0.7.73 (P09 B): the project's files and Mara's file tools.
-  $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
-    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo)) : '';
-  // 0.7.91: outside a project Mara knows that project chats have the environment.
-  if (($projectScope['id'] ?? '') === '') $projectFilesHint = coreui_pftools_outside_hint($pdo, $channel, $uid, (bool)$profile['compact']);
+  // The same validated file tools exist in normal and organizational chats.
+  // A hidden session workspace must receive the real tool menu, never the
+  // historic project-only hint or stale full-site build instruction.
+  $hasFileWorkspace = $channel === 'console' && $consoleSessionId !== null
+    && coreui_pftools_project($pdo,$uid,(string)$consoleSessionId) !== '';
+  $projectFilesHint = $hasFileWorkspace
+    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo))
+    : coreui_pftools_outside_hint($pdo,$channel,$uid,(bool)$profile['compact']);
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
   $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
@@ -5834,11 +5837,11 @@ function ember_generate_reply(
   $profilePromptBlock = !$projectIsolated && function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
   $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
-  // 0.7.73 (P09 B): the project's files and Mara's file tools.
-  $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
-    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo)) : '';
-  // 0.7.91: outside a project Mara knows that project chats have the environment.
-  if (($projectScope['id'] ?? '') === '') $projectFilesHint = coreui_pftools_outside_hint($pdo, $channel, $uid, (bool)$promptProfile['compact']);
+  $hasFileWorkspace = $channel === 'console' && $consoleSessionId !== null
+    && coreui_pftools_project($pdo,$uid,(string)$consoleSessionId) !== '';
+  $projectFilesHint = $hasFileWorkspace
+    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo))
+    : coreui_pftools_outside_hint($pdo,$channel,$uid,(bool)$promptProfile['compact']);
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
   $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
