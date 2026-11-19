@@ -653,21 +653,22 @@ function coreui_pftools_env_hint(PDO $pdo, int $uid, string $projectId, bool $co
  * deny it or claim it here. '' in the compact prompt, in other channels or without the Python tool.
  */
 function coreui_pftools_outside_hint(PDO $pdo, string $channel, int $uid, bool $compact): string {
-  if ($channel !== 'console' || $uid <= 0 || !coreui_pfiles_schema_ready($pdo)) return '';
-  $notice = "PROJEKTSTATUS: Dieser Chat ist keinem Projekt zugeordnet. "
-    . "Ein erzeugtes ZIP oder HTML aus dem Chat ist ein Download, nicht automatisch "
-    . "eine bearbeitbare Projektdatei. Fuer eine Erweiterung der vorhandenen "
-    . "Website die geprueften Downloads erst explizit in ein Projekt uebernehmen "
-    . "und im Projekt-Chat weiterarbeiten. Einen alten Projektplan NICHT "
-    . "erneut als Ersatz fuer aktuelle Dateiaenderungen bauen.";
+  if ($channel !== 'console' || $uid <= 0) return '';
+  // A regular CoreAI chat is a valid work chat. Never tell Mara that its
+  // Python/browser/native tools require a project. The versioned pfile
+  // backend still has a project-storage restriction until chat workspaces
+  // are unified; that is an implementation gap, not a user requirement.
+  $notice = "CHAT-WERKZEUGE: Auch dieser normale CoreAI-Chat kann "
+    . "dateibasierte Auftraege, Python, Web-Werkzeuge und echte Downloads "
+    . "bearbeiten, soweit diese Werkzeuge aktiviert sind. Ein Projekt ist "
+    . "dafuer keine Voraussetzung. Historische Projektplaene sind "
+    . "kein Ersatz fuer den aktuellen Nutzerauftrag. ";
   if ($compact) return $notice;
-  $canRun = function_exists('ember_py_enabled') && ember_py_enabled()
-    && coreui_pruns_ready($pdo);
-  return $notice . ($canRun
-    ? " Im Projekt-Chat stehen Datei-Lesen/-Aendern, Sandbox-Tests und "
-      . "Entwicklungsserver (Python 3.12, Node.js 24) zur Verfuegung."
-    : " Im Projekt-Chat lassen sich die gespeicherten Textdateien lesen "
-      . "und bearbeiten.");
+  return $notice
+    . "Achtung: Der spezielle versionierte Projektdatei-Speicher "
+    . "benoetigt im bisherigen Backend noch einen Projektbezug. "
+    . "Das ist eine zu behebende Speichergrenze, KEINE allgemeine "
+    . "Einschraenkung der Werkzeuge im Hauptchat.";
 }
 
 /**
