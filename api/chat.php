@@ -6988,8 +6988,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       }, $wasTruncated,
       static function (string $nextPrompt) use ($primaryModel,$sys): array {
         if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
-        $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,180,
-          [],null,null,false);
+        $raw = ember_call_ollama($primaryModel,$sys,$nextPrompt,
+          ember_timeout_for_model($primaryModel), ['__skills'=>'none'],null,false,false);
         $meta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
         return [
           'text'=>ember_sanitize_public_reply(
