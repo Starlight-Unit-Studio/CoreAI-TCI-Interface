@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.8.5 - 19.11.2026
+
+- **Pinned navigation restored:** `Angeheftet` appears immediately below the single `Projekte` link and above `Letzte`, not above Projects or hidden when it contains no chats.
+- **Pinned projects are back in the sidebar:** Existing server-stored project pins now render as direct open/unpin shortcuts alongside pinned chats. The project directory remains the only full project listing.
+- **Project chats can be pinned:** A chat inside a project stays visible in `Angeheftet` without reappearing in the general recent-chat section. Pinned shortcuts stay visible when viewing archived chats.
+- **Mobile/desktop behavior:** The pinned project rows share the old fold preference, fit touch targets and show a small empty state when nothing is pinned. Existing locked-chat navigation is unchanged.
+- **Tests and Preflight:** The sidebar selftest exercises the actual shared count and pinned project actions. The mandatory Python Preflight sync check enforces placement and renders even on hosts without Node.js.
+- **Deployment:** A passing CI does not verify the current host's browser cache or runtime; confirm after update.
+
 ## 0.8.4 - 19.11.2026
 
 - **No more manual Continue after a completed plan:** `PLAN_CONTINUE` now reaches the guarded project build authorization after finishing or finding an already completed plan; it no longer returns early or skips the build step.
