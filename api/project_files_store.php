@@ -484,7 +484,13 @@ function coreui_pfiles_import_build(PDO $pdo, int $uid, string $sessionId, int $
   if ($uid <= 0 || $files === [] || !function_exists('coreui_console_artifact_open_verified')
       || !coreui_pfiles_schema_ready($pdo)) return null;
   $scope = coreui_project_session_scope($pdo, $uid, $sessionId);
-  if (empty($scope['available']) || ($scope['id'] ?? '') === '') return null;
+  if (empty($scope['available'])) return null;
+  // Reuse the same verified artifact import for a chat-owned workspace.
+  // A never-opened workspace is not created implicitly by a download.
+  $target = (string)($scope['id'] ?? '');
+  if ($target === '' && function_exists('coreui_chat_workspace_id'))
+    $target = coreui_chat_workspace_id($pdo,$uid,$sessionId);
+  if ($target === '') return null;
   $entries = [];
   $loose = [];
   $skipped = [];
@@ -514,11 +520,11 @@ function coreui_pfiles_import_build(PDO $pdo, int $uid, string $sessionId, int $
   }
   foreach ($loose as $path => $bytes) $entries[$path] = $bytes;
   if ($entries === [] && $skipped === []) return null;
-  $result = coreui_pfiles_import_entries($pdo, $uid, (string)$scope['id'], $entries, $sessionId, $messageId, $skipped);
+  $result = coreui_pfiles_import_entries($pdo, $uid, $target, $entries, $sessionId, $messageId, $skipped);
   if (function_exists('coreui_work_record') && $result['saved'] !== []) {
     $n = count($result['saved']);
     coreui_work_record($pdo, 'artifact', 'success', $n === 1 ? '1 Datei im Projekt gespeichert' : $n . ' Dateien im Projekt gespeichert',
       ['source'=>'project_files', 'count'=>$n, 'skipped'=>count($result['skipped'])]);
   }
-  return $result + ['project_id'=>(string)$scope['id']];
+  return $result + ['project_id'=>$target];
 }
