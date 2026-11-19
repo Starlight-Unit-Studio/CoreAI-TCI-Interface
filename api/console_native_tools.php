@@ -375,6 +375,21 @@ function coreui_native_recovered_body_ok(string $type, string $body): bool {
  * around it, a second marker, or an "Beispiel:" introduction still fail
  * closed: those are illustrations or several actions, not one tool call.
  */
+/**
+ * Safe inline filenames in a progress sentence do not make it executable.
+ * Arbitrary backticks, brackets, multi-line code and examples remain rejected.
+ */
+function coreui_native_outer_prose_safe(string $prose,int $maxBytes): bool {
+  $prose = trim($prose);
+  if (strlen($prose) > $maxBytes || str_contains($prose, "\0")
+      || str_contains($prose, str_repeat(chr(96), 3))) return false;
+  $withoutNames = preg_replace(
+    '~\x60[A-Za-z0-9][A-Za-z0-9._-]{0,90}\.(?:html?|css|js|json|txt|md|svg)\x60~i',
+    '', $prose);
+  return is_string($withoutNames)
+    && strpbrk($withoutNames, '[]' . chr(96)) === false;
+}
+
 function coreui_native_single_block_recover(string $reply): ?array {
   if (strlen($reply) > 300000 || preg_match('//u', $reply) !== 1
       || str_contains($reply, "\0")) return null;
@@ -385,11 +400,10 @@ function coreui_native_single_block_recover(string $reply): ?array {
     return null;
   $intro = trim($m['intro']);
   $tail = trim($m['tail']);
-  if (strlen($intro) > 900 || strpbrk($intro, '[]' . chr(96)) !== false
+  if (!coreui_native_outer_prose_safe($intro,900)
       || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*\z~iu', $intro))
     return null;
-  if (strlen($tail) > 1200 || strpbrk($tail, '[]') !== false
-      || str_contains($tail, str_repeat(chr(96), 3))) return null;
+  if (!coreui_native_outer_prose_safe($tail,1200)) return null;
   $type = $m['type'];
   $body = trim($m['body']);
   if (!coreui_native_recovered_body_ok($type, $body)) return null;
@@ -625,6 +639,15 @@ function coreui_native_tool_apply(
   if ($uid <= 0 || $turnId <= 0 || !preg_match('~^[A-Za-z0-9_-]{8,40}$~D',$sessionId))
     return 'Der Werkzeugauftrag besitzt keinen gueltigen privaten Chatkontext.';
   $kind = $tool['type'];
+  // Never replay the obsolete full-site builder over real, already saved
+  // account-owned project files. Use the incremental project file tools.
+  if (in_array($kind,['PROJECT_BUILD','PLAN_AND_BUILD'],true)
+      && function_exists('coreui_pftools_has_saved_sources')
+      && coreui_pftools_has_saved_sources($pdo,$uid,$sessionId) !== false) {
+    return 'Dieses Projekt besitzt bereits Quelldateien. Die neue Anweisung '
+      . 'muss mit den Projektdatei-Werkzeugen umgesetzt werden; der alte '
+      . 'Homepage-Plan wird nicht erneut gebaut. Es wurde nichts ersetzt.';
+  }
   if ($kind === 'PLAN_CONTINUE' && !empty($tool['recovered'])
       && function_exists('coreui_work_record')) {
     coreui_work_record($pdo,'tool','info',
