@@ -144,6 +144,45 @@ $repairSmall = coreui_native_tool_repair_prompt('multiple_tool_blocks', 'VORHER-
 native_assert(str_contains($repair, '[COREUI_PLAN_AND_BUILD]') && str_contains($repair, 'VORHER-ANTWORT')
   && str_contains($repair, 'genau EINEM') && !str_contains($repairSmall, 'VORHER-ANTWORT'),
   'The correction names the reason and omits the old reply for a small context window');
+// Existing project regression (19 Nov 2026): a usable PROJECT_BUILD block
+// followed by a Markdown link is not silently executed, but its ONE safe
+// correction must retain the intended build tool instead of PLAN_SAVE.
+$framedBuild = "[COREUI_PROJECT_BUILD]\nErgaenze vorhandene Homepage-Dateien und pruefe die Ausgabe.\n[/COREUI_PROJECT_BUILD]"
+  . "\nErgebnis: [Projektdateien](https://example.invalid)";
+native_assert(coreui_native_tool_parse($framedBuild) === null
+  && coreui_native_tool_reply_shape($framedBuild) === 'tool_text_around_block',
+  'Markdown around tool is rejected before any project write');
+$buildCorrection = coreui_native_tool_repair_prompt('tool_text_around_block',$framedBuild);
+native_assert(str_contains($buildCorrection,
+    "[COREUI_PROJECT_BUILD]\nGespeicherten, vom Benutzer beauftragten Projektstand")
+  && !str_contains($buildCorrection,"[COREUI_PLAN_SAVE]\n# Titel")
+  && str_contains($buildCorrection,'Kein neuer Plan'),
+  'A malformed existing-project build must be corrected as PROJECT_BUILD');
+native_assert(coreui_native_tool_repair_example($framedBuild) !== null
+  && coreui_native_tool_parse(coreui_native_tool_repair_example($framedBuild))['type']==='PROJECT_BUILD',
+  'The targeted repair uses real newlines and a parsable block');
+$badMulti = "[COREUI_PLAN_SAVE]\n# P\n[/COREUI_PLAN_SAVE]\n"
+  . "[COREUI_PROJECT_BUILD]\nUmsetzen\n[/COREUI_PROJECT_BUILD]";
+native_assert(coreui_native_tool_repair_example($badMulti) === null
+  && coreui_native_tool_parse($badMulti) === null,
+  'Mixed plan/build attempts cannot be promoted to an executable tool');
+$fencedBuild = "```text\n[COREUI_PROJECT_BUILD]\nUmsetzen\n[/COREUI_PROJECT_BUILD]\n```";
+native_assert(coreui_native_tool_repair_example($fencedBuild)===null
+  && coreui_native_tool_parse($fencedBuild)===null,
+  'A quoted or fenced example is not a model-selected action');
+$appendWrapped="[COREUI_PLAN_APPEND]\n## Weitere Funktionen\n- Datei ergänzen.\n"
+  . "[/COREUI_PLAN_APPEND]\nWeitere Details: [Vorschau](https://example.invalid)";
+$appendCorrection=coreui_native_tool_repair_prompt('tool_text_around_block',$appendWrapped);
+native_assert(str_contains($appendCorrection,"[COREUI_PLAN_APPEND]\n## Naechste Schritte")
+  && !str_contains($appendCorrection,"[COREUI_PLAN_SAVE]\n# Titel"),
+  'An already versioned plan must be appended rather than restarted');
+$streamRepair = (string)file_get_contents(dirname(__DIR__).'/api/console_stream.php');
+$syncRepair = (string)file_get_contents(dirname(__DIR__).'/api/chat.php');
+native_assert(str_contains($streamRepair,'false,null,false,false);')
+  && !str_contains($streamRepair,'false,180);')
+  && str_contains($syncRepair,"ember_timeout_for_model(\$primaryModel),['__skills'=>'none'],null,false,false);"),
+  'Tool repair must use configured CPU timeout without redundant skills/thinking');
+
 // A rejected continuation must never be repaired as a brand-new plan.
 $malformedContinue = "[COREUI_PLAN_CONTINUE]\nIch moechte den gespeicherten Plan erweitern.";
 $continueFix = coreui_native_tool_repair_prompt('invalid_plan_continue_marker', $malformedContinue);
