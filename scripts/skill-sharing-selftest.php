@@ -84,7 +84,7 @@ if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
 $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 $pdo->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER NOT NULL, is_guest INTEGER NOT NULL DEFAULT 0)');
 $pdo->exec('CREATE TABLE stu_coreui_profiles (user_id INTEGER PRIMARY KEY, display_name TEXT NOT NULL)');
-$pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+$pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
 $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT)');
 $pdo->exec("CREATE TABLE stu_skill_packages (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, slug TEXT NOT NULL, title TEXT NOT NULL,
   description TEXT NOT NULL, body TEXT NOT NULL, triggers TEXT NOT NULL DEFAULT '', requires_tools TEXT NOT NULL DEFAULT '', project_id TEXT,
@@ -228,7 +228,7 @@ $old = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_E
 $old->exec('CREATE TABLE stu_skill_packages (id TEXT PRIMARY KEY, user_id INTEGER, slug TEXT, title TEXT, description TEXT, body TEXT, triggers TEXT,
   requires_tools TEXT, project_id TEXT, enabled INTEGER, created_at TEXT, updated_at TEXT)');
 $old->exec('CREATE TABLE stu_skill_package_files (skill_id TEXT, path TEXT, kind TEXT, content TEXT, size_bytes INTEGER, sha256 TEXT, updated_at TEXT)');
-$old->exec('CREATE TABLE stu_console_projects (id TEXT, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+$old->exec('CREATE TABLE stu_console_projects (id TEXT, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
 $old->exec('CREATE TABLE stu_console_sessions (id TEXT, user_id INTEGER, project_id TEXT)');
 $plain = coreui_skillpkg_save($old, $user, '', ['slug'=>'alt', 'title'=>'Alt', 'description'=>'D', 'body'=>'B', 'enabled'=>true]);
 sks_test(!coreui_skillpkg_sharing_ready($old) && $plain['shared'] === false && $plain['priority'] === 'normal'
