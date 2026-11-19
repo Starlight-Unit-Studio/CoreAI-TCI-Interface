@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.8.6 - 19.11.2026
+
+- **Existing-project tool recovery:** A model reply with a single identifiable, but malformed, `PROJECT_BUILD` or `PLAN_APPEND` marker now receives a matching in-turn correction prompt. Previously the generic example was `PLAN_SAVE`, which could abandon an already started build or extension.
+- **Safe parsing preserved:** Native tools still require a valid singular instruction; quoted/fenced illustrations, ambiguous multi-tool outputs and malformed blocks are not automatically executed. Owner/project checks and all file revision controls remain unchanged.
+- **CPU repair timeout:** Streaming tool-format repair now uses the configured model timeout rather than an obsolete fixed 180 seconds. Both streaming and synchronous correction avoid redundant skill expansion and thinking overhead.
+- **Regression coverage:** Added tests for the observed `tool_text_around_block` failure, tool-specific repair, mixed-marker refusal, in-context formatting and full-model timeout; the mandatory Preflight sync gate enforces these contracts.
+- **Scope:** Neither a published website nor a successfully rendered plan proves that a particular project file was written. Real host, account and project-write smoke checks remain required.
+
 ## 0.8.5 - 19.11.2026
 
 - **Pinned navigation restored:** `Angeheftet` appears immediately below the single `Projekte` link and above `Letzte`, not above Projects or hidden when it contains no chats.
