@@ -44,7 +44,7 @@ $prompt=coreui_build_intent_prompt(['version'=>3,'title'=>'Anime-Welt',
 intent_assert(str_contains($prompt,'Kannst du eine Homepage erstellen?')
   && str_contains($prompt,'keine zweite'),
   'Polite creation requests must count as build requests without a second Continue');
-intent_assert(strlen($prompt)<3500 && str_contains($prompt,'START_BUILD')intent_assert(strlen($prompt)<3500 && str_contains($prompt,'START_BUILD')
+intent_assert(strlen($prompt)<3500 && str_contains($prompt,'START_BUILD')
   && str_contains($prompt,'CHAT')
   && str_contains($prompt,'Lass mal den Plan umsetzen'),
   'Small model decision lacks expected format/message');
