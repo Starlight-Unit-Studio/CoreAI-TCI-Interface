@@ -239,6 +239,8 @@
   var pinnedZone = document.getElementById('pinnedZone');
   var pinnedCountEl = document.getElementById('pinnedCount');
   var pinnedSessionListEl = document.getElementById('pinnedSessionList');
+  var pinnedProjectListEl = document.getElementById('sidebarPinnedProjects');
+  var pinnedEmptyEl = document.getElementById('sidebarPinnedEmpty');
   var sessionZoneLabel = document.getElementById('sessionZoneLabel');
   var btnLogout     = document.getElementById('btnLogout');
   var headerSessionName = document.getElementById('headerSessionName');
@@ -579,18 +581,29 @@
     if (state.editingMessage && String(state.editingMessage.session_id) === sessionId) clearMessageEdit(false);
   }
 
+  // Both pinned chats and pinned projects share the same permanent section
+  // directly under Projekte. Each module owns only its own list.
+  function syncPinnedSection() {
+    var chatCount = pinnedSessionListEl ? pinnedSessionListEl.children.length : 0;
+    var projectCount = pinnedProjectListEl ? pinnedProjectListEl.children.length : 0;
+    var count = chatCount + projectCount;
+    if (pinnedZone) pinnedZone.hidden = false;
+    if (pinnedCountEl) pinnedCountEl.textContent = String(count);
+    if (pinnedEmptyEl) pinnedEmptyEl.hidden = count > 0;
+  }
+
   // ── Session-Liste rendern ────────────────────────────────
   function renderSessionList() {
     sessionListEl.innerHTML = '';
     if (pinnedSessionListEl) pinnedSessionListEl.replaceChildren();
     var standalone = state.sessions.filter(function(s) { return !s.project_id || !!s.archived; });
-    var pinnedChats = standalone.filter(function(s) { return !!s.pinned && !s.archived; });
+    // A pinned project chat is a shortcut too, even though it is absent from
+    // the general recent-chat list and its project directory owns the source.
+    var pinnedChats = state.sessions.filter(function(s) { return !!s.pinned && !s.archived; });
     var recentChats = standalone.filter(function(s) { return !s.pinned && !s.archived; });
     var archiveChats = standalone.filter(function(s) { return !!s.archived; });
     var activeCount = recentChats.length;
     if (sessionCountEl) sessionCountEl.textContent = String(state.showArchived ? archiveChats.length : activeCount).padStart(2, '0');
-    if (pinnedZone) pinnedZone.hidden = state.showArchived || pinnedChats.length === 0;
-    if (pinnedCountEl) pinnedCountEl.textContent = String(pinnedChats.length);
     if (sessionZoneLabel) sessionZoneLabel.textContent = state.showArchived ? 'Archiviert' : 'Letzte';
     if (sessionArchiveToggle) {
       sessionArchiveToggle.classList.toggle('active', state.showArchived);
@@ -598,7 +611,7 @@
       sessionArchiveToggle.setAttribute('aria-label', state.showArchived ? 'Letzte Chats anzeigen' : 'Archivierte Chats anzeigen');
       sessionArchiveToggle.title = state.showArchived ? 'Letzte Chats anzeigen' : 'Archivierte Chats anzeigen';
     }
-    var shownSessions = state.showArchived ? archiveChats : pinnedChats.concat(recentChats);
+    var shownSessions = pinnedChats.concat(state.showArchived ? archiveChats : recentChats);
     shownSessions.forEach(function(s) {
       var li = document.createElement('li');
       li.className = 'session-item' + (isActiveSession(s.id) ? ' active' : '') + (s.archived ? ' archived' : '');
@@ -794,10 +807,11 @@
         selectSession(s.id);
         closeDrawer();
       });
-      var target = !!s.pinned && !s.archived && pinnedSessionListEl && !state.showArchived ? pinnedSessionListEl : sessionListEl;
+      var target = !!s.pinned && !s.archived && pinnedSessionListEl ? pinnedSessionListEl : sessionListEl;
       target.appendChild(li);
     });
     if (window.CoreAIProjects && window.CoreAIProjects.updateSessions) window.CoreAIProjects.updateSessions(state.sessions);
+    syncPinnedSection();
     // 0.6.87: the chat menu (js/coreui-chat-menu.js) follows the active chat.
     if (window.CoreAIChatMenu && typeof window.CoreAIChatMenu.sync === 'function') window.CoreAIChatMenu.sync();
   }
@@ -4483,6 +4497,7 @@
         assistant: String(state.assistantName || 'Mara')} : null;
     },
     getSessions: function () { return state.sessions.slice(); },
+    syncPinnedSection: syncPinnedSection,
     openDrawer: openDrawer,
     closeDrawer: closeDrawer,
     select: function (sessionId) { return selectSession(sessionId).then(function () { closeDrawer(); }); },

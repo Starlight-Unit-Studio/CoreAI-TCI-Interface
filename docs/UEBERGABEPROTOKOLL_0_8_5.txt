@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.5
+Date: 2026-11-19
+Branch: fix/sidebar-pinned-section-below-projects-085
+Base: main 0.8.4
+
+Operator report
+- After converting Projekte from an expandable sidebar tree to a single navigation link, Angeheftet was no longer where the user expected it.
+- The required sidebar order is explicitly Projekte followed immediately by Angeheftet, then Letzte.
+
+Source findings
+- app.html had pinnedZone before projectsNav.
+- console-app.renderSessionList used only non-project pinned chats; pinnedZone.hidden was set when that list was empty or archive filter active.
+- coreui-projects.renderDirectory sorted pinned projects first but renderSidebar only showed protected chats, never pinned project shortcuts.
+- scripts/sidebar-sections-ui-selftest.cjs mistakenly asserted the obsolete order.
+
+Fix
+1. Move pinnedZone directly after projectsNav; keep the section visible and show a small empty message if no pins exist.
+2. Add sidebarPinnedProjects to the existing pin group. Existing projects array is the source of truth and existing runAction('pin') remains the only write path.
+3. Include pinned project chats in pinned shortcuts; do not duplicate them in Letzte. Pinned section stays visible when viewing archive.
+4. Count visible pinned projects and chats via a small shared sync function; project UI triggers it after each refresh.
+5. Preserve old fold key (pinned) and ensure both lists/empty note collapse together.
+6. Style rows with native CoreAI colors and 36-38px touch controls.
+7. Update Node regression to check layout and open/unpin behavior, and host Preflight Python guard to catch disappearance of the area even when Node is missing.
+8. Bump VERSION, changelog, README, page labels, selftests and CSS/JS cache-busting keys to 0.8.5.
+
+Safety and follow-up
+- No new authorization mechanism or DB changes. Locked chats remain protected by the existing session API.
+- CI and static checks cannot prove the live server UI; after merge/update verify light/softglass/dark layouts on phone and desktop.
+- This PR is specifically a sidebar restoration; autonomous homepage work from previous releases is not modified.
+- After merge the next version is 0.8.6.
