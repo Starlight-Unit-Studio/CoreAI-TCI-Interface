@@ -643,7 +643,7 @@ try {
         if (ember_agent_cancel_requested()) return ['text'=>'','ok'=>false];
         // Follow-up calls use the SAME model and queue, serially, without
         // repeating SKILL documents or changing Ollama Modelfile options.
-        $next = console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,180);
+        $next = console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,null,false,false);
         $text = ember_sanitize_public_reply((string)($next['content'] ?? ''),
           (string)($next['thinking'] ?? ''));
         return ['text'=>$text,

@@ -63,7 +63,7 @@ def verify(root: Path) -> list[str]:
         project_columns = set(re.findall(r"[a-z_]+", declared.group(1)))
         fixture_names = (
             "project-file-tools", "chat-branch", "project-runs", "project-procs",
-            "project-merge", "skill-packages", "skill-sharing", "skill-revisions",
+            "project-merge", "project-vcs", "skill-packages", "skill-sharing", "skill-revisions",
         )
         for name in fixture_names:
             rel = f"scripts/{name}-selftest.php"

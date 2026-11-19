@@ -1,0 +1,30 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.3
+Date: 2026-11-19
+Branch: fix/plan-timeout-vcs-preflight-083
+Base: main 0.8.2
+
+Symptom and investigated evidence
+- User requested Mara to build a polished 2026 homepage for company presentation.
+- UI still ended at the first incomplete Markdown plan, no website files generated.
+- Code read confirmed the plan-followup helper hardcoded "Die Aufgabe ist Planung, NICHT Quellcode oder Projektbau"; this line was scoped to the planning model subtask, but did not explain the parent build continuation.
+- Both chat.php and console_stream.php passed an older 180-second model timeout for their plan-followup call. The installed server is CPU-only, so the timeouts are especially problematic.
+- The previous preflight fixture fix omitted scripts/project-vcs-selftest.php; its SQLite projects table also lacked the description field checked by production project ownership.
+
+Repair and design decisions
+- Keep strict ownership, build authorization and read-only planner separation. Clarify in planner prompt that this substep prepares the full plan for the original authorized build task.
+- After one malformed yet provider-verified plan chunk, request one safe in-turn Markdown correction. No direct tool execution from that reply.
+- In-turn continuation now uses configured model timeout. The short format-specific generation deliberately avoids reasoning/skill expansion.
+- Expose real plan stop reason in the final user-visible reply and public work events without claiming that a ZIP exists.
+- Teach the independent model-controlled build selector that polite creation requests are immediate work requests, not merely informational questions.
+- Repair project-vcs test schema, and include it in the guarded schema drift fixture list and CI suite.
+- Both host preflights expose actual stderr and exit code for VCS failures.
+- Regression: end-to-end scripted polite user request, malformed plan response correction, verified completion, authorized file-writer invocation; plan-only request still does not build.
+
+Verification required
+- GitHub Actions on PR final SHA must pass, including new strict Preflight.
+- Real CoreAI update on CPU-only server, then rerun native/Docker Preflight and inspect new VCS diagnostic if it still fails.
+- Re-run original homepage request; verify actual index.html, style.css, script.js and archive assets, not just saved Markdown.
+- Confirm user cancellation and project ownership remain safe.
+- Do not claim live update or completed website without runtime evidence.
+
+After merge next version: 0.8.4.

@@ -25,6 +25,8 @@ $prompt = coreui_plan_followup_prompt($longText,str_repeat('Benutzerwunsch ',100
 plan_auto_assert(strlen($prompt) < 6800
   && str_contains($prompt,'BEREITS VORHANDENE UEBERSCHRIFTEN')
   && str_contains($prompt,'[COREUI_PLAN_COMPLETE]')
+  && str_contains($prompt,'ORIGINALAUFTRAG')
+  && !str_contains($prompt,'Die Aufgabe ist Planung, NICHT Quellcode')
   && !str_contains($prompt,str_repeat('Benutzerwunsch ',1000)),
   'Followup prompt must use bounded project context and an explicit completion marker');
 
@@ -90,8 +92,10 @@ plan_auto_assert(
   // 0.5.67: the SSE apply path is shared with the tool correction; it keeps
   // the turn's model and system prompt as $toolModel/$toolSys.
   && str_contains($streamSource,"static function (string \$nextPrompt) use (\$toolModel,\$toolSys)")
-  && str_contains($streamSource,'console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,180)')
+  && str_contains($streamSource,'console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,null,false,false)')
   && str_contains($streamSource,'$toolModel = isset($model) ? (string)$model : ember_model();')
+  && str_contains($chatSource,'ember_timeout_for_model($primaryModel)')
+  && !str_contains($chatSource, '$primaryModel,$sys,$nextPrompt,180,')
   && str_contains($chatSource,'&& !coreui_native_plan_continue_marker_attempt($out)')
   && str_contains($streamSource,'&& !coreui_native_plan_continue_marker_attempt($reply)')
   && str_contains($streamSource,'$safePlanRecovery'),
@@ -191,6 +195,38 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   plan_auto_assert($longResult['complete'] && $longResult['segments']===6
     && $longCalls===6 && !coreui_plan_is_draft_markdown($longResult['saved']['markdown']),
     'Production planning must advance through six genuine checkpoints without asking for Continue');
+
+  // The exact runtime regression: a local model may say "I will do it"
+  // instead of emitting inert Markdown. The same turn must repair its
+  // formatting once, then keep planning without requiring a user Continue.
+  $repairDraft=coreui_plan_save($pdo,1,$sid,11,$draft);
+  $repairCalls=0;
+  $repairOutputs=[
+    ['text'=>'Ich mache als naechstes die Projektplanung.', 'ok'=>true],
+    ['text'=>$segment, 'ok'=>true],
+    ['text'=>$last, 'ok'=>true],
+  ];
+  $repaired=coreui_plan_autorun($pdo,1,$sid,11,$repairDraft,
+    static function(string $p) use (&$repairOutputs,&$repairCalls): array {
+      $repairCalls++;
+      if ($repairCalls===2) plan_auto_assert(str_contains($p,'KORREKTUR:'),
+        'A malformed chunk must get one narrow in-turn repair prompt');
+      return array_shift($repairOutputs) ?? ['text'=>'','ok'=>false];
+    },'Erstelle die Homepage als echtes Projekt');
+  plan_auto_assert($repairCalls===3 && $repaired['segments']===2
+    && $repaired['complete'] && $repaired['reason']==='completed',
+    'After one format error Mara must finish the plan within the same user turn');
+
+  $failureDraft=coreui_plan_save($pdo,1,$sid,11,$draft);
+  $failureCalls=0;
+  $failed=coreui_plan_autorun($pdo,1,$sid,11,$failureDraft,
+    static function(string $p) use (&$failureCalls): array {
+      $failureCalls++;
+      return ['text'=>'','ok'=>false];
+    },'Homepage');
+  plan_auto_assert($failed['segments']===0 && !$failed['complete']
+    && $failed['reason']==='model_incomplete' && $failureCalls===1,
+    'A real provider failure must be reported, never retried as fake progress');
 
   $denied = coreui_plan_autorun($pdo,2,$sid,10,$v1,
     static fn(string $prompt): string => $segment,'Homepage',1);

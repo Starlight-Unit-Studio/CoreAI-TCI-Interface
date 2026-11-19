@@ -42,6 +42,7 @@ jobs:
             project-procs \
             project-env \
             project-merge \
+            project-vcs \
             skill-packages \
             skill-sharing \
             skill-revisions; do

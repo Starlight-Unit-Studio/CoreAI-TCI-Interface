@@ -26,7 +26,12 @@ function coreui_plan_followup_prompt(string $markdown, string $goal): string {
     ? mb_substr($body, -1800, null, 'UTF-8') : substr($body, -1800);
   return "Du setzt einen bereits von dir begonnenen und PRIVAT als Markdown "
     . "gespeicherten Projektplan fort. Ein Teil ist bereits in der Datei. "
-    . "Die Aufgabe ist Planung, NICHT Quellcode oder Projektbau.\n"
+    . "Dies ist nur der PLANUNGS-TEILSCHRITT des laufenden Auftrags. "
+    . "Nach einem nachweislich vollstaendigen Plan prueft eine separate, "
+    . "berechtigungsgeschuetzte Steuerung den ORIGINALAUFTRAG und setzt "
+    . "eine ausdruecklich beauftragte Homepage eigenstaendig technisch um. "
+    . "Schreibe in dieser Modellantwort nur Markdown-Planabschnitte, "
+    . "keine ausfuehrbaren Befehle oder Projektdateien.\n"
     . "ZIEL/AUFTRAG:\n" . $goal . "\n\n"
     . "BEREITS VORHANDENE UEBERSCHRIFTEN (nicht duplizieren):\n"
     . implode("\n", $headings) . "\n\n"
@@ -36,7 +41,8 @@ function coreui_plan_followup_prompt(string $markdown, string $goal): string {
     . "Fuer eine Homepage plane Seiten, Dateistruktur, Navigation, Design und "
     . "Responsivitaet anhand der bereits bekannten Anforderungen, ohne Neues "
     . "als bestaetigte Nutzerentscheidung zu erfinden. "
-    . "Schreibe hoechstens etwa 1200 bis 2000 Zeichen je Abschnitt. "
+    . "Halte den einzelnen Abschnitt geschlossen und nachvollziehbar, "
+    . "auch wenn nur wenig Platz in dieser Modellantwort bleibt. "
     . "Wiederhole keinen vorhandenen Titel, Text oder Anfangsmarker. "
     . "Nutze ## oder ### fuer neue Abschnitte. Keine Einleitung, keine Codefences, "
     . "keinen [COREUI_PLAN_SAVE] oder anderen Werkzeugaufruf. "
@@ -44,6 +50,20 @@ function coreui_plan_followup_prompt(string $markdown, string $goal): string {
     . "schreibe am Ende in einer EIGENEN ZEILE: [COREUI_PLAN_COMPLETE]. "
     . "Falls weitere Abschnitte fehlen, lass diesen Abschlussmarker weg. "
     . "Ein blosses Ende deiner Antwort bedeutet NICHT, dass der Plan fertig ist.";
+}
+
+/**
+ * One safe corrective request for a valid provider response that was formatted
+ * as chatter or a tool marker instead of inert plan Markdown. No tool dispatch
+ * and no invented completion marker on behalf of the model.
+ */
+function coreui_plan_followup_repair_prompt(string $original): string {
+  return $original . "\n\nKORREKTUR: Deine letzte Ausgabe war KEIN gueltiger "
+    . "Markdown-Planabschnitt. Schreibe nun ausschliesslich einen NEUEN "
+    . "Abschnitt beginnend mit ## oder ### und vollstaendigen Stichpunkten. "
+    . "Keine Vorrede, keine Codefences, keine Werkzeugmarker, keine alten "
+    . "Abschnitte wiederholen. [COREUI_PLAN_COMPLETE] nur als letzte Zeile, "
+    . "falls nach diesem Abschnitt wirklich alles geplant ist.";
 }
 
 function coreui_plan_followup_parse(string $raw): ?array {
@@ -150,7 +170,32 @@ function coreui_plan_autorun(PDO $pdo, int $uid, string $sessionId, int $turnId,
     if (!is_array($generated)) { $reason='generation_empty'; break; }
     $isVerified = !empty($generated['ok']);
     $parsed = coreui_plan_followup_parse((string)($generated['text'] ?? ''));
-    if ($parsed === null) { $reason='invalid_model_chunk'; break; }
+    // Some local models reply with commentary/markers despite the narrow
+    // Markdown instruction. A single in-turn repair is safer than silently
+    // ending the whole website task and asking the user for "Continue".
+    // Never retry a transport failure or trust its partial output as complete.
+    if ($parsed === null && $isVerified) {
+      if (function_exists('coreui_work_record')) {
+        coreui_work_record($pdo, 'model', 'info',
+          'Planformat wird im selben Auftrag korrigiert',
+          ['reason'=>'invalid_model_chunk','step'=>$step+1]);
+      }
+      try {
+        $corrected = $generate(coreui_plan_followup_repair_prompt($prompt));
+      } catch (Throwable $e) {
+        error_log('[CoreUI] Autonomous plan correction: ' . get_class($e));
+        $corrected = null;
+      }
+      if (is_string($corrected)) $corrected = ['text'=>$corrected,'ok'=>true];
+      if (is_array($corrected) && !empty($corrected['ok'])) {
+        $parsed = coreui_plan_followup_parse((string)($corrected['text'] ?? ''));
+        // Provider success does not make malformed content a completed plan.
+      }
+    }
+    if ($parsed === null) {
+      $reason = $isVerified ? 'invalid_model_chunk' : 'model_incomplete';
+      break;
+    }
     $body = coreui_plan_draft_text((string)$saved['markdown']);
     $combined = coreui_plan_merge_chunk($body, (string)$parsed['text']);
     if ($combined === null) { $reason='repeated_or_invalid_section'; break; }
@@ -177,6 +222,16 @@ function coreui_plan_autorun(PDO $pdo, int $uid, string $sessionId, int $turnId,
     if ($complete) { $reason='completed'; break; }
     if (!$isVerified) { $reason='model_incomplete'; break; }
     $reason = $bounded ? 'round_limit' : 'awaiting_next_section';
+  }
+  if ($reason !== 'completed' && $reason !== 'round_limit'
+      && function_exists('coreui_work_record')) {
+    coreui_work_record($pdo,'model',
+      $reason === 'cancelled' ? 'info' : 'error',
+      $reason === 'cancelled'
+        ? 'Planfortsetzung auf Wunsch gestoppt'
+        : 'Planfortsetzung mit nachvollziehbarem Fehler beendet',
+      ['reason'=>$reason,'segments'=>$passes,
+        'plan_version'=>(int)($saved['version'] ?? 0)]);
   }
   return ['saved'=>$saved,'segments'=>$passes,
     'complete'=>!coreui_plan_is_draft_markdown((string)$saved['markdown']),

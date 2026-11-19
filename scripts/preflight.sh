@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.2: mandatory preflight sync after every source change.
+# CoreAI: TCI Interface 0.8.3: mandatory preflight sync after every source change.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1588,10 +1588,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.
   project_vcs_test=''
-  if project_vcs_test="$(compose exec -T php php scripts/project-vcs-selftest.php 2>&1)"; then
+  if project_vcs_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-vcs-selftest.php 2>&1)"; then
     ok 'Project version history self-test passed.'
   else
-    fail "Project versions-self-test: ${project_vcs_test:-Unknown error}"
+    project_vcs_exit=$?
+    fail "Project versions-self-test (exit ${project_vcs_exit}): ${project_vcs_test:-No PHP output; check container memory limits and PHP logs}"
   fi
 
   # 0.7.81 (P11 B): merging working states with conflicts, Mara with versions; the Git export with git where it exists.
