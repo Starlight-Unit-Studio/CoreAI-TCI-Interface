@@ -1,0 +1,59 @@
+name: Project Autonomy and Preflight Regressions
+on:
+  pull_request:
+    paths:
+      - 'api/console_plan_autorun.php'
+      - 'api/console_native_tools.php'
+      - 'api/console_build_intent.php'
+      - 'scripts/plan-autocontinue-selftest.php'
+      - 'scripts/preflight.sh'
+      - 'scripts/preflight-native.sh'
+      - 'scripts/*selftest.php'
+      - '.github/workflows/plan-autonomy-preflight-diagnostics.yml'
+  workflow_dispatch:
+
+jobs:
+  planner-and-project-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, zip, curl, gd
+          coverage: none
+      - name: PHP syntax for planner and tests
+        run: |
+          php -l api/console_plan_autorun.php
+          php -l scripts/plan-autocontinue-selftest.php
+          bash -n scripts/preflight.sh
+          bash -n scripts/preflight-native.sh
+      - name: Capture all failing project and skill selftest reasons
+        run: |
+          set -u
+          failures=0
+          for name in \
+            plan-autocontinue \
+            native-tools \
+            project-file-tools \
+            chat-branch \
+            project-runs \
+            project-procs \
+            project-env \
+            project-merge \
+            skill-packages \
+            skill-sharing \
+            skill-revisions; do
+            echo "::group::${name}"
+            if php -d display_errors=stderr -d log_errors=1 "scripts/${name}-selftest.php"; then
+              echo "[PASS] ${name}"
+            else
+              status=$?
+              echo "::error title=Selftest ${name}::PHP exited ${status}; consult preceding output"
+              failures=$((failures+1))
+            fi
+            echo "::endgroup::"
+          done
+          echo "Failed selftests: ${failures}"
+          test "${failures}" -eq 0
