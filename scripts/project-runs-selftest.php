@@ -171,7 +171,7 @@ prt_test(coreui_pruns_enqueue($pdo, 7, $a, 'echo x')['status'] === 'queued', 'af
 
 // Mara's tool outside a project chat, and the hint.
 $pdo->prepare('INSERT INTO stu_console_sessions VALUES (?,?,?,?,?,?,?)')->execute(['cs_free_chat', 7, null, 'Frei', null, '2026-11-17', '2026-11-17']);
-prt_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'prun', 'input'=>'echo hi']) === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.',
+prt_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'prun', 'input'=>'echo hi']) === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.',
   'no runs outside a project chat');
 $pdo->prepare('INSERT INTO stu_console_sessions VALUES (?,?,?,?,?,?,?)')->execute(['cs_project_chat', 7, $a, 'Bau', null, '2026-11-17', '2026-11-17']);
 prt_test(str_contains(coreui_pftools_hint($pdo, 7, 'cs_project_chat', false, true), '[AUSFUEHREN: python -m unittest -v]')
