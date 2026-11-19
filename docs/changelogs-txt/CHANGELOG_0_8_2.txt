@@ -14,3 +14,8 @@ Preflight
 - Nine reported project/skill tests run with stderr enabled.
 - A new GitHub workflow runs each affected offline test independently, without masking its errors.
 - No claim that the nine actual host failures are already resolved; database/runtime diagnostics are still required.
+
+Additional verified corrections
+- Eight failing CI project/skill selftests repaired by aligning SQLite fixtures with the project description migration.
+- Preflight sync guard checks project schema columns in those fixtures before release.
+- Separate project-agent ten-minute work cutoff removed; existing cancellation and no-progress detection unchanged.
