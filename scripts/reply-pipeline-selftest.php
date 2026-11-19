@@ -164,9 +164,11 @@ if (str_contains($streamSource, "\$_GET['msg']") || !$storedTurnLookup || !$turn
   reply_test_fail('Der SSE-Pfad liest die Nachricht nicht aus dem kontogebundenen gespeicherten Turn oder uebertraegt Text per URL.');
 }
 if (!str_contains($streamSource, "'think'    => coreui_general_think_value(\$model, \$thinkOverride ?? ember_thinking_enabled())")
-    || !str_contains($streamSource, 'coreui_build_intent_select(')
     || !str_contains($streamSource, "console_stream_progress(\$thinkingEnabled")) {
   reply_test_fail('Thinking wird im SSE-Pfad nicht serverseitig aktiviert oder deaktiviert.');
+}
+if (!str_contains($streamSource, 'coreui_build_intent_select_for_plan(')) {
+  reply_test_fail('SSE muss den urspruenglichen autorisierten Projektauftrag beim Fortsetzen beibehalten.');
 }
 if (!str_contains($streamSource, 'ember_exact_integer_calculation($promptMessage)')
     || !str_contains($streamSource, "'truncated' => false")) {
