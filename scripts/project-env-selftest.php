@@ -336,7 +336,7 @@ env_test(str_contains($wait, 'Wartet auf den Sandbox-Dienst.') && str_contains($
 $tool('cs_game', 'pproc_stop');
 $w['start'] = "Server bereit\n";
 // Other chats and accounts, a missing migration.
-env_test($tool('cs_free', 'pproc_start', 'python app.py') === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.'
+env_test($tool('cs_free', 'pproc_start', 'python app.py') === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.'
   && str_starts_with($tool('cs_other', 'pproc_output'), 'Projektdateien gibt es nur'), 'only in the own project chat');
 $old = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 env_schema($old, false);
