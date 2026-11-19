@@ -130,8 +130,9 @@ env_test(ember_strip_stray_tool_markers("Ich starte ihn.\n[SERVER_STARTEN: 8000 
 env_test(str_contains($chatSource, "|| in_array(\$tool['tool'], COREUI_PFTOOLS_PROC_KINDS, true)) {")
   && str_contains($chatSource, "if (ember_py_enabled() && coreui_pruns_ready(stu_pdo()) && coreui_pprocs_ready(stu_pdo())) array_push(\$tools, ...COREUI_PFTOOLS_PROC_KINDS);")
   && str_contains($chatSource, "'pvcs_commit', 'pvcs_branch', 'pvcs_merge'],\n        COREUI_PFTOOLS_PROC_KINDS))));")
-  && substr_count($chatSource, "if ((\$projectScope['id'] ?? '') === '') \$projectFilesHint = coreui_pftools_outside_hint(\$pdo, \$channel, \$uid,") === 2,
-  'chat.php: dispatch, offered with Python and migration 048, first step, the hint outside a project in both prompts');
+  && substr_count($chatSource, "coreui_pftools_project(\$pdo,\$uid,(string)\$consoleSessionId) !== ''") >= 2
+  && substr_count($chatSource, "coreui_pftools_outside_hint(\$pdo,\$channel,\$uid,") >= 2,
+  'chat.php: dispatch, offered with Python and migration 048, first step, one shared file-tool hint in both normal and project chat prompts');
 $loopSource = (string)file_get_contents($root . '/api/console_agent_loop.php');
 env_test(str_contains($loopSource, "'pproc_start','pserver_start','pproc_output','pproc_input','pproc_stop','pserver_fetch']) !== null"),
   'console_agent_loop.php: no process marker in an image closing text');
