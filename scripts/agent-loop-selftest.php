@@ -32,6 +32,34 @@ loop_test(coreui_agent_next_tool('[ARCHIV: Port]', ['web']) === null, 'only allo
 loop_test(coreui_agent_next_tool('Erklaerung: `[WEB: x]` sucht im Netz.', $all) === null, 'mentions in code are no calls');
 loop_test(coreui_agent_next_tool('Die Antwort ist 42.', $all) === null, 'prose is the answer');
 
+// A model-authored promise to read a project file is NOT a completion. Only
+// the read-only tool can be recovered, with actual project permission checks.
+$readAllowed = ['pfile_read','pfile_edit','pfile_write','prun'];
+$readPromise = 'Ich lese mir jetzt style.css durch, bevor ich die Gestaltung ändere.';
+$expectedRead = ['tool'=>'pfile_read','input'=>'style.css','recovered_read_intent'=>true];
+loop_test(coreui_agent_next_tool($readPromise,$readAllowed) === null
+  && coreui_agent_recover_promised_read($readPromise,$readAllowed) === $expectedRead
+  && coreui_agent_recover_promised_read('Ich lese mir jetzt ' . chr(96) . 'src/style.css' . chr(96) . ' durch.', $readAllowed)
+    === ['tool'=>'pfile_read','input'=>'src/style.css','recovered_read_intent'=>true],
+  'a short first-person file-reading promise is a project-scoped read action');
+foreach ([
+  'Ich habe style.css bereits gelesen.',
+  'Ich lese mir jetzt ../secret.css durch.',
+  'Ich lese mir jetzt /etc/passwd durch.',
+  'Ich lese mir jetzt https://host/x.css durch.',
+  'Wir diskutieren, ob wir style.css lesen sollten.',
+  'Ich lese mir jetzt style.css durch.' . "\n" . str_repeat('x',900),
+  str_repeat(chr(96),3) . "\nIch lese mir jetzt style.css durch.\n" . str_repeat(chr(96),3),
+] as $unsafe) {
+  loop_test(coreui_agent_recover_promised_read($unsafe,$readAllowed) === null,
+    'no implicit read from past tense, quoted/long text or unsafe paths');
+}
+loop_test(coreui_agent_recover_promised_read($readPromise,['web','python']) === null
+  && coreui_agent_recover_promised_read('Ich ändere jetzt style.css.',$readAllowed) === null
+  && coreui_agent_recover_promised_read('Ich führe jetzt npm test aus.',$readAllowed) === null,
+  'no permission bypass and no inferred writes or commands');
+
+
 // Work view titles must pass the work store's ASCII rule.
 foreach (['web', 'browse', 'python', 'archive'] as $tool) {
   $title = coreui_agent_step_title(['tool'=>$tool, 'input'=>'Grüße „x“'], 3, 6);
@@ -145,6 +173,29 @@ $projectLoop = coreui_agent_loop_run('[WEB: projekt-start]', ['tool'=>'web','inp
 loop_test(count($projectTools)===9 && $projectLoop['steps']===9
   && str_contains((string)$projectLoop['out'],'abgeschlossen'), 'project work may continue past six confirmed steps');
 
+// The model may emit a promise instead of the next DATEI marker after a
+// real tool; the same loop must read the file before returning a final reply.
+$readSteps = [];
+$readEvents = [];
+$readReplies = [$readPromise,'Die Datei wurde mit dem Werkzeug geprüft; weitere Änderungen sind noch offen.'];
+$recoveredLoop = coreui_agent_loop_run('[DATEI: index.html]',
+  ['tool'=>'pfile_read','input'=>'index.html'], 'BASIS', $readAllowed, 0,
+  static function(string $prompt) use (&$readReplies): ?string { return array_shift($readReplies); },
+  static function(array $tool) use (&$readSteps): string {
+    $readSteps[]=$tool;
+    return 'Datei ' . $tool['input'] . " (Stand 1):\n1 | Beispiel";
+  },
+  static function(string $kind,string $state,string $title,array $meta) use (&$readEvents): void {
+    $readEvents[]=['kind'=>$kind,'state'=>$state,'meta'=>$meta];
+  }, static fn():bool=>false);
+loop_test(count($readSteps)===2
+  && $readSteps[1] === $expectedRead
+  && $recoveredLoop['steps']===2
+  && str_contains((string)$recoveredLoop['out'],'noch offen')
+  && count(array_filter($readEvents,static fn(array $e): bool =>
+    ($e['meta']['reason']??'')==='read_intent_without_marker'))===1,
+  'file-read promise results in real verified tool result and autonomous continuation');
+
 // A project run sends the model's own public note before each real tool.
 $projectNotes = [];
 $publicLoop = coreui_agent_loop_run(
@@ -195,6 +246,13 @@ loop_test(str_contains($chatSource, "if (ember_py_code_writes_output(\$code)) {"
 loop_test(str_contains($chatSource, '\[ARCHIV:\s*.*?\]') && substr_count((string)file_get_contents($root . '/api/console_stream.php'),
   'coreui_extract_archive_marker($reply) !== null') === 2, 'ARCHIV recognised in the stream and never shown');
 loop_test(substr_count($chatSource, 'coreui_agent_loop_hint(') === 2, 'both prompt builders tell Mara how to work');
+$streamSource=(string)file_get_contents($root . '/api/console_stream.php');
+loop_test(str_contains($chatSource,'coreui_agent_recover_promised_read($out, $loopAllowed)')
+  && str_contains($streamSource,'coreui_agent_next_tool($text,$projectToolAllowed)')
+  && str_contains($streamSource,'coreui_agent_recover_promised_read($text,$projectToolAllowed)')
+  && substr_count($streamSource,'$projectToolPending($reply)')===2,
+  'stream routes project file markers and promised reads to the authorized synchronous tool loop');
+
 
 // 0.6.22: a route sends a step another way, first and later steps (NRW weather to the WDR place search).
 $routeSeen = [];
