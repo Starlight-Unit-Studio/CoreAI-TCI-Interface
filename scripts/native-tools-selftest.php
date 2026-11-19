@@ -408,6 +408,39 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     && $autoBuildCalls===1 && $decisionCalls===1,
     'Explicit build request must flow directly from saved plan into the writer');
 
+  // Full original request: a polite homepage-build question must run from
+  // draft -> in-turn format correction -> verified plan -> actual file writer.
+  // The operator must NOT need to write Continue after the Markdown plan.
+  $homepageBuildCalls=0;
+  $homepageDecisionCalls=0;
+  $homepageModelCalls=0;
+  $finalSection="## Endkontrolle\n- Navigation, mobile Breiten und lokale Links pruefen.\n"
+    . "- Seiten vollstaendig ausliefern und fehlende Platzhalter vermeiden.\n"
+    . "[COREUI_PLAN_COMPLETE]";
+  $homepageBuilt=coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
+    static function (string $task) use (&$homepageBuildCalls): string {
+      $homepageBuildCalls++;
+      native_assert(str_contains($task,'index.html')
+        && str_contains($task,'[COREUI_PLANUNGSKONTEXT]'),
+        'The complete approved plan must reach the actual project writer');
+      return 'VERIFIED HOMEPAGE CREATED';
+    },true,
+    static function (string $prompt) use (&$homepageModelCalls,&$homepageDecisionCalls,$finalSection): array {
+      if (str_contains($prompt,'WERKZEUG-ENTSCHEIDER')) {
+        $homepageDecisionCalls++;
+        native_assert(str_contains($prompt,'kannst du eine homepage erstellen'),
+          'Build selector must see the original polite user request');
+        return ['text'=>'START_BUILD','ok'=>true];
+      }
+      $homepageModelCalls++;
+      return ['text'=>$homepageModelCalls===1
+          ? 'Ich setze die Planung fort.' : $finalSection,'ok'=>true];
+    },'kannst du eine homepage erstellen die modern und professionell aussieht');
+  native_assert($homepageBuilt==='VERIFIED HOMEPAGE CREATED'
+    && $homepageBuildCalls===1 && $homepageDecisionCalls===1
+    && $homepageModelCalls===2,
+    'A user homepage request must go from a recoverable draft to the actual build without Continue');
+
   // A plan-only request remains inert even if a valid plan is saved.
   $planOnlyBuildCalls = 0;
   $planSaved = coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
