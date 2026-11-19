@@ -6167,7 +6167,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $runApprovedBuild = static function () use ($pdo,$senderChar,$consoleUid,$consoleSessionId,
       $excludeReplyToId,$triggerMessageId,$triggerRevision,$userMsg,$primaryModel,
       &$buildIntentStatus): ?string {
-    $choice = coreui_build_intent_select(
+    $choice = coreui_build_intent_select_for_plan(
       $pdo,$consoleUid,(string)$consoleSessionId,$triggerMessageId,$userMsg,
       static function (string $decisionPrompt) use ($primaryModel): array {
         // The classifier needs no SKILL documents, only the short decision.
