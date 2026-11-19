@@ -651,18 +651,33 @@ function coreui_native_tool_apply(
     }
     if ($kind !== 'PLAN_AND_BUILD') {
       $autoSegments = 0;
+      $progressReason = $planGenerate === null ? 'continuation_unavailable' : '';
       if ($planGenerate !== null && coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
         $progress = coreui_plan_autorun($pdo,$uid,$sessionId,$turnId,$saved,
           $planGenerate,$planGoal);
         $saved = $progress['saved'];
         $autoSegments = (int)$progress['segments'];
+        $progressReason = (string)($progress['reason'] ?? 'unknown');
       }
       if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+        // Report the actual server stop condition, not a vague request for Continue.
+        $reasonText = match ($progressReason) {
+          'model_incomplete' => 'Die Modellantwort war abgeschnitten oder der Aufruf wurde nicht bestaetigt.',
+          'invalid_model_chunk' => 'Auch nach der Korrektur fehlte ein gueltiger Markdownabschnitt.',
+          'repeated_or_invalid_section','no_progress' => 'Das Modell wiederholte alten Plantext ohne Fortschritt.',
+          'generation_error','generation_empty' => 'Der naechste Modellaufruf konnte nicht abgeschlossen werden.',
+          'checkpoint_failed' => 'Der naechste Planabschnitt konnte nicht gespeichert werden.',
+          'plan_too_large' => 'Der gesamte Plan erreichte die Dateigroessengrenze.',
+          'cancelled' => 'Die Bearbeitung wurde abgebrochen.',
+          'continuation_unavailable' => 'Der automatische Modellaufruf ist derzeit nicht verfuegbar.',
+          default => 'Ein nicht zugeordneter technischer Fehler hat die Fortsetzung unterbrochen.',
+        };
         return 'Ich habe den Projektplan als UNVOLLSTAENDIGEN Markdown-Entwurf v'
           . (int)$saved['version'] . ' gesichert. '
           . ($autoSegments > 0
             ? 'Ich habe selbststaendig ' . $autoSegments . ' weitere Teilabschnitte geschrieben. '
-            : 'Ich konnte einen weiteren Planabschnitt noch nicht sicher abschliessen. ')
+            : '')
+          . 'Grund: ' . $reasonText . ' '
           . 'Der Markdown-Download ist vorhanden; die Planung ist noch nicht abgeschlossen. '
           . 'Es wurde kein Projektbau gestartet.';
       }
