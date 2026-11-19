@@ -136,6 +136,19 @@ function coreui_agent_step_note(array $tool): ?string {
 }
 
 /**
+ * A deliberately public work update in the model's visible content, never
+ * private Ollama thinking. The note is accepted only before a real, parsed
+ * tool call; it never grants permission to execute a tool.
+ * The existing shared safety filter rejects credentials and private prompts.
+ */
+function coreui_agent_public_progress_note(string $reply, ?array $tool): ?string {
+  if ($tool === null || !function_exists('coreui_native_public_note_safe')) return null;
+  if (preg_match('~\\A[ \\t]*\\[COREUI_PUBLIC_PROGRESS\\]([^\\r\\n]{1,480})\\[/COREUI_PUBLIC_PROGRESS\\][ \\t]*\\r?\\n[ \\t]*(?=\\[)~u',
+      $reply, $matches) !== 1) return null;
+  return coreui_native_public_note_safe((string)$matches[1]);
+}
+
+/**
  * Confirm the result, not the intention. A rejected file operation and a
  * running-but-unreachable server are not successful tool executions.
  * Only server-owned results are evaluated; no model-authored assertion is proof.
@@ -158,6 +171,30 @@ function coreui_agent_tool_result_state(array $tool, string $result): string {
   if ($kind === 'prun') return preg_match('~Exitcode 0\\b~', $result) === 1 ? 'success' : 'error';
   if (preg_match('~(?:nicht geaendert|nicht gespeichert|nicht verfuegbar|noch keine Ausgabe|noch nicht uebernommen)~iu', $result)) return 'info';
   return 'success';
+}
+
+/**
+ * Public outcome of a confirmed tool return, with no raw stdout, source code
+ * or model-internal reasoning. Only facts established by the tool state are
+ * announced; the entire project is not declared finished by an exit code.
+ */
+function coreui_agent_public_result_note(array $tool, string $state): ?string {
+  $kind = (string)($tool['tool'] ?? '');
+  if ($state === 'error') {
+    return 'Der Werkzeugschritt ist fehlgeschlagen. Ich werte den Fehler aus, bevor ich eine Korrektur versuche.';
+  }
+  if ($state === 'info' && in_array($kind, ['pserver_start','pproc_start','pserver_fetch'], true)) {
+    return 'Das Werkzeug hat den angeforderten Prozess oder Server noch nicht als erfolgreich bestätigt. Ich prüfe den tatsächlichen Zustand.';
+  }
+  if ($state !== 'success') return null;
+  return match ($kind) {
+    'prun' => 'Der ausgeführte Befehl endete mit Exitcode 0. Ich prüfe, ob damit alle Anforderungen erfüllt sind.',
+    'pserver_start' => 'Der Entwicklungsserver wurde gestartet und war beim HTTP-Test erreichbar. Ich überprüfe anschließend seine Ausgabe.',
+    'pserver_fetch' => 'Der Server hat einen erfolgreichen HTTP-Status geliefert. Ich werte die erhaltene Antwort aus.',
+    'pproc_start' => 'Der Prozess wurde gestartet. Sein späteres Ergebnis muss ich gesondert prüfen.',
+    'pproc_stop' => 'Die Anforderung zum Beenden des Prozesses wurde verarbeitet.',
+    default => null,
+  };
 }
 
 /** Label of a step inside the next prompt (pure); the prompt numbers the steps itself. */
@@ -280,7 +317,11 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
         . "Sag offen, was offen geblieben ist.\n"
       : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
         . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
-        . "Fehlt dir noch etwas Wichtiges, antworte NUR mit genau einem Marker fuer den naechsten Schritt:\n"
+        . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
+        . "Bei laengeren Projektauftraegen SOLLST du vor dem naechsten Werkzeugmarker in einer kurzen, ausdruecklich oeffentlichen Fortschrittsnotiz erklaeren, was das bestaetigte Ergebnis bedeutet und was du als Naechstes tust: "
+        . "[COREUI_PUBLIC_PROGRESS]Ich habe die bisher bestaetigten Ergebnisse geprueft und kontrolliere nun die naechste Projektdatei.[/COREUI_PUBLIC_PROGRESS] "
+        . "Danach folgt in einer NEUEN Zeile der einzelne Werkzeugmarker. Nenne nur gepruefte Ergebnisse und deinen naechsten Arbeitsschritt; "
+        . "kein privates Reasoning, keine geheimen Daten, keine erfundenen Erfolge. Ohne Notiz bleibt das Markerformat unveraendert.\n"
         . coreui_agent_tool_menu($allowed) . "\n"
         . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
         . "fuer eine neue Richtung verwende andere Suchbegriffe. "
@@ -322,7 +363,8 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     return "ARBEITSWEISE: Du arbeitest selbststaendig. Fehlt dir aktuelles oder genaues Wissen, suche ohne Nachfrage; "
       . "nach Suchtreffern kannst du mit [WEB: WEITER] bei Bedarf die naechste Gruppe abrufen oder genauer suchen; "
       . "Namensgleiche nicht ohne Identitaetsbeleg zusammenfuehren. "
-      . "Pruefe echte Werkzeugergebnisse statt angenommener Erfolge. In Projektauftraegen arbeite nach dem Plan weiter bis das Ergebnis geprueft ist."
+      . "Pruefe echte Werkzeugergebnisse statt angenommener Erfolge. In Projektauftraegen arbeite nach dem Plan weiter bis das Ergebnis geprueft ist. "
+      . "Vor einem echten Werkzeugmarker kannst du mit [COREUI_PUBLIC_PROGRESS]ein kurzer oeffentlicher Arbeitsschritt[/COREUI_PUBLIC_PROGRESS] in einer eigenen Zeile Mara selbst sprechen lassen; niemals private Gedanken oder unbelegte Erfolge."
       . ($archive ? ' Aelteres aus diesem Chat findest du mit [ARCHIV: Stichworte].' : '');
   }
   return "ARBEITSWEISE (selbststaendig wie ein Agent): Dein Trainingswissen hat einen Stichtag; das heutige Datum steht oben. "
@@ -333,6 +375,9 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
     . "mit [PY] rechnen" . ($archive ? ', mit [ARCHIV: Stichworte] in der Mitschrift dieses Chats nachsehen' : '') . "). "
     . "Suchtreffer sind keine gelesenen Webseiten; Namensgleiche nicht ohne belegte Verbindung verwechseln. "
     . "Fuer Projektauftraege mache die notwendigen, bestaetigten Arbeitsschritte eigenstaendig weiter, ohne nach jeder Datei auf 'continue' zu warten. "
+    . "In laengeren Projektauftraegen erklaere regelmaessig in einer eigenen oeffentlichen Notiz den bestaetigten Befund und den naechsten Schritt vor einem Werkzeugmarker: "
+    . "[COREUI_PUBLIC_PROGRESS]Ich habe die Ergebnisse geprueft und bearbeite nun die naechste Datei.[/COREUI_PUBLIC_PROGRESS] "
+    . "Danach folgt auf einer neuen Zeile nur der Werkzeugmarker. Nur bestaetigte Ergebnisse nennen, nie private Gedanken, Geheimnisse oder imaginierte Arbeit. "
     . "Ein Befehl, HTTP-Abruf oder Dateischritt gilt nur mit echtem Werkzeugergebnis als gelungen. Fuer Smalltalk, Meinungen und sicheres Wissen brauchst du keine Werkzeuge.";
 }
 
@@ -369,8 +414,12 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
     if (microtime(true) >= $deadline) { $stopReason = 'time_budget'; break; }
     $title = coreui_agent_step_title($tool, $used + 1, $maxSteps);
-    $note = coreui_agent_step_note($tool);
-    if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt', ['public_note'=>$note, 'source'=>'agent_loop']);
+    $publicNote = $projectWorkflow ? coreui_agent_public_progress_note($out, $tool) : null;
+    // A meaningful, safe model-authored public update takes priority over the
+    // generic tool label; do not show duplicate paragraphs for one step.
+    $note = $publicNote ?? coreui_agent_step_note($tool);
+    if ($note !== null) $record('commentary', 'info', 'Mara meldet ihren naechsten Schritt',
+      ['public_note'=>$note,'source'=>$publicNote !== null ? 'model_public_text' : 'agent_loop']);
     if ($tool['tool'] === 'browse') {
       if (($tool['route'] ?? '') === 'wdr_place_search') {
         $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
@@ -384,6 +433,11 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $state = coreui_agent_tool_result_state($tool, $result);
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
       'reason'=>$state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state]);
+    if ($projectWorkflow) {
+      $outcomeNote = coreui_agent_public_result_note($tool, $state);
+      if ($outcomeNote !== null) $record('commentary','info','Mara ordnet das Werkzeugergebnis ein',
+        ['public_note'=>$outcomeNote,'source'=>'verified_tool_result']);
+    }
     $steps[] = ['label'=>coreui_agent_step_label($tool, $used, $maxSteps, $state),
       'result'=>$result,'state'=>$state];
     // Repeating the same unsuccessful command with the same response cannot

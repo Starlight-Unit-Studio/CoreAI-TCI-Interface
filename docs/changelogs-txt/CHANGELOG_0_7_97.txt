@@ -1,28 +1,28 @@
 COREAI: TCI INTERFACE // CHANGELOG 0.7.97
 Date: 2026-11-18
 
-Mobile project navigation
-- Project name opens its workspace directly; separate chevron expands chats.
-- Project directory shows searchable, sortable cards with pin and options.
-- Project breadcrumb returns to the directory.
-- A touch-friendly project action sheet includes a close control and backdrop.
+Visible public agent workflow
+- Project agents can write one explicitly public progress sentence before each
+  genuine tool call, using the already validated COREUI_PUBLIC_PROGRESS form.
+  The assistant describes the next action or a verified finding in its own
+  words. This is visible assistant content, NOT private chain of thought.
+- Commentary survives server events and is live-streamed and saved to the
+  existing Work Events timeline. A filtered fallback remains available if the
+  model fails to produce a safe note.
+- Verified process/server/command results receive state-derived short
+  explanations, without raw worker output, secrets or unsupported success
+  claims. Process start and exit code do not declare a whole project done.
+- Long project agent commands without a fixed maximum now fold into the
+  correct technical action group in the UI. Folded groups show actual confirmed
+  action counts and failure counts, keeping public notes visible outside them.
+- Work-event UI and PHP agent-loop selftests check public text, confidential
+  data suppression, tool outcome semantics, streaming-style transitions and
+  continuing automatically to the next step.
 
-Project details
-- Dedicated project description persisted separately from AI instructions.
-- Migration 055 adds a nullable description field.
-- A compact editor offers name, description, Save and Cancel.
-- Existing instructions, memory scope and Space placeholder stay in advanced settings.
-
-Quality gates
-- Project UI regression registered in both Preflights.
-- Project SQLite fixtures updated for the new schema.
-- Release version and asset cache keys synchronized.
-
-This is a proposed draft PR build. Production and Android end-to-end validation
-have not yet been performed. CoreAI Holo theme overlay remains a separate pass.
-
-Sidebar navigation refinement (operator request)
-- The Projects entry in the chat drawer is one direct directory link.
-- Per-project folders, expand arrows and nested project chat lists are removed from the drawer.
-- Protected locked chats remain available under a separate area.
-- Sidebar folding and project UI contracts updated to reflect the new navigation.
+Tests and rollout
+- Existing Compose and Native Preflight paths already register the expanded
+  agent-loop and work-events UI regression tests.
+- Requires actual Android and live CoreAI server verification after merge.
+- The changes affect public commentary, not the protected model reasoning
+  channel, model queue, model configuration, sandbox permissions or guest quotas.
+- Separate issue #349 remains the place for recovery after a true runner abort.

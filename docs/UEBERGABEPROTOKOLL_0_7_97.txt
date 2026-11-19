@@ -1,46 +1,39 @@
 COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.97
 Date: 2026-11-18
 Base: main 0.7.96
-Branch: feat/mobile-project-navigation-claude-reference
-Draft PR: #357
+Branch: feat/agent-public-workflow-commentary-20261118
+Draft PR: #358
 
-Operator request
-Build a mobile project workflow following the operator's own five Claude
-screenshots as functional UI references. Do not source substitute images online.
-Start with navigation and layout parity; apply CoreAI Holo design afterward.
+Operator's requirement
+Show a genuine ongoing project run with public intermediate narration and
+expandable evidence of tool calls, resembling the operator's own Claude Code
+session screenshots. This must not be the private internal thought process.
 
-Implementation on branch
-- Tapping the project title opens its workspace; the chevron is for chat folding.
-- Directory page: project cards, search, sort, pins and action menu.
-- Project breadcrumb, mobile project sheet, simple name/description modal.
-- Existing advanced CoreAI settings remain available under a disclosure.
-- Migration 055, scoped API and store persist description independently from
-  instructions and without bypassing account/project authorization.
-- Project navigation/source edits are checked by updated regression contracts.
-- Native and Compose Preflights both register the UI contract.
+Implementation
+- api/console_agent_loop.php: public, safe model-authored commentary before
+  an authenticated project tool marker, never used as authorization; fallback
+  to existing tool action note. Confirmed outcomes of commands, server
+  requests and processes also become short public updates.
+- js/coreui-work-events.js: supports unbounded project step titles and counts
+  completed tool actions without mislabeling a running request as a successful
+  result. Public messages remain inline; technical groups stay expandable.
+- scripts/agent-loop-selftest.php, scripts/work-events-ui-selftest.js: new
+  validations for public progress, continuing automatically, honest exit
+  statuses and no private reasoning exposure.
+- Existing Preflight execution sites in both Compose and Native remain in
+  force; none were removed or bypassed. VERSION, release docs and numerical
+  SHA-256 asset fingerprint are synchronized.
 
-Validation
-- The GitHub Actions version, cache and fixture failures from the initial draft
-  were identified and addressed in the feature branch. Re-run CI against the
-  final head and inspect the resulting workflow checks before merge.
-- The isolated local container has no working GitHub DNS access, so a real
-  local browser run was not performed from this chat.
-- Do not represent static source checks as a successful Android device test.
-- The PR is intentionally a draft. Holo theme pass and end-to-end Android
-  navigation, project file preview, persistence, user rights and actual server
-  migration still need acceptance testing.
+Verification and release cautions
+- GitHub Actions must be green at the exact final commit; no production
+  deployment or real Android / Ollama project-chat test is claimed.
+- No actual confidential model thinking is shown, ever.
+- The public agent note may only contain verified observations or next steps;
+  model-generated claims are still not server-verified tool results.
+- Watch real SSE reconnects, project file modifications, job cancellations and
+  final answers in a live test.
+- A competing draft PR #357 also targets 0.7.97. Whichever merges second
+  MUST rebase onto main and take the next numeric release version, updating
+  all changelog, handover and cache contracts. Do not merge both at 0.7.97.
 
-Invariants
-- No added Chat/Work switch or dead scheduled-project features.
-- No modification of Ollama models, account permissions, sandbox policy or
-  operator's installed CoreAI server.
-- Use native project storage; preserve unsaved file confirmation.
-- Keep security checks, full Preflight sync, a version bump for each merge.
-
-Next version after merging this branch: 0.7.98.
-
-Sidebar navigation refinement (operator request)
-- The Projects entry in the chat drawer is one direct directory link.
-- Per-project folders, expand arrows and nested project chat lists are removed from the drawer.
-- Protected locked chats remain available under a separate area.
-- Sidebar folding and project UI contracts updated to reflect the new navigation.
+Next version after this branch merges alone: 0.7.98.

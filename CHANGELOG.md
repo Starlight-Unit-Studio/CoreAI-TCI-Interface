@@ -2,12 +2,10 @@
 
 ## 0.7.97 - 18.11.2026
 
-- **Mobile project navigation:** The chat sidebar now has one direct **Projekte** link to the dedicated directory, without expanding project folders or nested chat lists. A searchable and sortable directory offers project cards, pinning, project actions and a back breadcrumb. Locked chats remain accessible separately.
-- **Project details:** A compact mobile editor shows the project name and a separately stored description, with Save and Cancel. Existing model instructions, memory mode and Space placeholders remain under advanced settings.
-- **Scoped metadata migration:** Database migration 055 adds an optional project description without converting it into prompt instructions. Project APIs validate updates and retain user/project ownership checks.
-- **Touch navigation:** Project actions use a mobile bottom sheet with an overlay and explicit close control. Folder and chat actions remain separate.
-- **Regression protections:** The project UI contract covers the new controls and description persistence; Compose and native Preflight register the test. SQLite fixtures were synchronized with the new schema.
-- **Validation status:** Changes are proposed in draft PR #357; no production server or actual Android end-to-end verification is claimed. A full Holo theme pass follows functional approval.
+- **Visible, continuous project work:** Mara can write short, deliberately public progress updates before individual authenticated tool steps. Her status, next action and confirmed tool outcomes appear inline while the same project run continues, following the operator's Claude-Code reference screenshots.
+- **Verified outcomes, not fabricated thinking:** Command exit codes, process launch and server reachability are reported from real tool results. Public commentary never exposes hidden Ollama reasoning, raw prompts, secrets or unverified source text.
+- **Accurate expandable activity groups:** Unbounded project steps such as "Schritt 2: Projekt ausfuehren" are grouped as technical actions instead of being confused with public narration; counters distinguish actual returned tool outcomes and failures.
+- **Regression coverage:** Expanded agent-loop and work-event UI tests are already executed by both preflight variants; cache fingerprints and release metadata updated. Live Android / production validation remains required before deploy.
 
 ## 0.7.96 - 18.11.2026
 
