@@ -7034,7 +7034,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $window = ember_ollama_context_window($primaryModel);
       $fixRaw = ember_call_ollama($primaryModel,$sys,
         $finalPrompt . coreui_native_tool_repair_prompt($shape,$out,$window !== null && $window <= 8192),
-        ember_timeout_for_model($primaryModel),[],null,$fileToolThink);
+        ember_timeout_for_model($primaryModel),['__skills'=>'none'],null,false,false);
       $fixMeta = ember_last_call_meta();
       $fixComplete = is_string($fixRaw) && !empty($fixMeta['ok']) && !ember_last_call_was_truncated();
       $fixText = $fixComplete ? ember_sanitize_public_reply($fixRaw,
