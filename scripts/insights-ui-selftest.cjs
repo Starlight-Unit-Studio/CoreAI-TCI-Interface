@@ -126,7 +126,11 @@ vm.runInNewContext(source, sandbox);
   const chips = new Element('div');
   const insights = sandbox.window.CoreUIInsights.create({aside, chips, apiBase:'/coreai/api'});
   assert.equal(aside.all('insight-box').length, 4, 'four info boxes in the right column');
-  assert.equal(chips.all('insight-chip').length, 4, 'four chip buttons on narrow screens');
+  assert.equal(chips.all('insight-chip').length, 5, 'Core, Kontext, Werkzeuge, Projekt and Entwicklung tabs on narrow screens');
+  assert.equal(chips.all('insight-chip')[4].id, 'chatDevTab',
+    'fifth tab must open the real shared development environment');
+  assert.equal(aside.all('insight-dev-launch').length, 1,
+    'wide displays must offer the same developer workspace modal');
   assert(aside.textContent.includes('Lade Core-Status'), 'an honest loading state, no invented values');
 
   await insights.refresh('sessionAAAA1');
