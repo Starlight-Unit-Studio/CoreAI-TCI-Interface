@@ -1,0 +1,31 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.99
+Date: 2026-11-19
+Base: main 0.7.98
+Branch: feat/project-holo-directory-0799
+
+Operator request
+Finish design adjustments using the operator-supplied desktop screenshot.
+Remove duplicate settings actions in the three-dot project menu.
+Make the directory look like the CoreAI Holo theme in light and dark modes.
+
+Changes
+- app.html: project directory Holo topbar, native heading hierarchy,
+  accessible search icon/label, filtered count and icon for New Project.
+  The hidden legacy project popover no longer duplicates details actions.
+- css/coreui-project-theme.css: native theme-driven colors, readable cards,
+  highlighted hover/focus states, responsive small-screen layout, angular
+  accents and modal secondary-button treatment.
+- js/coreui-projects.js: one Details bearbeiten action, no redundant open
+  action, live project count, only-mobile overlay on project action sheet.
+- scripts/project-ui-selftest.cjs: regression assertions for duplicate
+  menu items, Holo theme and undimmed desktop context menus.
+- VERSION 0.7.99 and numeric SHA256 static-asset fingerprints synchronized.
+- Existing project ownership, tools, file preview, DB and model queue
+  unchanged; previous 0.7.97 work narrative and 0.7.98 project navigation
+  preserved.
+
+Validation
+- GitHub CI must be checked on the exact final commit before merge.
+- Live server and mobile/desktop visual QA are not proven by source tests.
+- Do not deploy/merge if release or preflight checks fail.
+- Next version after merging: 0.7.100.
