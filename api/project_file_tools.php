@@ -54,7 +54,11 @@ const COREUI_PFTOOLS_PROC_KINDS = ['pproc_start', 'pserver_start', 'pproc_output
 function coreui_pftools_project(PDO $pdo, int $uid, string $sessionId): string {
   if ($uid <= 0 || $sessionId === '' || !coreui_pfiles_schema_ready($pdo)) return '';
   $scope = coreui_project_session_scope($pdo, $uid, $sessionId);
-  return !empty($scope['available']) ? (string)($scope['id'] ?? '') : '';
+  if (empty($scope['available'])) return '';
+  if (($scope['id'] ?? '') !== '') return (string)$scope['id'];
+  // A normal chat can own source files too. It is not shown in Projects.
+  return function_exists('coreui_chat_workspace_id')
+    ? coreui_chat_workspace_id($pdo,$uid,$sessionId) : '';
 }
 
 /**
