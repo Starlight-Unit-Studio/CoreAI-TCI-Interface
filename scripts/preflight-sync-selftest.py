@@ -49,6 +49,36 @@ def verify(root: Path) -> list[str]:
             # One reference in the UI manifest and one real execution site.
             if body.count(test) < 2:
                 failures.append(f"{rel}: {test} not registered AND executed")
+    # The pinned section must remain a visible, independently foldable
+    # navigation destination immediately beneath the single Projects link.
+    # This contract is checked on CPU-only installations without Node.js.
+    page = (root / "app.html").read_text(encoding="utf-8")
+    projects_index = page.find('id="projectsNav"')
+    pinned_index = page.find('id="pinnedZone"')
+    recent_index = page.find('id="sessionZoneTitle"')
+    if min(projects_index, pinned_index, recent_index) < 0 or not (
+        projects_index < pinned_index < recent_index
+    ):
+        failures.append("app.html: required Projekte / Angeheftet / Letzte sidebar order missing")
+    if re.search(r'<section class="pinned-zone"[^>]*\\bhidden\\b', page):
+        failures.append("app.html: Angeheftet section must not be permanently hidden")
+    for item in ('id="sidebarPinnedProjects"', 'id="pinnedSessionList"',
+                 'id="sidebarPinnedEmpty"', 'id="sidebarPinnedToggle"'):
+        if page.count(item) != 1:
+            failures.append(f"app.html: missing or duplicated pinned sidebar element {item}")
+    chat_js = (root / "js/console-app.js").read_text(encoding="utf-8")
+    project_js = (root / "js/coreui-projects.js").read_text(encoding="utf-8")
+    nav_css = (root / "css/coreui-sidebar-refresh.css").read_text(encoding="utf-8")
+    if "function syncPinnedSection()" not in chat_js or (
+        "var pinnedChats = state.sessions.filter(" not in chat_js
+    ):
+        failures.append("js/console-app.js: all pinned chats and shared count must be rendered")
+    if "function renderPinnedProjects()" not in project_js or (
+        "renderPinnedProjects();" not in project_js
+    ):
+        failures.append("js/coreui-projects.js: pinned projects must appear below Projekte")
+    if ".sidebar-section-folded > .sidebar-pinned-project-list" not in nav_css:
+        failures.append("css/coreui-sidebar-refresh.css: pinned projects must fold with pinned chats")
     # A project schema change must also reach the SQLite fixtures run by both
     # host preflights. The missing description column in 0.8.1 made eight
     # independent checks fail before they could exercise their target.
