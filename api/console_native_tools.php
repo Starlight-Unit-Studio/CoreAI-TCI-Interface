@@ -455,12 +455,12 @@ function coreui_native_tool_repair_example(string $previous): ?string {
       || strtoupper($matches[0][2]) !== strtoupper($matches[1][2])) return null;
   $kind = strtoupper($matches[0][2]);
   return match ($kind) {
-    'PROJECT_BUILD' => "[COREUI_PROJECT_BUILD]\\nGespeicherten, vom Benutzer beauftragten Projektstand umsetzen und neue Dateien pruefen.\\n[/COREUI_PROJECT_BUILD]\\n",
-    'PLAN_AND_BUILD' => "[COREUI_PLAN_AND_BUILD]\\n# Projektumsetzung\\n## Anforderungen\\n- Den ausdruecklichen Benutzerauftrag vollstaendig planen.\\n## Abnahme\\n- Alle Projektdateien und Ergebnisse pruefen.\\n[/COREUI_PLAN_AND_BUILD]\\n",
-    'PLAN_SAVE' => "[COREUI_PLAN_SAVE]\\n# Projektplan\\n## Anforderungen\\n- Den Benutzerauftrag im Plan festhalten.\\n[/COREUI_PLAN_SAVE]\\n",
-    'PLAN_APPEND' => "[COREUI_PLAN_APPEND]\\n## Naechste Schritte\\n- Einen neuen, nicht wiederholten Planabschnitt ergaenzen.\\n[/COREUI_PLAN_APPEND]\\n",
+    'PROJECT_BUILD' => "[COREUI_PROJECT_BUILD]\nGespeicherten, vom Benutzer beauftragten Projektstand umsetzen und neue Dateien pruefen.\n[/COREUI_PROJECT_BUILD]\n",
+    'PLAN_AND_BUILD' => "[COREUI_PLAN_AND_BUILD]\n# Projektumsetzung\n## Anforderungen\n- Den ausdruecklichen Benutzerauftrag vollstaendig planen.\n## Abnahme\n- Alle Projektdateien und Ergebnisse pruefen.\n[/COREUI_PLAN_AND_BUILD]\n",
+    'PLAN_SAVE' => "[COREUI_PLAN_SAVE]\n# Projektplan\n## Anforderungen\n- Den Benutzerauftrag im Plan festhalten.\n[/COREUI_PLAN_SAVE]\n",
+    'PLAN_APPEND' => "[COREUI_PLAN_APPEND]\n## Naechste Schritte\n- Einen neuen, nicht wiederholten Planabschnitt ergaenzen.\n[/COREUI_PLAN_APPEND]\n",
     'PLAN_CONTINUE','PLANCONTINUE' =>
-      "[COREUI_PLAN_CONTINUE]\\nGespeicherten Entwurf fortsetzen.\\n[/COREUI_PLAN_CONTINUE]\\n",
+      "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen.\n[/COREUI_PLAN_CONTINUE]\n",
     default => null,
   };
 }
