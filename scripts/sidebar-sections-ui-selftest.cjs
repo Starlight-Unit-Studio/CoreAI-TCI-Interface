@@ -2,6 +2,7 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
+const vm=require('node:vm');
 const root=path.join(__dirname,'..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const h=read('app.html'), chat=read('js/console-app.js');
@@ -11,7 +12,8 @@ const navCSS=read('css/coreui-sidebar-refresh.css');
 const themeCSS=read('css/coreui-project-theme.css');
 const id=x=>(h.match(new RegExp('id="'+x+'"','g'))||[]).length;
 for(const k of ['btnSettings','btnLogout','btnNewSession','pinnedZone',
-  'pinnedSessionList','pinnedCount','sidebarPinnedToggle','sidebarProjectsToggle',
+  'pinnedSessionList','sidebarPinnedProjects','sidebarPinnedEmpty','pinnedCount',
+  'sidebarPinnedToggle','sidebarProjectsToggle',
   'sidebarRecentToggle','projectsNav','projectsNavList','sessionZoneLabel',
   'sessionList','sessionArchiveToggle','coreuiProjectHome']){
   assert.equal(id(k),1,'unique sidebar item '+k);
@@ -21,15 +23,25 @@ assert(h.includes('class="ren-matrix-svg"') && h.includes('class="core-ticker"')
   'original animated logo and ticker remain in place');
 assert(h.indexOf('class="core-ticker"') < h.indexOf('id="btnNewSession"'),
   'navigation starts directly below the existing ticker');
-assert(h.indexOf('id="pinnedZone"') < h.indexOf('id="projectsNav"') &&
-  h.indexOf('id="projectsNav"') < h.indexOf('id="sessionList"'),
-  'required pinned, projects, recent order');
+assert(h.indexOf('id="projectsNav"') < h.indexOf('id="pinnedZone"') &&
+  h.indexOf('id="pinnedZone"') < h.indexOf('class="locked-chats-nav"') &&
+  h.indexOf('id="pinnedZone"') < h.indexOf('id="sessionList"'),
+  'required Projekte, Angeheftet, Letzte navigation order');
+assert(!/<section class="pinned-zone"[^>]*hidden/.test(h) &&
+  h.includes('id="sidebarPinnedEmpty"'),
+  'Angeheftet must remain discoverable even when no chat/project is pinned');
 assert(h.indexOf('id="btnSettings"') < h.indexOf('class="core-ticker"') &&
   h.indexOf('id="btnLogout"') < h.indexOf('class="core-ticker"'),
   'header icons not a space-consuming footer');
-assert(chat.includes('pinnedChats.concat(recentChats)') &&
-  chat.includes('pinnedSessionListEl : sessionListEl'),
-  'pinned and recent chats rendered separately');
+assert(chat.includes('pinnedChats.concat(state.showArchived ? archiveChats : recentChats)') &&
+  chat.includes('pinnedSessionListEl : sessionListEl') &&
+  chat.includes('var pinnedChats = state.sessions.filter(function(s) { return !!s.pinned && !s.archived; });'),
+  'pinned chats from projects and standalone sessions are rendered separately from recent/archive');
+assert(project.includes('function renderPinnedProjects()') &&
+  project.includes("projects.filter(function(p) { return !!p.pinned; })") &&
+  project.includes("runAction('pin',p.id);") &&
+  project.includes('renderPinnedProjects();'),
+  'existing pinned projects must be clickable and removable beneath Projekte');
 assert(chat.includes("dbSessionAction({action:'pin'") &&
   chat.includes('session-row-more'), 'pin/unpin reachable without opening chat');
 assert(chat.includes('dbArchiveSession(s.id)') &&
@@ -44,8 +56,10 @@ assert(folding.includes('localStorage.setItem') && folding.includes("aria-expand
   'independent fold UI preference persisted and accessible');
 assert(navCSS.includes('.sidebar-section-folded') &&
   navCSS.includes('.pinned-session-list') &&
+  navCSS.includes('.sidebar-pinned-project-list') &&
+  navCSS.includes('.sidebar-pinned-empty') &&
   navCSS.includes('.drawer-footer') &&
-  navCSS.includes('.core-ticker'), 'space-saving theme preserves ticker');
+  navCSS.includes('.core-ticker'), 'foldable pinned section remains compact and touch-friendly');
 assert(themeCSS.includes('var(--cx)') &&
   themeCSS.includes('var(--panel)') &&
   themeCSS.includes('.project-modal') &&
@@ -72,6 +86,62 @@ assert(themeCSS.includes('.app-body #sidebarControl:not(:checked) ~ .drawer #btn
 assert(themeCSS.includes('body.project-home-active .project-chat-result') &&
   themeCSS.includes('clip-path:polygon('),
   'projects and chat controls retain angular CoreAI geometry');
+// Behavioral regression: the heading counts both sources and remains visible
+// with an empty state. It must not disappear when the archive view is active.
+const start=chat.indexOf('  function syncPinnedSection() {');
+const end=chat.indexOf('  // ── Session-Liste rendern',start);
+assert(start>=0 && end>start,'pinned count/visibility helper missing');
+const chatRows={children:[]},projectRows={children:[]};
+const zone={hidden:true},count={textContent:''},empty={hidden:true};
+const ctx={pinnedSessionListEl:chatRows,pinnedProjectListEl:projectRows,
+  pinnedZone:zone,pinnedCountEl:count,pinnedEmptyEl:empty};
+vm.runInNewContext(chat.slice(start,end)+'\nthis.update = syncPinnedSection;',ctx);
+ctx.update();
+assert.equal(zone.hidden,false,'pinned area must be visible with zero items');
+assert.equal(empty.hidden,false,'zero pinned entries should show a small empty state');
+assert.equal(count.textContent,'0');
+chatRows.children=[{}];
+projectRows.children=[{},{}];
+ctx.update();
+assert.equal(count.textContent,'3','pinned chats and projects share one total');
+assert.equal(empty.hidden,true,'real pins replace empty state');
+
+// Exercise actual project renderer: only pinned projects get sidebar entries,
+// sorted by name, and the shortcuts open/unpin the existing server-backed items.
+const projectStart=project.indexOf('  function renderPinnedProjects() {');
+const projectEnd=project.indexOf('  function refreshLocked()',projectStart);
+assert(projectStart>=0 && projectEnd>projectStart,'pinned project renderer missing');
+const list={children:[],replaceChildren(){this.children=[];},
+  appendChild(x){this.children.push(x);}};
+const element=(tag,cls,text)=>({tag,cls,textContent:text||'',children:[],
+  appendChild(x){this.children.push(x);},
+  setAttribute(name,value){this[name]=value;}});
+const opened=[],unpinned=[];let countUpdates=0;
+const pctx={
+  $:id=>id==='sidebarPinnedProjects'?list:null,
+  projects:[{id:'z',name:'Zeta',pinned:true},
+    {id:'n',name:'Not pinned',pinned:false},
+    {id:'a',name:'Alpha',pinned:true}],
+  el:element,
+  label:(t,c)=>element('span',c,t),
+  action:(t,fn,c)=>Object.assign(element('button',c,t),{click:fn}),
+  ICON_FOLDER_CLOSED:'<svg></svg>',
+  openProject:id=>opened.push(id),
+  runAction:(cmd,id)=>unpinned.push([cmd,id]),
+  chatApp:()=>({syncPinnedSection:()=>{countUpdates++;}}),
+};
+vm.runInNewContext(project.slice(projectStart,projectEnd)+
+  '\nthis.draw=renderPinnedProjects;',pctx);
+pctx.draw();
+assert.equal(list.children.length,2,'only pinned projects render');
+assert.equal(list.children[0].children[0].children[1].textContent,'Alpha',
+  'pinned project shortcuts must be alphabetized');
+list.children[0].children[0].click();
+list.children[1].children[1].click({stopPropagation(){}});
+assert.deepEqual(opened,['a'],'pinned shortcut opens its actual project');
+assert.deepEqual(unpinned,[['pin','z']],'unpin uses existing server-backed action');
+assert.equal(countUpdates,1,'project refresh updates shared pinned count');
+
 const version=read('VERSION').trim();
 assert(/^\d+\.\d+\.\d+$/.test(version), 'application version must be a numeric triple');
 assert(h.includes('N-73 // v'+version),
