@@ -515,7 +515,7 @@ function coreui_pftools_proc(PDO $pdo, int $uid, string $projectId, string $kind
 /** Run one file tool of the work loop; the result is what Mara reads next. $sleep is replaceable in tests. */
 function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, ?callable $sleep = null): string {
   $projectId = coreui_pftools_project($pdo, $uid, $sessionId);
-  if ($projectId === '') return 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.';
+  if ($projectId === '') return 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.';
   $kind = (string)($tool['tool'] ?? '');
   try {
     if (in_array($kind, COREUI_PFTOOLS_PROC_KINDS, true)) {
