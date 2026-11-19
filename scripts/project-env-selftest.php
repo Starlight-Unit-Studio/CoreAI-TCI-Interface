@@ -268,13 +268,18 @@ env_test(str_contains($off, 'Befehle, Tests und Prozesse sind in diesem Chat nic
   && str_contains($off, 'unter "Vorschau"') && !str_contains($off, 'PROZESS_STARTEN') && !str_contains($off, 'AUSFUEHREN')
   && str_contains(coreui_pftools_hint($pdo, 7, 'cs_server', true, false), 'Ausfuehren und Prozesse sind in diesem Chat nicht verfuegbar.'),
   'without the Python tool nothing is promised: ' . $off);
-// Outside a project: one line that the environment lives in project chats.
+// Every ordinary chat can work. A named Project is optional organization.
 $outside = coreui_pftools_outside_hint($pdo, 'console', 7, false);
-env_test(str_starts_with($outside, 'PROJEKTE: In einem Projekt-Chat') && str_contains($outside, 'Programme und Entwicklungsserver starten')
-  && str_contains($outside, 'In diesem Chat gibt es sie nicht') && coreui_pftools_outside_hint($pdo, 'console', 7, true) === ''
-  && coreui_pftools_outside_hint($pdo, 'global', 7, false) === '' && coreui_pftools_outside_hint($pdo, 'console', 0, false) === '', 'the hint outside a project');
+env_test(str_starts_with($outside, 'CHAT-WERKZEUGE: Auch dieser normale CoreAI-Chat')
+  && !str_contains($outside, 'In diesem Chat gibt es sie nicht')
+  && str_contains(coreui_pftools_outside_hint($pdo, 'console', 7, true), 'keine Voraussetzung')
+  && coreui_pftools_outside_hint($pdo, 'global', 7, false) === ''
+  && coreui_pftools_outside_hint($pdo, 'console', 0, false) === '',
+  'the normal chat retains global tools without requiring a named project');
 $GLOBALS['env_python'] = false;
-env_test(coreui_pftools_outside_hint($pdo, 'console', 7, false) === '', 'outside a project without the Python tool: nothing');
+env_test(str_contains(coreui_pftools_outside_hint($pdo, 'console', 7, false),
+  'soweit diese Werkzeuge aktiviert sind'),
+  'disabled Python must not imply every normal chat tool is unavailable');
 $GLOBALS['env_python'] = true;
 
 // Start a server: the worker takes it, the first output comes, the port is the one Mara named.
