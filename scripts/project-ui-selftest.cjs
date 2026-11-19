@@ -86,7 +86,7 @@ assert(js.includes("openProject(p.id);") &&
   js.includes("label:'Details bearbeiten'"),
   'project cards open directly and the three-dot menu has only one details editor');
 const actionBlock=js.slice(js.indexOf('  function projectActions(p) {'),js.indexOf('  function openPopover(',js.indexOf('  function projectActions(p) {')));
-assert((actionBlock.match(/openModal\\('settings'/g)||[]).length===1,
+assert(actionBlock.split("openModal('settings',p.id)").length===2,
   'project actions contain exactly one entry for the details editor');
 assert(!html.includes('data-project-action="rename"') &&
   html.includes('data-project-action="settings">Details bearbeiten</button>'),
