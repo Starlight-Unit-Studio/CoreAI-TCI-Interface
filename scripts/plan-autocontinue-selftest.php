@@ -90,8 +90,10 @@ plan_auto_assert(
   // 0.5.67: the SSE apply path is shared with the tool correction; it keeps
   // the turn's model and system prompt as $toolModel/$toolSys.
   && str_contains($streamSource,"static function (string \$nextPrompt) use (\$toolModel,\$toolSys)")
-  && str_contains($streamSource,'console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,180)')
+  && str_contains($streamSource,'console_stream_ollama($toolModel,$toolSys,$nextPrompt,false,null,false,false)')
   && str_contains($streamSource,'$toolModel = isset($model) ? (string)$model : ember_model();')
+  && str_contains($chatSource,'ember_timeout_for_model($primaryModel)')
+  && !str_contains($chatSource, '$primaryModel,$sys,$nextPrompt,180,')
   && str_contains($chatSource,'&& !coreui_native_plan_continue_marker_attempt($out)')
   && str_contains($streamSource,'&& !coreui_native_plan_continue_marker_attempt($reply)')
   && str_contains($streamSource,'$safePlanRecovery'),
