@@ -52,8 +52,8 @@ $stream=(string)file_get_contents(dirname(__DIR__).'/api/console_stream.php');
 $chat=(string)file_get_contents(dirname(__DIR__).'/api/chat.php');
 // 0.5.67: think=false and no SKILL documents for the short decision call;
 // "Neu generieren" and edited turns get the same decision as a first send.
-intent_assert(str_contains($stream,'coreui_build_intent_select(')
-  && str_contains($chat,'coreui_build_intent_select(')
+intent_assert(str_contains($stream,'coreui_build_intent_select_for_plan(')
+  && str_contains($chat,'coreui_build_intent_select_for_plan(')
   && str_contains($stream,'false, 90, false, false)')
   && str_contains($chat,"['__skills'=>'none'],null,false,false)")
   && str_contains($stream,"in_array(\$generationMode, ['regenerate','edit'], true)")
@@ -81,7 +81,7 @@ intent_assert(!str_contains($stream,'coreui_console_web_project_resolve(')
 if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   $pdo=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $pdo->exec('CREATE TABLE stu_chat_messages(id INTEGER PRIMARY KEY,
-    user_id INTEGER,session_id TEXT,channel TEXT,deleted_at TEXT)');
+    user_id INTEGER,session_id TEXT,channel TEXT,deleted_at TEXT,message TEXT)');
   $pdo->exec('CREATE TABLE stu_console_project_plans(id TEXT PRIMARY KEY,
     user_id INTEGER,session_id TEXT,source_turn_id INTEGER,response_message_id INTEGER,
     version INTEGER,title TEXT,markdown TEXT,byte_size INTEGER,sha256 TEXT,
@@ -143,6 +143,57 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     static function(string $q): array { throw new RuntimeException('Wrong account'); });
   intent_assert($other['status']==='ineligible',
     'Cross-account plan execution must not reach the model');
+  // A homepage request stays the real authorization across saved Markdown
+  // versions; "Continue" alone is not a new project-building instruction.
+  $sidResumed='cs_resume_homepage_2026';
+  $pdo->prepare("INSERT INTO stu_chat_messages
+    (id,user_id,session_id,channel,message) VALUES
+    (21,7,?,'console','kannst du eine homepage erstellen die modern und professionell ist'),
+    (22,7,?,'console','Continue'),
+    (23,7,?,'console','Schreibe nur einen Projektplan')")->execute([
+      $sidResumed,$sidResumed,$sidResumed]);
+  $initialMarkdown=COREUI_PLAN_DRAFT_MARKER . "\n\n" . $pages;
+  $finalMarkdown=$pages . "\n## Abnahme\n- Vollstaendige Webseite auf allen Geraeten.\n";
+  $insert->execute([str_repeat('d',32),7,$sidResumed,21,null,1,'Homepage',
+    $initialMarkdown,strlen($initialMarkdown),hash('sha256',$initialMarkdown)]);
+  $insert->execute([str_repeat('e',32),7,$sidResumed,22,null,2,'Homepage',
+    $finalMarkdown,strlen($finalMarkdown),hash('sha256',$finalMarkdown)]);
+  $lineage=coreui_plan_origin_request($pdo,7,$sidResumed,
+    coreui_plan_latest($pdo,7,$sidResumed));
+  intent_assert(is_array($lineage) && $lineage['turn_id']===21
+    && str_contains($lineage['message'],'homepage erstellen'),
+    'Resuming a plan must retain the original creation request');
+  $calls=0;
+  $choice=coreui_build_intent_select_for_plan($pdo,7,$sidResumed,22,'Continue',
+    static function (string $prompt) use (&$calls): array {
+      $calls++;
+      intent_assert(str_contains($prompt,'URSPRUENGLICHER AUFTRAG')
+        && str_contains($prompt,'kannst du eine homepage erstellen')
+        && str_contains($prompt,'Continue')
+        && str_contains($prompt,'Eine ausdrueckliche'),
+        'Classification must combine original authorization and latest instruction');
+      return ['text'=>'START_BUILD','ok'=>true];
+    });
+  intent_assert($calls===1 && $choice['status']==='build',
+    'A completed homepage after Continue must reach approved build');
+  intent_assert(coreui_plan_origin_request($pdo,8,$sidResumed,
+    coreui_plan_latest($pdo,7,$sidResumed))===null,
+    'The origin request must remain strictly account private');
+  // A new, unrelated plan breaks the lineage and does not inherit permission.
+  $newMarkdown="# Andere Planung\n\n## Anforderungen\n- Nur ein Entwurf.\n";
+  $insert->execute([str_repeat('f',32),7,$sidResumed,23,null,3,'Neue Planung',
+    $newMarkdown,strlen($newMarkdown),hash('sha256',$newMarkdown)]);
+  $newOrigin=coreui_plan_origin_request($pdo,7,$sidResumed,
+    coreui_plan_latest($pdo,7,$sidResumed));
+  intent_assert(is_array($newOrigin) && $newOrigin['turn_id']===23
+    && $newOrigin['message']==='Schreibe nur einen Projektplan',
+    'A separate new project must not inherit a previous build intent');
+  $planOnly=coreui_build_intent_select_for_plan($pdo,7,$sidResumed,23,
+    'Schreibe nur einen Projektplan',
+    static fn(string $prompt): array => ['text'=>'CHAT','ok'=>true]);
+  intent_assert($planOnly['status']==='chat' && $planOnly['tool']===null,
+    'Only plan requested must not build a website');
+
   $draft=COREUI_PLAN_DRAFT_MARKER."\n\n".$pages;
   $insert->execute([str_repeat('b',32),7,$sid,11,null,4,'Anime-Welt Tagebuch',
     $draft,strlen($draft),hash('sha256',$draft)]);
