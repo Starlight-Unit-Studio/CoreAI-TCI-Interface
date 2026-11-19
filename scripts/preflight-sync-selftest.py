@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 
 PREFLIGHTS = ("scripts/preflight.sh", "scripts/preflight-native.sh")
 # Safety-critical cross-mode contracts. The two plan tests caught the 0.7.94
@@ -48,6 +49,40 @@ def verify(root: Path) -> list[str]:
             # One reference in the UI manifest and one real execution site.
             if body.count(test) < 2:
                 failures.append(f"{rel}: {test} not registered AND executed")
+    # A project schema change must also reach the SQLite fixtures run by both
+    # host preflights. The missing description column in 0.8.1 made eight
+    # independent checks fail before they could exercise their target.
+    project_store = (root / "api/console_project_store.php").read_text(encoding="utf-8")
+    declared = re.search(
+        r"SELECT\s+([a-z_,\s]+)\s+FROM stu_console_projects LIMIT 0",
+        project_store, re.IGNORECASE,
+    )
+    if declared is None:
+        failures.append("api/console_project_store.php: project readiness query missing")
+    else:
+        project_columns = set(re.findall(r"[a-z_]+", declared.group(1)))
+        fixture_names = (
+            "project-file-tools", "chat-branch", "project-runs", "project-procs",
+            "project-merge", "skill-packages", "skill-sharing", "skill-revisions",
+        )
+        for name in fixture_names:
+            rel = f"scripts/{name}-selftest.php"
+            body = (root / rel).read_text(encoding="utf-8")
+            definitions = re.findall(
+                r"CREATE TABLE stu_console_projects\s*\((.*?)\)",
+                body, re.IGNORECASE | re.DOTALL,
+            )
+            if not definitions:
+                failures.append(f"{rel}: project fixture not found")
+                continue
+            for index, definition in enumerate(definitions, 1):
+                fixture_columns = set(re.findall(
+                    r"(?:^|,)\s*([a-z_]+)\s+[a-z_]+", definition, re.IGNORECASE,
+                ))
+                missing = sorted(project_columns - fixture_columns)
+                if missing:
+                    failures.append(f"{rel}: SQLite project fixture {index} missing {', '.join(missing)}")
+
     for rel in ("scripts/model-project-intent-selftest.php",
                 "scripts/contextual-project-selftest.php"):
         text = (root / rel).read_text(encoding="utf-8")

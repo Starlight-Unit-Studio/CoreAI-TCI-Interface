@@ -415,13 +415,13 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     ?callable $imageReview = null): array {
   $steps = [];
   $prompt = null;
-  // A project workflow must not stop after six files/commands. It is governed
-  // by its real wall-clock budget, cancellation and detectable lack of progress.
-  // Ordinary web/research loops retain their pre-existing bounded behavior.
+  // A project workflow must not stop after six files/commands or ten
+  // minutes while real verified steps continue. User cancellation, repeated
+  // identical failures, missing tool results and runtime errors still stop it.
+  // Ordinary web/research loops retain their bounded behavior.
   $projectWorkflow = in_array('pfile_write',$allowed,true)
     && in_array('pfile_edit',$allowed,true) && in_array('prun',$allowed,true);
   $maxSteps = $projectWorkflow ? 0 : COREUI_AGENT_MAX_STEPS;
-  $deadline = $projectWorkflow ? microtime(true) + 600.0 : INF;
   $lastSignature = '';
   $stalled = 0;
   $stopReason = '';
@@ -432,7 +432,6 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     // Keep legacy image/research cancellation semantics, but never launch a new
     // project command after an explicit cancellation.
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
-    if (microtime(true) >= $deadline) { $stopReason = 'time_budget'; break; }
     if (!empty($tool['recovered_read_intent'])) {
       $record('tool','info','Angekündigte Projektdatei wird tatsächlich gelesen',
         ['reason'=>'read_intent_without_marker','step'=>$used + 1]);

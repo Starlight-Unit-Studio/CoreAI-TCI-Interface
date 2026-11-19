@@ -1,0 +1,34 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.2
+Date: 2026-11-19
+Base: main 0.8.1
+Branch: fix/plan-autonomy-preflight-diagnostics-082
+
+Operator evidence
+- The request was to actually CREATE a polished 2026 homepage for Mara.
+- Mara produced unfinished plan versions v1 through v5 without verified website files.
+- Work history reports invalid_plan_continue_marker and tool_block_unclosed after subsequent Continue.
+- Host Preflight failed with nine issues: file tools, chat branches, project runs, processes, environment, merges and three skill tests.
+- Eight of nine failures printed an unhelpful Unknown error, so precise runtime causes remain unconfirmed.
+
+Changes
+- api/console_plan_autorun.php: production loop no longer stops after four rounds or a fixed 240 seconds; verified chunks are still persisted with private scope. Explicit finite rounds remain possible for deterministic tests.
+- scripts/plan-autocontinue-selftest.php: a long scripted plan must complete after six real model steps in the same turn.
+- scripts/preflight.sh and scripts/preflight-native.sh: nine PHP tests expose stderr and process exit code, helping identify missing extensions, resource kills and real assertion failures without suppressing failures.
+- .github/workflows/plan-autonomy-preflight-diagnostics.yml: offline test execution of those nine cases plus plan/parser coverage.
+- Version 0.8.2 and page/cache/release metadata synchronized.
+
+Security and limitations
+- Unfinished or unverified plans do not authorize project builds or fabricated ZIPs.
+- No artificial test limit in production; a real model failure, repeated output, cancellation or exhausted valid storage ends the run.
+- Server worker lifetime, proxy interruption and per-user persistent job rescheduling remain distinct from this in-request continuation fix.
+- Do not claim the host Preflight is fixed without rerunning it against the actual installation.
+- Check GitHub Actions at the final head SHA, then real Docker/native Preflight and CPU-only Ollama after deployment.
+- Next merge release is 0.8.3.
+
+Follow-up diagnosis and verified repair
+- CI reproduced eight failures on 0.8.2 before fixture repair: several PHP fatal errors at coreui_project_require (project_migration_required), chat branch lost project_id, and two skill access assertions failed.
+- Root cause was old SQLite test CREATE TABLE stu_console_projects declarations without the new description column required by api/console_project_store.php.
+- Fixed eight test fixtures and their positional project INSERT statements, keeping production schema checks unchanged.
+- Added a preflight-sync column comparison so later schema changes cannot silently invalidate the same fixture set again.
+- Removed the 600-second hard stop from the project agent loop. Only real cancellation and detected lack of progress remain.
+- CI later passed the nine targeted offline PHP selftests; this does NOT verify the operator's host MariaDB or actual project sandbox process environment.

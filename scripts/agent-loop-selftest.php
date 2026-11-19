@@ -25,6 +25,10 @@ function loop_test(bool $ok, string $why): void {
 
 $all = ['web', 'browse', 'python', 'archive'];
 loop_test(COREUI_AGENT_MAX_STEPS === 6, 'six steps per answer');
+$agentSource = (string)file_get_contents($root . '/api/console_agent_loop.php');
+loop_test(!str_contains($agentSource, 'microtime(true) + 600.0')
+  && !str_contains($agentSource, "if (microtime(true) >= " . '$deadline'),
+  'project tools must not stop after an arbitrary ten-minute deadline');
 loop_test(coreui_agent_next_tool('Ich schaue nach. [WEB: gemma4 12b ollama]', $all) === ['tool'=>'web', 'input'=>'gemma4 12b ollama'], 'web marker');
 loop_test(coreui_agent_next_tool('[BROWSE: Changelog von Ollama lesen]', $all)['tool'] === 'browse', 'browse marker');
 loop_test(coreui_agent_next_tool("[PY]print(2**10)[/PY]", $all) === ['tool'=>'python', 'input'=>'print(2**10)'], 'python marker');

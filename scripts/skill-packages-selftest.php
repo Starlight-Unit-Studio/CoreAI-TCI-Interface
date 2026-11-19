@@ -87,7 +87,7 @@ if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
 function skp_sqlite(bool $migrated = true): PDO {
   $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT,
-    pinned_at TEXT, created_at TEXT)');
+    pinned_at TEXT, created_at TEXT, description TEXT)');
   $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT)');
   if (!$migrated) return $pdo;
   $pdo->exec('CREATE TABLE stu_skill_packages (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, slug TEXT NOT NULL, title TEXT NOT NULL,

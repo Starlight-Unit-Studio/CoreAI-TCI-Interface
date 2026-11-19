@@ -153,7 +153,7 @@ $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_E
 $pdo->sqliteCreateFunction('NOW', static fn(): string => gmdate('Y-m-d H:i:s'), 0);
 $pdo->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER)');
 $pdo->exec('CREATE TABLE stu_console_media (user_id INTEGER, kind TEXT, file_size INTEGER)');
-$pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+$pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
 $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT, archived_at TEXT, created_at TEXT, updated_at TEXT)');
 $pdo->exec('CREATE TABLE stu_console_project_files (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id INTEGER NOT NULL, path TEXT NOT NULL,
   content TEXT NOT NULL, size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, created_at TEXT, updated_at TEXT, UNIQUE (project_id, path))');
@@ -171,7 +171,7 @@ $pdo->exec('CREATE TABLE stu_console_project_proc_fetch (id INTEGER PRIMARY KEY 
   response_type TEXT, response_body BLOB, error TEXT, created_at TEXT, finished_at TEXT)');
 $pdo->exec('INSERT INTO stu_users VALUES (7, 0), (9, 0)');
 $a = str_repeat('a', 32); $b = str_repeat('b', 32); $d = str_repeat('d', 32); $e = str_repeat('e', 32); $c = str_repeat('c', 32);
-$ins = $pdo->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)');
+$ins = $pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)');
 foreach ([[$a, 7, 'Web'], [$b, 7, 'Zwei'], [$d, 7, 'Drei'], [$e, 7, 'Leer'], [$c, 9, 'Fremd']] as $row) $ins->execute([$row[0], $row[1], $row[2], 'open', '', null, '2026-11-17']);
 foreach ([$a, $b, $d] as $project) coreui_pfiles_write($pdo, 7, $project, 'index.html', "<h1>Hallo</h1>\n", 'build');
 coreui_pfiles_write($pdo, 9, $c, 'x.py', "print(1)\n", 'build');

@@ -103,7 +103,7 @@ if (!in_array('sqlite', PDO::getAvailableDrivers(), true) || !class_exists('ZipA
 function skr_sqlite(bool $revisions = true): PDO {
   $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $pdo->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER NOT NULL, is_guest INTEGER NOT NULL DEFAULT 0)');
-  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
   $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT)');
   $pdo->exec("CREATE TABLE stu_skill_packages (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL, slug TEXT NOT NULL, title TEXT NOT NULL,
     description TEXT NOT NULL, body TEXT NOT NULL, triggers TEXT NOT NULL DEFAULT '', requires_tools TEXT NOT NULL DEFAULT '', project_id TEXT,

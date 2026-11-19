@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.1: mandatory preflight sync after every source change.
+# CoreAI: TCI Interface 0.8.2: mandatory preflight sync after every source change.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1536,18 +1536,20 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.73 (P09 B): Mara reads and changes single project files ([DATEI:], [DATEI_AENDERN:], [DATEI_NEU:]).
   project_file_tools_test=''
-  if project_file_tools_test="$(compose exec -T php php scripts/project-file-tools-selftest.php 2>&1)"; then
+  if project_file_tools_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-file-tools-selftest.php 2>&1)"; then
     ok 'Project file tools self-test passed.'
   else
-    fail "File tools-self-test: ${project_file_tools_test:-Unknown error}"
+    project_file_tools_test_exit=$?
+    fail "File tools-self-test (exit ${project_file_tools_test_exit}): ${project_file_tools_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.74 (P09 C): a chat branches off at one of Mara’s replies; the original stays unchanged.
   chat_branch_test=''
-  if chat_branch_test="$(compose exec -T php php scripts/chat-branch-selftest.php 2>&1)"; then
+  if chat_branch_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/chat-branch-selftest.php 2>&1)"; then
     ok 'Conversation branch self-test passed.'
   else
-    fail "Chat branch-self-test: ${chat_branch_test:-Unknown error}"
+    chat_branch_test_exit=$?
+    fail "Chat branch-self-test (exit ${chat_branch_test_exit}): ${chat_branch_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.75 (P10 A): the preview of a web project in an origin of its own.
@@ -1560,25 +1562,28 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.77 (P10 B): commands on project files in the sandbox, and Mara’s [AUSFUEHREN:].
   project_runs_test=''
-  if project_runs_test="$(compose exec -T php php scripts/project-runs-selftest.php 2>&1)"; then
+  if project_runs_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-runs-selftest.php 2>&1)"; then
     ok 'Project execution self-test passed.'
   else
-    fail "Project runs-self-test: ${project_runs_test:-Unknown error}"
+    project_runs_test_exit=$?
+    fail "Project runs-self-test (exit ${project_runs_test_exit}): ${project_runs_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   project_procs_test=''
-  if project_procs_test="$(compose exec -T php php scripts/project-procs-selftest.php 2>&1)"; then
+  if project_procs_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-procs-selftest.php 2>&1)"; then
     ok 'Project processes self-test passed.'
   else
-    fail "Project processes-self-test: ${project_procs_test:-Unknown error}"
+    project_procs_test_exit=$?
+    fail "Project processes-self-test (exit ${project_procs_test_exit}): ${project_procs_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.91: Mara knows the project environment and runs processes and development servers herself.
   project_env_test=''
-  if project_env_test="$(compose exec -T php php scripts/project-env-selftest.php 2>&1)"; then
+  if project_env_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-env-selftest.php 2>&1)"; then
     ok 'Project development environment self-test passed.'
   else
-    fail "Project environment self-test: ${project_env_test:-Unknown error}"
+    project_env_test_exit=$?
+    fail "Project environment self-test (exit ${project_env_test_exit}): ${project_env_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.
@@ -1591,10 +1596,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.81 (P11 B): merging working states with conflicts, Mara with versions; the Git export with git where it exists.
   project_merge_test=''
-  if project_merge_test="$(compose exec -T php php scripts/project-merge-selftest.php 2>&1)"; then
+  if project_merge_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-merge-selftest.php 2>&1)"; then
     ok 'Project merge self-test passed.'
   else
-    fail "Merge-self-test: ${project_merge_test:-Unknown error}"
+    project_merge_test_exit=$?
+    fail "Merge-self-test (exit ${project_merge_test_exit}): ${project_merge_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.82 (P11 C): the lifetime of the files Mara made: notes of deleted files, the retention, kept files.
@@ -1607,26 +1613,29 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.83 (P12 A): the account's own skills: store, companion files, Mara’s library and loading.
   skill_packages_test=''
-  if skill_packages_test="$(compose exec -T php php scripts/skill-packages-selftest.php 2>&1)"; then
+  if skill_packages_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/skill-packages-selftest.php 2>&1)"; then
     ok 'Custom skill package self-test passed.'
   else
-    fail "Own skills-self-test: ${skill_packages_test:-Unknown error}"
+    skill_packages_test_exit=$?
+    fail "Own skills-self-test (exit ${skill_packages_test_exit}): ${skill_packages_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.84 (P12 B): shared skills, precedence and the skills fixed for a chat.
   skill_sharing_test=''
-  if skill_sharing_test="$(compose exec -T php php scripts/skill-sharing-selftest.php 2>&1)"; then
+  if skill_sharing_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/skill-sharing-selftest.php 2>&1)"; then
     ok 'Shared skill permissions self-test passed.'
   else
-    fail "Shared skills-self-test: ${skill_sharing_test:-Unknown error}"
+    skill_sharing_test_exit=$?
+    fail "Shared skills-self-test (exit ${skill_sharing_test_exit}): ${skill_sharing_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   # 0.7.90 (P13 A): fixed revisions of skills, restoring, export and import of packages.
   skill_revisions_test=''
-  if skill_revisions_test="$(compose exec -T php php scripts/skill-revisions-selftest.php 2>&1)"; then
+  if skill_revisions_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/skill-revisions-selftest.php 2>&1)"; then
     ok 'Skill revisions self-test passed.'
   else
-    fail "Skill revisions self-test: ${skill_revisions_test:-Unknown error}"
+    skill_revisions_test_exit=$?
+    fail "Skill revisions self-test (exit ${skill_revisions_test_exit}): ${skill_revisions_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
   profile_reference_test=''

@@ -150,7 +150,7 @@ function pmg_sqlite(bool $merge = true): PDO {
   $pdo->sqliteCreateFunction('NOW', static fn(): string => gmdate('Y-m-d H:i:s'), 0);
   $pdo->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER)');
   $pdo->exec('CREATE TABLE stu_console_media (user_id INTEGER, kind TEXT, file_size INTEGER)');
-  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
   $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, title TEXT, archived_at TEXT, created_at TEXT, updated_at TEXT)');
   $pdo->exec('CREATE TABLE stu_console_project_files (id TEXT PRIMARY KEY, project_id TEXT NOT NULL, user_id INTEGER NOT NULL, path TEXT NOT NULL,
     content TEXT NOT NULL, size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, created_at TEXT, updated_at TEXT, UNIQUE (project_id, path))');
@@ -172,7 +172,7 @@ function pmg_sqlite(bool $merge = true): PDO {
 }
 $pdo = pmg_sqlite();
 $p = str_repeat('a', 32); $o = str_repeat('c', 32);
-$ins = $pdo->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)');
+$ins = $pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)');
 $ins->execute([$p, 7, 'Spiel', 'open', '', null, '2026-11-17']);
 $ins->execute([$o, 9, 'Fremd', 'open', '', null, '2026-11-17']);
 $pdo->exec("INSERT INTO stu_console_sessions VALUES ('cs_merge_chat', 7, '{$p}', 'Spiel', NULL, '2026-11-17', '2026-11-17')");
@@ -364,7 +364,7 @@ pmg_test(str_contains($hint, 'VERSIONEN: Aktiver Arbeitsstand ist main.') && str
 
 // Without migration 050: versions yes, merging no.
 $old = pmg_sqlite(false);
-$old->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)')->execute([$p, 7, 'Alt', 'open', '', null, '2026-11-17']);
+$old->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)')->execute([$p, 7, 'Alt', 'open', '', null, '2026-11-17']);
 $old->exec("INSERT INTO stu_console_sessions VALUES ('cs_old', 7, '{$p}', 'Alt', NULL, '2026-11-17', '2026-11-17')");
 coreui_pfiles_write($old, 7, $p, 'a.txt', "a\n", 'build');
 $os = coreui_pvcs_branch_create($old, 7, $p, 'zwei', true);
