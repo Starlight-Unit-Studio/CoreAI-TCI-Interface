@@ -186,19 +186,21 @@
         <span class="hud-button-copy"><strong>Neuer Chat</strong></span>
       </button>
 
-      <section class="pinned-zone" id="pinnedZone" aria-labelledby="pinnedZoneTitle" hidden>
-        <div class="section-label" id="pinnedZoneTitle">
-          <button id="sidebarPinnedToggle" class="sidebar-section-toggle" type="button" data-sidebar-fold="pinned" aria-expanded="true" aria-controls="pinnedSessionList"><svg class="sidebar-chevron-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg><span>Angeheftet</span></button>
-          <span class="section-count" id="pinnedCount">0</span>
-        </div>
-        <ul class="session-list pinned-session-list" id="pinnedSessionList" aria-live="polite"></ul>
-      </section>
-
       <section class="projects-nav" id="projectsNav" aria-labelledby="projectsNavTitle">
         <div class="projects-nav-heading">
           <button id="sidebarProjectsToggle" class="sidebar-projects-link" type="button" aria-label="Projektübersicht öffnen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h6"/></svg><span id="projectsNavTitle">Projekte</span></button>
           <button id="projectsCreateBtn" type="button" aria-label="Neues Projekt" title="Neues Projekt"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></button>
         </div>
+      </section>
+
+      <section class="pinned-zone" id="pinnedZone" aria-labelledby="pinnedZoneTitle">
+        <div class="section-label" id="pinnedZoneTitle">
+          <button id="sidebarPinnedToggle" class="sidebar-section-toggle" type="button" data-sidebar-fold="pinned" aria-expanded="true" aria-controls="sidebarPinnedProjects pinnedSessionList"><svg class="sidebar-chevron-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg><span>Angeheftet</span></button>
+          <span class="section-count" id="pinnedCount">0</span>
+        </div>
+        <div class="sidebar-pinned-project-list" id="sidebarPinnedProjects" aria-live="polite"></div>
+        <ul class="session-list pinned-session-list" id="pinnedSessionList" aria-live="polite"></ul>
+        <p class="sidebar-pinned-empty" id="sidebarPinnedEmpty">Noch nichts angeheftet.</p>
       </section>
 
       <section class="locked-chats-nav" aria-label="Gesperrte Chats">
