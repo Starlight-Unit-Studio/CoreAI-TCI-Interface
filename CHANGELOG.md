@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.100 - 19.11.2026
+
+- **Reliable project-file tool handoff:** The fast private-chat SSE endpoint now recognizes authorized project-file, process and version-control tool markers before publishing a final response. It checks again after truncated-response continuation.
+- **Mara reads instead of only promising:** When a Core writes an unambiguous first-person promise such as "Ich lese mir jetzt style.css durch" without a DATEI marker, the authorized project agent can recover the requested **read-only** action. Only project-scoped files are accessible through the existing path/ownership validation; no changes, commands or browser actions are inferred from prose.
+- **Work loop keeps going:** The same recovery is applied between genuine tool results and the next model turn; the run continues with verified file contents rather than treating the promise as a completed task.
+- **Tests and preflight synchronized:** Added explicit safe/unsafe and whole-loop regression tests; the image-generation stream contract now includes project tool routing without weakening the original image checks. Release and numeric asset fingerprints updated.
+- **Rollout:** Verified offline by CI; server/Ollama and phone/desktop live checks are still required to establish actual behavior in the installed system.
+
 ## 0.7.99 - 19.11.2026
 
 - **CoreAI Holo project directory:** The project overview now uses the native blue/gold palette and dynamic light/dark theme tokens instead of hardcoded dark project cards, black search fields and gray labels. Cards, filters, buttons, headings and empty states share CoreAI's angular design.
