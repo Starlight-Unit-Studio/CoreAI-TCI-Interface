@@ -1,0 +1,24 @@
+COREAI: TCI INTERFACE // 0.8.8
+Date: 2026-11-19
+Base: main 0.8.7
+
+Operator request
+- A normal CoreAI chat must have the same tools as a Project chat. Projects are organization, not a tool permission switch.
+- Add an Entwicklung chat tab like Werkzeuge that opens the existing file editor, preview, terminal, development server and version history in one modal.
+
+Implementation
+1. New mobile and desktop Entwicklung buttons open the existing, real project-files panel in a responsive modal; the original DOM is moved rather than cloned.
+2. Database migration 056 adds hidden, per-chat, owner-bound workspaces using a unique workspace_session_id and ON DELETE CASCADE.
+3. New normal chats provision their private workspace after the first message. Older chats provision one on the next authenticated work request. Hidden workspaces never appear in the Projects directory or alter normal memory context.
+4. The existing pfile_read/write/edit, live preview, command run, long-running processes, VCS and ZIP store works on those ordinary chats. Verified new file outputs also import into a previously provisioned workspace.
+5. workspace_ensure is protected by account session ownership, PIN lock and CSRF. Organizational Project management cannot manage hidden workspaces directly.
+6. A file-backed chat uses incremental source changes, not the obsolete whole-site plan and conflicting native/Python builder instructions.
+7. Exact single-block tool markers may have harmless inline filenames; executable text, examples and incomplete markers stay rejected.
+8. New SQLite ownership/retention tests, UI modal selftests and native/Docker Preflight contracts.
+
+Limits
+- Supported text files are persistent workspace sources; binary artifacts stay in the existing download system.
+- Unsaved new-chat drafts have no workspace until their first message.
+- Previously generated artifacts are not silently imported just by opening the modal.
+- Moving a normal chat with existing files to a named Project requires a future conflict-aware source transfer.
+- Passing CI does not prove live server behavior or host deployment.
