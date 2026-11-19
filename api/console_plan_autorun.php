@@ -189,7 +189,7 @@ function coreui_plan_autorun(PDO $pdo, int $uid, string $sessionId, int $turnId,
       if (is_string($corrected)) $corrected = ['text'=>$corrected,'ok'=>true];
       if (is_array($corrected) && !empty($corrected['ok'])) {
         $parsed = coreui_plan_followup_parse((string)($corrected['text'] ?? ''));
-        $isVerified = $parsed !== null;
+        // Provider success does not make malformed content a completed plan.
       }
     }
     if ($parsed === null) {
