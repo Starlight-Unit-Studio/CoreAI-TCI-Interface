@@ -6877,6 +6877,10 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed,
       array_merge(['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write', 'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge'],
         COREUI_PFTOOLS_PROC_KINDS))));
+    // A smaller Core sometimes says "Ich lese mir jetzt style.css durch"
+    // but emits no DATEI marker. Recover ONLY a read-only intent inside an
+    // authorized project; the normal project file guard still validates it.
+    if ($loopTool === null) $loopTool = coreui_agent_recover_promised_read($out, $loopAllowed);
     // A natural self-portrait question must use the account's visual reference,
     // even when the local Core emits the legacy generic [BILD: ...] marker.
     if ($loopTool !== null) {
