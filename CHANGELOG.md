@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.8.1 - 19.11.2026
+
+- **Navigation recovery:** The async private-chat send now saves its queued server-owned agent run before acknowledging. Returning from Settings claims a queued run once or observes an already running run without restarting it.
+- **Saved public work:** Live work events remain associated with the original session while another conversation is open.
+- **Image stability:** Standard final replies replace only their typing row, preserving uploaded images, avatars and existing work cards. Image decoding runs asynchronously.
+- **Real file reads:** Authorized read-only recovery supports the operator's "Ich lese dir jetzt script.js durch" phrasing, never inferred edits or commands.
+- **Regressions:** Added checks for restored runs, exact read phrasing and incremental message rendering. Live production validation remains pending.
+
 ## 0.8.0 - 19.11.2026
 
 - **Reliable project-file tool handoff:** The fast private-chat SSE endpoint now recognizes authorized project-file, process and version-control tool markers before publishing a final response. It checks again after truncated-response continuation.

@@ -277,10 +277,15 @@ try {
 
   frontend_test_assert(
     str_contains($console, 'function recoverActiveRun(ses, data)')
+      && str_contains($console, 'function reconnectRecoveredRun(ses, run)')
       && str_contains($console, 'var resumed = !prepend && recoverActiveRun(ses, d);')
-      && str_contains($console, 'var resumed = recoverActiveRun(ses, d);')
-      && str_contains($console, 'recoverActiveRun(ses, d);')
-      && str_contains($console, 'if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));')
+      && str_contains($console, 'var resumed = isActiveSession(sessionId) && recoverActiveRun(ses, d);')
+      && str_contains($console, 'if (resumed) reconnectRecoveredRun(ses, d.active_run);')
+      && str_contains($console, 'reconnectRecoveredRun(ses, d.active_run);')
+      && str_contains($console, "if (status === 'queued')")
+      && str_contains($console, 'openStreamForReply(ses,turnId,request,')
+      && str_contains($console, 'startFastPoll(ses,turnId);')
+      && str_contains($chatApi, "coreui_agent_run_ensure(\$pdo, (int)\$uid, (string)\$consoleSessionId, (int)\$id, 'base')")
       && str_contains($console, 'keepalive: new TextEncoder().encode(postBody).length < 60000')
       && str_contains($messageApi, "'active_run' => " . '$activeRun')
       && str_contains($messageApi, "'active_work_events' => " . '$activeWorkEvents')

@@ -42,6 +42,11 @@ loop_test(coreui_agent_next_tool($readPromise,$readAllowed) === null
   && coreui_agent_recover_promised_read('Ich lese mir jetzt ' . chr(96) . 'src/style.css' . chr(96) . ' durch.', $readAllowed)
     === ['tool'=>'pfile_read','input'=>'src/style.css','recovered_read_intent'=>true],
   'a short first-person file-reading promise is a project-scoped read action');
+loop_test(coreui_agent_recover_promised_read(
+    'Ich lese dir jetzt ' . chr(96) . 'script.js' . chr(96) . ' durch, bevor ich weitermache.',
+    $readAllowed
+  ) === ['tool'=>'pfile_read','input'=>'script.js','recovered_read_intent'=>true],
+  'the screenshot wording Ich lese dir jetzt script.js is a real guarded read, not an answer');
 foreach ([
   'Ich habe style.css bereits gelesen.',
   'Ich lese mir jetzt ../secret.css durch.',

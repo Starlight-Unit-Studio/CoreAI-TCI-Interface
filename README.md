@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.0`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.1`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -54,6 +54,8 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Run a **bounded tool-and-result loop**: pick an allowed action, examine its real result, refine the task and decide whether another step is needed.
 - Save, extend and continue structured Markdown plans through validated native plan actions. This does not grant unrestricted terminal access.
 - Present real work events, technical steps and status; do not expose raw private model thinking or invent tool activity.
+- Store the owner-scoped queued chat job before acknowledging a message, then reattach on return from Settings. An unstarted queued job resumes when the chat is reopened; a running server job survives browser navigation.
+- Replace a finished reply without rebuilding already loaded images and work cards, reducing mobile flicker.
 - Stop supported in-progress responses and work. Model inferences are serialized across the system; one Ollama model call runs at a time.
 - Copy, edit, regenerate and read aloud messages; rate answers with persistent 👍/👎 feedback.
 - React once in Mara's own words to a recorded rating or confirmed image generation, without a fabricated spoken request or an endless reaction loop.

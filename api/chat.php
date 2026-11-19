@@ -21,6 +21,7 @@ require_once __DIR__ . '/knowledge_store.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
+require_once __DIR__ . '/console_agent_runs.php';
 require_once __DIR__ . '/console_web_research.php';
 require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
@@ -10070,8 +10071,25 @@ if ($action === 'send') {
   }
 
   if ($doEmber && $emberClientAsync) {
-    $okPayload['ember_pending'] = true;
-    stu_json($okPayload);
+    if (!$isConsoleChannel) {
+      $okPayload['ember_pending'] = true;
+      stu_json($okPayload);
+    }
+    // Commit the owner-scoped queued run BEFORE acknowledging the send.
+    // Navigating to Settings may destroy the browser before it opens SSE.
+    // On return the saved run can be claimed once, without duplicating a turn.
+    try {
+      if (!coreui_agent_run_schema_ready($pdo)) {
+        throw new RuntimeException('agent_runs_migration_required');
+      }
+      coreui_agent_run_ensure($pdo, (int)$uid, (string)$consoleSessionId, (int)$id, 'base');
+      $okPayload['ember_pending'] = true;
+      stu_json($okPayload);
+    } catch (Throwable $eQueue) {
+      // Do not claim a recoverable run that was not stored. Fall back to the
+      // already existing detached, server-side generation path below.
+      error_log('[CoreAI] Agent run queue unavailable: ' . get_class($eQueue));
+    }
   }
 
   if (!$doEmber) {
