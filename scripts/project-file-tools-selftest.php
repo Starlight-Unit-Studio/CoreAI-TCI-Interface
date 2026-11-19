@@ -127,9 +127,9 @@ pft_test(($foreignSelection['status'] ?? '')!=='incremental_project',
 
 pft_test(coreui_pftools_project($pdo, 7, 'cs_project_chat') === $a && coreui_pftools_project($pdo, 7, 'cs_free_chat') === ''
   && coreui_pftools_project($pdo, 7, 'cs_other_account') === '', 'only the own project chat has file tools');
-pft_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'pfile_read', 'input'=>'index.html']) === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.',
+pft_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'pfile_read', 'input'=>'index.html']) === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.',
   'a chat outside a project gets a sentence, no file');
-pft_test(str_starts_with(coreui_pftools_run($pdo, 7, 'cs_other_account', ['tool'=>'pfile_read', 'input'=>'secret.md']), 'Projektdateien gibt es nur'),
+pft_test(str_starts_with(coreui_pftools_run($pdo, 7, 'cs_other_account', ['tool'=>'pfile_read', 'input'=>'secret.md']), 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar'),
   'another account\'s chat stays closed');
 $read = coreui_pftools_run($pdo, 7, 'cs_project_chat', ['tool'=>'pfile_read', 'input'=>'index.html']);
 pft_test(str_contains($read, "Datei index.html (Stand 1, 28 Bytes):\n1 | <h1>Hallo</h1>\n2 | <p>Start</p>") , 'read with line numbers: ' . $read);
