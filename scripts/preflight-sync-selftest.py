@@ -49,6 +49,27 @@ def verify(root: Path) -> list[str]:
             # One reference in the UI manifest and one real execution site.
             if body.count(test) < 2:
                 failures.append(f"{rel}: {test} not registered AND executed")
+    # A selected local Ollama Core must not be silently unloaded after 15m.
+    # The common sync, SSE, and preload paths must share the numeric -1 policy.
+    cfg = (root / "api/config.php").read_text(encoding="utf-8")
+    chat = (root / "api/chat.php").read_text(encoding="utf-8")
+    stream = (root / "api/console_stream.php").read_text(encoding="utf-8")
+    preload = (root / "api/core_preload.php").read_text(encoding="utf-8")
+    if "coreui_env('COREUI_EMBER_KEEP_ALIVE', '-1')" not in cfg:
+        failures.append("api/config.php: active Core keep_alive default must be -1")
+    if "function ember_keep_alive_value(" not in chat or (
+        "return ember_keep_alive_value(ember_cfg('STU_EMBER_KEEP_ALIVE', -1));" not in chat
+    ):
+        failures.append("api/chat.php: keep_alive must preserve numeric Ollama -1")
+    if "'keep_alive' => $keepAlive" not in chat:
+        failures.append("api/chat.php: sync chat does not send keep_alive")
+    if "$payload['keep_alive'] = $keepAlive" not in stream:
+        failures.append("api/console_stream.php: SSE does not send keep_alive")
+    if "$body['keep_alive'] = $keepAlive" not in preload:
+        failures.append("api/core_preload.php: model preload does not send keep_alive")
+    if "'keep_alive'=>0" not in preload:
+        failures.append("api/core_preload.php: explicit old-Core unload must remain")
+
     # The pinned section must remain a visible, independently foldable
     # navigation destination immediately beneath the single Projects link.
     # This contract is checked on CPU-only installations without Node.js.
