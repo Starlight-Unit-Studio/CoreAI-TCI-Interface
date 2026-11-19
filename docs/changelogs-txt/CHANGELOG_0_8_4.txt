@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // 0.8.4
+Date: 2026-11-19
+Base: main 0.8.3
+
+Operator defect
+- A planned homepage project still required manual "Continue" after five saved Markdown versions.
+- The last plan was already complete yet no actual homepage files were produced.
+
+Root cause
+- PLAN_CONTINUE returned early when the latest plan was already complete.
+- Even if PLAN_CONTINUE completed a draft, the post-plan build authorization condition deliberately excluded its tool type.
+- The separate build classifier only saw the latest word "Continue", not the originating request to actually create a homepage.
+
+Fix
+- A completed PLAN_CONTINUE does not create an unnecessary duplicate plan and is allowed to reach the guarded builder after verification.
+- Recover the original user request from cryptographically checked, private, sequential Markdown-plan versions and the authenticated chat message. A distinct rewritten plan breaks the chain.
+- The existing model-controlled intent selector sees original and latest messages; clear new user restrictions take precedence and plan-only requests do not authorize source generation.
+- Both synchronous and SSE preselected build flows use that same owner-scoped origin lookup.
+- New tests check multi-turn provenance, no cross-account authorization, no inherited authorization across unrelated plans, and exactly one project writer call after a completed PLAN_CONTINUE.
+- Preflight source-sync contract now checks this routing and authorization chain on both execution paths.
+
+Validation
+- GitHub CI must pass at the final head SHA.
+- Real CPU-only Ollama, file writer, ZIP and installed host Preflight still require runtime verification.
+- Existing completed runs cannot magically restart in the past; future runs should not terminate after Markdown when the original creation request is valid.

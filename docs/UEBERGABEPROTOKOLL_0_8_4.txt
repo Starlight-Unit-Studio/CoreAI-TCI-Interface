@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.4
+Date: 2026-11-19
+Branch: fix/autonomous-plan-handoff-provenance-084
+Base: main 0.8.3
+
+Observed
+- User still had to type Continue. Screenshot showed latest projektplan-v5.md as a completed Markdown artifact without a generated homepage.
+- Repo confirmed coreui_native_tool_apply returned "already completed" for PLAN_CONTINUE on a complete latest plan and did not run build-intent validation after PLAN_CONTINUE completion.
+- The classifier was separately bound to the most recent message, which was Continue, instead of the actual original user request to build a homepage.
+
+Changes
+1. api/console_plan_store.php: verified, owner-scoped origin retrieval from contiguous immutable plan versions. Disconnected later projects cannot inherit a prior authorized request.
+2. api/console_build_intent.php: secure plan-aware intent classifier sees the original and latest user messages with explicit revocation priority. Missing ownership or corrupted source versions fail closed.
+3. api/console_native_tools.php: a finished PLAN_CONTINUE enters the approved build decision, without a dummy plan version. The verified source-file writer remains the only place that creates files and ZIPs.
+4. api/console_stream.php and api/chat.php: early already-completed-plan build decisions use the same plan-aware original-request lookup.
+5. scripts/native-tools-selftest.php and scripts/model-project-intent-selftest.php: full regression of the user's multi-turn homepage scenario, authenticated origin, direct file-worker invocation exactly once, plan-only no-build, unrelated-new-project no inherited permission.
+6. scripts/preflight-sync-selftest.py: hard release gate to prevent reintroducing the PLAN_CONTINUE exclusion.
+7. CoreAI 0.8.4 metadata, Changelog and browser fingerprint synchronized.
+
+Verification
+- CI on the final HEAD is required before merge.
+- Production CoreAI host, CPU-only Ollama, PHP-worker lifetime, real project files and resulting ZIP must be validated after deployment.
+- User cancellation and real model/tool failure are still reasons to stop, but a completed Markdown artifact alone is not a confirmed website.
+- Do not claim an already-finished server run resumes without a new trigger.
+- Next version after merge: 0.8.5.

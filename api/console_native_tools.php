@@ -618,12 +618,14 @@ function coreui_native_tool_apply(
       if ($kind === 'PLAN_CONTINUE') {
         $saved = coreui_plan_latest($pdo,$uid,$sessionId);
         if (!is_array($saved)) return 'Hier ist noch kein Projektplan gespeichert.';
-        if (!coreui_plan_is_draft_markdown((string)$saved['markdown']))
-          return 'Der letzte Projektplan ist bereits abgeschlossen.';
-        if ($planGenerate === null)
-          return 'Der Entwurf ist erhalten, aber die Fortsetzung ist momentan nicht verfuegbar.';
-        $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,
-          (string)$saved['markdown'],false);
+        // An already finished plan is not a dead end when the original
+        // user request still authorizes the website implementation.
+        if (coreui_plan_is_draft_markdown((string)$saved['markdown'])) {
+          if ($planGenerate === null)
+            return 'Der Entwurf ist erhalten, aber die Fortsetzung ist momentan nicht verfuegbar.';
+          $saved = coreui_plan_save($pdo,$uid,$sessionId,$turnId,
+            (string)$saved['markdown'],false);
+        }
       } elseif ($kind === 'PLAN_APPEND' && $draft) {
         // Incomplete additions must never make an approved previous plan
         // silently appear complete. Preserve old bytes in a versioned draft.
@@ -685,10 +687,10 @@ function coreui_native_tool_apply(
       // Recheck the ORIGINAL user's explicit build authorization with the
       // existing model-controlled selector. Never infer authority from keywords.
       $approvedBuild = false;
-      if (in_array($kind,['PLAN_SAVE','PLAN_APPEND'],true)
-          && $planGenerate !== null && trim($planGoal) !== ''
+      if ($planGenerate !== null && trim($planGoal) !== ''
           && (!function_exists('ember_agent_cancel_requested') || !ember_agent_cancel_requested())) {
-        $choice = coreui_build_intent_select($pdo,$uid,$sessionId,$turnId,$planGoal,$planGenerate);
+        $choice = coreui_build_intent_select_for_plan(
+          $pdo,$uid,$sessionId,$turnId,$planGoal,$planGenerate,$saved);
         $approvedBuild = ($choice['status'] ?? '') === 'build'
           && (int)($choice['plan_version'] ?? 0) === (int)$saved['version'];
         if (function_exists('coreui_work_record')) {
@@ -696,7 +698,7 @@ function coreui_native_tool_apply(
             $approvedBuild ? 'Fertiger Plan: freigegebene Umsetzung wird fortgesetzt'
               : 'Markdown-Projektplan abgeschlossen',
             ['reason'=>$approvedBuild ? 'approved_plan_autobuild'
-              : 'plan_saved_without_build_authorization',
+              : 'plan_build_intent_' . (string)($choice['status'] ?? 'unknown'),
              'plan_version'=>(int)$saved['version']]);
         }
       }

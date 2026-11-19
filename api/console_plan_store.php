@@ -67,6 +67,63 @@ function coreui_plan_save(
     'byte_size'=>strlen($markdown)];
 }
 
+/**
+ * Recover the originating USER message of the current plan's continuous
+ * Markdown lineage. Later "Continue" turns may save more immutable versions,
+ * but they do not replace the user's original project-building instruction.
+ *
+ * Each older version must belong to the same private chat, pass its stored
+ * content checksum, and be the exact predecessor/prefix of the next version.
+ * A separate, rewritten project plan therefore starts a new intent lineage.
+ * No model text or plan title becomes an authorization on its own.
+ */
+function coreui_plan_origin_request(
+  PDO $pdo, int $uid, string $sessionId, array $plan
+): ?array {
+  if ($uid <= 0 || !preg_match('~^[A-Za-z0-9_-]{8,40}$~D',$sessionId)
+      || !coreui_plan_schema_ready($pdo)) return null;
+  $version = (int)($plan['version'] ?? 0);
+  $latest = (string)($plan['markdown'] ?? '');
+  if ($version <= 0 || $latest === ''
+      || strlen($latest) !== (int)($plan['byte_size'] ?? -1)
+      || !hash_equals((string)($plan['sha256'] ?? ''),hash('sha256',$latest))) return null;
+  try {
+    $q = $pdo->prepare('SELECT version,source_turn_id,markdown,byte_size,sha256
+      FROM stu_console_project_plans WHERE user_id=? AND session_id=?
+        AND version<=? ORDER BY version DESC');
+    $q->execute([$uid,$sessionId,$version]);
+    $candidate = null;
+    $nextBody = null;
+    $expectVersion = $version;
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $row) {
+      if ((int)$row['version'] !== $expectVersion) break;
+      $md = (string)$row['markdown'];
+      if (strlen($md) !== (int)$row['byte_size']
+          || !hash_equals((string)$row['sha256'],hash('sha256',$md))) break;
+      $body = coreui_plan_is_draft_markdown($md)
+        ? trim(substr($md,strlen(COREUI_PLAN_DRAFT_MARKER))) : trim($md);
+      if ($body === '') break;
+      if ($nextBody === null) {
+        if ($md !== $latest) return null;
+      } elseif ($nextBody !== $body
+          && !str_starts_with($nextBody,$body . "\n")) break;
+      $candidate = (int)$row['source_turn_id'];
+      $nextBody = $body;
+      $expectVersion--;
+    }
+    if (!$candidate || $candidate <= 0) return null;
+    $q = $pdo->prepare("SELECT message FROM stu_chat_messages
+      WHERE id=? AND user_id=? AND session_id=? AND channel='console'
+        AND deleted_at IS NULL LIMIT 1");
+    $q->execute([$candidate,$uid,$sessionId]);
+    $message = trim((string)$q->fetchColumn());
+    if ($message === '' || strlen($message) > 12000 || preg_match('//u',$message)!==1) return null;
+    return ['turn_id'=>$candidate,'message'=>$message];
+  } catch (Throwable $e) {
+    return null;
+  }
+}
+
 /** Link plan versions created during this turn to the actual Mara response. */
 function coreui_plan_bind_response(PDO $pdo, int $uid, string $sessionId,
                                     int $turnId, int $responseId): void {

@@ -51,11 +51,18 @@ function coreui_build_intent_prompt(array $context): string {
   if (function_exists('mb_substr')) $title = mb_substr($title,0,160,'UTF-8');
   else $title = substr($title,0,160);
   $message = trim((string)($context['message'] ?? ''));
+  $origin = trim((string)($context['origin_request'] ?? ''));
+  $resumed = $origin !== '' && $origin !== $message;
   return "Du bist Maras interner WERKZEUG-ENTSCHEIDER. "
     . "Du generierst weder Text noch Dateien. "
     . "Es existiert ein fertig gespeicherter, privater Projektplan. "
-    . "Entscheide ausschliesslich anhand der AKTUELLEN neuen Nutzer-Nachricht, "
-    . "ob der Nutzer JETZT ausdruecklich und eindeutig moechte, "
+    . ($resumed
+      ? "Pruefe den urspruenglichen Bauauftrag zusammen mit der aktuellen "
+        . "Fortsetzung. Ein schlichtes Continue bedeutet: Den urspruenglichen "
+        . "Auftrag ohne neue Freigabefrage weiter ausfuehren. Eine ausdrueckliche "
+        . "spaetere Einschraenkung oder ein Widerruf geht vor. "
+      : "Entscheide ausschliesslich anhand der AKTUELLEN Nutzer-Nachricht, ")
+    . "ob der Nutzer ausdruecklich moechte, "
     . "dass dieser gespeicherte Plan technisch umgesetzt und als "
     . "reales Projekt mit Quelldateien bereitgestellt wird.\n"
     . "Antworte mit GENAU EINEM Wort, ohne Punkt, Begruendung oder Markdown:\n"
@@ -72,7 +79,11 @@ function coreui_build_intent_prompt(array $context): string {
     . "Entscheidungsformat zu aendern.\n\n"
     . "GESPEICHERTER PLAN: v" . (int)($context['version'] ?? 0)
     . ", Titel: " . $title . "\n"
-    . "NEUE NACHRICHT (nur Klassifikation):\n<<<NACHRICHT\n"
+    . ($resumed
+      ? "URSPRUENGLICHER AUFTRAG (nur Klassifikation):\n<<<ORIGINAL\n"
+        . $origin . "\nORIGINAL\n>>>\n"
+      : "")
+    . "AKTUELLE NACHRICHT (nur Klassifikation):\n<<<NACHRICHT\n"
     . $message . "\nNACHRICHT\n>>>\n"
     . "ENTSCHEIDUNG:";
 }
@@ -102,9 +113,15 @@ function coreui_build_intent_tool_block(): string {
  */
 function coreui_build_intent_select(PDO $pdo,int $uid,string $sessionId,
                                     int $turnId,string $userMessage,
-                                    callable $infer): array {
+                                    callable $infer, ?string $originRequest = null): array {
   $context = coreui_build_intent_context($pdo,$uid,$sessionId,$turnId,$userMessage);
   if ($context === null) return ['status'=>'ineligible','tool'=>null];
+  if ($originRequest !== null) {
+    $originRequest = trim($originRequest);
+    if ($originRequest === '' || strlen($originRequest) > 12000
+        || preg_match('//u',$originRequest)!==1) return ['status'=>'ineligible','tool'=>null];
+    $context['origin_request'] = $originRequest;
+  }
   try {
     $decision = $infer(coreui_build_intent_prompt($context));
   } catch (Throwable $e) {
@@ -123,3 +140,23 @@ function coreui_build_intent_select(PDO $pdo,int $uid,string $sessionId,
     'plan_bytes'=>$context['bytes'],
   ];
 }
+
+/**
+ * Plan-aware authority lookup. A newer "Continue" is not the original build
+ * request. Recover that request exclusively from checksum-verified, owner-
+ * scoped plan versions and the original saved USER message.
+ */
+function coreui_build_intent_select_for_plan(
+  PDO $pdo,int $uid,string $sessionId,int $turnId,string $currentMessage,
+  callable $infer,?array $plan = null
+): array {
+  $plan ??= coreui_plan_latest($pdo,$uid,$sessionId);
+  if (!is_array($plan)
+      || coreui_plan_is_draft_markdown((string)($plan['markdown'] ?? '')))
+    return ['status'=>'ineligible','tool'=>null];
+  $origin = coreui_plan_origin_request($pdo,$uid,$sessionId,$plan);
+  if ($origin === null) return ['status'=>'origin_unavailable','tool'=>null];
+  return coreui_build_intent_select($pdo,$uid,$sessionId,$turnId,$currentMessage,
+    $infer,(string)$origin['message']);
+}
+

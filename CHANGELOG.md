@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.8.4 - 19.11.2026
+
+- **No more manual Continue after a completed plan:** `PLAN_CONTINUE` now reaches the guarded project build authorization after finishing or finding an already completed plan; it no longer returns early or skips the build step.
+- **Original task provenance:** The backend reconstructs the initial owner-scoped user request from checksum-verified, consecutive plan versions. A later `Continue` is treated as a continuation of that specific request rather than a new planning-only request.
+- **Authorization preserved:** The intent classifier receives the original request and the current follow-up, giving explicit later cancellation or scope restriction precedence. Replaced, unrelated plans cannot inherit earlier build authority.
+- **Consistent dispatch:** SSE and synchronous early-build routes also use the verified original request when an existing plan has reached completion.
+- **Real regressions:** Tests simulate a multi-turn homepage request, `Continue`, a completed plan and exactly one verified file-writer call, including a new unrelated plan and account isolation.
+- **Mandatory Preflight:** The source sync check now enforces the original-request handoff in both execution modes.
+- **Live validation:** CI proves the guarded execution path, not live Ollama behavior or host updater success.
+
 ## 0.8.3 - 19.11.2026
 
 - **Plan-to-build handoff:** Clarified that the Markdown planner is only a subtask. After verified plan completion, the independent model-controlled build selector recognizes explicit requests such as "Kannst du eine Homepage erstellen?" without requiring another user Continue. No automatic build is authorized from plan prose alone.
