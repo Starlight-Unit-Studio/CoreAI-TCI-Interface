@@ -401,3 +401,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_8_1.txt
 * CHANGELOG_0_8_2.txt
 * CHANGELOG_0_8_3.txt
+* CHANGELOG_0_8_4.txt
