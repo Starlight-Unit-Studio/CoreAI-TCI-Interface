@@ -47,6 +47,19 @@ foreach ([
     && ($parsedCase['body'] ?? '') === 'Setze den gespeicherten Plan als Homepage um.',
     'Harmless tool formatting rejected: ' . $case);
 }
+// Local Core Normal often writes a harmless inline filename before a closed
+// native marker. Accept ONLY a bare filename in backticks, not code/examples.
+$inlineFile = "Ich ergaenze jetzt `blog.html`.\n" . $build;
+$inlineParsed = coreui_native_tool_parse($inlineFile);
+native_assert(($inlineParsed['type'] ?? '') === 'PROJECT_BUILD',
+  'An inline filename before one valid tool is ordinary progress text');
+native_assert(coreui_native_tool_parse(
+  "Ich fuehre `rm -rf /` aus.\n" . $build) === null
+  && coreui_native_tool_parse(
+    "Beispiel: `blog.html`\n" . $build) === null
+  && coreui_native_tool_parse(
+    "Erklaerung: [Quelle](https://x.invalid)\n" . $build) === null,
+  'Only safe filenames, not shell or example citations, may be tolerated around native tools');
 $prose = coreui_native_public_progress_only($progressLine . "\nKlar, das machen wir so!");
 native_assert(is_array($prose) && $prose['reply'] === 'Klar, das machen wir so!'
   && $prose['note'] === 'Ich pruefe den gespeicherten Plan und beginne.'
