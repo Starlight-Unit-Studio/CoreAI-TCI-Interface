@@ -5217,8 +5217,10 @@ function ember_build_chat_prompt(
   }
   $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
-  $pyHint = (ember_py_enabled() && $imageUrl === null
-      && $existingProjectSourcesState === false)
+  // Python is a global CoreAI tool, including for chats with saved files.
+  // Existing-project work should prefer pfile edits, but never disable
+  // unrelated Python, analysis or download capabilities.
+  $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $profile['compact'], $consoleUid);
   $intentHint = ember_composer_intent_hint($composerIntent, $imageUrl, $consoleUid);
@@ -5798,10 +5800,10 @@ function ember_generate_reply(
     ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // The synchronous prompt has no separate tool block, so the Python hint
   // itself names the checked project builder for small local models.
-  $pyHint = (ember_py_enabled() && $imageUrl === null
-      && $existingProjectSourcesState === false)
+  $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $promptProfile['compact'],
-        $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) : '';
+        $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+          && $existingProjectSourcesState === false) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $promptProfile['compact'], $consoleUid);
   $intentHint = ember_composer_intent_hint($composerIntent, $imageUrl, $consoleUid);
   $loreBlock = '';
