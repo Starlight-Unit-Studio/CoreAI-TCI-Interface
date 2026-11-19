@@ -282,7 +282,7 @@ function coreui_native_plan_recover_model_reply(string $reply): ?array {
   $intro = trim(substr($reply, 0, $offset));
   if (strlen($intro) > 900 || str_contains($intro, str_repeat(chr(96), 3))
       || preg_match('~\[/?COREUI[/_][A-Z_]+\]~i', $intro)
-      || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*\z~iu', $intro))
+      || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*(?:\x60[^\r\n]+\x60)?\s*\z~iu', $intro))
     return null;
   $body = trim(substr($reply, $offset + strlen($opening)));
   $close = '~\r?\n[ \t]*\[/COREUI(?:_PLAN_SAVE|/PLANSAVE)\][ \t]*$~i';
