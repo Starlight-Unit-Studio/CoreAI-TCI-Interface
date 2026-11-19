@@ -653,13 +653,21 @@ function coreui_pftools_env_hint(PDO $pdo, int $uid, string $projectId, bool $co
  * deny it or claim it here. '' in the compact prompt, in other channels or without the Python tool.
  */
 function coreui_pftools_outside_hint(PDO $pdo, string $channel, int $uid, bool $compact): string {
-  if ($channel !== 'console' || $compact || $uid <= 0 || !function_exists('ember_py_enabled') || !ember_py_enabled()
-      || !coreui_pfiles_schema_ready($pdo) || !coreui_pruns_ready($pdo)) {
-    return '';
-  }
-  return "PROJEKTE: In einem Projekt-Chat (ein Chat in einem Projekt der Seitenleiste) hast du eine Entwicklungsumgebung: Projektdateien "
-    . "lesen und aendern, Befehle und Tests ausfuehren, Programme und Entwicklungsserver starten (Sandbox mit Python 3.12 und Node.js 24, "
-    . "Vorschau im Tab Dateien). In diesem Chat gibt es sie nicht; braucht jemand das, schlag vor, in einem Projekt weiterzuarbeiten.";
+  if ($channel !== 'console' || $uid <= 0 || !coreui_pfiles_schema_ready($pdo)) return '';
+  $notice = "PROJEKTSTATUS: Dieser Chat ist keinem Projekt zugeordnet. "
+    . "Ein erzeugtes ZIP oder HTML aus dem Chat ist ein Download, nicht automatisch "
+    . "eine bearbeitbare Projektdatei. Fuer eine Erweiterung der vorhandenen "
+    . "Website die geprueften Downloads erst explizit in ein Projekt uebernehmen "
+    . "und im Projekt-Chat weiterarbeiten. Einen alten Projektplan NICHT "
+    . "erneut als Ersatz fuer aktuelle Dateiaenderungen bauen.";
+  if ($compact) return $notice;
+  $canRun = function_exists('ember_py_enabled') && ember_py_enabled()
+    && coreui_pruns_ready($pdo);
+  return $notice . ($canRun
+    ? " Im Projekt-Chat stehen Datei-Lesen/-Aendern, Sandbox-Tests und "
+      . "Entwicklungsserver (Python 3.12, Node.js 24) zur Verfuegung."
+    : " Im Projekt-Chat lassen sich die gespeicherten Textdateien lesen "
+      . "und bearbeiten.");
 }
 
 /**
