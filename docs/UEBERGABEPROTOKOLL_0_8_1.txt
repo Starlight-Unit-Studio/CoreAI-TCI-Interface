@@ -1,0 +1,32 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.1
+Date: 2026-11-19
+Base: main 0.8.0
+Branch: fix/queued-run-reattach-image-flicker-0801
+
+Operator report
+1. Navigating from an active project chat to Settings and back hides Mara's work.
+2. Uploading an image causes severe chat flickering.
+3. Mara says she is reading script.js but sometimes stops without invoking the file reader.
+
+Verified code paths and fixes
+- api/chat.php: The former async console POST acknowledged pending work without recording a queued agent run. It now persists the existing owner-scoped job before acknowledging. On a schema/write failure, it does not advertise a recoverable job and retains its existing detached background fallback.
+- js/console-app.js: Previously, active-run recovery only started a status poll, even when a server run was merely queued and never started. The client now claims a queued run once using its original turn/character. Running base jobs are observed via poll; regeneration requests use their original request key. History recovery requires the current view epoch. No duplicate messages or model requests are intentionally created.
+- js/console-app.js: Work events are stored per session even while another chat is visible; the DOM is updated only for the active session.
+- js/console-app.js: Standard final replies are rendered offscreen and replace just the typing row. Existing uploaded images, old avatars and open work cards are preserved. Variant actions and rendering exceptions retain a full-render fallback. Images decode asynchronously.
+- api/console_agent_loop.php: The restricted and permission-scoped read-only parser now matches "Ich lese dir jetzt script.js durch". Edit and execution intents are not inferred.
+
+Regression coverage
+- scripts/agent-loop-selftest.php tests the reported exact read wording.
+- scripts/chat-navigation-recovery-selftest.cjs verifies queued, running and regenerating-run recovery without duplicate inference.
+- scripts/history-render-selftest.cjs verifies preserving old image DOM elements on completion.
+- Both shipping Preflights already run the relevant regression tests; preflight sync gate remains active.
+
+Release discipline
+- Version 0.8.1 in VERSION, release materials, product pages, metadata, selftests and preflight headers.
+- App JavaScript cache fingerprint recalculated from the changed asset content.
+- Verify final CI status and version gate before merging. Live server, Ollama and mobile/desktop browser checks have NOT been run via GitHub.
+
+Known limits
+- An unstarted queued run resumes when the authenticated client returns. This is not a fully independent background queue worker.
+- Existing project plan drafting still has a four-call/240-second budget. This targeted repair does not silently rewrite that policy.
+- Next version after merge: 0.8.2.
