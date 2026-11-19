@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.98
+Date: 2026-11-19
+
+Mobile project navigation
+- Project name opens its workspace directly; separate chevron expands chats.
+- Project directory shows searchable, sortable cards with pin and options.
+- Project breadcrumb returns to the directory.
+- A touch-friendly project action sheet includes a close control and backdrop.
+
+Project details
+- Dedicated project description persisted separately from AI instructions.
+- Migration 055 adds a nullable description field.
+- A compact editor offers name, description, Save and Cancel.
+- Existing instructions, memory scope and Space placeholder stay in advanced settings.
+
+Quality gates
+- Project UI regression registered in both Preflights.
+- Project SQLite fixtures updated for the new schema.
+- Release version and asset cache keys synchronized.
+
+This is a proposed draft PR build. Production and Android end-to-end validation
+have not yet been performed. CoreAI Holo theme overlay remains a separate pass.
+
+Sidebar navigation refinement (operator request)
+- The Projects entry in the chat drawer is one direct directory link.
+- Per-project folders, expand arrows and nested project chat lists are removed from the drawer.
+- Protected locked chats remain available under a separate area.
+- Sidebar folding and project UI contracts updated to reflect the new navigation.
