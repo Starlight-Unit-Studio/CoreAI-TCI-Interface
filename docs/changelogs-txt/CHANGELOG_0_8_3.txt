@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // 0.8.3
+Date: 2026-11-19
+Base: main 0.8.2
+
+Operator reported
+- Despite CoreAI 0.8.2, a polished homepage request stopped at incomplete projektplan-v1.md.
+- Preflight showed a single Project versions-self-test Unknown error after the other project/skill tests were fixed.
+- The operator noticed the planner's own wording told Mara not to implement.
+
+Corrections
+1. Plan continuation uses the configured CPU-model timeout for both synchronous chat and SSE instead of an outdated 180-second override. Short, format-specific calls avoid unnecessary reasoning and skill injection.
+2. The planner's prompt now explicitly labels Markdown planning as a substep. The validated original request may continue to the real file writer AFTER a complete plan and explicit model-controlled build authorization.
+3. A verified but malformed Markdown section receives one safe, internal correction attempt in the SAME turn. Truncated provider calls are never treated as successful instructions.
+4. Plan stop reasons are shown as grounded public diagnostics, not a generic "couldn't finish".
+5. The build-intent model understands polite creation questions ("Kannst du eine Homepage erstellen?") as creation requests, without requiring a second manual Continue. Plan-only requests remain non-builds.
+6. Fixed the forgotten project-vcs SQLite fixture missing project.description and used schema-explicit INSERT. Both Preflights now show the real test process exit code and stderr.
+7. Added project-vcs to the mandatory schema-drift guard and all targeted project CI tests.
+8. Added scripted plan-repair, genuine provider failure, and draft-to-verified-build tests.
+
+Limitations
+- The planner never directly executes a build or shell command. The secure model-controlled selector and project writer own implementation.
+- A model timeout, cancelled job, unrecognized output after one repair, or server process failure may still stop work safely.
+- Passing CI does not prove live CoreAI/Ollama performance or the installed server Preflight.
