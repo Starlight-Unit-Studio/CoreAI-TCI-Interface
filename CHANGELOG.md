@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.7.99 - 19.11.2026
+
+- **CoreAI Holo project directory:** The project overview now uses the native blue/gold palette and dynamic light/dark theme tokens instead of hardcoded dark project cards, black search fields and gray labels. Cards, filters, buttons, headings and empty states share CoreAI's angular design.
+- **One project details action:** The ellipsis menu exposes a single **Details bearbeiten** action for name, description and advanced project options. Duplicate **Projekteinstellungen** and unnecessary **Projekt öffnen** options were removed.
+- **Desktop and mobile menus:** Desktop project actions are anchored popups without a full-screen overlay. Mobile retains the dismissible bottom sheet and backdrop.
+- **Accessibility:** Clear focus outlines, mobile-sized touch targets, responsive sizing, reduced-motion support and a dynamic search-result project count.
+- **Regression coverage:** Project UI tests check that duplicate settings cannot reappear and the directory follows light/dark CoreAI tokens.
+
 ## 0.7.98 - 19.11.2026
 
 - **Mobile project navigation:** The chat sidebar now has one direct **Projekte** link to the dedicated directory, without expanding project folders or nested chat lists. A searchable and sortable directory offers project cards, pinning, project actions and a back breadcrumb. Locked chats remain accessible separately.

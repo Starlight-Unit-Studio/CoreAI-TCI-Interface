@@ -79,9 +79,35 @@ assert(!sidebarBlock.includes('projects.forEach(') &&
   !sidebarBlock.includes('project-nav-folder-toggle') &&
   sidebarBlock.includes('if (lockedChats.length)'),
   'no project folders or project chat sublists in the drawer; locked chats remain available');
-assert(js.includes("openProject(p.id);") && js.includes("label:'Projekt öffnen'") &&
-  js.includes("showFloatingMenu($('projectHomeMore'),'project',projectActions(p))"),
-  'projects retain direct opening and workspace actions on their actual project pages');
+assert(js.includes("openProject(p.id);") &&
+  js.includes("showFloatingMenu($('projectHomeMore'),'project',projectActions(p))") &&
+  !js.includes("label:'Projekt öffnen'") &&
+  !js.includes("label:'Projekteinstellungen'") &&
+  js.includes("label:'Details bearbeiten'"),
+  'project cards open directly and the three-dot menu has only one details editor');
+const actionBlock=js.slice(js.indexOf('  function projectActions(p) {'),js.indexOf('  function openPopover(',js.indexOf('  function projectActions(p) {')));
+assert(actionBlock.split("openModal('settings',p.id)").length===2,
+  'project actions contain exactly one entry for the details editor');
+assert(!html.includes('data-project-action="rename"') &&
+  html.includes('data-project-action="settings">Details bearbeiten</button>'),
+  'legacy fallback markup also contains no duplicated settings action');
+assert(html.includes('id="projectDirectoryCount"') &&
+  html.includes('project-directory-search-field') &&
+  html.includes('class="project-directory-kicker"') &&
+  js.includes("var count=$('projectDirectoryCount');"),
+  'project directory uses native navigation, search and dynamic result counts');
+assert(theme.includes('0.7.99 Project Directory Holo pass') &&
+  theme.includes('body.project-home-active .project-directory-card') &&
+  theme.includes('body.project-home-active .project-directory-search-field') &&
+  theme.includes('body.project-home-active .project-directory-sort select') &&
+  theme.includes('background:var(--panel);') &&
+  theme.includes('color:var(--txt);'),
+  'project directory cards and fields must follow active CoreAI light and dark theme');
+assert(theme.includes('@media(min-width:621px)') &&
+  theme.includes('.project-menu-backdrop {display:none!important;}') &&
+  js.includes("kind!=='project' || !window.matchMedia('(max-width:620px)').matches"),
+  'project action menu must not dim the desktop view');
+
 assert(js.includes('if (lockedChats.length)') &&
   js.includes("CoreAIChatLock.unlockChat(chat)"),
   'protected chat folder and PIN unlock must remain available');

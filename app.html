@@ -11,7 +11,7 @@
   />
   <meta name="theme-color" content="#f0f4fa" />
   <meta name="color-scheme" content="light" />
-  <meta name="application-version" content="0.7.98" />
+  <meta name="application-version" content="0.7.99" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface | Quantum Software</title>
@@ -23,13 +23,13 @@
   <link rel="stylesheet" href="./css/coreui-image-viewer.css?v=0041889774580256723673713" />
   <link rel="stylesheet" href="./css/coreui-chat-tci-layout.css?v=0692552423704018413771136" />
   <link rel="stylesheet" href="./css/coreui-feedback.css?v=0248446518621718122238802" />
-  <script src="./js/console-gate.js?v=0503143171043842024718556"></script>
+  <script src="./js/console-gate.js?v=0518154228725439610624221"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="./css/coreui-projects.css?v=0384202420689223487562543" />
   <link rel="stylesheet" href="./css/coreui-project-files.css?v=0677648217447778511593633" />
   <link rel="stylesheet" href="./css/coreui-sidebar-refresh.css?v=0259224674802143448546373" />
-  <link rel="stylesheet" href="./css/coreui-project-theme.css?v=0004353107422065361837923" />
+  <link rel="stylesheet" href="./css/coreui-project-theme.css?v=1018543211996787570683039" />
   <link rel="stylesheet" href="./css/coreui-shortcuts.css?v=1167871766899792767901985" />
   <link rel="stylesheet" href="./css/coreui-deep-research.css?v=1016468972388485295589572" />
   <link rel="stylesheet" href="./css/coreui-chat-skills.css?v=0514646381451118155453685" />
@@ -155,7 +155,7 @@
         <div class="brand-copy">
           <div class="brand-kicker">QUANTUM SOFTWARE</div>
           <div class="brand-title">COREAI:<span class="brand-product-part">TCI INTERFACE</span></div>
-          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.7.98</div>
+          <div class="brand-signature">TERRA-NET MATRIX // N-73 // v0.7.99</div>
         </div>
       </div>
 
@@ -312,9 +312,18 @@
       </section>
       <section class="project-directory project-home" id="coreuiProjectDirectory" hidden aria-label="Alle Projekte">
         <div class="project-home-content">
-          <button class="project-directory-drawer" id="projectDirectoryDrawer" type="button" aria-label="Seitenleiste öffnen">☰</button>
-          <header class="project-directory-header"><h1>Projekte</h1><button id="projectDirectoryCreate" type="button">Neues Projekt</button></header>
-          <div class="project-directory-tools"><label class="project-directory-search">Suchen<input id="projectDirectorySearch" type="search" placeholder="In Projekten suchen" autocomplete="off"></label><label class="project-directory-sort">Sortieren<select id="projectDirectorySort"><option value="newest">Neueste</option><option value="name">Name</option><option value="oldest">Älteste</option></select></label></div>
+          <div class="project-directory-topbar">
+            <button class="project-directory-drawer" id="projectDirectoryDrawer" type="button" aria-label="Seitenleiste öffnen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+            <span class="project-directory-kicker">COREAI // PROJEKTE</span>
+          </div>
+          <header class="project-directory-header">
+            <div class="project-directory-heading"><h1>Projekte</h1><p id="projectDirectoryCount" role="status" aria-live="polite"></p></div>
+            <button id="projectDirectoryCreate" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Neues Projekt</span></button>
+          </header>
+          <div class="project-directory-tools">
+            <label class="project-directory-search"><span>Suchen</span><span class="project-directory-search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="projectDirectorySearch" type="search" placeholder="In Projekten suchen" autocomplete="off"></span></label>
+            <label class="project-directory-sort"><span>Sortieren</span><select id="projectDirectorySort"><option value="newest">Neueste</option><option value="name">Name</option><option value="oldest">Älteste</option></select></label>
+          </div>
           <div class="project-directory-list" id="projectDirectoryList" aria-live="polite"></div>
         </div>
       </section>
@@ -330,8 +339,7 @@
             </div>
             <div class="project-home-popover" id="projectHomePopover" hidden>
               <button type="button" data-project-action="share">Projekt teilen</button>
-              <button type="button" data-project-action="rename">Projekt umbenennen</button>
-              <button type="button" data-project-action="settings">Projekteinstellungen</button>
+              <button type="button" data-project-action="settings">Details bearbeiten</button>
               <button type="button" data-project-action="home">Projektstartseite</button>
               <button type="button" data-project-action="pin" id="projectHomePin">Projekt anpinnen</button>
               <button type="button" data-project-action="delete" class="danger">Projekt löschen</button>
@@ -876,7 +884,7 @@
   </div>
   <script src="./js/coreui-update.js?v=0027007356017747916079807"></script>
   <script src="./js/coreui-project-files.js?v=0953475465316548366557292"></script>
-  <script src="./js/coreui-projects.js?v=0676075503565005452660219"></script>
+  <script src="./js/coreui-projects.js?v=0290380449200635396376681"></script>
   <script src="./js/coreui-sidebar-fold.js?v=1057593083839253957456375"></script>
   <script src="./js/coreui-chat-menu.js?v=0953487258652648855791858"></script>
   <script src="./js/coreui-chat-lock.js?v=1010347577925834331557538"></script>

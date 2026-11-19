@@ -1,0 +1,15 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.7.99
+Date: 2026-11-19
+
+- Project directory adopts CoreAI Holo visual tokens in light and dark
+  modes, rather than fixed black cards and input fields.
+- Holo framing, blue/gold accents, typography, responsive project cards,
+  search/sort controls, action buttons and empty state are implemented.
+- Project three-dot menus expose one Details bearbeiten action. Duplicate
+  Projekteinstellungen and redundant Projekt oeffnen options are removed.
+- Desktop menu is a small anchored popup without dark full-screen overlay.
+- Mobile retains the bottom sheet with its closeable backdrop.
+- New responsive search-result count, focus outlines and minimum touch sizes.
+- Project UI test protects the single editing action and theme consistency.
+- Version and numeric asset fingerprints updated for cache consistency.
+- No Core/runner/sandbox/permission behavior changed.

@@ -1213,3 +1213,371 @@ body.project-home-active .project-floating-menu {
 }
 .app-body .drawer #projectsNav #projectsNavList:empty {display:none}
 .app-body .drawer #projectsNav .project-nav-locked {margin-top:8px}
+
+/* 0.7.99 Project Directory Holo pass.
+   The original Claude-derived information hierarchy stays intact; this is
+   CoreAI's own responsive palette for light, dark and holo themes. */
+body.project-home-active #coreuiProjectDirectory .project-home-content {
+  max-width:940px;
+  padding-top:clamp(20px,3.3vw,34px);
+  padding-bottom:max(58px,env(safe-area-inset-bottom,0px));
+}
+body.project-home-active .project-directory-topbar {
+  display:flex;
+  align-items:center;
+  gap:15px;
+  min-height:48px;
+  margin-bottom:38px;
+}
+body.project-home-active .project-directory-drawer {
+  flex:0 0 44px;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  margin:0;
+  padding:0;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel);
+  color:var(--cx);
+  box-shadow:var(--shadow-tight);
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
+body.project-home-active .project-directory-drawer svg {
+  display:block;
+  width:22px;
+  height:22px;
+}
+body.project-home-active .project-directory-kicker {
+  color:var(--amb);
+  font:500 11px/1.4 "Share Tech Mono",monospace;
+  letter-spacing:.16em;
+}
+body.project-home-active .project-directory-header {
+  align-items:center;
+  gap:24px;
+  margin:0 0 31px;
+  padding:0 0 20px;
+  border-bottom:1px solid var(--line-strong);
+  position:relative;
+}
+body.project-home-active .project-directory-header::after {
+  content:"";
+  position:absolute;
+  right:0;
+  bottom:-1px;
+  width:120px;
+  height:2px;
+  pointer-events:none;
+  background:linear-gradient(90deg,var(--cx),var(--amb));
+}
+body.project-home-active .project-directory-heading {
+  min-width:0;
+  flex:1 1 auto;
+}
+body.project-home-active .project-directory-header h1 {
+  margin:0;
+  color:var(--txt);
+  font:750 clamp(30px,4.2vw,45px)/1.12 var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.025em;
+}
+body.project-home-active .project-directory-heading p {
+  margin:9px 0 0;
+  color:var(--muted);
+  font:500 13px/1.4 "Share Tech Mono",monospace;
+}
+body.project-home-active #projectDirectoryCreate {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  flex:0 0 auto;
+  min-height:47px;
+  padding:10px 17px;
+  color:#fff;
+  background:var(--cx);
+  border:1px solid var(--cx);
+  border-radius:0;
+  box-shadow:var(--shadow-tight);
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+  font:700 16px/1.3 var(--coreui-font,"Rajdhani"),sans-serif;
+  cursor:pointer;
+}
+body.project-home-active #projectDirectoryCreate svg {
+  display:block;
+  width:19px;
+  height:19px;
+  stroke-width:2;
+}
+body.project-home-active .project-directory-tools {
+  display:flex;
+  align-items:end;
+  gap:14px;
+  margin:0 0 23px;
+}
+body.project-home-active .project-directory-tools label {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+  margin:0;
+  color:var(--muted);
+  font:650 13px/1.3 var(--coreui-font,"Rajdhani"),sans-serif;
+  letter-spacing:.035em;
+}
+body.project-home-active .project-directory-search {
+  flex:1 1 auto;
+}
+body.project-home-active .project-directory-search-field {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  min-height:50px;
+  padding:0 13px;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel);
+  color:var(--cx);
+  box-shadow:var(--shadow-tight);
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
+body.project-home-active .project-directory-search-field svg {
+  display:block;
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+}
+body.project-home-active .project-directory-search-field input {
+  flex:1 1 auto;
+  width:100%;
+  min-width:0;
+  min-height:48px;
+  margin:0;
+  padding:10px 0;
+  border:0!important;
+  border-radius:0;
+  outline:0;
+  background:transparent!important;
+  color:var(--txt)!important;
+  box-shadow:none;
+  font:500 16px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-directory-search-field input::placeholder {
+  color:var(--muted);
+  opacity:1;
+}
+body.project-home-active .project-directory-search-field:focus-within {
+  border-color:var(--cx);
+  box-shadow:var(--glow-cx);
+}
+body.project-home-active .project-directory-sort {
+  flex:0 0 172px;
+  width:172px;
+}
+body.project-home-active .project-directory-sort select {
+  display:block;
+  width:100%;
+  min-height:50px;
+  margin:0;
+  padding:10px 28px 10px 13px;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel);
+  color:var(--txt);
+  box-shadow:var(--shadow-tight);
+  font:600 15px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-directory-sort select:focus-visible {
+  outline:2px solid var(--cx);
+  outline-offset:2px;
+}
+body.project-home-active .project-directory-list {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+body.project-home-active .project-directory-card {
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:99px;
+  padding:12px 15px;
+  border:1px solid var(--line-strong);
+  border-left:3px solid var(--cx);
+  border-radius:0;
+  background:var(--panel);
+  color:var(--txt);
+  box-shadow:var(--shadow-tight);
+  clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+  transition:background 140ms ease,border-color 140ms ease,box-shadow 140ms ease;
+}
+body.project-home-active .project-directory-card:hover,
+body.project-home-active .project-directory-card:focus-within {
+  background:var(--panel-cx);
+  border-color:var(--cx);
+  box-shadow:var(--shadow-soft);
+}
+body.project-home-active .project-directory-open {
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  min-width:0;
+  gap:15px;
+  padding:7px 3px;
+  border:0;
+  background:transparent;
+  color:var(--txt);
+  text-align:left;
+  cursor:pointer;
+}
+body.project-home-active .project-directory-icon {
+  display:grid;
+  place-items:center;
+  flex:0 0 52px;
+  width:52px;
+  height:52px;
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  background:var(--panel-cx);
+  color:var(--cx);
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+}
+body.project-home-active .project-directory-icon svg {
+  width:25px;
+  height:25px;
+}
+body.project-home-active .project-directory-copy {
+  min-width:0;
+  gap:6px;
+}
+body.project-home-active .project-directory-copy strong {
+  color:var(--txt);
+  font:700 19px/1.3 var(--coreui-font,"Rajdhani"),sans-serif;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+body.project-home-active .project-directory-copy small {
+  color:var(--muted);
+  font:500 13px/1.35 "Share Tech Mono",monospace;
+}
+body.project-home-active .project-directory-options,
+body.project-home-active .project-directory-pin {
+  display:grid;
+  place-items:center;
+  flex:0 0 44px;
+  width:44px;
+  min-width:44px;
+  height:44px;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  border:1px solid transparent;
+  border-radius:0;
+  background:transparent;
+  color:var(--cx);
+  cursor:pointer;
+  font:700 24px/1 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+body.project-home-active .project-directory-pin {color:var(--amb);}
+body.project-home-active .project-directory-options:hover,
+body.project-home-active .project-directory-pin:hover,
+body.project-home-active .project-directory-options:focus-visible,
+body.project-home-active .project-directory-pin:focus-visible {
+  color:var(--cx);
+  background:var(--panel-cx);
+  border-color:var(--line-strong);
+  outline:2px solid var(--line-strong);
+  outline-offset:-2px;
+}
+body.project-home-active .project-directory-drawer:hover,
+body.project-home-active #projectDirectoryCreate:hover {
+  filter:brightness(1.08);
+}
+body.project-home-active .project-directory button:focus-visible {
+  outline:2px solid var(--amb);
+  outline-offset:2px;
+}
+body.project-home-active .project-directory .project-empty {
+  border:1px dashed var(--line-strong);
+  border-left:2px solid var(--cx);
+  border-radius:0;
+  background:var(--panel-soft);
+  color:var(--muted);
+  padding:28px 20px;
+}
+body.project-home-active .project-home-description {
+  color:var(--muted);
+}
+.project-details-advanced {
+  border-color:var(--line-strong);
+}
+.project-details-advanced summary {
+  color:var(--cx);
+  font:650 15px/1.4 var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal-secondary {
+  border:1px solid var(--line-strong);
+  border-radius:0;
+  clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,0 100%);
+  background:var(--panel);
+  color:var(--txt);
+  font:650 16px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.project-modal-secondary:hover {background:var(--panel-cx);}
+.project-floating-menu.project-folder-menu {
+  border-top:2px solid var(--cx);
+  background:var(--panel-solid)!important;
+  color:var(--txt);
+}
+/* The project action sheet dims the screen only on narrow touch layouts.
+   Desktop three-dot menus remain anchored, without a full-page overlay. */
+.project-menu-backdrop {z-index:1090;}
+@media(min-width:621px) {
+  .project-menu-backdrop {display:none!important;}
+}
+@media(max-width:620px) {
+  body.project-home-active #coreuiProjectDirectory .project-home-content {
+    padding:15px 16px max(44px,env(safe-area-inset-bottom,0px));
+  }
+  body.project-home-active .project-directory-topbar {margin-bottom:26px;}
+  body.project-home-active .project-directory-header {
+    align-items:center;
+    gap:12px;
+    margin-bottom:23px;
+    padding-bottom:15px;
+  }
+  body.project-home-active .project-directory-header h1 {
+    font-size:clamp(27px,8vw,36px);
+  }
+  body.project-home-active .project-directory-heading p {margin-top:5px;font-size:11px;}
+  body.project-home-active #projectDirectoryCreate {
+    min-height:44px;
+    gap:5px;
+    padding:9px 10px;
+    font-size:14px;
+  }
+  body.project-home-active #projectDirectoryCreate svg {width:17px;height:17px;}
+  body.project-home-active .project-directory-tools {gap:10px;margin-bottom:18px;}
+  body.project-home-active .project-directory-sort {flex:0 0 112px;width:112px;}
+  body.project-home-active .project-directory-sort select {padding-left:9px;padding-right:18px;font-size:14px;}
+  body.project-home-active .project-directory-card {min-height:85px;padding:9px 7px;gap:3px;}
+  body.project-home-active .project-directory-open {gap:9px;padding:5px 2px;}
+  body.project-home-active .project-directory-icon {flex-basis:44px;width:44px;height:44px;}
+  body.project-home-active .project-directory-copy strong {font-size:16px;}
+  body.project-home-active .project-directory-copy small {font-size:11px;}
+  body.project-home-active .project-directory-options,
+  body.project-home-active .project-directory-pin {flex-basis:40px;width:40px;min-width:40px;}
+}
+@media(max-width:360px) {
+  body.project-home-active .project-directory-header {align-items:flex-start;}
+  body.project-home-active #projectDirectoryCreate span {max-width:68px;white-space:normal;line-height:1.05;}
+  body.project-home-active .project-directory-options,
+  body.project-home-active .project-directory-pin {flex-basis:36px;width:36px;min-width:36px;}
+}
+@media(prefers-reduced-motion:reduce) {
+  body.project-home-active .project-directory-card {transition:none;}
+}

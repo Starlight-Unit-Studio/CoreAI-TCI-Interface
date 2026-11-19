@@ -66,7 +66,7 @@
       floatingBackdrop.addEventListener('click',dismissFloatingMenu);
       document.body.appendChild(floatingBackdrop);
     }
-    floatingBackdrop.hidden=kind!=='project';
+    floatingBackdrop.hidden=kind!=='project' || !window.matchMedia('(max-width:620px)').matches;
     floatingMenu.replaceChildren();
     if(kind==='project'){
       floatingMenu.appendChild(action('Schließen',dismissFloatingMenu,'project-menu-close'));
@@ -89,6 +89,7 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape')dismissFloatingMenu();});
   function updateFloatingMenuPosition() {
     if (!floatingAnchor || !floatingMenu || floatingMenu.hidden) return;
+    if (floatingBackdrop) floatingBackdrop.hidden=!floatingMenu.classList.contains('project-folder-menu') || !window.matchMedia('(max-width:620px)').matches;
     if (!floatingAnchor.isConnected) {dismissFloatingMenu();return;}
     var b=floatingAnchor.getBoundingClientRect();
     if (b.bottom < 0 || b.top > window.innerHeight ||
@@ -350,6 +351,12 @@
     var term=String($('projectDirectorySearch').value||'').trim().toLocaleLowerCase();
     var order=$('projectDirectorySort').value;
     var entries=projects.filter(function(p){return String(p.name||'').toLocaleLowerCase().includes(term);});
+    var count=$('projectDirectoryCount');
+    if(count){
+      count.textContent=term
+        ? entries.length+' von '+projects.length+' '+(projects.length===1?'Projekt':'Projekten')
+        : projects.length+' '+(projects.length===1?'Projekt':'Projekte');
+    }
     entries.sort(function(a,b){
       if(Boolean(a.pinned)!==Boolean(b.pinned))return a.pinned?-1:1;
       if(order==='name')return String(a.name).localeCompare(String(b.name),'de');
@@ -440,9 +447,7 @@
   }
   function projectActions(p) {
     return [
-      {label:'Projekt öffnen',run:function(){openProject(p.id);}},
       {label:'Details bearbeiten',run:function(){openModal('settings',p.id);}},
-      {label:'Projekteinstellungen',run:function(){openModal('settings',p.id);}},
       {label:'Projekt teilen',run:function(){openModal('share',p.id);}},
       {label:p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen',run:function(){runAction('pin',p.id);}},
       {label:'Projekt löschen',danger:true,run:function(){deleteProject(p.id);}}
