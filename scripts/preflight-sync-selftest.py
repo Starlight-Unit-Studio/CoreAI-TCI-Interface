@@ -83,6 +83,25 @@ def verify(root: Path) -> list[str]:
                 if missing:
                     failures.append(f"{rel}: SQLite project fixture {index} missing {', '.join(missing)}")
 
+    # Autonomous projects must not finish at Markdown just because a later
+    # turn contains only "Continue". Validate BOTH dispatch routes and the
+    # account-owned original request lookup on every source change.
+    native = (root / "api/console_native_tools.php").read_text(encoding="utf-8")
+    origin = (root / "api/console_plan_store.php").read_text(encoding="utf-8")
+    intent = (root / "api/console_build_intent.php").read_text(encoding="utf-8")
+    if "coreui_build_intent_select_for_plan(" not in native:
+        failures.append("api/console_native_tools.php: plan-to-build handoff missing")
+    if "in_array($kind,['PLAN_SAVE','PLAN_APPEND'],true)\n          && $planGenerate" in native:
+        failures.append("api/console_native_tools.php: PLAN_CONTINUE is excluded from approved build")
+    if "function coreui_plan_origin_request(" not in origin:
+        failures.append("api/console_plan_store.php: saved original intent recovery missing")
+    if "function coreui_build_intent_select_for_plan(" not in intent:
+        failures.append("api/console_build_intent.php: owner-bound plan intent routing missing")
+    for path in ("api/chat.php", "api/console_stream.php"):
+        body = (root / path).read_text(encoding="utf-8")
+        if "coreui_build_intent_select_for_plan(" not in body:
+            failures.append(f"{path}: returning completed plan must retain original authorization")
+
     for rel in ("scripts/model-project-intent-selftest.php",
                 "scripts/contextual-project-selftest.php"):
         text = (root / rel).read_text(encoding="utf-8")
