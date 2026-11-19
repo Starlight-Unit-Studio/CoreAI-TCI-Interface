@@ -169,6 +169,38 @@
       }
     }
     list.scrollTop = scrollTop;
+    renderPinnedProjects();
+  }
+
+  // Project pins are real shortcuts in the shared Angeheftet sidebar section,
+  // not a second expandable copy of the project directory.
+  function renderPinnedProjects() {
+    var list = $('sidebarPinnedProjects');
+    if (!list) return;
+    var rows = projects.filter(function(p) { return !!p.pinned; })
+      .sort(function(a,b) { return String(a.name||'').localeCompare(String(b.name||''),'de'); });
+    list.replaceChildren();
+    rows.forEach(function(p) {
+      var row = el('div','project-nav-row project-pinned-row');
+      var open = action('',function() {openProject(p.id);},'project-nav-open project-pinned-open');
+      open.setAttribute('aria-label','Projekt öffnen: '+p.name);
+      open.title = p.name;
+      var icon = el('span','project-nav-folder');
+      icon.innerHTML = ICON_FOLDER_CLOSED;
+      open.appendChild(icon);
+      open.appendChild(label(p.name,'project-nav-label'));
+      row.appendChild(open);
+      var unpin = action('★',function(e) {
+        e.stopPropagation();
+        runAction('pin',p.id);
+      },'project-pinned-unpin');
+      unpin.setAttribute('aria-label','Projekt nicht mehr anpinnen: '+p.name);
+      unpin.title = 'Projekt nicht mehr anpinnen';
+      row.appendChild(unpin);
+      list.appendChild(row);
+    });
+    var app=chatApp();
+    if (app && typeof app.syncPinnedSection==='function') app.syncPinnedSection();
   }
   function refreshLocked() {
     return getJson(api+'/console_sessions.php?action=chat_locked_list').then(function(d){
