@@ -57,6 +57,23 @@ function coreui_pftools_project(PDO $pdo, int $uid, string $sessionId): string {
   return !empty($scope['available']) ? (string)($scope['id'] ?? '') : '';
 }
 
+/**
+ * Whether this owned project chat already has saved source files.
+ * null means the project exists but storage could not be checked; callers
+ * must NOT fall back to rebuilding from an old plan in that situation.
+ */
+function coreui_pftools_has_saved_sources(PDO $pdo, int $uid, string $sessionId): ?bool {
+  $projectId = coreui_pftools_project($pdo,$uid,$sessionId);
+  if ($projectId === '') return false;
+  try {
+    $list = coreui_pfiles_list($pdo,$uid,$projectId);
+    return (int)($list['count'] ?? 0) > 0;
+  } catch (Throwable $e) {
+    error_log('[CoreAI] Existing project source inventory unavailable: '.get_class($e));
+    return null;
+  }
+}
+
 /** [DATEI: pfad] (pure): the path, or null. */
 function coreui_pftools_extract_read(string $reply): ?string {
   if (preg_match('~\[\s*DATEI\s*:\s*([^\]\r\n]{1,200}?)\s*\]~u', $reply, $m) !== 1) return null;
