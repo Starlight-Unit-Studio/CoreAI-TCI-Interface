@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // 0.8.6
+Date: 2026-11-19
+Base: main 0.8.5
+
+Operator report
+- An established project/website produced good results, but a later project work turn ended after two malformed tool responses.
+- Work events showed tool_text_around_block with model ember-coreui:latest; no verified file-write event appeared.
+
+Verified source diagnosis
+- api/project_file_tools.php and api/project_files_store.php permit creating and replacing files inside an authorized existing project; successful changes create retained revisions.
+- coreui_native_tool_parse() correctly rejects ambiguous markup-wrapped tool calls. No proof of a blanket existing-project write lock.
+- coreui_native_tool_repair_prompt() previously offered PLAN_SAVE as the default correction example even when the reply contained one identifiable PROJECT_BUILD or PLAN_APPEND. This can redirect the model from finishing an ongoing project to drafting yet another plan.
+- console_stream.php still invoked that correction with a fixed 180-second timeout instead of the configured model timeout; the synchronous correction also re-augmented skill context.
+
+Repair
+- A single matching native tool marker gets a corresponding correction template, including PROJECT_BUILD and PLAN_APPEND. This only influences the next model response; execution still requires the full parser and the original permission/ownership checks.
+- Mixed/mismatched tool markers, fenced illustrations, bad output and unverified provider results remain blocked.
+- SSE format repair uses the model's configured timeout and disables unnecessary thinking/skill augmentation.
+- Synchronous format repair also avoids redundant skill/think overhead.
+- Added explicit tests for Markdown around a build block, safe target-specific correction, no mixed/fenced recovery and proper CPU timeout.
+- Extended mandatory preflight-sync checks for both execution paths.
+
+Verification
+- GitHub CI on the final SHA required; passing CI cannot prove live server behavior or production account permissions.
+- To validate runtime: in a real authorized project chat, have Mara read an existing file, create one new .html/.css/.js text file, then edit it and confirm the revision appears in Dateien. Examine work events if model again emits tool_text_around_block.
