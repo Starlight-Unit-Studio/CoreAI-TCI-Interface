@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.8.3 - 19.11.2026
+
+- **Plan-to-build handoff:** Clarified that the Markdown planner is only a subtask. After verified plan completion, the independent model-controlled build selector recognizes explicit requests such as "Kannst du eine Homepage erstellen?" without requiring another user Continue. No automatic build is authorized from plan prose alone.
+- **Model recovery:** If the planner returns commentary or an incorrectly formatted marker instead of inert Markdown, CoreAI makes one safe corrective model call within the same turn. The plan remains versioned and no code is executed until the normal guard approves it.
+- **CPU model timeouts:** Both synchronous and streaming plan continuations now use the same configured model timeout policy as the main request, replacing the hard-coded 180 seconds. Focused plan calls disable unnecessary reasoning and SKILL expansion.
+- **Accurate stop reasons:** Interrupted plans now explain the actual failure category in the chat and the public work log, rather than only saying the plan could not be finished.
+- **Preflight project versions:** Repaired the omitted `project-vcs` SQLite fixture for the `description` migration and made positional inserts schema-explicit. Both Preflights now expose PHP stderr and exit status for this test. Added project-vcs to the schema drift guard and CI regression suites.
+- **Coverage:** Added an end-to-end scripted polite-homepage request through draft correction, verified plan, explicit build classification and actual writer invocation.
+- **Production validation:** CI cannot reproduce the installed server's Ollama performance, worker lifetime, or host storage permissions; verify after merge.
+
 ## 0.8.2 - 19.11.2026
 
 - **Autonomous planning continuation:** Removed the four-call and 240-second production cutoffs. Mara continues a server-owned project-planning turn while each result adds verified, versioned Markdown, until it is explicitly complete or a genuine failure/cancellation prevents progress. Finite rounds remain available for deterministic tests.
