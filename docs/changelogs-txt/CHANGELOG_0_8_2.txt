@@ -1,0 +1,16 @@
+COREAI: TCI INTERFACE // 0.8.2
+Date: 2026-11-19
+Base: main 0.8.1
+
+Autonomous project planning
+- A live server-owned plan runs in serial, checkpointing every verified section.
+- Removes the arbitrary four-model-call / 240-second cap.
+- The model must explicitly complete a plan before project build starts.
+- Cancellation, invalid or repeated sections, storage errors and model errors remain real stop reasons.
+- Adds a regression requiring more than four checkpoints with no user Continue.
+
+Preflight
+- Docker and native Preflight now print the real exit status on silent PHP failures.
+- Nine reported project/skill tests run with stderr enabled.
+- A new GitHub workflow runs each affected offline test independently, without masking its errors.
+- No claim that the nine actual host failures are already resolved; database/runtime diagnostics are still required.
