@@ -24,3 +24,11 @@ Security and limitations
 - Do not claim the host Preflight is fixed without rerunning it against the actual installation.
 - Check GitHub Actions at the final head SHA, then real Docker/native Preflight and CPU-only Ollama after deployment.
 - Next merge release is 0.8.3.
+
+Follow-up diagnosis and verified repair
+- CI reproduced eight failures on 0.8.2 before fixture repair: several PHP fatal errors at coreui_project_require (project_migration_required), chat branch lost project_id, and two skill access assertions failed.
+- Root cause was old SQLite test CREATE TABLE stu_console_projects declarations without the new description column required by api/console_project_store.php.
+- Fixed eight test fixtures and their positional project INSERT statements, keeping production schema checks unchanged.
+- Added a preflight-sync column comparison so later schema changes cannot silently invalidate the same fixture set again.
+- Removed the 600-second hard stop from the project agent loop. Only real cancellation and detected lack of progress remain.
+- CI later passed the nine targeted offline PHP selftests; this does NOT verify the operator's host MariaDB or actual project sandbox process environment.
