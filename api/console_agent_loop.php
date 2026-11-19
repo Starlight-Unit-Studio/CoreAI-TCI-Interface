@@ -68,6 +68,26 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
   return null;
 }
 
+/**
+ * A narrow read-only recovery for a Core that *promises* to read a project
+ * file in its answer instead of emitting a DATEI marker. Never infer edits,
+ * commands, servers or browsing from prose. Access still goes through the
+ * existing account/project scoped tool dispatcher and path validator.
+ */
+function coreui_agent_recover_promised_read(string $reply, array $allowed): ?array {
+  if (!in_array('pfile_read', $allowed, true) || strlen($reply) > 800
+      || str_contains($reply, str_repeat(chr(96),3)) || str_contains($reply, '[DATEI:')) return null;
+  if (preg_match(
+    '~\A\s*Ich\s+(?:lese|oeffne|öffne)\s+'
+    . '(?:(?:mir|jetzt|gleich|zuerst|nun|die|das|den|Datei|Projektdatei|Code|kurz|als|Nächstes)\s+){0,8}'
+    . '[\x60]?([A-Za-z0-9][A-Za-z0-9_./-]{0,170}\.[A-Za-z0-9]{1,10})[\x60]?(?=\s|[.,;!?]|\z)~iu',
+    $reply, $m) !== 1) return null;
+  $path = (string)$m[1];
+  if (str_contains($path,'..') || str_contains($path,'//') || str_starts_with($path,'/')
+      || preg_match('~\Ahttps?~i', $path) === 1) return null;
+  return ['tool'=>'pfile_read','input'=>$path,'recovered_read_intent'=>true];
+}
+
 /** Only the explicit + menu selection authorizes Playwright for this turn. */
 function coreui_agent_explicit_browse(?array $intent, bool $enabled): bool {
   return $enabled && is_array($intent) && ($intent['tool'] ?? '') === 'browse';
@@ -413,6 +433,10 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     // project command after an explicit cancellation.
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
     if (microtime(true) >= $deadline) { $stopReason = 'time_budget'; break; }
+    if (!empty($tool['recovered_read_intent'])) {
+      $record('tool','info','Angekündigte Projektdatei wird tatsächlich gelesen',
+        ['reason'=>'read_intent_without_marker','step'=>$used + 1]);
+    }
     $title = coreui_agent_step_title($tool, $used + 1, $maxSteps);
     $publicNote = $projectWorkflow ? coreui_agent_public_progress_note($out, $tool) : null;
     // A meaningful, safe model-authored public update takes priority over the
@@ -491,6 +515,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
     if ($out === '') break;
     $tool = $projectWorkflow || $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
+    if ($tool === null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS)) {
+      $tool = coreui_agent_recover_promised_read($out, $allowed);
+    }
     if ($tool !== null && $route !== null) $tool = $route($tool);
   }
   // Never show a requested but unexecuted tool as proof of success.

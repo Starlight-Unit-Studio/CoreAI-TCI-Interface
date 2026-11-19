@@ -550,6 +550,24 @@ try {
   console_stream_progress($thinkingEnabled, 'validate');
   $reply = ember_sanitize_public_reply($contentAll, $thinkingAll);
 
+  // The fast SSE stream must pass project file, process and version markers
+  // to the SAME scoped tool dispatcher as the synchronous reply path.
+  // Otherwise DATEI requests (or an explicit promise to read one file) were
+  // mistaken for completed prose and silently ended the project run.
+  $projectToolAllowed = [];
+  if (!$isVisionTurn && !$fileTaskHandled && !$preselectedBuildHandled
+      && $composerIntentStream === null && $sessionId !== '') {
+    $projectToolAllowed = array_values(array_intersect(
+      ember_agent_allowed_tools((int)$uid,$sessionId,false),
+      array_merge(['pfile_read','pfile_edit','pfile_write','prun',
+        'pvcs_commit','pvcs_branch','pvcs_merge'],COREUI_PFTOOLS_PROC_KINDS)));
+  }
+  $projectToolPending = static function(string $text) use ($projectToolAllowed): bool {
+    if ($projectToolAllowed === []) return false;
+    return coreui_agent_next_tool($text,$projectToolAllowed) !== null
+      || coreui_agent_recover_promised_read($text,$projectToolAllowed) !== null;
+  };
+
   // Tool-Marker ([WEB:]/[BROWSE:]/[PY]) werden weiterhin vom gemeinsamen
   // Werkzeugpfad verarbeitet. Ein reines Tokenlimit setzt dagegen gezielt am
   // vorhandenen Antworttext fort und startet nicht mehr die ganze Anfrage neu.
@@ -559,6 +577,7 @@ try {
             || coreui_extract_archive_marker($reply) !== null
             || coreui_skills_extract_marker($reply) !== null
             || ember_image_marker_in($reply, (int)$uid)
+            || $projectToolPending($reply)
             || ($composerIntentStream !== null && !$isVisionTurn && !$fileTaskHandled);
 
   if (!$isVisionTurn && !$fileTaskHandled
@@ -588,7 +607,8 @@ try {
               || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
             || coreui_extract_archive_marker($reply) !== null
             || coreui_skills_extract_marker($reply) !== null
-            || ember_image_marker_in($reply, (int)$uid);
+            || ember_image_marker_in($reply, (int)$uid)
+            || $projectToolPending($reply);
   }
 
   // A plan with an unfinished marker may be stored as an explicitly marked
