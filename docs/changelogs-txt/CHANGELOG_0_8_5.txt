@@ -1,0 +1,25 @@
+COREAI: TCI INTERFACE // 0.8.5
+Date: 2026-11-19
+Base: main 0.8.4
+
+Operator complaint
+- The previous sidebar Project-button redesign had effectively removed the familiar Angeheftet list. The user requires Angeheftet directly below Projekte.
+
+Root causes
+- app.html still placed the pinned section BEFORE the single Projects button.
+- console-app.js hid the section when it contained no standalone pinned chat and excluded project-bound chats from pinned shortcuts.
+- A project's saved pinned flag was only used to order the project directory, not shown in sidebar.
+- Existing sidebar regression test encoded the wrong ordering.
+
+Changes
+- New persistent sidebar order: Projekte -> Angeheftet -> Letzte; locked chats remain a separate protected entry.
+- Pinned project links and chat links render in one section, using existing server-saved project/chat pin state and open/unpin actions.
+- Project-bound pinned chats appear as shortcuts; general recent chats still exclude project-bound chats to avoid duplication.
+- Pinned section stays discoverable with a small empty state and a combined project/chat count, even in archive view.
+- The existing collapse state, keyboard/focus labels and mobile touch targets are reused.
+- Node sidebar regression test exercises rendering, count, actual project open and unpin actions. Preflight's Python sync guard checks placement and two lists even if Node is unavailable.
+- No database migration, new project store, ownership bypass or independent project tree.
+
+Verification
+- CI on the final PR SHA must pass, including source fingerprints.
+- Real mobile and desktop theme/sidebar behavior and updating the installed CoreAI server require follow-up validation.
