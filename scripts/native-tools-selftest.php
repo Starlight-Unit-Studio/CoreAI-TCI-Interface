@@ -323,13 +323,19 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
   $pdo = new NativePlanTestPDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $pdo->exec("CREATE TABLE stu_chat_messages (
     id INTEGER PRIMARY KEY,user_id INTEGER,session_id TEXT,channel TEXT,deleted_at TEXT,
-    reply_to_id INTEGER)");
+    reply_to_id INTEGER,message TEXT)");
   $pdo->exec("CREATE TABLE stu_console_project_plans (
     id TEXT PRIMARY KEY,user_id INTEGER,session_id TEXT,source_turn_id INTEGER,
     response_message_id INTEGER,version INTEGER,title TEXT,markdown TEXT,byte_size INTEGER,
     sha256 TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
   $sid='cs_1234567890abcdef';
   $pdo->exec("INSERT INTO stu_chat_messages (id,user_id,session_id,channel) VALUES (10,1,'".$sid."','console'),(11,1,'".$sid."','console'),(12,2,'cs_other_12345678','console')");
+  // These are authenticated operator messages, not fabricated plan text.
+  // Explicit homepage creation on turn 11 must survive following plan versions.
+  $pdo->exec("UPDATE stu_chat_messages SET message='Nur einen Projektplan erstellen'
+    WHERE id=10");
+  $pdo->exec("UPDATE stu_chat_messages SET message='kannst du eine homepage erstellen die modern und professionell aussieht'
+    WHERE id=11");
   $v1=coreui_plan_save($pdo,1,$sid,10,$markdown);
   native_assert($v1['version']===1 && $v1['markdown']===$markdown,'First version saved unchanged');
   $v2=coreui_plan_save($pdo,1,$sid,11,"## Nachtrag\nNeue Funktion",true);
