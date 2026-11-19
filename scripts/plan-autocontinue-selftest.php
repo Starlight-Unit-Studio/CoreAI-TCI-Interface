@@ -174,6 +174,24 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     && !coreui_plan_is_draft_markdown(coreui_plan_latest($pdo,1,$sid)['markdown']),
     'Existing private drafts must be resumable by Mara using PLAN_CONTINUE');
 
+  // The production call has no arbitrary four-round/240-second ceiling.
+  // A long but productive plan must finish in the same server-owned turn.
+  $longDraft=coreui_plan_save($pdo,1,$sid,11,$draft);
+  $longCalls=0;
+  $longChunks=[];
+  for ($n=1; $n<=5; $n++) {
+    $longChunks[]=['text'=>"## Weiterer Abschnitt $n\n- Gepruefte Aufgabe $n\n- Verlinkung und responsives Verhalten fuer Bereich $n.",'ok'=>true];
+  }
+  $longChunks[]=['text'=>$last,'ok'=>true];
+  $longResult=coreui_plan_autorun($pdo,1,$sid,11,$longDraft,
+    static function (string $prompt) use (&$longCalls,&$longChunks): array {
+      $longCalls++;
+      return array_shift($longChunks) ?? ['text'=>'','ok'=>false];
+    },'Homepage mit mehreren Abschnitten');
+  plan_auto_assert($longResult['complete'] && $longResult['segments']===6
+    && $longCalls===6 && !coreui_plan_is_draft_markdown($longResult['saved']['markdown']),
+    'Production planning must advance through six genuine checkpoints without asking for Continue');
+
   $denied = coreui_plan_autorun($pdo,2,$sid,10,$v1,
     static fn(string $prompt): string => $segment,'Homepage',1);
   plan_auto_assert($denied['segments']===0
@@ -182,4 +200,4 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
 } else {
   fwrite(STDOUT,"Autoplan SQLite fixture SKIP (pdo_sqlite missing)\n");
 }
-fwrite(STDOUT,"Autonomous Markdown planning selftest OK: bounded segments, private versions, finished/unfinished state and resume\n");
+fwrite(STDOUT,"Autonomous Markdown planning selftest OK: serial long plans, private checkpoints, finished/unfinished state and resume\n");
