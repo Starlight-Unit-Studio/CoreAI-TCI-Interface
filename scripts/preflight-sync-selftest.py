@@ -60,7 +60,7 @@ def verify(root: Path) -> list[str]:
         projects_index < pinned_index < recent_index
     ):
         failures.append("app.html: required Projekte / Angeheftet / Letzte sidebar order missing")
-    if re.search(r'<section class="pinned-zone"[^>]*\\bhidden\\b', page):
+    if re.search(r'<section class="pinned-zone"[^>]*\bhidden\b', page):
         failures.append("app.html: Angeheftet section must not be permanently hidden")
     for item in ('id="sidebarPinnedProjects"', 'id="pinnedSessionList"',
                  'id="sidebarPinnedEmpty"', 'id="sidebarPinnedToggle"'):
