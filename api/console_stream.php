@@ -492,7 +492,7 @@ try {
     if (($generationRequest === null || in_array($generationMode, ['regenerate','edit'], true))
         && $attachmentIds === []
         && ember_py_enabled() && !ember_agent_cancel_requested()) {
-      $choice = coreui_build_intent_select(
+      $choice = coreui_build_intent_select_for_plan(
         $pdo, (int)$uid, $sessionId, $afterId, $message,
         static function (string $decisionPrompt) use ($model): array {
           $decision = console_stream_ollama($model, '', $decisionPrompt,
