@@ -57,8 +57,21 @@ function coreui_pftools_project(PDO $pdo, int $uid, string $sessionId): string {
   if (empty($scope['available'])) return '';
   if (($scope['id'] ?? '') !== '') return (string)$scope['id'];
   // A normal chat can own source files too. It is not shown in Projects.
-  return function_exists('coreui_chat_workspace_id')
-    ? coreui_chat_workspace_id($pdo,$uid,$sessionId) : '';
+  if (!function_exists('coreui_chat_workspace_id')) return '';
+  $id=coreui_chat_workspace_id($pdo,$uid,$sessionId);
+  // Chats saved before migration 056 should gain the same tools automatically
+  // on their next authenticated work turn, with no manual project creation.
+  if ($id==='' && function_exists('coreui_chat_workspace_ready')
+      && coreui_chat_workspace_ready($pdo)
+      && function_exists('coreui_chat_workspace_ensure')) {
+    try {
+      $workspace=coreui_chat_workspace_ensure($pdo,$uid,$sessionId);
+      $id=(string)($workspace['project_id'] ?? '');
+    } catch (Throwable $e) {
+      error_log('[CoreAI] Chat workspace unavailable: '.get_class($e));
+    }
+  }
+  return $id;
 }
 
 /**
