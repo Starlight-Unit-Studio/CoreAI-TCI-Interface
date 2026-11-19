@@ -5141,6 +5141,13 @@ function ember_build_chat_prompt(
   $projectIsolated = (($projectScope['mode'] ?? 'none') === 'isolated'
     && ($projectScope['id'] ?? '') !== '');
   $GLOBALS['COREUI_PROJECT_ISOLATED'] = $projectIsolated;
+  // Once an account-owned project contains real files, the CURRENT file
+  // state wins over historical Markdown plans and full-site ZIP builders.
+  // An unavailable file inventory also disables unsafe auto-build hints.
+  $existingProjectSourcesState = ($channel === 'console'
+      && ($projectScope['id'] ?? '') !== '' && $consoleSessionId !== null)
+    ? coreui_pftools_has_saved_sources($pdo,$uid,(string)$consoleSessionId)
+    : false;
   // 0.7.0: the person's own words of this turn decide whether their reference photos apply.
   $GLOBALS['COREUI_TURN_USER_TEXT'] = $channel === 'console' ? (string)$userMsg : '';
   // #113: the KI-Profil window belongs to the private console; the global
@@ -5199,7 +5206,8 @@ function ember_build_chat_prompt(
   $sys = ember_persona_system_for(ember_model());
 
   $nativeProjects = $channel === 'console' && $imageUrl === null
-    && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
+    && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+    && $existingProjectSourcesState === false;
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
   // 0.5.77: in the private chat Mara works on her own over several steps.
@@ -5209,7 +5217,8 @@ function ember_build_chat_prompt(
   }
   $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
-  $pyHint = (ember_py_enabled() && $imageUrl === null)
+  $pyHint = (ember_py_enabled() && $imageUrl === null
+      && $existingProjectSourcesState === false)
     ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $profile['compact'], $consoleUid);
   $intentHint = ember_composer_intent_hint($composerIntent, $imageUrl, $consoleUid);
@@ -5254,7 +5263,8 @@ function ember_build_chat_prompt(
   $projectKnowledgeBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_knowledge_block($pdo,$uid,(string)$projectScope['id'],
         $cleanLoreQuestion,$profile['compact'] ? 1500 : 3600) : '';
-  $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
+  $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null
+      && $existingProjectSourcesState === false)
     ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId,$profile['plan']) : '';
   $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$projectPromptBlock}{$projectChatBlock}{$projectKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
@@ -5732,6 +5742,13 @@ function ember_generate_reply(
   $projectIsolated = (($projectScope['mode'] ?? 'none') === 'isolated'
     && ($projectScope['id'] ?? '') !== '');
   $GLOBALS['COREUI_PROJECT_ISOLATED'] = $projectIsolated;
+  // Once an account-owned project contains real files, the CURRENT file
+  // state wins over historical Markdown plans and full-site ZIP builders.
+  // An unavailable file inventory also disables unsafe auto-build hints.
+  $existingProjectSourcesState = ($channel === 'console'
+      && ($projectScope['id'] ?? '') !== '' && $consoleSessionId !== null)
+    ? coreui_pftools_has_saved_sources($pdo,$uid,(string)$consoleSessionId)
+    : false;
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
   $mem = (!$projectIsolated && $memLimit > 0) ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $promptProfile['memory']) : '';
 
@@ -5781,7 +5798,8 @@ function ember_generate_reply(
     ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // The synchronous prompt has no separate tool block, so the Python hint
   // itself names the checked project builder for small local models.
-  $pyHint = (ember_py_enabled() && $imageUrl === null)
+  $pyHint = (ember_py_enabled() && $imageUrl === null
+      && $existingProjectSourcesState === false)
     ? ember_py_capability_hint(ember_model(), $promptProfile['compact'],
         $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $promptProfile['compact'], $consoleUid);
