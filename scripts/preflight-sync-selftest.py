@@ -20,6 +20,7 @@ REQUIRED_TESTS = (
     "scripts/plan-autocontinue-selftest.php",
     "scripts/agent-loop-selftest.php",
     "scripts/project-files-selftest.php",
+    "scripts/chat-workspace-selftest.php",
     "scripts/project-env-selftest.php",
 )
 RULE_FILES = ("AGENTS.md", "CLAUDE.md", "docs/VERSIONING_POLICY.md")
@@ -109,6 +110,35 @@ def verify(root: Path) -> list[str]:
         failures.append("js/coreui-projects.js: pinned projects must appear below Projekte")
     if ".sidebar-section-folded > .sidebar-pinned-project-list" not in nav_css:
         failures.append("css/coreui-sidebar-refresh.css: pinned projects must fold with pinned chats")
+    # Every normal chat may open the real development environment without
+    # becoming a visible Project. This guard runs even without Node.js.
+    app_html = (root / "app.html").read_text(encoding="utf-8")
+    modal_js = (root / "js/coreui-chat-dev.js").read_text(encoding="utf-8")
+    insights_js = (root / "js/coreui-insights.js").read_text(encoding="utf-8")
+    store_js = (root / "api/console_project_store.php").read_text(encoding="utf-8")
+    tool_js = (root / "api/project_file_tools.php").read_text(encoding="utf-8")
+    endpoint = (root / "api/console_sessions.php").read_text(encoding="utf-8")
+    migration = (root / "database/migrations/056_chat_workspaces.sql").read_text(encoding="utf-8")
+    for item in ('id="chatDevModal"', 'id="chatDevHost"', 'id="projectFilesPanel"'):
+        if app_html.count(item) != 1:
+            failures.append(f"app.html: missing or duplicated shared dev modal element {item}")
+    if ("host.appendChild(panel)" not in modal_js
+        or "marker.parentNode.insertBefore(panel,marker.nextSibling)" not in modal_js
+        or "app.ensureDevWorkspace()" not in modal_js):
+        failures.append("js/coreui-chat-dev.js: real editor/preview not reused for chat modal")
+    if "root.CoreAIChatDev.open(dev)" not in insights_js:
+        failures.append("js/coreui-insights.js: Entwicklung chat tab not connected")
+    if ("workspace_session_id IS NULL" not in store_js
+        or "coreui_chat_workspace_ensure(" not in store_js
+        or "ON DELETE CASCADE" not in migration):
+        failures.append("chat workspace: private backing store or deletion lifecycle missing")
+    if ("coreui_chat_workspace_id(" not in tool_js
+        or "In diesem Chat gibt es sie nicht" in tool_js):
+        failures.append("api/project_file_tools.php: ordinary chat remains blocked from developer tools")
+    if ("'workspace_ensure'" not in endpoint or "stu_require_csrf()" not in endpoint):
+        failures.append("api/console_sessions.php: workspace creation lacks authenticated CSRF endpoint")
+    if "workspace_ensure" not in (root / "js/console-app.js").read_text(encoding="utf-8"):
+        failures.append("js/console-app.js: authenticated workspace request missing")
     # A project schema change must also reach the SQLite fixtures run by both
     # host preflights. The missing description column in 0.8.1 made eight
     # independent checks fail before they could exercise their target.
