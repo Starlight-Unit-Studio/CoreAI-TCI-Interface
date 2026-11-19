@@ -113,6 +113,24 @@ def verify(root: Path) -> list[str]:
                 if missing:
                     failures.append(f"{rel}: SQLite project fixture {index} missing {', '.join(missing)}")
 
+    # A recoverable malformed PROJECT_BUILD/PLAN_APPEND reply must retain its
+    # intended tool during ONE corrective model call, not restart at PLAN_SAVE.
+    # Tool execution/permissions remain guarded by the native parser.
+    native_tools = (root / "api/console_native_tools.php").read_text(encoding="utf-8")
+    stream_code = (root / "api/console_stream.php").read_text(encoding="utf-8")
+    chat_code = (root / "api/chat.php").read_text(encoding="utf-8")
+    if "function coreui_native_tool_repair_example(" not in native_tools:
+        failures.append("api/console_native_tools.php: targeted same-tool repair missing")
+    if "'PROJECT_BUILD' =>" not in native_tools or (
+        "'PLAN_APPEND' =>" not in native_tools
+    ):
+        failures.append("api/console_native_tools.php: project build/append repair contracts missing")
+    if "false,180);" in stream_code:
+        failures.append("api/console_stream.php: tool correction still uses fixed 180-second CPU timeout")
+    if "false,null,false,false);" not in stream_code:
+        failures.append("api/console_stream.php: lean configured-timeout correction missing")
+    if "['__skills'=>'none'],null,false,false);" not in chat_code:
+        failures.append("api/chat.php: lean synchronous correction missing")
     # Autonomous projects must not finish at Markdown just because a later
     # turn contains only "Continue". Validate BOTH dispatch routes and the
     # account-owned original request lookup on every source change.
