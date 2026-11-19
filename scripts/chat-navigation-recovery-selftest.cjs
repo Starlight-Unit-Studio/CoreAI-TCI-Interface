@@ -18,6 +18,7 @@ const state = {
   thinkingPanelEl:null
 };
 let updates = 0, added = 0, outbound = 0;
+const streamStarts = [], fastPolls = [], generationPolls = [];
 const sandbox = {
   state,
   window:{CoreUIWorkEvents:{add:()=>{added++;}}},
@@ -29,8 +30,11 @@ const sandbox = {
   isActiveSession: id=>id===sessionId,
   updateActivePendingUi:()=>{updates++},
   fetch:()=>{outbound++;throw Error('Recovery must never issue a request')},
+  openStreamForReply:(...args)=>streamStarts.push(args),
+  startFastPoll:(...args)=>fastPolls.push(args),
+  startGenerationStatusPoll:(...args)=>generationPolls.push(args),
 };
-vm.runInNewContext(snippet+'\nthis.recover = recoverActiveRun;', sandbox);
+vm.runInNewContext(snippet+'\nthis.recover = recoverActiveRun; this.reconnect = reconnectRecoveredRun;', sandbox);
 const recover=sandbox.recover, ses={id:sessionId};
 const ev={id:1,kind:'run',state:'running',title:'Auftrag gestartet'};
 assert.equal(recover(ses,{active_run:validRun,active_work_events:[ev]}),true);
@@ -64,4 +68,39 @@ assert.equal(recover(ses,{active_run:{...validRun,id:'b'.repeat(32)}}),false,
 const regenerate = {...validRun,id:'c'.repeat(32),run_key:'d'.repeat(32)};
 assert.equal(recover(ses,{active_run:regenerate}),true,'A real regeneration of an answered turn still resumes');
 assert.equal(state.pendingBySession[sessionId],41);
-console.log('CoreUI active-run recovery: existing run restored, events merged, invalid state ignored, no duplicate inference');
+// A newly posted user message is already queued on the server. If the client
+// navigated away before EventSource started, restoration must CLAIM that exact
+// saved run, not wait forever for a response from an unstarted worker.
+delete state.pendingBySession[sessionId];
+state.messageCacheBySession[sessionId] = [{id:41,message:'Testfrage',character_id:'user'}];
+const queued = {...validRun,id:'d'.repeat(32),status:'queued'};
+assert.equal(recover(ses,{active_run:queued,active_work_events:[ev]}),true);
+sandbox.reconnect(ses,queued);
+assert.equal(streamStarts.length,1,'queued server run starts exactly once');
+assert.equal(streamStarts[0][1],41,'restored stream claims original turn');
+assert.equal(streamStarts[0][3],'user','restored stream keeps original character');
+assert.equal(recover(ses,{active_run:queued}),false,'already restored pending run is not restarted');
+assert.equal(streamStarts.length,1,'repeated history response does not duplicate inference');
+delete state.pendingBySession[sessionId];
+const running = {...validRun,id:'e'.repeat(32),status:'running'};
+assert.equal(recover(ses,{active_run:running}),true);
+sandbox.reconnect(ses,running);
+assert.equal(streamStarts.length,1,'running server work must never start a second stream');
+assert.equal(fastPolls.length,1,'running server work is observed via status polling');
+delete state.pendingBySession[sessionId];
+const queuedVariant={...queued,id:'f'.repeat(32),run_key:'c'.repeat(32)};
+assert.equal(recover(ses,{active_run:queuedVariant}),true);
+sandbox.reconnect(ses,queuedVariant);
+assert.equal(streamStarts.length,2,'queued regeneration claims its own request');
+assert.equal(streamStarts[1][2].id,queuedVariant.run_key,'the owned generation request ID is retained');
+delete state.pendingBySession[sessionId];
+sandbox.reconnect(ses,{...queuedVariant,status:'running'});
+assert.equal(generationPolls.length,1,'running regeneration polls its request, not an old answer');
+
+const chatSource = fs.readFileSync(path.join(__dirname,'../api/chat.php'),'utf8');
+const enqueue = chatSource.indexOf("coreui_agent_run_ensure($pdo, (int)$uid, (string)$consoleSessionId, (int)$id, 'base')");
+const acknowledge = chatSource.indexOf("$okPayload['ember_pending'] = true;", enqueue);
+assert(enqueue > 0 && acknowledge > enqueue,
+  'the console POST must store the queued owner-scoped run before acknowledging async work');
+
+console.log('CoreUI active-run recovery: queued job claimed once, running job observed, action scoped, events retained');

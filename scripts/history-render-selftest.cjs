@@ -84,4 +84,49 @@ assert.equal(pending.state.typingEl,pending.visible.childNodes[1]);
 
 assert(source.includes("problem.kind = 'render'"));
 assert(source.includes('if (!displayError && !prepend) scheduleHistoryRetry'));
-console.log('History-render safety: atomic commit, error rollback, state and no auto retry OK');
+// Normal stream completion should not destroy existing full-size uploaded
+// images, their scroll anchors or already expanded work panels.
+const partialStart = source.indexOf('  function replaceTypingWithSavedReply(sessionId, responseId) {');
+const partialEnd = source.indexOf('  function finalizeStream(',partialStart);
+assert(partialStart >= 0 && partialEnd > partialStart, 'incremental saved-reply renderer must exist');
+const preservedImage = {name:'uploaded-image',src:'image-from-owner'};
+const typingRow = {name:'live-work'};
+const host = {
+  childNodes:[preservedImage,typingRow],
+  replaceChild(fresh,prior) {
+    const index = this.childNodes.indexOf(prior);
+    assert(index >= 0,'only the live row may be replaced');
+    this.childNodes[index] = fresh;
+    prior.parentNode = null;
+    fresh.parentNode = this;
+  }
+};
+typingRow.parentNode = host;
+const finalState = {
+  typingEl:typingRow,thinkingPanelEl:{expanded:true},agentStopEl:{},
+  messageCacheBySession:{demo:[{id:99,is_ember:true,message:'Saved answer'}]}
+};
+let redraws=0, finalRefresh=0;
+const finalContext = {
+  messagesInner:host,state:finalState,
+  isActiveSession:id=>id==='demo',
+  isEmberMsg:record=>record.is_ember===true,
+  document:{createElement:()=>({
+    childNodes:[],appendChild(child){this.childNodes.push(child);this.firstChild=this.childNodes[0];}
+  })},
+  renderMessageRecord(record) {
+    finalContext.messagesInner.appendChild({name:'confirmed-reply',id:record.id});
+  },
+  renderHistory(){redraws++;},
+  chatFollow:{refresh(){finalRefresh++;}},
+  console
+};
+vm.runInNewContext(source.slice(partialStart,partialEnd)+'\nthis.replaceOne = replaceTypingWithSavedReply;',finalContext);
+assert.equal(finalContext.replaceOne('demo',99),true,'replace one saved reply');
+assert.equal(host.childNodes[0],preservedImage,'existing uploaded image must retain its DOM node');
+assert.equal(host.childNodes[1].id,99,'the pending row becomes the saved message');
+assert.equal(redraws,0,'normal reply completion must not rebuild image-heavy history');
+assert.equal(finalRefresh,1,'chat follower should update just once');
+assert.equal(finalState.typingEl,null,'live typing state is cleared');
+assert.equal(finalContext.replaceOne('demo',99),false,'a second final event cannot replace a row twice');
+console.log('History-render safety: atomic history, local saved-reply replacement, old images preserved OK');

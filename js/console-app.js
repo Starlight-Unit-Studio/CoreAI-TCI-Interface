@@ -1150,6 +1150,31 @@
     return !wasPending;
   }
 
+  // Reattach to the EXISTING server-owned job. Only an unclaimed, queued
+  // job needs its first SSE request; running jobs must only be observed.
+  // The lock + queued->running transition on the server prevent duplicate work.
+  function reconnectRecoveredRun(ses, run) {
+    if (!ses || !run || !isActiveSession(String(ses.id))) return;
+    var turnId = Number(run.turn_id) || 0;
+    if (turnId <= 0) return;
+    var runKey = String(run.run_key || 'base');
+    var status = String(run.status || '');
+    if (status === 'queued') {
+      var turn = (state.messageCacheBySession[String(ses.id)] || []).find(function (row) {
+        return Number(row.id) === turnId && !isEmberMsg(row);
+      });
+      if (!turn) return;
+      var request = /^[a-f0-9]{32}$/.test(runKey)
+        ? {id:runKey,character_id:String(turn.character_id || state.characterId)} : null;
+      if (runKey !== 'base' && !request) return;
+      openStreamForReply(ses,turnId,request,String(turn.character_id || state.characterId));
+    } else if (/^[a-f0-9]{32}$/.test(runKey)) {
+      startGenerationStatusPoll(ses,{id:runKey});
+    } else if (runKey === 'base' && (status === 'running' || status === 'waiting_tool')) {
+      startFastPoll(ses,turnId);
+    }
+  }
+
   // Build an authenticated history off-screen and commit its DOM in one
   // operation. An invalid work card must never erase the last usable chat.
   function renderHistory(ses) {
@@ -1354,7 +1379,6 @@
       mergeSessionMessages(ses.id, d.messages);
       if (!prepend) state.branchBySession[String(ses.id)] = d.branch && typeof d.branch === 'object' ? d.branch : null;
       state.historyFailuresBySession[ses.id] = 0;
-      var resumed = !prepend && recoverActiveRun(ses, d);
       state.historyHasMoreBySession[ses.id] = !!d.has_more_before;
       state.historyOldestBySession[ses.id] = Number(d.oldest_id) || state.historyOldestBySession[ses.id] || 0;
       var newest = Number(d.last_id) || 0;
@@ -1362,6 +1386,7 @@
       if (newest > Number(ses.last_message_id || 0)) ses.last_message_id = newest;
       ses.unread_count = 0;
       if (!isActiveSession(ses.id) || epoch !== state.viewEpoch) return;
+      var resumed = !prepend && recoverActiveRun(ses, d);
       try {
         clearHistoryRetry();
         var renderMs;
@@ -1378,7 +1403,7 @@
         if (!state.pendingBySession[ses.id]) setStatus('online', 'VERBUNDEN');
         if (!prepend) scrollToBottom();
         renderSessionList();
-        if (resumed) startFastPoll(ses, Number(state.pendingBySession[ses.id]));
+        if (resumed) reconnectRecoveredRun(ses, d.active_run);
         scheduleBackgroundPoll();
       } catch (renderError) {
         // The HTTP request succeeded. Do not mislabel a DOM failure as a
@@ -2210,6 +2235,7 @@
       picture.src = url;
       picture.alt = 'Bild von TCI: ' + (state.assistantName || 'Mara');
       picture.loading = 'lazy';
+      picture.decoding = 'async';
       picture.setAttribute('data-file-name', att.name || ((state.assistantName || 'Mara') + '-Bild.png'));
       picture.setAttribute('data-file-size', String(att.size || 0));
       picture.setAttribute('data-file-mime', att.mime || 'image/png');
@@ -2233,6 +2259,7 @@
       img.src = att.image_url || url;
       img.alt = att.name || 'Bild';
       img.loading = 'lazy';
+      img.decoding = 'async';
       img.tabIndex = 0;
       img.setAttribute('role', 'button');
       img.setAttribute('aria-label', (att.name || 'Bild') + ' vergrößern');
@@ -2478,6 +2505,7 @@
         thumb.alt = item.name || 'Hochgeladenes Bild';
         thumb.src = previewUrl;
         thumb.loading = 'lazy';
+        thumb.decoding = 'async';
         thumb.dataset.previewUrl = previewUrl;
         thumb.dataset.fileName = item.name || 'CoreAI-Bild.png';
         thumb.dataset.fileSize = String(item.size || 0);
@@ -3255,11 +3283,11 @@
     }
   }
 
-  function openStreamForReply(ses, userMsgId, generationRequest) {
+  function openStreamForReply(ses, userMsgId, generationRequest, characterIdOverride) {
     var sessionId = String(ses.id);
-    var streamCharacterId = generationRequest && generationRequest.character_id
+    var streamCharacterId = characterIdOverride || (generationRequest && generationRequest.character_id
       ? String(generationRequest.character_id)
-      : state.characterId;
+      : state.characterId);
     var url = API_BASE + '/console_stream.php'
       + '?character_id=' + encodeURIComponent(streamCharacterId)
       + '&session_id=' + encodeURIComponent(sessionId);
@@ -3318,9 +3346,11 @@
     es.addEventListener('work', function(ev) {
       armWatchdog();
       try {
-        if (!isActiveSession(sessionId) || !window.CoreUIWorkEvents) return;
+        if (!window.CoreUIWorkEvents) return;
         var event = rememberLiveWorkEvent(sessionId,Number(userMsgId),
           workRunKey,JSON.parse(ev.data));
+        // Keep the live timeline while a different chat is open. DOM stays scoped.
+        if (!isActiveSession(sessionId)) return;
         if (insights && event) insights.observe(event);
         // 0.6.41 (P20.5): the image Mara paints, as a card with its real progress.
         if (event && state.typingEl && window.CoreAIImageProgress) window.CoreAIImageProgress.observe(state.typingEl, event);
@@ -3472,6 +3502,41 @@
     poll();
   }
 
+  // An image-heavy chat must not rebuild every old image, avatar and work
+  // panel just because ONE saved reply replaced its live typing row.
+  // Build the verified message off-screen and replace only that row.
+  function replaceTypingWithSavedReply(sessionId, responseId) {
+    if (!isActiveSession(sessionId) || !state.typingEl
+        || state.typingEl.parentNode !== messagesInner) return false;
+    var saved = (state.messageCacheBySession[sessionId] || []).find(function (row) {
+      return Number(row.id) === Number(responseId);
+    });
+    if (!saved || !isEmberMsg(saved)) return false;
+    var host = messagesInner;
+    var draft = document.createElement('div');
+    try {
+      messagesInner = draft;
+      renderMessageRecord(saved);
+    } catch (error) {
+      console.error('[CoreAI] Final reply render failed:', error);
+      return false;
+    } finally {
+      messagesInner = host;
+    }
+    if (draft.childNodes.length !== 1) return false;
+    try {
+      host.replaceChild(draft.firstChild, state.typingEl);
+    } catch (error) {
+      console.error('[CoreAI] Reply row replacement failed:', error);
+      return false;
+    }
+    state.typingEl = null;
+    state.thinkingPanelEl = null;
+    state.agentStopEl = null;
+    if (chatFollow) chatFollow.refresh();
+    return true;
+  }
+
   function finalizeStream(data, ses, userMsgId, generationRequest) {
     var sessionId = String(ses.id);
     if ((data && data.session_id && String(data.session_id) !== sessionId)
@@ -3542,9 +3607,15 @@
     // Dadurch verwenden Live-Antwort und History exakt denselben sicheren
     // Markdown-, Codeblock- und Aktionsleistenpfad.
     if (state.typingEl && text && emberId > 0 && browseJobId <= 0) {
-      if (state.typingEl.parentNode) state.typingEl.parentNode.removeChild(state.typingEl);
-      state.typingEl = null;
-      renderHistory(ses);
+      // Regeneration changes the selected variant and needs the full grouping
+      // pass. Ordinary replies only replace their own typing row.
+      if ((data && data.generation_mode) || !replaceTypingWithSavedReply(sessionId, emberId)) {
+        if (state.typingEl && state.typingEl.parentNode) state.typingEl.parentNode.removeChild(state.typingEl);
+        state.typingEl = null;
+        state.thinkingPanelEl = null;
+        state.agentStopEl = null;
+        renderHistory(ses);
+      }
       var finalRow = messagesInner.querySelector('[data-message-id="' + String(emberId) + '"]');
       if (finalRow) showResponseTime(finalRow, sessionId);
       // 0.6.1: read the new answer aloud when the account switched that on.
@@ -4114,10 +4185,10 @@
             && Number(m.reply_to_id) === pendingTurnId) receivedReply = true;
       });
       ingestNewMessages(ses, d.messages);
-      var resumed = recoverActiveRun(ses, d);
-      if (resumed && isActiveSession(sessionId)) {
+      var resumed = isActiveSession(sessionId) && recoverActiveRun(ses, d);
+      if (resumed) {
         renderHistory(ses);
-        startFastPoll(ses, Number(state.pendingBySession[sessionId]));
+        reconnectRecoveredRun(ses, d.active_run);
       }
       var waitingTool = d.active_run && d.active_run.status === 'waiting_tool'
         && Number(d.active_run.turn_id) === pendingTurnId;

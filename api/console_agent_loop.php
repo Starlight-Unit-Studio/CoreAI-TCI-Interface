@@ -79,7 +79,7 @@ function coreui_agent_recover_promised_read(string $reply, array $allowed): ?arr
       || str_contains($reply, str_repeat(chr(96),3)) || str_contains($reply, '[DATEI:')) return null;
   if (preg_match(
     '~\A\s*Ich\s+(?:lese|oeffne|öffne)\s+'
-    . '(?:(?:mir|jetzt|gleich|zuerst|nun|die|das|den|Datei|Projektdatei|Code|kurz|als|Nächstes)\s+){0,8}'
+    . '(?:(?:mir|dir|jetzt|gleich|zuerst|nun|die|das|den|Datei|Projektdatei|Code|kurz|als|Nächstes)\s+){0,8}'
     . '[\x60]?([A-Za-z0-9][A-Za-z0-9_./-]{0,170}\.[A-Za-z0-9]{1,10})[\x60]?(?=\s|[.,;!?]|\z)~iu',
     $reply, $m) !== 1) return null;
   $path = (string)$m[1];
