@@ -84,7 +84,7 @@ if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
 function cbt_sqlite(): PDO {
   $pdo = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $pdo->sqliteCreateFunction('NOW', static fn(): string => gmdate('Y-m-d H:i:s'), 0);
-  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  $pdo->exec('CREATE TABLE stu_console_projects (id TEXT PRIMARY KEY, user_id INTEGER, name TEXT, context_mode TEXT, instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
   $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT PRIMARY KEY, user_id INTEGER, project_id TEXT, branch_source_id TEXT, branch_source_message_id INTEGER,
     branch_point_id INTEGER, title TEXT, since_id INTEGER, last_message_id INTEGER, last_read_message_id INTEGER, created_at TEXT, updated_at TEXT,
     archived_at TEXT, pinned_at TEXT, locked_at TEXT)');
@@ -150,7 +150,7 @@ function cbt_throws(callable $fn, string $error): bool {
 
 $pdo = cbt_sqlite();
 $project = str_repeat('a', 32);
-$pdo->prepare("INSERT INTO stu_console_projects VALUES (?, 7, 'Spiel', 'open', '', NULL, NOW())")->execute([$project]);
+$pdo->prepare("INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?, 7, 'Spiel', 'open', '', NULL, NOW())")->execute([$project]);
 $id = cbt_chat($pdo, 7, $project, 'cs_source_chat_7');
 $attIns = $pdo->prepare('INSERT INTO stu_console_message_attachments VALUES (?, ?, 7, ?, NOW())');
 $attIns->execute([$id['q1'], 'media-photo', 0]);
