@@ -13,6 +13,30 @@ function ctx_test(bool $ok, string $why): void {
   if (!$ok) { fwrite(STDERR, "AI context FAIL: {$why}\n"); exit(1); }
 }
 
+// The keep-alive policy is request-level, not a Gemma tuning parameter.
+// Numeric strings from env/config must become numeric JSON values.
+ctx_test(ember_keep_alive_value('-1') === -1
+  && ember_keep_alive_value(-1) === -1
+  && ember_keep_alive_value('0') === 0
+  && ember_keep_alive_value('15m') === '15m'
+  && ember_keep_alive_value('') === -1
+  && ember_keep_alive_value(null) === null,
+  'numeric keep_alive preserves -1 and explicit admin durations');
+ctx_test(ember_keep_alive() === -1,
+  'default local active Core must remain in Ollama RAM until explicit unload');
+
+$sourceConfig=(string)file_get_contents($root.'/api/config.php');
+$sourceChat=(string)file_get_contents($root.'/api/chat.php');
+$sourceStream=(string)file_get_contents($root.'/api/console_stream.php');
+$sourcePreload=(string)file_get_contents($root.'/api/core_preload.php');
+ctx_test(str_contains($sourceConfig,"coreui_env('COREUI_EMBER_KEEP_ALIVE', '-1')")
+  && str_contains($sourceChat, "'keep_alive' => $keepAlive")
+  && str_contains($sourceStream, "$"."payload['keep_alive'] = $keepAlive")
+  && str_contains($sourcePreload, "$"."body['keep_alive'] = $keepAlive"),
+  'preload, synchronous and streaming Ollama requests share keep_alive');
+ctx_test(str_contains($sourcePreload,"['model'=>$"."model, 'keep_alive'=>0]"),
+  'explicit Core switching still unloads the old local model');
+
 // --- Whitelist ---------------------------------------------------------
 $stops = [4096, 8192, 16384, 32768, 65536, 131072];
 ctx_test(coreui_ai_num_ctx_choices() === $stops, 'six slider stops from 4K to 128K');
