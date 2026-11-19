@@ -116,22 +116,24 @@ function coreui_plan_has_outline(string $markdown): bool {
  * The generator returns ['text'=>string,'ok'=>bool] for one MODEL call.
  * Each successful content chunk creates one immutable, owner-scoped DB version.
  * A complete plan requires both a verified model call and an explicit terminal
- * marker. Bounded budget, no infinite loop and no spurious build.
+ * marker. Production continues across saved checkpoints until completion,
+ * cancellation, stalled progress or error. Tests can request bounded rounds.
  */
 function coreui_plan_autorun(PDO $pdo, int $uid, string $sessionId, int $turnId,
                             array $initial, callable $generate,
-                            string $goal = '', int $maxRounds = 4): array {
+                            string $goal = '', int $maxRounds = 0): array {
   $saved = $initial;
   $passes = 0;
   $reason = 'no_progress';
-  $startAt = microtime(true);
-  $maxRounds = max(0, min(4, $maxRounds));
-  for ($step = 0; $step < $maxRounds; $step++) {
+  // Positive maxRounds is an explicit test/diagnostic bound only. Production
+  // must never stop after an arbitrary four calls or a 240-second timeout.
+  // Each verified chunk is persisted and failure/cancellation ends the loop.
+  $bounded = $maxRounds > 0;
+  for ($step = 0; !$bounded || $step < $maxRounds; $step++) {
     if (!coreui_plan_is_draft_markdown((string)($saved['markdown'] ?? ''))) {
       $reason = 'completed';
       break;
     }
-    if (microtime(true) - $startAt >= 240.0) { $reason = 'time_budget'; break; }
     if (function_exists('ember_agent_cancel_requested') && ember_agent_cancel_requested()) {
       $reason = 'cancelled';
       break;
@@ -174,7 +176,7 @@ function coreui_plan_autorun(PDO $pdo, int $uid, string $sessionId, int $turnId,
     }
     if ($complete) { $reason='completed'; break; }
     if (!$isVerified) { $reason='model_incomplete'; break; }
-    $reason='round_limit';
+    $reason = $bounded ? 'round_limit' : 'awaiting_next_section';
   }
   return ['saved'=>$saved,'segments'=>$passes,
     'complete'=>!coreui_plan_is_draft_markdown((string)$saved['markdown']),
