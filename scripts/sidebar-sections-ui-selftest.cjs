@@ -139,7 +139,7 @@ assert.equal(list.children[0].children[0].children[1].textContent,'Alpha',
 list.children[0].children[0].click();
 list.children[1].children[1].click({stopPropagation(){}});
 assert.deepEqual(opened,['a'],'pinned shortcut opens its actual project');
-assert.deepEqual(unpinned,[['pin','z']],'unpin uses existing server-backed action');
+assert.equal(JSON.stringify(unpinned),JSON.stringify([['pin','z']]),'unpin uses existing server-backed action');
 assert.equal(countUpdates,1,'project refresh updates shared pinned count');
 
 const version=read('VERSION').trim();
