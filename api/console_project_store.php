@@ -13,6 +13,54 @@ function coreui_project_schema_ready(PDO $pdo): bool {
   } catch (Throwable $e) { return false; }
 }
 
+/** Internal workspace backing for normal chats. The organizational Project
+ * list remains separate; a hidden workspace never isolates conversational
+ * memory or requires a user to create a named project. */
+function coreui_chat_workspace_ready(PDO $pdo): bool {
+  try { $pdo->query('SELECT workspace_session_id FROM stu_console_projects LIMIT 0'); return true; }
+  catch (Throwable $e) { return false; }
+}
+function coreui_chat_workspace_id(PDO $pdo,int $uid,string $sessionId): string {
+  if ($uid<=0 || $sessionId==='' || !coreui_chat_workspace_ready($pdo)) return '';
+  $st=$pdo->prepare('SELECT id FROM stu_console_projects WHERE user_id=? AND workspace_session_id=? LIMIT 1');
+  $st->execute([$uid,$sessionId]);
+  return (string)($st->fetchColumn() ?: '');
+}
+function coreui_chat_workspace_ensure(PDO $pdo,int $uid,string $sessionId): array {
+  if (!coreui_chat_workspace_ready($pdo)) throw new RuntimeException('chat_workspace_migration_required');
+  if (!function_exists('coreui_console_session_require')) throw new RuntimeException('session_unavailable');
+  coreui_console_session_require($pdo,$uid,$sessionId);
+  $scope=coreui_project_session_scope($pdo,$uid,$sessionId);
+  if (empty($scope['available'])) throw new RuntimeException('project_not_found');
+  if (($scope['id'] ?? '') !== '') {
+    $p=coreui_project_require($pdo,$uid,(string)$scope['id']);
+    return ['project_id'=>(string)$p['id'],'kind'=>'project'];
+  }
+  $id=coreui_chat_workspace_id($pdo,$uid,$sessionId);
+  if ($id==='') {
+    $newId=bin2hex(random_bytes(16));
+    $sql=$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='sqlite'
+      ? "INSERT OR IGNORE INTO stu_console_projects
+          (id,user_id,name,context_mode,workspace_session_id) VALUES (?,?,?,'open',?)"
+      : "INSERT INTO stu_console_projects
+          (id,user_id,name,context_mode,workspace_session_id) VALUES (?,?,?,'open',?)
+          ON DUPLICATE KEY UPDATE id=id";
+    $pdo->prepare($sql)->execute([$newId,$uid,'Chat-Arbeitsbereich',$sessionId]);
+    $id=coreui_chat_workspace_id($pdo,$uid,$sessionId);
+  }
+  if ($id==='') throw new RuntimeException('chat_workspace_unavailable');
+  return ['project_id'=>$id,'kind'=>'chat'];
+}
+function coreui_project_require_managed(PDO $pdo,int $uid,string $projectId): array {
+  $p=coreui_project_require($pdo,$uid,$projectId);
+  if (coreui_chat_workspace_ready($pdo)) {
+    $q=$pdo->prepare('SELECT workspace_session_id FROM stu_console_projects WHERE id=? AND user_id=?');
+    $q->execute([$projectId,$uid]);
+    if ($q->fetchColumn() !== null) throw new RuntimeException('workspace_not_a_project');
+  }
+  return $p;
+}
+
 function coreui_project_id($value): string {
   $id = strtolower(trim((string)$value));
   return preg_match('~^[a-f0-9]{32}$~D', $id) ? $id : '';
@@ -35,6 +83,16 @@ function coreui_project_require(PDO $pdo, int $uid, string $projectId): array {
   $st->execute([$uid, $projectId]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
   if (!is_array($row)) throw new RuntimeException('project_not_found');
+  if (coreui_chat_workspace_ready($pdo)) {
+    $w=$pdo->prepare('SELECT workspace_session_id FROM stu_console_projects WHERE id=? AND user_id=?');
+    $w->execute([$projectId,$uid]);
+    $workspaceSession=$w->fetchColumn();
+    if (is_string($workspaceSession) && $workspaceSession!=='') {
+      if (!function_exists('coreui_console_session_require'))
+        throw new RuntimeException('session_unavailable');
+      coreui_console_session_require($pdo,$uid,$workspaceSession);
+    }
+  }
   return $row;
 }
 
@@ -43,7 +101,9 @@ function coreui_project_list(PDO $pdo, int $uid): array {
   $st = $pdo->prepare('SELECT p.id, p.name, p.description, p.context_mode, p.instructions_md, p.pinned_at, p.created_at, '
     . '(SELECT COUNT(*) FROM stu_console_sessions s WHERE s.project_id=p.id AND s.user_id=p.user_id '
     . 'AND s.archived_at IS NULL) AS chat_count FROM stu_console_projects p '
-    . 'WHERE p.user_id=? ORDER BY (p.pinned_at IS NULL), p.pinned_at DESC, p.created_at DESC');
+    . 'WHERE p.user_id=?'
+    . (coreui_chat_workspace_ready($pdo) ? ' AND p.workspace_session_id IS NULL' : '')
+    . ' ORDER BY (p.pinned_at IS NULL), p.pinned_at DESC, p.created_at DESC');
   $st->execute([$uid]);
   return array_map(static function (array $row): array {
     $row['chat_count'] = (int)$row['chat_count'];
@@ -65,7 +125,7 @@ function coreui_project_create(PDO $pdo, int $uid, string $name, string $mode): 
 }
 
 function coreui_project_update(PDO $pdo, int $uid, string $projectId, string $name, string $instructions, string $description = ''): array {
-  coreui_project_require($pdo,$uid,$projectId);
+  coreui_project_require_managed($pdo,$uid,$projectId);
   $name = coreui_project_name($name);
   if (mb_strlen($instructions,'UTF-8') > 12000) throw new InvalidArgumentException('project_instructions_too_long');
   $description = trim($description);
@@ -76,14 +136,14 @@ function coreui_project_update(PDO $pdo, int $uid, string $projectId, string $na
 }
 
 function coreui_project_pin(PDO $pdo, int $uid, string $projectId, bool $pinned): array {
-  coreui_project_require($pdo,$uid,$projectId);
+  coreui_project_require_managed($pdo,$uid,$projectId);
   $st=$pdo->prepare('UPDATE stu_console_projects SET pinned_at=' . ($pinned?'NOW()':'NULL') . ' WHERE id=? AND user_id=?');
   $st->execute([$projectId,$uid]);
   return coreui_project_require($pdo,$uid,$projectId);
 }
 
 function coreui_project_delete(PDO $pdo, int $uid, string $projectId): array {
-  coreui_project_require($pdo,$uid,$projectId);
+  coreui_project_require_managed($pdo,$uid,$projectId);
   // Conversations survive project deletion and return to the standalone list.
   $st=$pdo->prepare('UPDATE stu_console_sessions SET project_id=NULL WHERE user_id=? AND project_id=?');
   $st->execute([$uid,$projectId]);
@@ -105,7 +165,7 @@ function coreui_project_delete(PDO $pdo, int $uid, string $projectId): array {
 function coreui_project_assign(PDO $pdo, int $uid, string $sessionId, string $projectId): ?array {
   if (!coreui_project_schema_ready($pdo)) throw new RuntimeException('project_migration_required');
   coreui_console_session_require($pdo, $uid, $sessionId, true);
-  $project = $projectId !== '' ? coreui_project_require($pdo,$uid,$projectId) : null;
+  $project = $projectId !== '' ? coreui_project_require_managed($pdo,$uid,$projectId) : null;
   // Moving a whole chat into an isolated project is intentional; existing
   // global memories are not retroactively purged or exported into the project.
   $st = $pdo->prepare('UPDATE stu_console_sessions SET project_id=? WHERE id=? AND user_id=?');
