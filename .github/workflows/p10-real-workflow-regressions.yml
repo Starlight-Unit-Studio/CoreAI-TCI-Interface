@@ -50,7 +50,7 @@ jobs:
         run: |
           set -u
           failed=0
-          for name in project-file-tools chat-branch project-runs project-procs project-env project-merge skill-packages skill-sharing skill-revisions; do
+          for name in project-file-tools chat-branch project-runs project-procs project-env project-merge project-vcs skill-packages skill-sharing skill-revisions; do
             echo "::group::${name}"
             if php -d display_errors=stderr -d log_errors=1 "scripts/${name}-selftest.php"; then
               echo "[PASS] ${name}"
