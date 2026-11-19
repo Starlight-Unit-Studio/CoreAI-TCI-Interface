@@ -769,7 +769,7 @@ try {
       $window = ember_ollama_context_window($model);
       $fix = console_stream_ollama($model,$sys,
         $u . coreui_native_tool_repair_prompt($shape,$reply,$window !== null && $window <= 8192),
-        false,180);
+        false,null,false,false);
       $fixText = ember_sanitize_public_reply((string)($fix['content'] ?? ''),
         (string)($fix['thinking'] ?? ''));
       $fixComplete = !empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated']);
