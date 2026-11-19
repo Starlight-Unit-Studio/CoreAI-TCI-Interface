@@ -153,17 +153,29 @@ function coreui_console_session_create(PDO $pdo, int $uid, string $title = '', s
   if (function_exists('mb_substr')) $title = mb_substr($title, 0, 64, 'UTF-8');
   else $title = substr($title, 0, 64);
 
-  $project = $projectId !== '' ? coreui_project_require($pdo,$uid,$projectId) : null;
+  $project = $projectId !== '' ? coreui_project_require_managed($pdo,$uid,$projectId) : null;
   $id = 'cs_' . bin2hex(random_bytes(12));
-  $st = $pdo->prepare(
-    'INSERT INTO stu_console_sessions '
-    . '(id, user_id, title, since_id, last_message_id, last_read_message_id, created_at, updated_at, archived_at) '
-    . 'VALUES (?, ?, ?, 0, NULL, NULL, NOW(), NOW(), NULL)'
-  );
-  $st->execute([$id, $uid, $title]);
-  if ($project !== null) {
-    $stProject = $pdo->prepare('UPDATE stu_console_sessions SET project_id=? WHERE id=? AND user_id=?');
-    $stProject->execute([$project['id'],$id,$uid]);
+  $ownTransaction = !$pdo->inTransaction();
+  if ($ownTransaction) $pdo->beginTransaction();
+  try {
+    $st = $pdo->prepare(
+      'INSERT INTO stu_console_sessions '
+      . '(id, user_id, title, since_id, last_message_id, last_read_message_id, created_at, updated_at, archived_at) '
+      . 'VALUES (?, ?, ?, 0, NULL, NULL, NOW(), NOW(), NULL)'
+    );
+    $st->execute([$id, $uid, $title]);
+    if ($project !== null) {
+      $stProject = $pdo->prepare('UPDATE stu_console_sessions SET project_id=? WHERE id=? AND user_id=?');
+      $stProject->execute([$project['id'],$id,$uid]);
+    } elseif (coreui_chat_workspace_ready($pdo)) {
+      // No visible Project is created. Normal chat tools now have their own
+      // private files, version history, preview and sandbox from first turn.
+      coreui_chat_workspace_ensure($pdo,$uid,$id);
+    }
+    if ($ownTransaction) $pdo->commit();
+  } catch (Throwable $e) {
+    if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
+    throw $e;
   }
   return [
     'id' => $id,
