@@ -70,6 +70,15 @@ def verify(root: Path) -> list[str]:
     if "'keep_alive'=>0" not in preload:
         failures.append("api/core_preload.php: explicit old-Core unload must remain")
 
+    # An already populated project must never be regenerated from a stale
+    # earlier plan when the operator asks for a new page or modification.
+    build_intent = (root / "api/console_build_intent.php").read_text(encoding="utf-8")
+    file_tools = (root / "api/project_file_tools.php").read_text(encoding="utf-8")
+    if "return ['status'=>'incremental_project','tool'=>null];" not in build_intent:
+        failures.append("api/console_build_intent.php: old plan rebuild still captures existing projects")
+    if "Der alte, abgeschlossene Projektplan ist nur historischer Kontext" not in file_tools:
+        failures.append("api/project_file_tools.php: existing project changes must honor current user request")
+
     # The pinned section must remain a visible, independently foldable
     # navigation destination immediately beneath the single Projects link.
     # This contract is checked on CPU-only installations without Node.js.
