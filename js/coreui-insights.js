@@ -257,6 +257,18 @@
         heads[spec.id] = made.head;
         aside.appendChild(made.section);
       });
+      // Wide displays use the right rail instead of the chat chip bar.
+      var wideDev=el('button','insight-dev-launch');
+      wideDev.type='button';
+      wideDev.setAttribute('aria-haspopup','dialog');
+      wideDev.setAttribute('aria-controls','chatDevModal');
+      wideDev.appendChild(el('span','insight-icon','⌘'));
+      wideDev.appendChild(el('span','', 'Entwicklung öffnen'));
+      wideDev.addEventListener('click',function(){
+        if(root.CoreAIChatDev && root.CoreAIChatDev.open)
+          root.CoreAIChatDev.open(wideDev);
+      });
+      aside.appendChild(wideDev);
     }
     if (chips) {
       var bar = el('div', 'insight-chip-row');
