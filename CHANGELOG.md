@@ -1,6 +1,6 @@
 # CoreAI: TCI Interface
 
-## 0.7.100 - 19.11.2026
+## 0.8.0 - 19.11.2026
 
 - **Reliable project-file tool handoff:** The fast private-chat SSE endpoint now recognizes authorized project-file, process and version-control tool markers before publishing a final response. It checks again after truncated-response continuation.
 - **Mara reads instead of only promising:** When a Core writes an unambiguous first-person promise such as "Ich lese mir jetzt style.css durch" without a DATEI marker, the authorized project agent can recover the requested **read-only** action. Only project-scoped files are accessible through the existing path/ownership validation; no changes, commands or browser actions are inferred from prose.
