@@ -337,7 +337,7 @@ $tool('cs_game', 'pproc_stop');
 $w['start'] = "Server bereit\n";
 // Other chats and accounts, a missing migration.
 env_test($tool('cs_free', 'pproc_start', 'python app.py') === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.'
-  && str_starts_with($tool('cs_other', 'pproc_output'), 'Projektdateien gibt es nur'), 'only in the own project chat');
+  && str_starts_with($tool('cs_other', 'pproc_output'), 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar'), 'only in the own project chat');
 $old = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 env_schema($old, false);
 $old->exec('INSERT INTO stu_users VALUES (7, 0)');
