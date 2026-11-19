@@ -12,6 +12,7 @@ $root = dirname(__DIR__);
 require_once $root . '/api/console_compaction.php';
 require_once $root . '/api/console_agent_loop.php';
 require_once $root . '/api/project_file_tools.php';
+require_once $root . '/api/console_build_intent.php';
 $chatSource = (string)file_get_contents($root . '/api/chat.php');
 foreach (['ember_without_inline_code', 'ember_extract_web_marker', 'ember_strip_stray_tool_markers'] as $fn) {
   if (preg_match('~^function ' . $fn . '\(.*?^}~ms', $chatSource, $m) !== 1) { fwrite(STDERR, "missing {$fn}\n"); exit(1); }
@@ -104,6 +105,26 @@ coreui_pfiles_write($pdo, 7, $a, 'index.html', "<h1>Hallo</h1>\n<p>Start</p>\n",
 coreui_pfiles_write($pdo, 7, $a, 'css/style.css', "h1 { color: red; }\n", 'build');
 coreui_pfiles_write($pdo, 9, $c, 'secret.md', "fremd\n", 'create');
 
+// Regression: operator requests blog.html after pages are already in this
+// existing project. The old completed-plan classifier must never run:
+// Mara must use this project's existing pfile workflow, not regenerate ZIP.
+$buildSelectionCalls=0;
+$selection=coreui_build_intent_select_for_plan($pdo,7,'cs_project_chat',42,
+  'Da fehlt aber blog.html',static function(string $prompt) use (&$buildSelectionCalls): array {
+    $buildSelectionCalls++;
+    return ['text'=>'START_BUILD','ok'=>true];
+  });
+pft_test(($selection['status'] ?? '')==='incremental_project'
+  && ($selection['tool'] ?? null)===null && $buildSelectionCalls===0,
+  'existing project page additions bypass historical PLAN_BUILD chooser');
+$foreignSelection=coreui_build_intent_select_for_plan($pdo,7,'cs_other_account',42,
+  'Da fehlt aber blog.html',static function(string $prompt): array {
+    return ['text'=>'START_BUILD','ok'=>true];
+  });
+pft_test(($foreignSelection['status'] ?? '')!=='incremental_project',
+  'a foreign project cannot be detected as own editable project');
+
+
 pft_test(coreui_pftools_project($pdo, 7, 'cs_project_chat') === $a && coreui_pftools_project($pdo, 7, 'cs_free_chat') === ''
   && coreui_pftools_project($pdo, 7, 'cs_other_account') === '', 'only the own project chat has file tools');
 pft_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'pfile_read', 'input'=>'index.html']) === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.',
@@ -126,6 +147,12 @@ $failed = coreui_pftools_run($pdo, 7, 'cs_project_chat', ['tool'=>'pfile_edit', 
 pft_test(str_starts_with($failed, 'Die Datei css/style.css wurde NICHT geaendert: Block 1') && coreui_pfiles_get($pdo, 7, $a, 'css/style.css')['revision'] === 2,
   'a change that does not match changes nothing');
 $new = coreui_pftools_run($pdo, 7, 'cs_project_chat', ['tool'=>'pfile_write', 'input'=>"js/main.js\n```js\nconsole.log('los');\n```"]);
+$blog = coreui_pftools_run($pdo,7,'cs_project_chat',
+  ['tool'=>'pfile_write','input'=>"blog.html\n<main>Neue Seite</main>"]);
+pft_test(str_contains($blog,'Datei blog.html angelegt')
+  && coreui_pfiles_get($pdo,7,$a,'blog.html')['content']==="<main>Neue Seite</main>\n"
+  && coreui_pfiles_get($pdo,7,$a,'index.html')['content']==="<h1>Hallo</h1>\n<p>Start</p>\n",
+  'adding blog.html preserves previously finished index.html');
 pft_test($new === 'Datei js/main.js angelegt (Stand 1, 20 Bytes).' && coreui_pfiles_get($pdo, 7, $a, 'js/main.js')['content'] === "console.log('los');\n"
   && coreui_pfiles_get($pdo, 7, $a, 'js/main.js')['revisions'][0]['source'] === 'mara', 'a new file: ' . $new);
 $whole = coreui_pftools_run($pdo, 7, 'cs_project_chat', ['tool'=>'pfile_write', 'input'=>"js/main.js\nconsole.log('neu');"]);
@@ -140,7 +167,10 @@ foreach ($titles as $t) pft_test(preg_match('/^[a-zA-Z0-9 \-.,:()\/]{3,110}$/D',
 
 // --- Prompt hint ---------------------------------------------------------------------------------
 $hint = coreui_pftools_hint($pdo, 7, 'cs_project_chat', false);
-pft_test(str_contains($hint, 'Dateien des Projekts: css/style.css (1 KB), index.html (1 KB), js/main.js (1 KB).')
+pft_test(str_contains($hint, 'Der alte, abgeschlossene Projektplan ist nur historischer Kontext')
+  && str_contains(coreui_pftools_hint($pdo,7,'cs_project_chat',true),'nicht alten Projektplan neu bauen'),
+  'new pages must be prompted as incremental edits, not full rebuilds');
+pft_test(str_contains($hint, 'Dateien des Projekts: blog.html (1 KB), css/style.css (1 KB), index.html (1 KB), js/main.js (1 KB).')
   && str_contains($hint, "[DATEI_AENDERN: pfad]\n<<<<<<< SUCHEN") && str_contains($hint, 'wiederherstellbar'), 'hint with the files and the format: ' . $hint);
 pft_test(strlen(coreui_pftools_hint($pdo, 7, 'cs_project_chat', true)) < 600 && coreui_pftools_hint($pdo, 7, 'cs_free_chat', false) === '',
   'a short hint for small Cores, none outside a project');

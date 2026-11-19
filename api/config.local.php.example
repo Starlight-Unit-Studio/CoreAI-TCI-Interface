@@ -17,6 +17,9 @@ define('STU_EMBER_CHARACTER_NAME', 'Ember');
 define('STU_EMBER_MODEL', 'ember-coreui:latest');
 define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:11434/api/chat');
 define('STU_EMBER_LOCK_NAMESPACE', 'ember_coreui');
+// Active local Core: never unload solely due to idle time (Ollama keep_alive -1).
+// Overrides are optional; model switching still unloads the previous Core.
+// define('STU_EMBER_KEEP_ALIVE', -1);
 
 // Current Gemma 4 + Ollama known-good fast path.
 define('STU_EMBER_TEMPERATURE', 1.0);

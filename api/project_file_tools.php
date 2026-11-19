@@ -684,13 +684,14 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
         . "ist sie fertig und getestet, sicherst du eine Version. Zusammenfuehren nur, wenn die Person es moechte.\n";
   }
   if ($compact) {
-    return "PROJEKTDATEIEN: " . $files . " Lesen: [DATEI: pfad]. Gezielt aendern: [DATEI_AENDERN: pfad] mit Bloecken "
+    return "PROJEKTDATEIEN: " . $files . " Bei Folgewuenschen aktuelle Dateien erweitern, nicht alten Projektplan neu bauen. " . "Lesen: [DATEI: pfad]. Gezielt aendern: [DATEI_AENDERN: pfad] mit Bloecken "
       . "<<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN]. "
       . "Neu oder ganz ersetzen: [DATEI_NEU: pfad] Inhalt [/DATEI_NEU]."
       . ($canRun ? " Ausfuehren und testen: [AUSFUEHREN: befehl]." : '')
       . coreui_pftools_env_hint($pdo, $uid, $projectId, true, $canRun, $canProcs) . $vcs;
   }
   return "PROJEKTDATEIEN: " . $files . "\n"
+    . "Ein neuer Seitenwunsch (z.B. blog.html) ergaenzt die bestehenden Projektdateien. Der alte, abgeschlossene Projektplan ist nur historischer Kontext: NICHT die Homepage neu aus diesem Plan erstellen. Bestehende Dateien und die aktuelle Nutzernachricht sind massgebend.\n"
     . "Du kannst die Dateien dieses Projekts selbst lesen und gezielt aendern, ein Werkzeug pro Schritt:\n"
     . "- [DATEI: pfad] liest eine Datei mit Zeilennummern. Lies eine Datei, bevor du sie aenderst.\n"
     . "- Gezielt aendern:\n[DATEI_AENDERN: pfad]\n<<<<<<< SUCHEN\nalte Zeilen, Zeichen fuer Zeichen wie in der Datei (ohne Zeilennummern)\n"

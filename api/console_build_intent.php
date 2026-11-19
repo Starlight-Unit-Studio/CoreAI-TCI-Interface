@@ -150,6 +150,25 @@ function coreui_build_intent_select_for_plan(
   PDO $pdo,int $uid,string $sessionId,int $turnId,string $currentMessage,
   callable $infer,?array $plan = null
 ): array {
+  // A project that already contains real source files must be extended via
+  // its account-scoped pfile_read/pfile_edit/pfile_write work loop. Routing
+  // each new request through the saved plan would regenerate the OLD website,
+  // discarding the newly requested page or changes. This is a routing veto,
+  // NOT an authorization to write any file.
+  if (function_exists('coreui_pftools_project')
+      && function_exists('coreui_pfiles_list')) {
+    $projectId = coreui_pftools_project($pdo,$uid,$sessionId);
+    if ($projectId !== '') {
+      try {
+        $fileList = coreui_pfiles_list($pdo,$uid,$projectId);
+      } catch (Throwable $e) {
+        return ['status'=>'project_files_unavailable','tool'=>null];
+      }
+      if ((int)($fileList['count'] ?? 0) > 0) {
+        return ['status'=>'incremental_project','tool'=>null];
+      }
+    }
+  }
   $plan ??= coreui_plan_latest($pdo,$uid,$sessionId);
   if (!is_array($plan)
       || coreui_plan_is_draft_markdown((string)($plan['markdown'] ?? '')))

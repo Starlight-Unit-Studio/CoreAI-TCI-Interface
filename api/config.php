@@ -54,7 +54,9 @@ coreui_define('STU_EMBER_CHARACTER_NAME', coreui_env('COREUI_EMBER_CHARACTER_NAM
 coreui_define('STU_EMBER_MODEL', coreui_env('COREUI_EMBER_MODEL', 'ember-coreui:latest'));
 coreui_define('STU_EMBER_OLLAMA_URL', coreui_env('COREUI_OLLAMA_URL', 'http://127.0.0.1:11434/api/chat'));
 coreui_define('STU_EMBER_LOCK_NAMESPACE', coreui_env('COREUI_LOCK_NAMESPACE', 'ember_coreui'));
-coreui_define('STU_EMBER_KEEP_ALIVE', coreui_env('COREUI_EMBER_KEEP_ALIVE', '15m'));
+// The active local Core stays in Ollama RAM until explicitly switched/unloaded.
+// This is model residency, not persistent conversational context.
+coreui_define('STU_EMBER_KEEP_ALIVE', coreui_env('COREUI_EMBER_KEEP_ALIVE', '-1'));
 coreui_define('STU_EMBER_NUM_THREAD', (int)coreui_env('COREUI_EMBER_NUM_THREAD', '12'));
 coreui_define('STU_EMBER_NUM_PREDICT', (int)coreui_env('COREUI_EMBER_NUM_PREDICT', '6500'));
 coreui_define('STU_EMBER_NUM_CTX', (int)coreui_env('COREUI_EMBER_NUM_CTX', '32768'));

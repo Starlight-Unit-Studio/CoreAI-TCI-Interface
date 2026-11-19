@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.6`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.7`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -38,6 +38,10 @@ The launcher installs the latest `main` commit and runs preflight. Updates prese
 
 An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still be selected explicitly through `COREUI_SETUP_SOURCE=release`. It is **not** the current source version. A `main` source checkout must not be represented as a newly verified ZIP release.
 
+
+**Local Ollama Core retention:** The active local Core defaults to `keep_alive: -1` on preload, normal chat and streaming calls, so Ollama does not unload it solely because 15 minutes elapsed. An explicit Core switch still unloads the previous model to conserve RAM. A host administrator may override the timeout using `COREUI_EMBER_KEEP_ALIVE` or an existing `STU_EMBER_KEEP_ALIVE` setting. Model residency is independent of the conversation history/context that CoreAI sends on each request.
+
+**Existing-project changes:** Once a project chat contains saved source files, later requests such as adding `blog.html` use the project file read/edit/write tools. The historical completed Markdown plan is no longer re-dispatched as an automatic full-site rebuild for every new message.
 
 ## What Mara can do
 

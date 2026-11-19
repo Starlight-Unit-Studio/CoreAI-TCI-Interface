@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.8.7 - 19.11.2026
+
+- **Active local Core retention:** Default `COREUI_EMBER_KEEP_ALIVE` is now numeric `-1` rather than `15m`; preload, synchronous Ollama chat and streaming all use the same request-level value. Explicit configured numeric strings normalize to JSON numbers, while custom duration strings remain available. Switching local Cores still explicitly unloads the old one with `keep_alive: 0` under the model queue.
+- **Existing-project next-page requests:** When the account-owned project chat already has saved source files, skip the historical saved-plan auto-build classifier. Requests such as adding `blog.html` use the existing guarded `pfile_read`/`pfile_edit`/`pfile_write` loop and keep prior files intact.
+- **Prompt clarification:** Normal and compact project-file instructions prioritize the latest user request and existing project files over the old completed plan. New or file-empty project work still follows the existing approved plan-building path.
+- **Regression coverage:** Added keep_alive normalization and all-three-call-path checks, an active-file-project routing test, and a new-page file-write test preserving index.html. The mandatory offline Preflight gate protects model residency semantics.
+- **Limitations:** `keep_alive` governs loaded model residency, not restoration of a previous KV cache or reconstruction of conversation context. Existing explicit local config overrides still take precedence. Live Ollama and installed server must be checked after merge.
+
 ## 0.8.6 - 19.11.2026
 
 - **Existing-project tool recovery:** A model reply with a single identifiable, but malformed, `PROJECT_BUILD` or `PLAN_APPEND` marker now receives a matching in-turn correction prompt. Previously the generic example was `PLAN_SAVE`, which could abandon an already started build or extension.

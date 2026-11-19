@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE // 0.8.7
+Date: 2026-11-19
+Base: main 0.8.6
+
+Operator observations
+- Core Normal reportedly loses context although only 2% of the window is used.
+- Ollama model residency was limited to 15m by api/config.php; the code helper's -1 fallback was unreachable because the configuration was always defined.
+- During a continued homepage request to add blog.html, the older original website request was repeated instead of applying the new change. Existing files were being generated successfully in a 6-file workflow.
+
+Changes
+1. Default active local Ollama keep_alive to -1, shared by preload, sync, and streaming. Numeric config strings become JSON numbers, not strings; explicit override durations and unload (0) continue to work.
+2. Preserve the explicit local-Core switch unload to avoid retaining all variants in CPU RAM.
+3. Keep conversation context distinct from model residency: a loaded model is not a substitute for sending/rehydrating the original chat history after worker restart.
+4. Do not use an old completed plan to automatically rebuild a file-backed project on later user requests. Account-owned project with at least one file uses its incremental pfile workflow instead.
+5. Add explicit normal/compact project instructions: a new page such as blog.html extends saved files and current message, not the historical project spec.
+6. Regression checks for keep_alive 15m -> -1, numeric conversion, all three Ollama payload routes, previous Core unload, and existing project file write preserving index.html.
+7. Both native and Docker Preflights now have a source-sync regression rule for both fixes.
+
+Verification
+- Offline CI must pass on the final head.
+- Live host may contain an explicit STU_EMBER_KEEP_ALIVE in api/config.local.php; if set, that operator override takes precedence and needs inspection.
+- An unloaded Ollama model reload does not by itself reset the application's saved message history. Investigate actual context persistence separately if the UI still reports a cleared context.
+- No live Ollama restart, host update, blog.html deployment or end-to-end user-site test is claimed.

@@ -1,0 +1,26 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.7
+Date: 2026-11-19
+Branch: fix/ollama-keepalive-pinned-active-core-087
+Base: main 0.8.6
+
+Confirmed source facts
+- api/config.php default COREUI_EMBER_KEEP_ALIVE was 15m (STU_EMBER_KEEP_ALIVE); chat.php helper already fell back to -1 only when no constant existed.
+- Core preload and both Ollama chat routes already sent ember_keep_alive() at request top level; a single default change and numeric normalization therefore cover all paths.
+- Explicit switch in api/core_preload.php sends keep_alive 0 to old resident local model.
+- api/console_build_intent.php always recovered original user request from latest completed Markdown plan, even when the same project chat already contained saved source files. That could regenerate old requested site and ignore later blog.html instruction.
+- api/project_file_tools.php supports actual pfile_read, pfile_edit, pfile_write with revisions, preserving unrelated files.
+
+Resolution
+- Default -1 (numeric) for active local Ollama Core; default can be deliberately overridden by operator configuration.
+- Bypass old full-project build intent selection for account-owned project chats containing existing project files; normal agent tools use the latest message.
+- Preserve first-time plan-to-build for new/file-empty projects; do not alter the model's Modelfile, context-size choice, or shared queue.
+- Record and validate with offline selftests plus Preflight contract and versioned changelog.
+
+QA plan
+1. Verify GitHub CI on final commit and source version/cache fingerprints.
+2. Merge and update host; inspect api/config.local.php to ensure no explicit 15m override remains unless intended.
+3. Select Core Normal; inspect Ollama /api/ps after 15+ idle minutes with no Core switch; it should remain resident while RAM is available.
+4. Start a NEW test request in an existing project: add blog.html. Confirm the original files remain, blog.html exists in project Files tab, navigation is updated, and user does not have to reissue original site request.
+5. Independently verify context reconstruction across a worker reload, settings navigation and completed work; model residency alone cannot guarantee this.
+6. Run preflight-native.sh or preflight.sh according to installation and read all test results. Do not claim live verification before these steps are done.
+Next version after merge: 0.8.8.
