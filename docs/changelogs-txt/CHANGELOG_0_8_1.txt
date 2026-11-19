@@ -1,0 +1,13 @@
+COREAI: TCI INTERFACE // 0.8.1
+Date: 2026-11-19
+Base: 0.8.0
+
+- Acknowledged private chat messages persist an account-scoped queued agent run before the async reply starts.
+- Returning from Settings reattaches to the same run. Queued runs start once; running jobs are observed, not restarted.
+- Public work progress remains associated with the chat while the browser shows other chats.
+- Ordinary completed replies replace only the typing row. Existing uploaded images and other message elements stay mounted, reducing flicker.
+- Browser image decoding is asynchronous.
+- Verified project read-only intent recovery now recognizes the phrasing "Ich lese dir jetzt script.js durch".
+- Regression tests added for queued/running recovery, preserved image elements, and the operator's exact read phrase.
+- Existing native and Compose preflight suites retain these required tests.
+- GitHub CI and real device/server smoke tests still required; no live deployment claimed.
