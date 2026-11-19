@@ -447,6 +447,33 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
     && $homepageModelCalls===2,
     'A user homepage request must go from a recoverable draft to the actual build without Continue');
 
+  // Regression observed by the operator: a fully saved plan followed by
+  // "Continue" must not report "already completed" and wait for another turn.
+  // It must use the original account-owned homepage request exactly once.
+  $finishedVersion=(int)coreui_plan_latest($pdo,1,$sid)['version'];
+  $continueBuilds=0;
+  $continueDecisions=0;
+  $resumeComplete=coreui_native_tool_apply($pdo,1,$sid,11,
+    "[COREUI_PLAN_CONTINUE]\nBitte den gespeicherten Auftrag fortsetzen.\n[/COREUI_PLAN_CONTINUE]",
+    static function(string $task) use (&$continueBuilds): string {
+      $continueBuilds++;
+      native_assert(str_contains($task,'[COREUI_PLANUNGSKONTEXT]')
+        && str_contains($task,'index.html'),
+        'The saved complete plan must reach the validated file worker');
+      return 'VERIFIED HOMEPAGE CONTINUED';
+    },false,static function(string $prompt) use (&$continueDecisions): array {
+      $continueDecisions++;
+      native_assert(str_contains($prompt,'URSPRUENGLICHER AUFTRAG')
+        && str_contains($prompt,'kannst du eine homepage erstellen')
+        && str_contains($prompt,'Continue'),
+        'The real initial request must survive a later Continue');
+      return ['text'=>'START_BUILD','ok'=>true];
+    },'Continue');
+  native_assert($resumeComplete==='VERIFIED HOMEPAGE CONTINUED'
+    && $continueBuilds===1 && $continueDecisions===1
+    && (int)coreui_plan_latest($pdo,1,$sid)['version']===$finishedVersion,
+    'Completed PLAN_CONTINUE must invoke one approved build without a duplicate plan');
+
   // A plan-only request remains inert even if a valid plan is saved.
   $planOnlyBuildCalls = 0;
   $planSaved = coreui_native_tool_apply($pdo,1,$sid,11,$properPlan,
