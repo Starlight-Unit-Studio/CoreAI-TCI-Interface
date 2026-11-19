@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.8.2 - 19.11.2026
+
+- **Autonomous planning continuation:** Removed the four-call and 240-second production cutoffs. Mara continues a server-owned project-planning turn while each result adds verified, versioned Markdown, until it is explicitly complete or a genuine failure/cancellation prevents progress. Finite rounds remain available for deterministic tests.
+- **Preflight diagnostics:** Both Docker and native host Preflight now preserve PHP stderr and report process exit status for nine project/skill tests instead of hiding silent failures behind `Unknown error`.
+- **Real regression coverage:** Added a six-checkpoint planner test and an offline GitHub workflow that runs all nine reported project and skill selftests separately, revealing actual assertion failures or process exits.
+- **Verification scope:** GitHub's offline tests are distinct from host MariaDB, Ollama and sandbox checks; runtime rollout still requires server Preflight.
+
 ## 0.8.1 - 19.11.2026
 
 - **Navigation recovery:** The async private-chat send now saves its queued server-owned agent run before acknowledging. Returning from Settings claims a queued run once or observes an already running run without restarting it.
