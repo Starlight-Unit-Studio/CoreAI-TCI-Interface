@@ -28,6 +28,7 @@
   <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="./css/coreui-projects.css?v=0384202420689223487562543" />
   <link rel="stylesheet" href="./css/coreui-project-files.css?v=0677648217447778511593633" />
+  <link rel="stylesheet" href="./css/coreui-chat-dev.css" />
   <link rel="stylesheet" href="./css/coreui-sidebar-refresh.css?v=0627668178446908152113989" />
   <link rel="stylesheet" href="./css/coreui-project-theme.css?v=1018543211996787570683039" />
   <link rel="stylesheet" href="./css/coreui-shortcuts.css?v=1167871766899792767901985" />
@@ -884,8 +885,27 @@
     </div>
     <ol class="chat-search-results" id="chatSearchResults"></ol>
   </div>
+  <!-- One shared, real project-file editor/terminal/preview module.
+       Moving its DOM into this dialog preserves its running state. -->
+  <div id="chatDevModal" class="chat-dev-modal" role="dialog" aria-modal="true"
+       aria-labelledby="chatDevTitle" aria-describedby="chatDevStatus" hidden>
+    <section class="chat-dev-window" tabindex="-1">
+      <header class="chat-dev-header">
+        <div class="chat-dev-heading">
+          <span class="chat-dev-kicker">COREAI // WORKSPACE</span>
+          <h2 id="chatDevTitle">Entwicklungsumgebung</h2>
+          <span class="chat-dev-context" id="chatDevContext"></span>
+        </div>
+        <button type="button" class="chat-dev-close" id="chatDevClose" aria-label="Entwicklungsumgebung schließen">✕</button>
+      </header>
+      <p class="chat-dev-status" id="chatDevStatus" role="status" aria-live="polite">Arbeitsbereich laden …</p>
+      <div class="chat-dev-content" id="chatDevHost"></div>
+    </section>
+  </div>
+
   <script src="./js/coreui-update.js?v=0027007356017747916079807"></script>
   <script src="./js/coreui-project-files.js?v=0953475465316548366557292"></script>
+  <script src="./js/coreui-chat-dev.js"></script>
   <script src="./js/coreui-projects.js?v=0366482625628996702391515"></script>
   <script src="./js/coreui-sidebar-fold.js?v=1057593083839253957456375"></script>
   <script src="./js/coreui-chat-menu.js?v=0953487258652648855791858"></script>
