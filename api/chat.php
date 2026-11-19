@@ -5145,7 +5145,7 @@ function ember_build_chat_prompt(
   // state wins over historical Markdown plans and full-site ZIP builders.
   // An unavailable file inventory also disables unsafe auto-build hints.
   $existingProjectSourcesState = ($channel === 'console'
-      && ($projectScope['id'] ?? '') !== '' && $consoleSessionId !== null)
+      && $consoleSessionId !== null)
     ? coreui_pftools_has_saved_sources($pdo,$uid,(string)$consoleSessionId)
     : false;
   // 0.7.0: the person's own words of this turn decide whether their reference photos apply.
@@ -5748,7 +5748,7 @@ function ember_generate_reply(
   // state wins over historical Markdown plans and full-site ZIP builders.
   // An unavailable file inventory also disables unsafe auto-build hints.
   $existingProjectSourcesState = ($channel === 'console'
-      && ($projectScope['id'] ?? '') !== '' && $consoleSessionId !== null)
+      && $consoleSessionId !== null)
     ? coreui_pftools_has_saved_sources($pdo,$uid,(string)$consoleSessionId)
     : false;
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
