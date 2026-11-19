@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.8
+Date: 2026-11-19
+Branch: fix/project-native-tool-conflict-088
+Base: main 0.8.7
+
+Operator intent
+A normal main chat must be a complete work chat. Projects are optional organizational and memory-isolation features. Reuse the existing Project Files UI instead of creating another editor.
+
+Source findings
+- Existing editor, preview, terminal, development server and version history all live inside the one #projectFilesPanel owned by js/coreui-project-files.js.
+- Existing pfile backend authorized files using only project_id; ordinary chat sessions lacked a storage root.
+- A saved historical plan and the native/Python full-site builder could override newer requests such as adding blog.html.
+- The chat input placeholder can be reset by profile refresh and is NOT an authorization signal.
+
+Implementation
+- Migration 056: hidden workspace_session_id with unique per-chat backing project and ON DELETE CASCADE. CoreAI project list excludes internal workspaces.
+- Normal session creation transactionally provisions its private workspace; older existing chats gain it lazily. Workspace APIs enforce account ownership, active/unlocked session and CSRF.
+- Same existing pfile/project-run/process/VCS APIs; no duplicate runtime and no new arbitrary shell authority.
+- Existing project chats use their named Project workspace; ordinary chats use a hidden session workspace without isolation of global memory.
+- A mobile chat tab and desktop rail action open a modal. The real Project Files panel moves into it and returns intact; editor state, controls, previews and listeners are reused.
+- Populated source workspaces avoid stale whole-site rebuild prompts. Native tool block correction remains strict and type-sensitive.
+- Preflight, regression tests, source fingerprints, README, roadmap and version files synchronized.
+
+QA after merge
+1. On mobile, open a saved normal chat, select Entwicklung, create index.html, preview and run it, close/reopen the modal and reload the chat.
+2. Verify file versions and private chat separation. Confirm hidden workspaces do not appear under Projekte.
+3. In an existing named Project chat, add blog.html without recreating index.html.
+4. Confirm account separation, locked/archived chat denial and cascade deletion.
+5. After the installer update, run native or Docker Preflight, and confirm the real host worker and sandbox.
+6. Do not claim a server update or working deployment without evidence.
+
+Limitations
+- Previously generated downloads do not automatically migrate when the modal opens.
+- Moving a file-backed ordinary chat into a named Project needs an explicit conflict-aware file import.
+- Text sources are in the file workspace; other binary artifacts stay in the download system.
+- Next version after merge: 0.8.9.
