@@ -438,6 +438,33 @@ function coreui_native_tool_attempt(string $reply): bool {
       substr($text, 0, 4000)) === 1;
 }
 
+/**
+ * A malformed reply with one unmistakable native marker must be corrected as
+ * THAT tool, not redirected to a new PLAN_SAVE (which can abandon a project
+ * update). This is only a prompt hint; it never executes or authorizes a tool.
+ * Mixed markers, fences and unknown actions remain without a targeted hint.
+ */
+function coreui_native_tool_repair_example(string $previous): ?string {
+  $text = coreui_native_marker_lines_normalize(
+    coreui_native_public_progress_strip($previous)['reply']);
+  if (strlen($text) > 300000 || preg_match('//u',$text) !== 1
+      || str_contains($text,chr(0))
+      || str_contains($text,str_repeat(chr(96),3))) return null;
+  if (preg_match_all('~\\[(/?)COREUI[_/]([A-Z_]+)\\]~i',$text,$matches,PREG_SET_ORDER) !== 2
+      || $matches[0][1] !== '' || $matches[1][1] !== '/'
+      || strtoupper($matches[0][2]) !== strtoupper($matches[1][2])) return null;
+  $kind = strtoupper($matches[0][2]);
+  return match ($kind) {
+    'PROJECT_BUILD' => "[COREUI_PROJECT_BUILD]\nGespeicherten, vom Benutzer beauftragten Projektstand umsetzen und neue Dateien pruefen.\n[/COREUI_PROJECT_BUILD]\n",
+    'PLAN_AND_BUILD' => "[COREUI_PLAN_AND_BUILD]\n# Projektumsetzung\n## Anforderungen\n- Den ausdruecklichen Benutzerauftrag vollstaendig planen.\n## Abnahme\n- Alle Projektdateien und Ergebnisse pruefen.\n[/COREUI_PLAN_AND_BUILD]\n",
+    'PLAN_SAVE' => "[COREUI_PLAN_SAVE]\n# Projektplan\n## Anforderungen\n- Den Benutzerauftrag im Plan festhalten.\n[/COREUI_PLAN_SAVE]\n",
+    'PLAN_APPEND' => "[COREUI_PLAN_APPEND]\n## Naechste Schritte\n- Einen neuen, nicht wiederholten Planabschnitt ergaenzen.\n[/COREUI_PLAN_APPEND]\n",
+    'PLAN_CONTINUE','PLANCONTINUE' =>
+      "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen.\n[/COREUI_PLAN_CONTINUE]\n",
+    default => null,
+  };
+}
+
 /** The single correction request after an unreadable tool reply. */
 function coreui_native_tool_repair_prompt(string $shape, string $previous, bool $compact = false): string {
   $why = [
@@ -456,9 +483,10 @@ function coreui_native_tool_repair_prompt(string $shape, string $previous, bool 
   // gets this narrowly scoped correction; mixed tool blocks stay ambiguous.
   $resume = coreui_native_plan_continue_marker_attempt($previous)
     && preg_match_all('~(?mi)^[ \\t]*\\[(?:COREUI[/_][A-Z_]+)\\][ \\t]*$~', $previous) === 1;
+  $targetedExample = coreui_native_tool_repair_example($previous);
   $example = $resume
     ? "[COREUI_PLAN_CONTINUE]\nGespeicherten Entwurf fortsetzen.\n[/COREUI_PLAN_CONTINUE]\n"
-    : "[COREUI_PLAN_SAVE]\n# Titel\n## Abschnitt\n- Anforderungen und Abnahmekriterien konkret beschreiben.\n[/COREUI_PLAN_SAVE]\n";
+    : ($targetedExample ?? "[COREUI_PLAN_SAVE]\n# Titel\n## Abschnitt\n- Anforderungen und Abnahmekriterien konkret beschreiben.\n[/COREUI_PLAN_SAVE]\n");
   $prompt = "\n\n[COREUI WERKZEUGKORREKTUR]\nDeine letzte Antwort wollte ein CoreAI-Werkzeug "
     . "nutzen, war aber nicht sicher lesbar. Grund: " . $why . "\n"
     . "Triff deine Entscheidung jetzt erneut. Antworte ENTWEDER normal ohne jeden COREUI-Marker "
@@ -466,6 +494,10 @@ function coreui_native_tool_repair_prompt(string $shape, string $previous, bool 
     . "letzte Zeile der passende schliessende Marker, zum Beispiel:\n"
     . $example
     . ($resume ? "Verwende den bereits gespeicherten Entwurf. Starte keinen neuen PLAN_SAVE-Block.\n" : '')
+    . ($targetedExample !== null
+        ? "Wenn derselbe Werkzeugschritt weiter erforderlich ist, verwende ausschliesslich seinen obigen Marker. "
+          . "Kein neuer Plan, wenn es um bestehende Projektdateien geht. "
+        : "Bei Projektdateien zuerst den vorhandenen Projektstand pruefen; keine neuen Plaene aus einem Formatfehler erfinden. ")
     . "Erlaubte Werkzeuge: PLAN_SAVE, PLAN_APPEND, PLAN_CONTINUE, PLAN_AND_BUILD, PROJECT_BUILD. "
     . "Kein Codeblock und kein zweiter Block.\n";
   $previous = trim($previous);
