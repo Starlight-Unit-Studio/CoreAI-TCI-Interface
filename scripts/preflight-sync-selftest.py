@@ -54,7 +54,7 @@ def verify(root: Path) -> list[str]:
     # independent checks fail before they could exercise their target.
     project_store = (root / "api/console_project_store.php").read_text(encoding="utf-8")
     declared = re.search(
-        r"SELECT\\s+([a-z_,\\s]+)\\s+FROM stu_console_projects LIMIT 0",
+        r"SELECT\s+([a-z_,\s]+)\s+FROM stu_console_projects LIMIT 0",
         project_store, re.IGNORECASE,
     )
     if declared is None:
@@ -69,7 +69,7 @@ def verify(root: Path) -> list[str]:
             rel = f"scripts/{name}-selftest.php"
             body = (root / rel).read_text(encoding="utf-8")
             definitions = re.findall(
-                r"CREATE TABLE stu_console_projects\\s*\\((.*?)\\)",
+                r"CREATE TABLE stu_console_projects\s*\((.*?)\)",
                 body, re.IGNORECASE | re.DOTALL,
             )
             if not definitions:
@@ -77,7 +77,7 @@ def verify(root: Path) -> list[str]:
                 continue
             for index, definition in enumerate(definitions, 1):
                 fixture_columns = set(re.findall(
-                    r"(?:^|,)\\s*([a-z_]+)\\s+[a-z_]+", definition, re.IGNORECASE,
+                    r"(?:^|,)\s*([a-z_]+)\s+[a-z_]+", definition, re.IGNORECASE,
                 ))
                 missing = sorted(project_columns - fixture_columns)
                 if missing:
