@@ -29,7 +29,7 @@ jobs:
             scripts/model-project-intent-selftest.php scripts/contextual-project-selftest.php \
             scripts/native-tools-selftest.php scripts/plan-autocontinue-selftest.php \
             scripts/agent-loop-selftest.php scripts/project-files-selftest.php \
-            scripts/project-env-selftest.php; do
+            scripts/chat-workspace-selftest.php scripts/project-env-selftest.php; do
             php -l "$file"
           done
       - name: Offline preflight regression suite (no production database)
@@ -41,4 +41,5 @@ jobs:
           php scripts/plan-autocontinue-selftest.php
           php scripts/agent-loop-selftest.php
           php scripts/project-files-selftest.php
+          php scripts/chat-workspace-selftest.php
           php scripts/project-env-selftest.php
