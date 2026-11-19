@@ -1,0 +1,29 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.6
+Date: 2026-11-19
+Branch: fix/native-tool-repair-existing-project-086
+Base: main 0.8.5
+
+Evidence
+- The operator reports that the published website example works and looks good.
+- In CoreAI, two screenshots show native tool reply rejection. Diagnostic reason: tool_text_around_block, model ember-coreui:latest, response lengths 676 and 636 bytes.
+- The exact unfiltered LLM response is not present in work events and was not inspected, so exact surrounding text is not asserted.
+
+What was proved
+- coreui_pftools_run('pfile_write') is project-scoped, but writes new paths or replaces an existing path; revisions are stored. No hard prohibition on preexisting projects was found.
+- The native tool parser fails closed on an ambiguously framed single response and the one retry used a generic PLAN_SAVE demonstration for any shape. A correction may consequently be misdirected.
+- SSE tool correction used 180 seconds even though the configured CPU model timeout may require more. Synchronous correction unnecessarily re-expanded skills/think context.
+
+Changes
+1. api/console_native_tools.php: inert, marker-specific repair examples for one matching known tool. No directly executed recovered ambiguous output.
+2. api/console_stream.php: configured CPU model timeout for the single format retry; disable thought and skill overhead for precise formatting.
+3. api/chat.php: sync retry uses minimal formatting-specific call and no redundant skill injection.
+4. scripts/native-tools-selftest.php: single-tool malformed framing, same-tool correction, mixed/fenced exclusion, CPU follow-up assertion.
+5. scripts/preflight-sync-selftest.py: offline contract gates for targeted repair and timeout in both dispatch modes.
+6. Release VERSION, pages, browser JS fingerprint, README, changelogs, branding selftest, Docker/native Preflight header updated to 0.8.6.
+
+Limits and operational next steps
+- No update or live deployment claimed.
+- The full raw model output cannot be inferred from tool_text_around_block; instrumentation does not persist private model content.
+- Project owner, chat binding, file type, 512 KiB single-file, project 200-file/10-MB and account quotas remain normal authorization/size limits.
+- Production smoke test should verify a newly added file and one edited file in Dateien, not only that an external web URL renders.
+- Next merged version must be 0.8.7, never invented patch version.
