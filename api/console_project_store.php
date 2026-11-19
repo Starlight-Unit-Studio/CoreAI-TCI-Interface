@@ -56,7 +56,9 @@ function coreui_project_require_managed(PDO $pdo,int $uid,string $projectId): ar
   if (coreui_chat_workspace_ready($pdo)) {
     $q=$pdo->prepare('SELECT workspace_session_id FROM stu_console_projects WHERE id=? AND user_id=?');
     $q->execute([$projectId,$uid]);
-    if ($q->fetchColumn() !== null) throw new RuntimeException('workspace_not_a_project');
+    $internalSession=$q->fetchColumn();
+    if (is_string($internalSession) && $internalSession !== '')
+      throw new RuntimeException('workspace_not_a_project');
   }
   return $p;
 }
