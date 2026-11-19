@@ -1,0 +1,39 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.7.97
+Date: 2026-11-18
+Base: main 0.7.96
+Branch: feat/agent-public-workflow-commentary-20261118
+Draft PR: #358
+
+Operator's requirement
+Show a genuine ongoing project run with public intermediate narration and
+expandable evidence of tool calls, resembling the operator's own Claude Code
+session screenshots. This must not be the private internal thought process.
+
+Implementation
+- api/console_agent_loop.php: public, safe model-authored commentary before
+  an authenticated project tool marker, never used as authorization; fallback
+  to existing tool action note. Confirmed outcomes of commands, server
+  requests and processes also become short public updates.
+- js/coreui-work-events.js: supports unbounded project step titles and counts
+  completed tool actions without mislabeling a running request as a successful
+  result. Public messages remain inline; technical groups stay expandable.
+- scripts/agent-loop-selftest.php, scripts/work-events-ui-selftest.js: new
+  validations for public progress, continuing automatically, honest exit
+  statuses and no private reasoning exposure.
+- Existing Preflight execution sites in both Compose and Native remain in
+  force; none were removed or bypassed. VERSION, release docs and numerical
+  SHA-256 asset fingerprint are synchronized.
+
+Verification and release cautions
+- GitHub Actions must be green at the exact final commit; no production
+  deployment or real Android / Ollama project-chat test is claimed.
+- No actual confidential model thinking is shown, ever.
+- The public agent note may only contain verified observations or next steps;
+  model-generated claims are still not server-verified tool results.
+- Watch real SSE reconnects, project file modifications, job cancellations and
+  final answers in a live test.
+- A competing draft PR #357 also targets 0.7.97. Whichever merges second
+  MUST rebase onto main and take the next numeric release version, updating
+  all changelog, handover and cache contracts. Do not merge both at 0.7.97.
+
+Next version after this branch merges alone: 0.7.98.

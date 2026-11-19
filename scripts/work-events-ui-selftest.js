@@ -219,6 +219,38 @@ assert(liveStatus.querySelector('.work-status').textContent
   'the live status names the activity, elapsed time and tokens');
 assert.equal(saved.querySelector('.work-status'),null,'a finished reply has no live status line');
 
+// Public project commentary stays readable between actual tool events like a
+// continuous terminal-agent run; its commands remain expandable and sourced
+// from verified tool events, not a displayed private chain of thought.
+const narratedRun = work.create({events:[
+  {id:810,kind:'commentary',state:'info',title:'Mara meldet ihren naechsten Schritt',
+    meta:{source:'model_public_text',
+      public_note:'Ich habe die Projektdateien untersucht und prüfe jetzt den JavaScript-Test.',
+      raw_thinking:'PRIVATE_INTERNAL_TEXT'}},
+  {id:811,kind:'tool',state:'running',title:'Schritt 2: Projekt ausfuehren',
+    meta:{reason:'agent_loop'}},
+  {id:812,kind:'tool',state:'success',title:'Schritt 2: Projekt ausfuehren',
+    meta:{reason:'verified_tool_result'}},
+  {id:813,kind:'commentary',state:'info',title:'Mara ordnet das Werkzeugergebnis ein',
+    meta:{source:'verified_tool_result',
+      public_note:'Der ausgeführte Befehl endete mit Exitcode 0. Ich prüfe nun die Auswirkungen.'}},
+  {id:814,kind:'commentary',state:'info',title:'Mara meldet ihren naechsten Schritt',
+    meta:{source:'model_public_text',
+      public_note:'Die Prüfung ist abgeschlossen, jetzt prüfe ich den gespeicherten Arbeitsstand.'}}
+]});
+const narratedEntries = narratedRun.querySelector('.work-entries');
+assert(narratedEntries.children[0].className.includes('work-narration'),
+  'the next action is an inline Mara paragraph');
+assert.equal(narratedEntries.children[1].querySelector('.work-run-toggle').textContent,
+  '1 Werkzeugaktion · Details anzeigen▸',
+  'only an actually returned tool event contributes to the action count');
+assert(narratedEntries.children[2].hidden,'technical success details stay folded');
+assert(narratedEntries.children[3].textContent.includes('Exitcode 0')
+  && narratedEntries.children[4].textContent.includes('Arbeitsstand'),
+  'verified tool outcome and following Mara commentary appear without manual expansion');
+assert(!narratedRun.textContent.includes('PRIVATE_INTERNAL_TEXT'),
+  'private reasoning remains excluded from persistent work view');
+
 // Issue #115 and Starlight lore: the interface says "Core", never "Modell"
 // or "Core-Aufruf". Internal event names stay unchanged.
 const coreTitles = ['Modellstream vorbereitet','Modellstream gestartet','Modellaufruf gestartet',

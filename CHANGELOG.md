@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.7.97 - 18.11.2026
+
+- **Visible, continuous project work:** Mara can write short, deliberately public progress updates before individual authenticated tool steps. Her status, next action and confirmed tool outcomes appear inline while the same project run continues, following the operator's Claude-Code reference screenshots.
+- **Verified outcomes, not fabricated thinking:** Command exit codes, process launch and server reachability are reported from real tool results. Public commentary never exposes hidden Ollama reasoning, raw prompts, secrets or unverified source text.
+- **Accurate expandable activity groups:** Unbounded project steps such as "Schritt 2: Projekt ausfuehren" are grouped as technical actions instead of being confused with public narration; counters distinguish actual returned tool outcomes and failures.
+- **Regression coverage:** Expanded agent-loop and work-event UI tests are already executed by both preflight variants; cache fingerprints and release metadata updated. Live Android / production validation remains required before deploy.
+
 ## 0.7.96 - 18.11.2026
 
 - **English-only terminal output:** Installer, migration and both Preflight variants now present CoreAI-authored operator status messages in English, independent from the application's UI language. Replaced raw selftest success stdout with explicit English pass labels after each real test completes.
