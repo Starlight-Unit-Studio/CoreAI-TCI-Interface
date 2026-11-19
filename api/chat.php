@@ -550,9 +550,23 @@ function ember_max_reply_chars(): int {
   return ember_max_reply_chars_for_values($configured, $numPredict);
 }
 
-function ember_keep_alive() {
-  // Ollama accepts e.g. -1 (keep forever) or "30m" strings.
-  return ember_cfg('STU_EMBER_KEEP_ALIVE', -1);
+/** Ollama keep_alive is a top-level request field, never a Modelfile option.
+ * Numeric configuration strings need to be JSON numbers: "-1" -> -1.
+ * Explicit administrator durations (e.g. "15m") and zero (unload) remain valid.
+ */
+function ember_keep_alive_value($value): int|string|null {
+  if ($value === null) return null;
+  if (is_int($value)) return $value;
+  if (is_string($value)) {
+    $value = trim($value);
+    if (preg_match('~^-?\\d+$~D', $value) === 1) return (int)$value;
+    return $value !== '' ? $value : -1;
+  }
+  return -1;
+}
+
+function ember_keep_alive(): int|string|null {
+  return ember_keep_alive_value(ember_cfg('STU_EMBER_KEEP_ALIVE', -1));
 }
 
 function ember_virtual_minutes_catchup_sec(): int {
