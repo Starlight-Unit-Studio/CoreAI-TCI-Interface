@@ -401,7 +401,7 @@ function coreui_native_single_block_recover(string $reply): ?array {
   $intro = trim($m['intro']);
   $tail = trim($m['tail']);
   if (!coreui_native_outer_prose_safe($intro,900)
-      || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*\z~iu', $intro))
+      || preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*(?:\x60[^\r\n]+\x60)?\s*\z~iu', $intro))
     return null;
   if (!coreui_native_outer_prose_safe($tail,1200)) return null;
   $type = $m['type'];
