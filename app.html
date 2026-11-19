@@ -312,9 +312,18 @@
       </section>
       <section class="project-directory project-home" id="coreuiProjectDirectory" hidden aria-label="Alle Projekte">
         <div class="project-home-content">
-          <button class="project-directory-drawer" id="projectDirectoryDrawer" type="button" aria-label="Seitenleiste öffnen">☰</button>
-          <header class="project-directory-header"><h1>Projekte</h1><button id="projectDirectoryCreate" type="button">Neues Projekt</button></header>
-          <div class="project-directory-tools"><label class="project-directory-search">Suchen<input id="projectDirectorySearch" type="search" placeholder="In Projekten suchen" autocomplete="off"></label><label class="project-directory-sort">Sortieren<select id="projectDirectorySort"><option value="newest">Neueste</option><option value="name">Name</option><option value="oldest">Älteste</option></select></label></div>
+          <div class="project-directory-topbar">
+            <button class="project-directory-drawer" id="projectDirectoryDrawer" type="button" aria-label="Seitenleiste öffnen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+            <span class="project-directory-kicker">COREAI // PROJEKTE</span>
+          </div>
+          <header class="project-directory-header">
+            <div class="project-directory-heading"><h1>Projekte</h1><p id="projectDirectoryCount" role="status" aria-live="polite"></p></div>
+            <button id="projectDirectoryCreate" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Neues Projekt</span></button>
+          </header>
+          <div class="project-directory-tools">
+            <label class="project-directory-search"><span>Suchen</span><span class="project-directory-search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="projectDirectorySearch" type="search" placeholder="In Projekten suchen" autocomplete="off"></span></label>
+            <label class="project-directory-sort"><span>Sortieren</span><select id="projectDirectorySort"><option value="newest">Neueste</option><option value="name">Name</option><option value="oldest">Älteste</option></select></label>
+          </div>
           <div class="project-directory-list" id="projectDirectoryList" aria-live="polite"></div>
         </div>
       </section>
@@ -330,8 +339,7 @@
             </div>
             <div class="project-home-popover" id="projectHomePopover" hidden>
               <button type="button" data-project-action="share">Projekt teilen</button>
-              <button type="button" data-project-action="rename">Projekt umbenennen</button>
-              <button type="button" data-project-action="settings">Projekteinstellungen</button>
+              <button type="button" data-project-action="settings">Details bearbeiten</button>
               <button type="button" data-project-action="home">Projektstartseite</button>
               <button type="button" data-project-action="pin" id="projectHomePin">Projekt anpinnen</button>
               <button type="button" data-project-action="delete" class="danger">Projekt löschen</button>
