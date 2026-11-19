@@ -873,10 +873,11 @@ img_gen_test(str_contains($chat, "sse_send('image_preview', ['image' => \$image,
   '0.6.42: previews go to the live stream of this request');
 // 0.6.43: the first check also takes a tool chosen in the + menu (composer-intent-selftest.php).
 img_gen_test(substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid)') === 2
-  && substr_count($stream, '|| ember_image_marker_in($reply, (int)$uid);') === 1
-  && str_contains($stream, "|| ember_image_marker_in(\$reply, (int)\$uid)\n            || (\$composerIntentStream !== null && !\$isVisionTurn && !\$fileTaskHandled);")
+  && substr_count($stream, '|| $projectToolPending($reply)') === 2
+  && str_contains($stream, "|| ember_image_marker_in(\$reply, (int)\$uid)\n            || \$projectToolPending(\$reply)\n            || (\$composerIntentStream !== null && !\$isVisionTurn && !\$fileTaskHandled);")
+  && str_contains($stream, "|| ember_image_marker_in(\$reply, (int)\$uid)\n            || \$projectToolPending(\$reply);")
   && str_contains($stream, "'attachments'   => coreui_image_message_attachments(\$pdo, (int)\$uid, \$emberMsgId),"),
-  'the stream hands an image wish to the work loop and sends the image with the answer');
+  'the stream hands image and project tool requests to the work loop before final answers');
 img_gen_test(str_contains($read('api/console_session_store.php'), "\$allowedPrefixes = ['var/console_media/images/', 'var/console_media/',"),
   'chat and account deletion know the image folder');
 img_gen_test(str_contains($read('api/console_messages.php'), "'generated' => str_starts_with((string)(\$media['rel_path'] ?? ''), 'var/console_media/images/'),"),
