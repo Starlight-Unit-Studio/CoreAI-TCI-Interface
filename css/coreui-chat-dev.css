@@ -1,5 +1,14 @@
 /* Reuse the real Project Files editor in any chat. No iframe duplication,
    invented preview or second tool state. Responsive to Android / DeX. */
+.core-insights .insight-dev-launch {
+  display:flex;align-items:center;justify-content:flex-start;gap:10px;
+  min-height:44px;width:100%;padding:9px 14px;
+  border:1px solid var(--line-strong);
+  background:var(--panel);color:var(--cx);
+  font:600 13px var(--coreui-font,"Rajdhani"),sans-serif;
+  cursor:pointer;
+}
+.core-insights .insight-dev-launch:focus-visible {outline:2px solid var(--cx);}
 .chat-dev-modal[hidden] {display:none!important;}
 .chat-dev-modal {
   position:fixed;
