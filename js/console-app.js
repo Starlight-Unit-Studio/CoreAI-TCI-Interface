@@ -4508,6 +4508,23 @@
         assistant: String(state.assistantName || 'Mara')} : null;
     },
     getSessions: function () { return state.sessions.slice(); },
+    ensureDevWorkspace: function () {
+      var active = activeSession();
+      if (!active || active.archived) return Promise.reject(new Error('Starte zuerst einen Chat, damit der Arbeitsbereich gespeichert werden kann.'));
+      var sid=String(active.id);
+      return fetch(API_BASE + '/console_sessions.php', {
+        method:'POST', credentials:'include',cache:'no-store',
+        headers:{'Content-Type':'application/json','X-COREUI-CSRF':state.csrfToken},
+        body:JSON.stringify({action:'workspace_ensure',id:sid})
+      }).then(function(r) {
+        return r.json().catch(function(){return {};}).then(function(d){
+          if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('HTTP '+r.status));
+          if (String(d.session_id)!==sid || !d.workspace || !/^[a-f0-9]{32}$/.test(String(d.workspace.project_id||'')))
+            throw new Error('Ungültige Workspace-Zuordnung.');
+          return d.workspace;
+        });
+      });
+    },
     syncPinnedSection: syncPinnedSection,
     openDrawer: openDrawer,
     closeDrawer: closeDrawer,
