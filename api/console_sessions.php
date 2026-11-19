@@ -26,7 +26,7 @@ if ($method === 'POST') {
   $body = stu_read_json_body();
   $action = strtolower(trim((string)($body['action'] ?? $action)));
   if (str_starts_with($action,'project_') || str_starts_with($action,'chat_lock') || $action === 'chat_unlock'
-    || in_array($action, ['archive_all', 'delete_all'], true)) stu_require_csrf();
+    || in_array($action, ['archive_all', 'delete_all', 'workspace_ensure'], true)) stu_require_csrf();
 }
 
 try {
@@ -72,6 +72,14 @@ try {
 
   if ($action === 'projects' && $method === 'GET') {
     stu_json(['ok'=>true,'projects'=>coreui_project_list($pdo,(int)$uid),'csrf_token'=>stu_csrf_token()]);
+  }
+
+  if ($method === 'POST' && $action === 'workspace_ensure') {
+    $sessionId=coreui_console_session_normalize_id($body['id'] ?? '');
+    if ($sessionId==='') throw new InvalidArgumentException('invalid_session');
+    $workspace=coreui_chat_workspace_ensure($pdo,(int)$uid,$sessionId);
+    stu_json(['ok'=>true,'session_id'=>$sessionId,
+      'workspace'=>$workspace,'csrf_token'=>stu_csrf_token()]);
   }
 
   if ($method === 'POST' && $action === 'project_create') {

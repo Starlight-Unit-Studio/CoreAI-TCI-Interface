@@ -268,6 +268,16 @@
     return state.sessions.find(function(s) { return String(s.id) === id; }) || null;
   }
 
+  function refreshComposerPlaceholder() {
+    if (!inputEl) return;
+    var ses = activeSession();
+    // Cosmetic only. The authenticated server session, not this label, owns
+    // the tool/file permissions; both chat types may use general tools.
+    inputEl.placeholder = (state.draftProjectId || (ses && ses.project_id))
+      ? 'Nachricht im Projekt…'
+      : 'Nachricht an ' + (state.assistantName || 'CoreAI') + '…';
+  }
+
   function isActiveSession(sessionId) {
     return String(state.activeSessionId || '') === String(sessionId || '');
   }
@@ -925,6 +935,7 @@
     trimSessionCaches(state.activeSessionId);
     if (chatFollow) chatFollow.reset();
     var ses = activeSession();
+    refreshComposerPlaceholder();
     if (!ses) { showSessionInsights(false); return Promise.resolve(); }
     messagesArea.classList.remove('is-welcome');
     showSessionInsights(true);
@@ -4284,7 +4295,7 @@
         state.assistantName = d.assistant_name || 'Mara';
         state.userAvatarUrl = d.avatars && d.avatars.user ? d.avatars.user : null;
         state.assistantAvatarUrl = d.avatars && d.avatars.assistant ? d.avatars.assistant : null;
-        if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
+        refreshComposerPlaceholder();
         updateWelcomeGreeting();
         state.guest = d.is_guest && d.guest ? d.guest : null;
         renderGuestQuota();
@@ -4322,7 +4333,7 @@
         state.assistantName = d.profile.assistant_name || state.assistantName || 'Mara';
         state.userAvatarUrl = d.profile.avatars && d.profile.avatars.user ? d.profile.avatars.user : null;
         state.assistantAvatarUrl = d.profile.avatars && d.profile.avatars.assistant ? d.profile.avatars.assistant : null;
-        if (inputEl) inputEl.placeholder = 'Nachricht an ' + state.assistantName + '…';
+        refreshComposerPlaceholder();
         updateWelcomeGreeting();
         var ses = activeSession();
         if (ses && isActiveSession(ses.id)) renderHistory(ses);
@@ -4497,6 +4508,23 @@
         assistant: String(state.assistantName || 'Mara')} : null;
     },
     getSessions: function () { return state.sessions.slice(); },
+    ensureDevWorkspace: function () {
+      var active = activeSession();
+      if (!active || active.archived) return Promise.reject(new Error('Starte zuerst einen Chat, damit der Arbeitsbereich gespeichert werden kann.'));
+      var sid=String(active.id);
+      return fetch(API_BASE + '/console_sessions.php', {
+        method:'POST', credentials:'include',cache:'no-store',
+        headers:{'Content-Type':'application/json','X-COREUI-CSRF':state.csrfToken},
+        body:JSON.stringify({action:'workspace_ensure',id:sid})
+      }).then(function(r) {
+        return r.json().catch(function(){return {};}).then(function(d){
+          if (!r.ok || !d || !d.ok) throw new Error((d && d.error) || ('HTTP '+r.status));
+          if (String(d.session_id)!==sid || !d.workspace || !/^[a-f0-9]{32}$/.test(String(d.workspace.project_id||'')))
+            throw new Error('Ungültige Workspace-Zuordnung.');
+          return d.workspace;
+        });
+      });
+    },
     syncPinnedSection: syncPinnedSection,
     openDrawer: openDrawer,
     closeDrawer: closeDrawer,

@@ -257,6 +257,18 @@
         heads[spec.id] = made.head;
         aside.appendChild(made.section);
       });
+      // Wide displays use the right rail instead of the chat chip bar.
+      var wideDev=el('button','insight-dev-launch');
+      wideDev.type='button';
+      wideDev.setAttribute('aria-haspopup','dialog');
+      wideDev.setAttribute('aria-controls','chatDevModal');
+      wideDev.appendChild(el('span','insight-icon','⌘'));
+      wideDev.appendChild(el('span','', 'Entwicklung öffnen'));
+      wideDev.addEventListener('click',function(){
+        if(root.CoreAIChatDev && root.CoreAIChatDev.open)
+          root.CoreAIChatDev.open(wideDev);
+      });
+      aside.appendChild(wideDev);
     }
     if (chips) {
       var bar = el('div', 'insight-chip-row');
@@ -270,6 +282,21 @@
         chipButtons[spec.id] = chip;
         bar.appendChild(chip);
       });
+      // Development is an action, not another read-only insight sheet:
+      // it opens the existing, real files/editor/terminal/preview in a modal.
+      var dev=el('button','insight-chip insight-chip-development');
+      dev.type='button';
+      dev.id='chatDevTab';
+      dev.setAttribute('aria-haspopup','dialog');
+      dev.setAttribute('aria-controls','chatDevModal');
+      dev.appendChild(el('span','insight-icon','⌘'));
+      dev.appendChild(el('span','insight-chip-label','Entwicklung'));
+      dev.addEventListener('click',function(){
+        setChip('');
+        if(root.CoreAIChatDev && typeof root.CoreAIChatDev.open==='function')
+          root.CoreAIChatDev.open(dev);
+      });
+      bar.appendChild(dev);
       chips.appendChild(bar);
       sheet = el('div', 'insight-sheet');
       sheet.hidden = true;

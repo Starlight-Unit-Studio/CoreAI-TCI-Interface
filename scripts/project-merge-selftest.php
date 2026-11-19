@@ -356,7 +356,7 @@ pmg_test(str_starts_with($out, 'NICHT zusammengefuehrt: 1 Konflikt(e) in style.c
   'with a conflict Mara changes nothing and says so: ' . $out);
 pmg_test(str_starts_with($runTool('pvcs_merge', 'gibt-es-nicht'), 'Das ging nicht: diesen Arbeitsstand gibt es im Projekt nicht')
   && str_starts_with($runTool('pvcs_branch', 'a b'), 'Das ging nicht: der Name eines Arbeitsstands'), 'Mara is told what went wrong');
-pmg_test(coreui_pftools_run($pdo, 9, 'cs_merge_chat', ['tool'=>'pvcs_commit', 'input'=>'x']) === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.',
+pmg_test(coreui_pftools_run($pdo, 9, 'cs_merge_chat', ['tool'=>'pvcs_commit', 'input'=>'x']) === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.',
   'not in another account\'s chat');
 $hint = coreui_pftools_hint($pdo, 7, 'cs_merge_chat', false, true);
 pmg_test(str_contains($hint, 'VERSIONEN: Aktiver Arbeitsstand ist main.') && str_contains($hint, '[ZUSAMMENFUEHREN: name]')

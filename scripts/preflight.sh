@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.7: mandatory preflight sync after every source change.
+# CoreAI: TCI Interface 0.8.8: mandatory preflight sync after every source change.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -244,6 +244,10 @@ UI_FILES=(
   database/migrations/045_project_files_mara.sql
   api/project_file_tools.php
   scripts/project-file-tools-selftest.php
+  database/migrations/056_chat_workspaces.sql
+  js/coreui-chat-dev.js
+  css/coreui-chat-dev.css
+  scripts/chat-workspace-selftest.php
   database/migrations/046_chat_branches.sql
   api/console_branch_store.php
   scripts/chat-branch-selftest.php
@@ -1541,6 +1545,15 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     project_file_tools_test_exit=$?
     fail "File tools-self-test (exit ${project_file_tools_test_exit}): ${project_file_tools_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
+  fi
+
+  # 0.8.8: every saved chat owns its real, private file/run/preview workspace.
+  chat_workspace_test=''
+  if chat_workspace_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/chat-workspace-selftest.php 2>&1)"; then
+    ok 'Chat workspace self-test passed.'
+  else
+    chat_workspace_exit=$?
+    fail "Chat workspace-self-test (exit ${chat_workspace_exit}): ${chat_workspace_test:-No PHP output; inspect workspace migration and PHP worker logs}"
   fi
 
   # 0.7.74 (P09 C): a chat branches off at one of Mara’s replies; the original stays unchanged.

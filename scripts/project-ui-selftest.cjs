@@ -155,4 +155,30 @@ assert(theme.includes('.project-modal h2::before') &&
   theme.includes('clip-path:polygon(') &&
   theme.includes('linear-gradient(90deg,var(--cx),var(--amb)'),
   'native blue/gold HUD must style the project home and creation modal');
+const dev=read('js/coreui-chat-dev.js');
+const devCss=read('css/coreui-chat-dev.css');
+const insights=read('js/coreui-insights.js');
+const workspaceMigration=read('database/migrations/056_chat_workspaces.sql');
+assert(html.includes('id="chatDevModal"') && html.includes('id="chatDevHost"') &&
+  html.includes('id="chatDevClose"') && html.includes('id="projectFilesPanel"'),
+  'one shared editor, terminal and preview must be available in chat modal');
+assert(!/<iframe[^>]*id="chatDev/.test(html) &&
+  dev.includes('host.appendChild(panel)') && dev.includes('marker.parentNode.insertBefore(panel,marker.nextSibling)'),
+  'the original project editor must MOVE into the modal, never be cloned');
+assert(insights.includes("dev.id='chatDevTab'") && insights.includes("root.CoreAIChatDev.open(dev)") &&
+  insights.includes("aria-haspopup','dialog"),'an Entwicklung chat tab must open the real modal');
+assert(dev.includes('app.ensureDevWorkspace()') && app.includes('ensureDevWorkspace: function ()') &&
+  api.includes("action === 'workspace_ensure'") && api.includes("'workspace_ensure'"),
+  'main chat must provision its own backend workspace over CSRF-protected API');
+assert(workspaceMigration.includes('workspace_session_id') &&
+  workspaceMigration.includes('ON DELETE CASCADE') &&
+  store.includes('coreui_chat_workspace_ensure') &&
+  store.includes('workspace_session_id IS NULL'),
+  'normal-chat workspaces are persistent, private, hidden from Projects and deleted with their chats');
+assert(devCss.includes('max-height:100dvh') && devCss.includes('safe-area-inset-bottom') &&
+  devCss.includes('.chat-dev-modal[hidden]'),
+  'mobile/deX dev modal must fit display and preserve hidden state');
+assert(!read('api/project_file_tools.php').includes('In diesem Chat gibt es sie nicht'),
+  'normal CoreAI chat must not be advertised as tool-disabled');
+
 console.log('CoreAI Projects: single sidebar link, project directory, native workspace and security OK');

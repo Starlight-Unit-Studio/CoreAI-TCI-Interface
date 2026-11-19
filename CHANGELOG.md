@@ -1,5 +1,15 @@
 # CoreAI: TCI Interface
 
+## 0.8.8 - 19.11.2026
+
+- **Full developer tools in normal chat:** Added **Entwicklung** beside existing chat controls on mobile and in the desktop information rail. It opens a responsive modal containing the *original* Project Files editor, safe web preview, development server/process controls, command runner, revisions and ZIP tools. No duplicate file editor or fake preview is created.
+- **Private chat workspace backend:** Migration 056 adds hidden, session-bound project backing records. Every new normal chat provisions a workspace after its first message; older chats provision on their next authenticated work turn. Workspaces do not appear in the Project directory and do not change the normal chat memory scope.
+- **Ownership and lifecycle:** Workspace APIs enforce account ownership, session locks, CSRF and existing sandbox/file validation. Deleting the chat cascades its private workspace, source versions and histories. Project chats continue using their existing project storage.
+- **Files and autonomy:** The normal chat can now use the real project file read/edit/write loop, persistent verified outputs and preview without being moved into a Project. Removed misleading project-only error messages and guarded against replaying an old full-site plan over newer saved files.
+- **Native tool robustness:** Safe single-block replies can include a filename in backticks, but executable code, examples, markdown links, ambiguous blocks and incomplete tool markers are still rejected.
+- **Testing:** New chat workspace SQLite regression, shared UI integrity checks, mandatory host Preflight and source contracts. Runtime verification of the installed server is still required.
+- **Limitation:** Moving a file-backed ordinary chat into an organizational Project requires a deliberate future file handoff; files are not automatically merged on assignment. No live deployment claimed.
+
 ## 0.8.7 - 19.11.2026
 
 - **Active local Core retention:** Default `COREUI_EMBER_KEEP_ALIVE` is now numeric `-1` rather than `15m`; preload, synchronous Ollama chat and streaming all use the same request-level value. Explicit configured numeric strings normalize to JSON numbers, while custom duration strings remain available. Switching local Cores still explicitly unloads the old one with `keep_alive: 0` under the model queue.

@@ -77,7 +77,8 @@ prt_test(coreui_agent_step_title(['tool'=>'prun', 'input'=>'x'], 2, 6) === 'Schr
 $chat = (string)file_get_contents($root . '/api/chat.php');
 prt_test(str_contains($chat, "if (ember_py_enabled() && coreui_pruns_ready(stu_pdo())) \$tools[] = 'prun';")
   && str_contains($chat, "in_array(\$tool['tool'], ['pfile_read', 'pfile_edit', 'pfile_write', 'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge'], true)")
-  && substr_count($chat, 'ember_py_enabled() && coreui_pruns_ready($pdo)) : \'\';') === 2
+  && substr_count($chat, 'ember_py_enabled() && coreui_pruns_ready($pdo)') === 2
+  && substr_count($chat, 'coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId') === 2
   && str_contains($chat, "preg_replace('~\\[\\s*AUSF(?:UE|Ü)HREN\\s*:[^\\r\\n]*\\][ \\t]*~u', '', \$out)"), 'chat.php: only with Python, dispatch, hint, stray marker removed');
 $endpoint = (string)file_get_contents($root . '/api/project_files.php');
 prt_test(str_contains($endpoint, "case 'run':\n      if (!coreui_pruns_allowed(\$pdo, \$uid)) stu_json(['ok'=>false, 'error'=>'python_disabled'], 403);")
@@ -171,7 +172,7 @@ prt_test(coreui_pruns_enqueue($pdo, 7, $a, 'echo x')['status'] === 'queued', 'af
 
 // Mara's tool outside a project chat, and the hint.
 $pdo->prepare('INSERT INTO stu_console_sessions VALUES (?,?,?,?,?,?,?)')->execute(['cs_free_chat', 7, null, 'Frei', null, '2026-11-17', '2026-11-17']);
-prt_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'prun', 'input'=>'echo hi']) === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.',
+prt_test(coreui_pftools_run($pdo, 7, 'cs_free_chat', ['tool'=>'prun', 'input'=>'echo hi']) === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.',
   'no runs outside a project chat');
 $pdo->prepare('INSERT INTO stu_console_sessions VALUES (?,?,?,?,?,?,?)')->execute(['cs_project_chat', 7, $a, 'Bau', null, '2026-11-17', '2026-11-17']);
 prt_test(str_contains(coreui_pftools_hint($pdo, 7, 'cs_project_chat', false, true), '[AUSFUEHREN: python -m unittest -v]')

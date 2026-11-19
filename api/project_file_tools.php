@@ -54,7 +54,41 @@ const COREUI_PFTOOLS_PROC_KINDS = ['pproc_start', 'pserver_start', 'pproc_output
 function coreui_pftools_project(PDO $pdo, int $uid, string $sessionId): string {
   if ($uid <= 0 || $sessionId === '' || !coreui_pfiles_schema_ready($pdo)) return '';
   $scope = coreui_project_session_scope($pdo, $uid, $sessionId);
-  return !empty($scope['available']) ? (string)($scope['id'] ?? '') : '';
+  if (empty($scope['available'])) return '';
+  if (($scope['id'] ?? '') !== '') return (string)$scope['id'];
+  // A normal chat can own source files too. It is not shown in Projects.
+  if (!function_exists('coreui_chat_workspace_id')) return '';
+  $id=coreui_chat_workspace_id($pdo,$uid,$sessionId);
+  // Chats saved before migration 056 should gain the same tools automatically
+  // on their next authenticated work turn, with no manual project creation.
+  if ($id==='' && function_exists('coreui_chat_workspace_ready')
+      && coreui_chat_workspace_ready($pdo)
+      && function_exists('coreui_chat_workspace_ensure')) {
+    try {
+      $workspace=coreui_chat_workspace_ensure($pdo,$uid,$sessionId);
+      $id=(string)($workspace['project_id'] ?? '');
+    } catch (Throwable $e) {
+      error_log('[CoreAI] Chat workspace unavailable: '.get_class($e));
+    }
+  }
+  return $id;
+}
+
+/**
+ * Whether this owned project chat already has saved source files.
+ * null means the project exists but storage could not be checked; callers
+ * must NOT fall back to rebuilding from an old plan in that situation.
+ */
+function coreui_pftools_has_saved_sources(PDO $pdo, int $uid, string $sessionId): ?bool {
+  $projectId = coreui_pftools_project($pdo,$uid,$sessionId);
+  if ($projectId === '') return false;
+  try {
+    $list = coreui_pfiles_list($pdo,$uid,$projectId);
+    return (int)($list['count'] ?? 0) > 0;
+  } catch (Throwable $e) {
+    error_log('[CoreAI] Existing project source inventory unavailable: '.get_class($e));
+    return null;
+  }
 }
 
 /** [DATEI: pfad] (pure): the path, or null. */
@@ -481,7 +515,7 @@ function coreui_pftools_proc(PDO $pdo, int $uid, string $projectId, string $kind
 /** Run one file tool of the work loop; the result is what Mara reads next. $sleep is replaceable in tests. */
 function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, ?callable $sleep = null): string {
   $projectId = coreui_pftools_project($pdo, $uid, $sessionId);
-  if ($projectId === '') return 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.';
+  if ($projectId === '') return 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.';
   $kind = (string)($tool['tool'] ?? '');
   try {
     if (in_array($kind, COREUI_PFTOOLS_PROC_KINDS, true)) {
@@ -636,13 +670,22 @@ function coreui_pftools_env_hint(PDO $pdo, int $uid, string $projectId, bool $co
  * deny it or claim it here. '' in the compact prompt, in other channels or without the Python tool.
  */
 function coreui_pftools_outside_hint(PDO $pdo, string $channel, int $uid, bool $compact): string {
-  if ($channel !== 'console' || $compact || $uid <= 0 || !function_exists('ember_py_enabled') || !ember_py_enabled()
-      || !coreui_pfiles_schema_ready($pdo) || !coreui_pruns_ready($pdo)) {
-    return '';
-  }
-  return "PROJEKTE: In einem Projekt-Chat (ein Chat in einem Projekt der Seitenleiste) hast du eine Entwicklungsumgebung: Projektdateien "
-    . "lesen und aendern, Befehle und Tests ausfuehren, Programme und Entwicklungsserver starten (Sandbox mit Python 3.12 und Node.js 24, "
-    . "Vorschau im Tab Dateien). In diesem Chat gibt es sie nicht; braucht jemand das, schlag vor, in einem Projekt weiterzuarbeiten.";
+  if ($channel !== 'console' || $uid <= 0) return '';
+  // A regular CoreAI chat is a valid work chat. Never tell Mara that its
+  // Python/browser/native tools require a project. The versioned pfile
+  // backend still has a project-storage restriction until chat workspaces
+  // are unified; that is an implementation gap, not a user requirement.
+  $notice = "CHAT-WERKZEUGE: Auch dieser normale CoreAI-Chat kann "
+    . "dateibasierte Auftraege, Python, Web-Werkzeuge und echte Downloads "
+    . "bearbeiten, soweit diese Werkzeuge aktiviert sind. Ein Projekt ist "
+    . "dafuer keine Voraussetzung. Historische Projektplaene sind "
+    . "kein Ersatz fuer den aktuellen Nutzerauftrag. ";
+  if ($compact) return $notice;
+  return $notice
+    . "Achtung: Der spezielle versionierte Projektdatei-Speicher "
+    . "benoetigt im bisherigen Backend noch einen Projektbezug. "
+    . "Das ist eine zu behebende Speichergrenze, KEINE allgemeine "
+    . "Einschraenkung der Werkzeuge im Hauptchat.";
 }
 
 /**

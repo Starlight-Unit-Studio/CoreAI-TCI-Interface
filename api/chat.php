@@ -5141,6 +5141,13 @@ function ember_build_chat_prompt(
   $projectIsolated = (($projectScope['mode'] ?? 'none') === 'isolated'
     && ($projectScope['id'] ?? '') !== '');
   $GLOBALS['COREUI_PROJECT_ISOLATED'] = $projectIsolated;
+  // Once an account-owned project contains real files, the CURRENT file
+  // state wins over historical Markdown plans and full-site ZIP builders.
+  // An unavailable file inventory also disables unsafe auto-build hints.
+  $existingProjectSourcesState = ($channel === 'console'
+      && $consoleSessionId !== null)
+    ? coreui_pftools_has_saved_sources($pdo,$uid,(string)$consoleSessionId)
+    : false;
   // 0.7.0: the person's own words of this turn decide whether their reference photos apply.
   $GLOBALS['COREUI_TURN_USER_TEXT'] = $channel === 'console' ? (string)$userMsg : '';
   // #113: the KI-Profil window belongs to the private console; the global
@@ -5199,7 +5206,8 @@ function ember_build_chat_prompt(
   $sys = ember_persona_system_for(ember_model());
 
   $nativeProjects = $channel === 'console' && $imageUrl === null
-    && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY']);
+    && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+    && $existingProjectSourcesState === false;
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
   // 0.5.77: in the private chat Mara works on her own over several steps.
@@ -5209,6 +5217,9 @@ function ember_build_chat_prompt(
   }
   $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
+  // Python is a global CoreAI tool, including for chats with saved files.
+  // Existing-project work should prefer pfile edits, but never disable
+  // unrelated Python, analysis or download capabilities.
   $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $profile['compact'], $nativeProjects) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $profile['compact'], $consoleUid);
@@ -5242,11 +5253,14 @@ function ember_build_chat_prompt(
   $nativeToolHint = $nativeProjects ? coreui_native_tools_prompt($profile['compact']) : '';
   $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
-  // 0.7.73 (P09 B): the project's files and Mara's file tools.
-  $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
-    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo)) : '';
-  // 0.7.91: outside a project Mara knows that project chats have the environment.
-  if (($projectScope['id'] ?? '') === '') $projectFilesHint = coreui_pftools_outside_hint($pdo, $channel, $uid, (bool)$profile['compact']);
+  // The same validated file tools exist in normal and organizational chats.
+  // A hidden session workspace must receive the real tool menu, never the
+  // historic project-only hint or stale full-site build instruction.
+  $hasFileWorkspace = $channel === 'console' && $consoleSessionId !== null
+    && coreui_pftools_project($pdo,$uid,(string)$consoleSessionId) !== '';
+  $projectFilesHint = $hasFileWorkspace
+    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$profile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo))
+    : coreui_pftools_outside_hint($pdo,$channel,$uid,(bool)$profile['compact']);
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
   $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,
@@ -5254,7 +5268,8 @@ function ember_build_chat_prompt(
   $projectKnowledgeBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_knowledge_block($pdo,$uid,(string)$projectScope['id'],
         $cleanLoreQuestion,$profile['compact'] ? 1500 : 3600) : '';
-  $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null)
+  $savedPlanBlock = ($channel === 'console' && $consoleSessionId !== null
+      && $existingProjectSourcesState === false)
     ? coreui_plan_prompt_block($pdo,$uid,(string)$consoleSessionId,$profile['plan']) : '';
   $u = "[SERVERZEIT (nur dein Hintergrundwissen - Datum/Uhrzeit im Gespraech NUR nennen, wenn in der NEU-Nachricht danach gefragt wird; fuer erzeugte Inhalte wie Copyright-Jahr oder Stand-Angaben gilt dieses Datum, nicht das Jahr aus deinem Trainingswissen): {$emberZeit}]{$memBlock}{$repBlock}{$playerStateBlock}{$attachBlock}{$userPromptBlock}{$profilePromptBlock}{$privateKnowledgeBlock}{$projectPromptBlock}{$projectChatBlock}{$projectKnowledgeBlock}{$savedPlanBlock}\n" . "Kontext (letzte Zeilen - Zeilen mit (du) sind DEINE eigenen, bereits gesendeten Antworten; beantworte sie NICHT erneut):\n" . ($ctx !== '' ? $ctx : "(leer)")
    . $loreBlock
@@ -5732,6 +5747,13 @@ function ember_generate_reply(
   $projectIsolated = (($projectScope['mode'] ?? 'none') === 'isolated'
     && ($projectScope['id'] ?? '') !== '');
   $GLOBALS['COREUI_PROJECT_ISOLATED'] = $projectIsolated;
+  // Once an account-owned project contains real files, the CURRENT file
+  // state wins over historical Markdown plans and full-site ZIP builders.
+  // An unavailable file inventory also disables unsafe auto-build hints.
+  $existingProjectSourcesState = ($channel === 'console'
+      && $consoleSessionId !== null)
+    ? coreui_pftools_has_saved_sources($pdo,$uid,(string)$consoleSessionId)
+    : false;
   $memLimit = $useLore ? min(2, ember_memory_limit()) : ember_memory_limit();
   $mem = (!$projectIsolated && $memLimit > 0) ? ember_mem_block($pdo, $uid, $cid, $memLimit, $userMsg, $promptProfile['memory']) : '';
 
@@ -5783,7 +5805,8 @@ function ember_generate_reply(
   // itself names the checked project builder for small local models.
   $pyHint = (ember_py_enabled() && $imageUrl === null)
     ? ember_py_capability_hint(ember_model(), $promptProfile['compact'],
-        $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])) : '';
+        $channel === 'console' && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
+          && $existingProjectSourcesState === false) : '';
   $imageHint = ember_image_hint($channel, $imageUrl, $promptProfile['compact'], $consoleUid);
   $intentHint = ember_composer_intent_hint($composerIntent, $imageUrl, $consoleUid);
   $loreBlock = '';
@@ -5814,11 +5837,11 @@ function ember_generate_reply(
   $profilePromptBlock = !$projectIsolated && function_exists('coreui_profile_prompt_block') ? coreui_profile_prompt_block($pdo, $uid) : '';
   $projectPromptBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_prompt_block($pdo,$uid,(string)$consoleSessionId) : '';
-  // 0.7.73 (P09 B): the project's files and Mara's file tools.
-  $projectFilesHint = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
-    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo)) : '';
-  // 0.7.91: outside a project Mara knows that project chats have the environment.
-  if (($projectScope['id'] ?? '') === '') $projectFilesHint = coreui_pftools_outside_hint($pdo, $channel, $uid, (bool)$promptProfile['compact']);
+  $hasFileWorkspace = $channel === 'console' && $consoleSessionId !== null
+    && coreui_pftools_project($pdo,$uid,(string)$consoleSessionId) !== '';
+  $projectFilesHint = $hasFileWorkspace
+    ? coreui_pftools_hint($pdo,$uid,(string)$consoleSessionId,(bool)$promptProfile['compact'],ember_py_enabled() && coreui_pruns_ready($pdo))
+    : coreui_pftools_outside_hint($pdo,$channel,$uid,(bool)$promptProfile['compact']);
   if ($projectFilesHint !== '') $projectPromptBlock = rtrim($projectPromptBlock, "\n") . "\n" . $projectFilesHint . "\n";
   $projectChatBlock = ($channel === 'console' && ($projectScope['id'] ?? '') !== '')
     ? coreui_project_context_block($pdo,$uid,(string)$consoleSessionId,

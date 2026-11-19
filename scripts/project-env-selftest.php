@@ -130,8 +130,9 @@ env_test(ember_strip_stray_tool_markers("Ich starte ihn.\n[SERVER_STARTEN: 8000 
 env_test(str_contains($chatSource, "|| in_array(\$tool['tool'], COREUI_PFTOOLS_PROC_KINDS, true)) {")
   && str_contains($chatSource, "if (ember_py_enabled() && coreui_pruns_ready(stu_pdo()) && coreui_pprocs_ready(stu_pdo())) array_push(\$tools, ...COREUI_PFTOOLS_PROC_KINDS);")
   && str_contains($chatSource, "'pvcs_commit', 'pvcs_branch', 'pvcs_merge'],\n        COREUI_PFTOOLS_PROC_KINDS))));")
-  && substr_count($chatSource, "if ((\$projectScope['id'] ?? '') === '') \$projectFilesHint = coreui_pftools_outside_hint(\$pdo, \$channel, \$uid,") === 2,
-  'chat.php: dispatch, offered with Python and migration 048, first step, the hint outside a project in both prompts');
+  && substr_count($chatSource, "coreui_pftools_project(\$pdo,\$uid,(string)\$consoleSessionId) !== ''") >= 2
+  && substr_count($chatSource, "coreui_pftools_outside_hint(\$pdo,\$channel,\$uid,") >= 2,
+  'chat.php: dispatch, offered with Python and migration 048, first step, one shared file-tool hint in both normal and project chat prompts');
 $loopSource = (string)file_get_contents($root . '/api/console_agent_loop.php');
 env_test(str_contains($loopSource, "'pproc_start','pserver_start','pproc_output','pproc_input','pproc_stop','pserver_fetch']) !== null"),
   'console_agent_loop.php: no process marker in an image closing text');
@@ -268,13 +269,18 @@ env_test(str_contains($off, 'Befehle, Tests und Prozesse sind in diesem Chat nic
   && str_contains($off, 'unter "Vorschau"') && !str_contains($off, 'PROZESS_STARTEN') && !str_contains($off, 'AUSFUEHREN')
   && str_contains(coreui_pftools_hint($pdo, 7, 'cs_server', true, false), 'Ausfuehren und Prozesse sind in diesem Chat nicht verfuegbar.'),
   'without the Python tool nothing is promised: ' . $off);
-// Outside a project: one line that the environment lives in project chats.
+// Every ordinary chat can work. A named Project is optional organization.
 $outside = coreui_pftools_outside_hint($pdo, 'console', 7, false);
-env_test(str_starts_with($outside, 'PROJEKTE: In einem Projekt-Chat') && str_contains($outside, 'Programme und Entwicklungsserver starten')
-  && str_contains($outside, 'In diesem Chat gibt es sie nicht') && coreui_pftools_outside_hint($pdo, 'console', 7, true) === ''
-  && coreui_pftools_outside_hint($pdo, 'global', 7, false) === '' && coreui_pftools_outside_hint($pdo, 'console', 0, false) === '', 'the hint outside a project');
+env_test(str_starts_with($outside, 'CHAT-WERKZEUGE: Auch dieser normale CoreAI-Chat')
+  && !str_contains($outside, 'In diesem Chat gibt es sie nicht')
+  && str_contains(coreui_pftools_outside_hint($pdo, 'console', 7, true), 'keine Voraussetzung')
+  && coreui_pftools_outside_hint($pdo, 'global', 7, false) === ''
+  && coreui_pftools_outside_hint($pdo, 'console', 0, false) === '',
+  'the normal chat retains global tools without requiring a named project');
 $GLOBALS['env_python'] = false;
-env_test(coreui_pftools_outside_hint($pdo, 'console', 7, false) === '', 'outside a project without the Python tool: nothing');
+env_test(str_contains(coreui_pftools_outside_hint($pdo, 'console', 7, false),
+  'soweit diese Werkzeuge aktiviert sind'),
+  'disabled Python must not imply every normal chat tool is unavailable');
 $GLOBALS['env_python'] = true;
 
 // Start a server: the worker takes it, the first output comes, the port is the one Mara named.
@@ -336,8 +342,8 @@ env_test(str_contains($wait, 'Wartet auf den Sandbox-Dienst.') && str_contains($
 $tool('cs_game', 'pproc_stop');
 $w['start'] = "Server bereit\n";
 // Other chats and accounts, a missing migration.
-env_test($tool('cs_free', 'pproc_start', 'python app.py') === 'Projektdateien gibt es nur in einem Chat, der zu einem Projekt gehoert.'
-  && str_starts_with($tool('cs_other', 'pproc_output'), 'Projektdateien gibt es nur'), 'only in the own project chat');
+env_test($tool('cs_free', 'pproc_start', 'python app.py') === 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar. Migration 056 und Berechtigungen prüfen.'
+  && str_starts_with($tool('cs_other', 'pproc_output'), 'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar'), 'only in the own project chat');
 $old = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 env_schema($old, false);
 $old->exec('INSERT INTO stu_users VALUES (7, 0)');
