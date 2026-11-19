@@ -13,11 +13,15 @@ const store=read('api/console_project_store.php');
 const knowledge=read('api/knowledge_store.php');
 const prompts=read('api/chat.php');
 const migration=read('database/migrations/037_chat_projects.sql');
+const descriptionMigration=read('database/migrations/055_project_descriptions.sql');
 assert(!html.includes('project-mode-switch') && !html.includes('Work wird separat entwickelt'), 'CoreAI chat already is the work area');
 assert(!css.includes('project-mode-switch'), 'no dead separate mode CSS remains');
 for (const id of ['projectsCreateBtn','projectsNavList','coreuiProjectHome','projectTabChats',
   'projectTabSources','projectSourceFile','projectModalSettings','projectSettingsInstructions',
-  'projectSettingsMode','projectComposerSlot','projectModalShare','projectHomeDrawerToggle']) {
+  'projectSettingsMode','projectSettingsDescription','projectHomeDescription',
+  'projectComposerSlot','projectModalShare','projectHomeDrawerToggle',
+  'coreuiProjectDirectory','projectDirectoryList','projectDirectorySearch',
+  'projectDirectorySort','projectHomeBreadcrumbBack','projectSettingsCancel','sidebarProjectsToggle']) {
   assert(html.includes('id="'+id+'"'), 'missing project control: '+id);
 }
 assert(css.includes('.project-modal-scrim[hidden]') && css.includes('#projectSourcesPanel[hidden]'),
@@ -51,26 +55,33 @@ assert(store.includes('coreui_project_session_scope') && store.includes('coreui_
 assert(knowledge.includes('s.project_id IS NULL'), 'global RAG must exclude project files');
 assert(prompts.includes('COREUI_PROJECT_ISOLATED') && prompts.includes('projectKnowledgeBlock'), 'AI must honor isolated project mode');
 assert(migration.includes('stu_console_projects') && migration.includes('project_id'), 'migration needs project and source scope');
-assert(js.includes('ICON_FOLDER_CLOSED') && js.includes('ICON_FOLDER_OPEN') &&
-  js.includes('setFolderExpanded(p.id, !folderIsExpanded(p.id))') &&
-  js.includes('children.hidden = !expanded'),
-  'independent project folders must toggle their visible chats and folder icons');
-assert(js.includes('localStorage.setItem(FOLDER_STATE_KEY') &&
-  js.includes("toggle.setAttribute('aria-expanded'") &&
-  js.includes("toggle.setAttribute('aria-controls'"),
-  'fold status must persist as an accessible local UI preference');
-assert(js.includes('setFolderExpanded(p.id,!folderIsExpanded(p.id))') &&
-  js.includes("label:'Projektstartseite'") &&
-  js.includes("showFloatingMenu(options,'project',projectActions(p))") &&
-  js.includes("showFloatingMenu($('projectHomeMore'),'project',projectActions(p))") &&
-  js.includes("chatApp(); if (app && app.select) app.select(s.id);"),
-  'folder title must fold chats and both project ellipsis buttons must open real actions');
-assert(js.includes("var viewport = window.visualViewport") &&
-  js.includes("floatingAnchor.contains(e.target)") &&
-  js.includes("document.addEventListener('scroll',updateFloatingMenuPosition,true)") &&
-  js.includes("if (floatingAnchor && list.contains(floatingAnchor)) dismissFloatingMenu()") &&
-  js.includes("floatingMenu.setAttribute('role','menu')"),
-  'project menu must remain touch accessible, viewport-clamped and protected from unrelated refresh');
+assert(descriptionMigration.includes('ADD COLUMN IF NOT EXISTS description') &&
+  store.includes('description=?') && api.includes("$body['description']"),
+  'project descriptions must be stored separately from AI instructions');
+assert(js.includes("$('projectSettingsDescription').value") &&
+  js.includes('description.textContent=p.description') &&
+  js.includes("description:$('projectSettingsDescription').value"),
+  'details dialog saves descriptions and project page displays them');
+assert(js.includes("$('projectDirectorySearch').addEventListener('input',renderDirectory)") &&
+  js.includes("$('projectDirectorySort').addEventListener('change',renderDirectory)") &&
+  js.includes("$('sidebarProjectsToggle').addEventListener('click',openDirectory)"),
+  'mobile project directory search, sort and navigation are connected');
+const sidebarFold=read('js/coreui-sidebar-fold.js');
+assert(html.includes('class="sidebar-projects-link"') &&
+  !html.includes('id="projectsDirectoryBtn"') &&
+  !html.includes('data-sidebar-fold="projects"') &&
+  /<\/section>\s*<section class="locked-chats-nav"[^>]*>\s*<div class="projects-nav-list" id="projectsNavList"/.test(html) &&
+  !sidebarFold.includes("'pinned','projects','recent'"),
+  'projects must be a single link, not an expanding section');
+const sidebarBlock=js.slice(js.indexOf('function renderSidebar()'),js.indexOf('function refreshLocked()'));
+assert(!sidebarBlock.includes('projects.forEach(') &&
+  !sidebarBlock.includes('project-nav-children-') &&
+  !sidebarBlock.includes('project-nav-folder-toggle') &&
+  sidebarBlock.includes('if (lockedChats.length)'),
+  'no project folders or project chat sublists in the drawer; locked chats remain available');
+assert(js.includes("openProject(p.id);") && js.includes("label:'Projekt öffnen'") &&
+  js.includes("showFloatingMenu($('projectHomeMore'),'project',projectActions(p))"),
+  'projects retain direct opening and workspace actions on their actual project pages');
 assert(js.includes('if (lockedChats.length)') &&
   js.includes("CoreAIChatLock.unlockChat(chat)"),
   'protected chat folder and PIN unlock must remain available');
@@ -78,9 +89,9 @@ assert(html.includes('id="projectHomeMode"') &&
   js.includes("$('projectHomeMode').textContent"),
   'project start page must display its actual memory isolation mode');
 assert(theme.includes('.project-nav-children[hidden]') &&
-  theme.includes('.project-nav-folder-toggle') &&
+  theme.includes('.sidebar-projects-link') &&
   theme.includes('.session-zone .session-item'),
-  'CoreAI project folder UI and compact sidebar chat rows must have responsive styles');
+  'single project directory link and compact sidebar chat rows must have responsive styles');
 assert(theme.includes('.project-composer-slot > .composer') &&
   theme.includes('body.project-home-active .project-empty-state') &&
   theme.includes('.project-floating-menu') &&
@@ -107,7 +118,7 @@ assert(popupLayer > drawerLayer && popupLayer > overlayLayer,
   'project three-dot popup must render ABOVE mobile drawer and backdrop: popup=' +
   popupLayer + ', drawer=' + drawerLayer + ', backdrop=' + overlayLayer);
 assert(js.includes('document.body.appendChild(floatingMenu)') &&
-  js.includes("showFloatingMenu(options,'project',projectActions(p))"),
+  js.includes("showFloatingMenu(menu,'project',projectActions(p))"),
   'menu remains portalled to body and reachable from project folder ellipsis');
 assert(js.includes('delete_permanently') &&
   js.includes("proof!=='LÖSCHEN'") &&
@@ -118,4 +129,4 @@ assert(theme.includes('.project-modal h2::before') &&
   theme.includes('clip-path:polygon(') &&
   theme.includes('linear-gradient(90deg,var(--cx),var(--amb)'),
   'native blue/gold HUD must style the project home and creation modal');
-console.log('CoreAI Projects: independent folders, compact chats, native workspace and security OK');
+console.log('CoreAI Projects: single sidebar link, project directory, native workspace and security OK');

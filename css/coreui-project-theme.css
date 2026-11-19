@@ -1195,3 +1195,21 @@ body.project-home-active .project-floating-menu {
     flex-wrap:wrap;
   }
 }
+
+/* Claude-style project navigation: one clear tap target, no disclosure tree. */
+.app-body .drawer #projectsNav .projects-nav-heading {gap:8px;align-items:center}
+.app-body .drawer #projectsNav .sidebar-projects-link {
+  display:flex;align-items:center;gap:12px;flex:1 1 auto;min-width:0;
+  min-height:48px;padding:10px 12px;text-align:left;border:0;
+  background:transparent;color:var(--txt);cursor:pointer;
+  font:600 16px var(--coreui-font,"Rajdhani"),sans-serif;
+}
+.app-body .drawer #projectsNav .sidebar-projects-link svg {
+  width:23px;height:23px;flex:0 0 23px;color:var(--cx);
+}
+.app-body .drawer #projectsNav .sidebar-projects-link:hover,
+.app-body .drawer #projectsNav .sidebar-projects-link:focus-visible {
+  background:var(--panel-cx);outline:2px solid var(--line-strong);outline-offset:-2px;
+}
+.app-body .drawer #projectsNav #projectsNavList:empty {display:none}
+.app-body .drawer #projectsNav .project-nav-locked {margin-top:8px}

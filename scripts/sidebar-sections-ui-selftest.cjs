@@ -35,7 +35,7 @@ assert(chat.includes("dbSessionAction({action:'pin'") &&
 assert(chat.includes('dbArchiveSession(s.id)') &&
   chat.includes('dbDeleteSession(s.id, !s.archived)') &&
   chat.includes('dbRenameSession(s.id'), 'existing chat management still reachable');
-for(const name of ['pinned','projects','recent']){
+for(const name of ['pinned','recent']){
   assert(folding.includes(name+': document.')||folding.includes(name+': document.querySelector'),
     'folded section wired '+name);
   assert(h.includes('data-sidebar-fold="'+name+'"'), 'toggle in markup '+name);
@@ -52,8 +52,13 @@ assert(themeCSS.includes('var(--cx)') &&
   themeCSS.includes('.project-source-row') &&
   themeCSS.includes('body.project-home-active .drawer'),
   'project home, sources, settings and sidebar adopt native CoreAI theme');
-assert(project.includes('coreui_project')===false || project.includes('project-nav-folder'),
-  'project list remains available');
+assert(h.includes('class="sidebar-projects-link"') &&
+  !h.includes('data-sidebar-fold="projects"') &&
+  project.includes("$('sidebarProjectsToggle').addEventListener('click',openDirectory)") &&
+  project.includes("function renderDirectory()") &&
+  !project.slice(project.indexOf('function renderSidebar()'),project.indexOf('function refreshLocked()')).includes('projects.forEach(') &&
+  h.includes('class="locked-chats-nav"'),
+  'single projects link opens the directory; no nested project folders or chats; locked chats stay separate');
 
 // 0.7.27: Native CoreAI shape, accents and collapsed desktop controls.
 assert(themeCSS.includes('.app-body .chat-menu') &&

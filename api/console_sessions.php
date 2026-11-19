@@ -89,7 +89,8 @@ try {
 
   if ($method === 'POST' && $action === 'project_update') {
     $project = coreui_project_update($pdo,(int)$uid,(string)($body['project_id'] ?? ''),
-      (string)($body['name'] ?? ''),(string)($body['instructions_md'] ?? ''));
+      (string)($body['name'] ?? ''),(string)($body['instructions_md'] ?? ''),
+      (string)($body['description'] ?? ''));
     stu_json(['ok'=>true,'project'=>$project]);
   }
 

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.7.98 - 19.11.2026
+
+- **Mobile project navigation:** The chat sidebar now has one direct **Projekte** link to the dedicated directory, without expanding project folders or nested chat lists. A searchable and sortable directory offers project cards, pinning, project actions and a back breadcrumb. Locked chats remain accessible separately.
+- **Project details:** A compact mobile editor shows the project name and a separately stored description, with Save and Cancel. Existing model instructions, memory mode and Space placeholders remain under advanced settings.
+- **Scoped metadata migration:** Database migration 055 adds an optional project description without converting it into prompt instructions. Project APIs validate updates and retain user/project ownership checks.
+- **Touch navigation:** Project actions use a mobile bottom sheet with an overlay and explicit close control. Folder and chat actions remain separate.
+- **Regression protections:** The project UI contract covers the new controls and description persistence; Compose and native Preflight register the test. SQLite fixtures were synchronized with the new schema.
+- **Validation status:** Changes are proposed in draft PR #357; no production server or actual Android end-to-end verification is claimed. A full Holo theme pass follows functional approval.
+
 ## 0.7.97 - 18.11.2026
 
 - **Visible, continuous project work:** Mara can write short, deliberately public progress updates before individual authenticated tool steps. Her status, next action and confirmed tool outcomes appear inline while the same project run continues, following the operator's Claude-Code reference screenshots.

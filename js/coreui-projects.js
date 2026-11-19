@@ -5,7 +5,7 @@
   var $ = function (id) { return document.getElementById(id); };
   if (!$('coreuiProjectHome') || !$('projectsNavList')) return;
   var projects = [], sessions = [], lockedChats = [], lockedExpanded = false, current = null, tab = 'chats', sources = [];
-  var csrf = '', busy = false;
+  var csrf = '', busy = false, directoryVisible = false;
   var api = './api';
   var modalProjectId = '';
   var composer = document.querySelector('.app-shell > .composer');
@@ -18,10 +18,11 @@
   function restoreComposer() {
     if (composer && composerMarker.parentNode) composerMarker.parentNode.insertBefore(composer, composerMarker.nextSibling);
   }
-  var floatingMenu = null, floatingAnchor = null;
+  var floatingMenu = null, floatingAnchor = null, floatingBackdrop = null;
   function dismissFloatingMenu() {
     if (floatingAnchor) floatingAnchor.setAttribute('aria-expanded','false');
     if (floatingMenu) floatingMenu.hidden = true;
+    if (floatingBackdrop) floatingBackdrop.hidden = true;
     floatingAnchor = null;
   }
   function placeFloatingMenu(menu,trigger) {
@@ -58,7 +59,18 @@
       document.body.appendChild(floatingMenu);
     }
     floatingMenu.className='project-floating-menu '+(kind==='chat'?'project-chat-menu':'project-folder-menu');
+    if(!floatingBackdrop){
+      floatingBackdrop=el('button','project-menu-backdrop');
+      floatingBackdrop.type='button';floatingBackdrop.hidden=true;
+      floatingBackdrop.setAttribute('aria-label','Projektmenü schließen');
+      floatingBackdrop.addEventListener('click',dismissFloatingMenu);
+      document.body.appendChild(floatingBackdrop);
+    }
+    floatingBackdrop.hidden=kind!=='project';
     floatingMenu.replaceChildren();
+    if(kind==='project'){
+      floatingMenu.appendChild(action('Schließen',dismissFloatingMenu,'project-menu-close'));
+    }
     actions.forEach(function(item){
       var control=action(item.label,function(event){event.stopPropagation();dismissFloatingMenu();item.run();},item.danger?'danger':'');
       control.setAttribute('role','menuitem');
@@ -87,29 +99,8 @@
   // rather than immediately making the project ellipsis appear broken.
   window.addEventListener('resize',updateFloatingMenuPosition);
   document.addEventListener('scroll',updateFloatingMenuPosition,true);
-  // Sidebar folding is a local UI preference, never server-side project state.
-  var FOLDER_STATE_KEY = 'coreai.project-folder-folded.v1';
-  var folderState = Object.create(null);
-  try {
-    var savedFolderState = JSON.parse(localStorage.getItem(FOLDER_STATE_KEY) || '{}');
-    if (savedFolderState && typeof savedFolderState === 'object' && !Array.isArray(savedFolderState)) {
-      Object.keys(savedFolderState).forEach(function(id) {
-        if (/^[a-f0-9]{32}$/.test(id) && typeof savedFolderState[id] === 'boolean') {
-          folderState[id] = savedFolderState[id];
-        }
-      });
-    }
-  } catch (e) {}
-  function folderIsExpanded(id) {
-    return Object.prototype.hasOwnProperty.call(folderState, id) ? folderState[id] : id === current;
-  }
-  function setFolderExpanded(id, expanded) {
-    folderState[id] = !!expanded;
-    try { localStorage.setItem(FOLDER_STATE_KEY, JSON.stringify(folderState)); } catch (e) {}
-  }
+  // Projects have a single directory link; folder state is no longer used.
   var ICON_FOLDER_CLOSED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3V7Z"/></svg>';
-  var ICON_FOLDER_OPEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11V6a2 2 0 0 1 2-2h5l2 3h6a2 2 0 0 1 2 2v2"/><path d="M5 11h16l-2 9H3l2-9Z"/></svg>';
-  var ICON_FOLDER_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
   var ERR = {
     project_name_required:'Bitte einen Projektnamen eingeben.',
     project_not_found:'Das Projekt wurde nicht gefunden.',
@@ -119,7 +110,8 @@
     knowledge_file_too_large:'Die Datei ist zu groß.',
     knowledge_text_too_short:'Das Dokument enthält zu wenig lesbaren Text.',
     csrf_failed:'Die Sitzung wurde geändert. Bitte Seite neu laden.',
-    project_source_failed:'Die Projektdatei konnte nicht verarbeitet werden.'
+    project_source_failed:'Die Projektdatei konnte nicht verarbeitet werden.',
+    project_description_too_long:'Die Projektbeschreibung ist zu lang.'
   };
   function chatApp() { return window.CoreAIChatApp || null; }
   function fail(err) { var m=err && err.message || 'Unbekannter Fehler'; return ERR[m] || m; }
@@ -145,75 +137,8 @@
     if (floatingAnchor && list.contains(floatingAnchor)) dismissFloatingMenu();
     var scrollTop = list.scrollTop;
     list.replaceChildren();
-    projects.forEach(function(p) {
-      var expanded = folderIsExpanded(p.id);
-      var row = el('div', 'project-nav-row project-nav-folder-row' +
-        (p.id === current ? ' active' : '') + (expanded ? ' is-expanded' : ''));
-      var childrenId = 'project-nav-children-' + p.id;
-      var toggle = action('', function() {
-        setFolderExpanded(p.id, !folderIsExpanded(p.id));
-        renderSidebar();
-        var replacement = document.getElementById('project-nav-toggle-' + p.id);
-        if (replacement) replacement.focus({preventScroll:true});
-      }, 'project-nav-folder-toggle');
-      toggle.id = 'project-nav-toggle-' + p.id;
-      toggle.setAttribute('aria-expanded', String(expanded));
-      toggle.setAttribute('aria-controls', childrenId);
-      toggle.setAttribute('aria-label', (expanded ? 'Projektordner zuklappen: ' : 'Projektordner aufklappen: ') + p.name);
-      toggle.title = expanded ? 'Ordner zuklappen' : 'Ordner aufklappen';
-      var chevron = el('span', 'project-nav-chevron');
-      chevron.innerHTML = ICON_FOLDER_CHEVRON;
-      toggle.appendChild(chevron);
-      var icon = el('span', 'project-nav-folder');
-      icon.innerHTML = expanded ? ICON_FOLDER_OPEN : ICON_FOLDER_CLOSED;
-      toggle.appendChild(icon);
-      row.appendChild(toggle);
-      // The folder and its title both fold; only the project actions
-      // expose a deliberate entry to the separate project start page.
-      var open = action('',function(){
-        setFolderExpanded(p.id,!folderIsExpanded(p.id));
-        renderSidebar();
-      },'project-nav-open');
-      open.appendChild(label(p.name, 'project-nav-label'));
-      open.setAttribute('aria-expanded',String(expanded));
-      open.setAttribute('aria-controls',childrenId);
-      open.setAttribute('aria-label',(expanded?'Projektordner zuklappen: ':'Projektordner aufklappen: ')+p.name);
-      row.appendChild(open);
-      var options = action('···', function(e) {
-        e.stopPropagation();
-        showFloatingMenu(options,'project',projectActions(p));
-      }, 'project-nav-menu');
-      options.setAttribute('aria-label', 'Projektaktionen: ' + p.name);
-      options.setAttribute('aria-haspopup','menu');
-      options.setAttribute('aria-expanded','false');
-      row.appendChild(options);
-      list.appendChild(row);
-
-      var children = el('div', 'project-nav-children');
-      children.id = childrenId;
-      children.hidden = !expanded;
-      if (expanded) {
-        var chats = sessions.filter(function(s) {
-          return s.project_id === p.id && !s.archived;
-        });
-        if(!chats.length) {
-          children.appendChild(el('span','project-nav-empty','Keine Chats'));
-        }
-        chats.slice(0, 8).forEach(function(s) {
-          var entry = action('◯  ' + (s.title || 'Chat'), function() {
-            var app = chatApp(); if (app && app.select) app.select(s.id);
-          }, 'project-nav-chat');
-          entry.title = s.title || 'Chat';
-          children.appendChild(entry);
-        });
-        if (chats.length > 8) {
-          children.appendChild(action('Weitere Chats in der Projektstartseite', function() {
-            openProject(p.id);
-          }, 'project-nav-chat project-nav-more'));
-        }
-      }
-      list.appendChild(children);
-    });
+    // Only protected chats keep their existing unlock entry here.
+    // All projects and their chats are accessible via the separate directory page.
     // The protected folder remains conditional: zero locked chats means no row.
     if (lockedChats.length) {
       var lockedRow = el('div', 'project-nav-row project-nav-locked');
@@ -263,7 +188,10 @@
       var app=chatApp();
       if(app && app.getSessions) sessions=app.getSessions();
       if(current && !selected()) closeHome();
-      if(!current) {
+      if(!current && !directoryVisible) {
+        var directoryLink=false;
+        try{directoryLink=new URLSearchParams(location.search).get('projects')==='1';}catch(e){}
+        if(directoryLink){openDirectory();}
         var linkedProject='';
         try {linkedProject=new URLSearchParams(location.search).get('project')||'';}catch(e){}
         if(linkedProject && projects.some(function(p){return p.id===linkedProject;})) {
@@ -272,12 +200,17 @@
       }
       renderSidebar();
       if(current) {renderHeader();renderChats();}
+      if(directoryVisible)renderDirectory();
       return refreshLocked();
     });
   }
   function renderHeader() {
     var p=selected();if(!p)return;
     $('projectHomeName').textContent=p.name;
+    var description=$('projectHomeDescription');
+    if(description){description.textContent=p.description||'';description.hidden=!p.description;}
+    var breadcrumb=$('projectHomeBreadcrumbName');
+    if(breadcrumb)breadcrumb.textContent=p.name;
     $('projectHomeMode').textContent=p.context_mode==='isolated'?'KONTEXT // ISOLIERT':'KONTEXT // STANDARD';
     $('projectHomeMode').title=p.context_mode==='isolated'?'Nur Projektwissen verwenden':'Normale Erinnerungen können verwendet werden';
     // The real composer is reused; no second project-only input exists.
@@ -411,6 +344,49 @@
     } catch(e){sourceStatus(processed+' hochgeladen. Fehler: '+fail(e));}
     finally{busy=false;$('projectSourceFile').value='';}
   }
+  function renderDirectory() {
+    var list=$('projectDirectoryList');if(!list)return;
+    list.replaceChildren();
+    var term=String($('projectDirectorySearch').value||'').trim().toLocaleLowerCase();
+    var order=$('projectDirectorySort').value;
+    var entries=projects.filter(function(p){return String(p.name||'').toLocaleLowerCase().includes(term);});
+    entries.sort(function(a,b){
+      if(Boolean(a.pinned)!==Boolean(b.pinned))return a.pinned?-1:1;
+      if(order==='name')return String(a.name).localeCompare(String(b.name),'de');
+      var diff=new Date(a.created_at||0)-new Date(b.created_at||0);
+      return order==='oldest'?diff:-diff;
+    });
+    if(!entries.length){list.appendChild(el('p','project-empty',term?'Keine passenden Projekte.':'Noch keine Projekte.'));return;}
+    entries.forEach(function(p){
+      var row=el('article','project-directory-card');
+      var main=action('',function(){openProject(p.id);},'project-directory-open');
+      var icon=el('span','project-directory-icon');icon.innerHTML=ICON_FOLDER_CLOSED;
+      main.appendChild(icon);
+      var copy=el('span','project-directory-copy');
+      copy.appendChild(el('strong','',p.name));
+      var date=p.created_at?new Date(p.created_at):null;
+      copy.appendChild(el('small','',date&&!Number.isNaN(date.getTime())?date.toLocaleDateString('de-DE'):'Projekt'));
+      main.appendChild(copy);row.appendChild(main);
+      var menu=action('···',function(e){e.stopPropagation();showFloatingMenu(menu,'project',projectActions(p));},'project-directory-options');
+      menu.setAttribute('aria-label','Projektaktionen: '+p.name);row.appendChild(menu);
+      var pin=action(p.pinned?'★':'☆',function(e){e.stopPropagation();runAction('pin',p.id);},'project-directory-pin');
+      pin.setAttribute('aria-label',p.pinned?'Projekt loslösen: '+p.name:'Projekt anpinnen: '+p.name);
+      row.appendChild(pin);list.appendChild(row);
+    });
+  }
+  function openDirectory() {
+    var files=filesTab();
+    if(files&&files.dirtyProject()&&!files.leave())return;
+    dismissFloatingMenu();
+    restoreComposer();
+    directoryVisible=true;
+    $('coreuiProjectHome').hidden=true;
+    $('coreuiProjectDirectory').hidden=false;
+    document.body.classList.add('project-home-active');
+    renderDirectory();
+    var app=chatApp();if(app&&app.closeDrawer)app.closeDrawer();
+    try{history.replaceState(null,'',location.pathname+'?projects=1');}catch(e){}
+  }
   function openProject(id) {
     if(!projects.some(function(p){return p.id===id;}))return;
     // Unsaved edits of another project are only dropped after a confirmation;
@@ -421,6 +397,8 @@
     // into whichever unrelated session happened to be active before opening.
     var app=chatApp();
     if(!app||!app.prepareProjectDraft||!app.prepareProjectDraft(id))return;
+    directoryVisible=false;
+    $('coreuiProjectDirectory').hidden=true;
     current=id;tab='chats';sourceStatus('');
     mountComposer();
     $('coreuiProjectHome').hidden=false;
@@ -432,10 +410,10 @@
     if(app.closeDrawer)app.closeDrawer();
   }
   function closeHome() {
-    if(!current && $('coreuiProjectHome').hidden)return;
+    if(!current && !directoryVisible && $('coreuiProjectHome').hidden)return;
     dismissFloatingMenu();
     restoreComposer();
-    current=null;$('coreuiProjectHome').hidden=true;
+    current=null;directoryVisible=false;$('coreuiProjectDirectory').hidden=true;$('coreuiProjectHome').hidden=true;
     document.body.classList.remove('project-home-active');
     $('projectHomePopover').hidden=true;
     $('projectHomeMore').setAttribute('aria-expanded','false');
@@ -462,8 +440,8 @@
   }
   function projectActions(p) {
     return [
-      {label:'Projektstartseite',run:function(){if(current!==p.id)openProject(p.id);}},
-      {label:'Projekt umbenennen',run:function(){openModal('settings',p.id);}},
+      {label:'Projekt öffnen',run:function(){openProject(p.id);}},
+      {label:'Details bearbeiten',run:function(){openModal('settings',p.id);}},
       {label:'Projekteinstellungen',run:function(){openModal('settings',p.id);}},
       {label:'Projekt teilen',run:function(){openModal('share',p.id);}},
       {label:p.pinned?'Projekt nicht mehr anpinnen':'Projekt anpinnen',run:function(){runAction('pin',p.id);}},
@@ -485,17 +463,19 @@
     $('projectModalCreate').hidden=which!=='create';
     $('projectModalSettings').hidden=which!=='settings';
     $('projectModalShare').hidden=which!=='share';
-    $('projectModalTitle').textContent=which==='create'?'Neues Projekt':which==='share'?'Projekt teilen':'Projekteinstellungen';
+    $('projectModalTitle').textContent=which==='create'?'Neues Projekt':which==='share'?'Projekt teilen':'Details bearbeiten';
     var p=projects.find(function(item){return item.id===modalProjectId;})||null;
     if(which==='create') {$('projectCreateName').value='';$('projectCreateMode').value='open';}
     if(which==='settings' && p) {
       $('projectSettingsName').value=p.name;
+      $('projectSettingsDescription').value=p.description||'';
       $('projectSettingsInstructions').value=p.instructions_md||'';
       $('projectSettingsMode').value=p.context_mode;
       $('projectSettingsModeHint').textContent=p.context_mode==='isolated'
         ? 'Nur Inhalte dieses Projekts. Der Erinnerungsmodus bleibt aus Sicherheitsgründen nach Erstellung unverändert.'
         : 'Dieses Projekt kann zusätzlich auf die normalen Erinnerungen zugreifen. Der Erinnerungsmodus bleibt unverändert.';
     }
+    var advanced=$('projectDetailsAdvanced');if(advanced)advanced.open=false;
     $('projectModalScrim').hidden=false;
     var focus=which==='create'?$('projectCreateName'):which==='settings'?$('projectSettingsName'):$('projectModalClose');
     if(focus)focus.focus();
@@ -542,7 +522,16 @@
     }).then(refresh).catch(function(e){alert(fail(e));});
   }
   $('projectsCreateBtn').addEventListener('click',function(){openModal('create');});
+  $('sidebarProjectsToggle').addEventListener('click',openDirectory);
+  $('projectDirectoryCreate').addEventListener('click',function(){openModal('create');});
+  $('projectDirectoryDrawer').addEventListener('click',function(){var a=chatApp();if(a&&a.openDrawer)a.openDrawer();});
+  $('projectDirectorySearch').addEventListener('input',renderDirectory);
+  $('projectDirectorySort').addEventListener('change',renderDirectory);
   $('projectHomeDrawerToggle').addEventListener('click',function(){var app=chatApp();if(app&&app.openDrawer)app.openDrawer();});
+  var projectBreadcrumb=$('projectHomeBreadcrumbBack');
+  if(projectBreadcrumb)projectBreadcrumb.addEventListener('click',openDirectory);
+  var modalCancel=$('projectSettingsCancel');
+  if(modalCancel)modalCancel.addEventListener('click',closeModal);
   $('projectModalClose').addEventListener('click',closeModal);
   $('projectModalScrim').addEventListener('click',function(e){if(e.target===this)closeModal();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();$('projectHomePopover').hidden=true;}});
@@ -551,15 +540,15 @@
     if(!name){modalError(new Error('project_name_required'));return;}
     post({action:'project_create',name:name,context_mode:mode}).then(function(d){
       closeModal();
-      setFolderExpanded(d.project.id,true);
-      return refresh().then(function(){renderSidebar();});
+      return refresh().then(function(){openProject(d.project.id);});
     }).catch(modalError);
   });
   $('projectSettingsSave').addEventListener('click',function(){
     var p=projects.find(function(item){return item.id===modalProjectId;});
     if(!p)return;
     post({action:'project_update',project_id:p.id,name:$('projectSettingsName').value,
-      instructions_md:$('projectSettingsInstructions').value}).then(refresh).then(function(){closeModal();})
+      instructions_md:$('projectSettingsInstructions').value,
+      description:$('projectSettingsDescription').value}).then(refresh).then(function(){closeModal();})
       .catch(modalError);
   });
   $('projectSettingsDelete').addEventListener('click',deleteProject);
@@ -576,7 +565,7 @@
   $('projectSourceFile').addEventListener('change',function(){uploadFiles(Array.from(this.files||[]));});
   // The shared CoreAI composer sends via CoreAIChatApp.sendMessage with the
   // project ID bound in prepareProjectDraft; no parallel event listener.
-  window.CoreAIProjects={refresh:refresh,openProject:openProject,closeHome:closeHome,
+  window.CoreAIProjects={refresh:refresh,openProject:openProject,openDirectory:openDirectory,closeHome:closeHome,
     updateSessions:updateSessions,assignChat:assignChat,refreshLocked:refreshLocked};
   refresh().catch(function(e){console.warn('[CoreAI] Projects deferred until sign-in:',e.message);});
 })();

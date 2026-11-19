@@ -12,7 +12,7 @@ if (!in_array('sqlite',PDO::getAvailableDrivers(),true)) {
 }
 $pdo=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
 $pdo->exec('CREATE TABLE stu_console_projects (id TEXT, user_id INTEGER, name TEXT, context_mode TEXT,
-  instructions_md TEXT, pinned_at TEXT, created_at TEXT)');
+  instructions_md TEXT, pinned_at TEXT, created_at TEXT, description TEXT)');
 $pdo->exec('CREATE TABLE stu_console_sessions (id TEXT, user_id INTEGER, project_id TEXT,
   title TEXT, archived_at TEXT, created_at TEXT, updated_at TEXT)');
 $pdo->exec('CREATE TABLE stu_user_knowledge_sources (uuid TEXT, user_id INTEGER, project_id TEXT,
@@ -22,7 +22,7 @@ $pdo->exec('CREATE TABLE stu_user_knowledge_chunks (source_uuid TEXT, user_id IN
 $pdo->exec('CREATE TABLE stu_chat_messages (id INTEGER, channel TEXT, user_id INTEGER,
   session_id TEXT, character_name TEXT, character_id TEXT, message TEXT, deleted_at TEXT, alliance_id TEXT)');
 $a=str_repeat('a',32);$b=str_repeat('b',32);$c=str_repeat('c',32);
-$st=$pdo->prepare('INSERT INTO stu_console_projects VALUES (?,?,?,?,?,?,?)');
+$st=$pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)');
 $st->execute([$a,7,'Test A','isolated','Stay in A',null,'2026-01-01']);
 $st->execute([$b,7,'Test B','open','',null,'2026-01-01']);
 $st->execute([$c,9,'Other account','isolated','',null,'2026-01-01']);
@@ -36,6 +36,19 @@ $st->execute([3,'console',9,'cs_proj_c1','Someone','person','OtherAccount Secret
 project_assert(coreui_project_session_scope($pdo,7,'cs_proj_a1')['mode']==='isolated','isolation flag');
 project_assert(coreui_project_session_scope($pdo,7,'cs_proj_b1')['mode']==='open','standard mode');
 project_assert(coreui_project_session_scope($pdo,7,'cs_proj_c1')['available']===false,'cross-account session denied');
+$updated=coreui_project_update($pdo,7,$b,'Test B','', 'Game');
+project_assert($updated['description']==='Game','description persisted separately from instructions');
+project_assert($updated['instructions_md']==='','description did not modify AI instructions');
+$list=coreui_project_list($pdo,7);
+project_assert(count(array_filter($list,static fn(array $item): bool => ($item['id'] ?? '')===$b && ($item['description'] ?? '')==='Game'))===1,
+  'description appears in the owner-scoped project list');
+try {
+  coreui_project_update($pdo,7,$c,'Cross-account','', 'Forbidden');
+  project_assert(false,'cross-account description edit must be denied');
+} catch (RuntimeException $e) {
+  project_assert($e->getMessage()==='project_not_found','cross-account description edit remains blocked');
+}
+
 $ctx=coreui_project_context_block($pdo,7,'cs_proj_a1');
 project_assert(str_contains($ctx,'AlphaProject ChatFact'),'same-project chat visible');
 project_assert(!str_contains($ctx,'OtherProject') && !str_contains($ctx,'OtherAccount'),'other chats excluded');
