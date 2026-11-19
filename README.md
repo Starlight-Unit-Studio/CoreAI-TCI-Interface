@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.7`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.8`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -41,6 +41,8 @@ An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still
 
 **Local Ollama Core retention:** The active local Core defaults to `keep_alive: -1` on preload, normal chat and streaming calls, so Ollama does not unload it solely because 15 minutes elapsed. An explicit Core switch still unloads the previous model to conserve RAM. A host administrator may override the timeout using `COREUI_EMBER_KEEP_ALIVE` or an existing `STU_EMBER_KEEP_ALIVE` setting. Model residency is independent of the conversation history/context that CoreAI sends on each request.
 
+**Chat development (0.8.8):** The shared real Project Files UI is mounted in a responsive chat modal. Saved ordinary chats own their own account-scoped development files, preview, commands, revision history and backups; older chats gain a workspace on their next work request. Projects are optional organizational groupings, not the permission gate for tool use. New chats are still created only after the first message. Opening the developer tab in a draft without a saved session asks the user to send a first message. Server permissions, PIN lock, CSRF, sandbox and file validation still apply. The chat-to-Project file migration on a later move needs a separate conflict-aware import flow; current workspaces are not silently overwritten.
+
 **Existing-project changes:** Once a project chat contains saved source files, later requests such as adding `blog.html` use the project file read/edit/write tools. The historical completed Markdown plan is no longer re-dispatched as an automatic full-site rebuild for every new message.
 
 ## What Mara can do
@@ -50,7 +52,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 ### 1. Conversation, thinking and agentic work
 
 - Answer questions, explain complex topics, translate, summarize, draft, revise and discuss text or code with a selected **TCI Core or other compatible, authorized Ollama model**.
-- Use one normal private chat as a workspace, with saved context, responses, follow-up suggestions and multimodal attachments; no artificial Chat/Work switch.
+- Use every saved private chat as a complete working environment: **Entwicklung** beside the chat tool tabs opens a modal with the same editor, preview, terminal, development server and Git-style file history as the Project page. An ordinary chat receives a private hidden source workspace; it is not converted into a visible Project, and its normal memory scope stays unchanged. Projects remain optional organization. No separate Chat/Work switch.
 - Open a personalized welcome screen with starter prompts; a conversation is not stored until its first message or attachment.
 - Select a **TCI Core or another installed and authorized model**, including compatible Hugging Face models imported through Ollama, separately from **Thinking**; supported model-dependent options apply to subsequent turns.
 - Let the operator configure which installed Original/Uncensored Ollama tag backs a TCI tier in **Manage Cores**. The chat menu lists one row per TCI tier **and separately named permitted models where available**.
