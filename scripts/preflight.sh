@@ -351,6 +351,9 @@ UI_FILES=(
   database/migrations/011_console_artifacts.sql
   database/migrations/012_console_work_events.sql
   database/migrations/013_console_agent_runs.sql
+  database/migrations/057_task_journal.sql
+  api/console_task_journal.php
+  scripts/task-journal-selftest.php
   api/console_work_events.php
   api/console_work_store.php
   api/console_agent_runs.php
@@ -515,6 +518,7 @@ UI_FILES=(
   scripts/compaction-selftest.php
   api/console_compaction.php
   scripts/agent-loop-selftest.php
+  scripts/task-journal-selftest.php
   api/console_agent_loop.php
   scripts/browse-worker-selftest.py
   scripts/browse-live-ui-selftest.cjs
@@ -1088,6 +1092,20 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok 'Migration 013: global FIFO model queue ready.'
   else
     fail 'Migration 013: model queue missing.'
+  fi
+
+  if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_task_journal.php"; exit(coreui_task_journal_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 057: durable task journal and claim ledger ready.'
+  else
+    fail 'Migration 057 missing: durable task journal is required for autonomous project tools.'
+  fi
+
+  if compose exec -T php php scripts/task-journal-selftest.php >/dev/null 2>&1; then
+    ok 'Task journal: idempotent tool claims, checkpoints and owner isolation verified.'
+  else
+    fail 'Task journal: checkpoint and safe-replay regression failed.'
   fi
 
   if compose exec -T php php scripts/agent-runs-selftest.php >/dev/null 2>&1; then
