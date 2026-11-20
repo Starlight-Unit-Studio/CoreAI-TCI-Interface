@@ -872,6 +872,9 @@ try {
     }
   }
 
+  // A stored interruption notice is a real answer to show, not proof
+  // that the model finished the requested multi-step work.
+  $taskInterrupted = ($GLOBALS['COREUI_AGENT_TASK_OUTCOME'] ?? '') === 'interrupted';
   if ($emberMsgId > 0) {
     if (!coreui_agent_run_bind_response($pdo, (int)$uid, $sessionId, $agentRunId, $emberMsgId)) {
       throw new RuntimeException('agent_response_binding_failed');
