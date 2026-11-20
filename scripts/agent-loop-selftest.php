@@ -358,7 +358,7 @@ $externalRecovery=coreui_agent_loop_run('[DATEI: style.css]',
   },
   static fn():bool=>false,null,null,
   static fn():array=>['provider'=>'external','http_code'=>200,'transport_ok'=>true,
-    'curl_errno'=>0,'done_reason'=>'length','eval_count'=>100,'prompt_eval_count'=>5000]);
+    'curl_errno'=>0,'done_seen'=>true,'done'=>true,'done_reason'=>'length','eval_count'=>100,'prompt_eval_count'=>5000]);
 loop_test(count($recoveryPrompts)===3
   && array_column($recoveryTools,'tool')===['pfile_read','pfile_read']
   && $externalRecovery['steps']===2
