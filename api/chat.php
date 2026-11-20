@@ -4087,6 +4087,8 @@ function ember_agent_followup_last_call(): array {
     'provider'=>(string)($last['provider'] ?? 'ollama'),
     'http_code'=>(int)($last['code'] ?? 0),
     'transport_ok'=>!empty($last['ok']),
+    'done_seen'=>!empty($last['done_seen']),
+    'done'=>($last['done'] ?? null) === true,
     'curl_errno'=>(int)($last['curl_errno'] ?? 0),
     'done_reason'=>(string)($last['done_reason'] ?? ''),
     'prompt_eval_count'=>(int)($last['prompt_eval_count'] ?? 0),
