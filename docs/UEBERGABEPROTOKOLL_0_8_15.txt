@@ -12,6 +12,27 @@ Dazu die Schwaechen, die beim Test auffielen: die Verbindungspruefung lief nur m
 Schalter und sagte das nicht ("Erst vollstaendig einrichten und speichern."), der zugehoerige
 Speichern-Knopf lag weit oben, und im Chat war nicht zu sehen, dass ein externer Core antwortet.
 
+NACHTRAG IM SELBEN PR: task_decision_invalid
+- Der Betreiber hat den Projektauftrag ("Homepage mit Gaestebuch") schon mit dem externen Core
+  gpt-6-luna laufen lassen (in 0.8.11 zeigte der Chip den lokalen Core, daher "Core Normal" auf
+  den Screenshots). Auch dort Abbruch nach Planungsabschnitt 24 mit task_decision_invalid,
+  ausserhalb und innerhalb eines Projekts. Damit war das Modell als Ursache ausgeschlossen.
+- Ursache im Code: coreui_task_decision() (0.8.13) nahm DONE/BLOCKED nur an, wenn die Antwort
+  exakt mit dem Marker begann und endete. Abgelehnt wurden: Fortschrittsnotiz plus Leerzeile vor
+  dem Block (genau die Form, die der Prompt nahelegt), ein Satz vor dem Block, Marker in derselben
+  Zeile, Codeblock, Windows-Zeilenenden. Der Folge-Prompt im Projektmodus endete zudem mit
+  "Antworte in deinem persoenlichen Anzeigenamen:" und lud so zu Text vor dem Block ein. Die
+  Reparatur nannte nicht, was falsch war.
+- Umsetzung: api/console_task_control.php (ein vollstaendiger Block zaehlt, wo er steht; mehrdeutige
+  Antworten bleiben ungueltig; Form der ungueltigen Antwort ohne Modelltext; Reparatur nennt die
+  Form), api/console_agent_loop.php (Form als error_type im Arbeitsweg, Prompt-Zeile im
+  Projektmodus ersetzt durch "Den Text im ...-Block schreibst du in deinem persoenlichen
+  Anzeigenamen."), api/console_stream.php (fortgesetzter Lauf: dieselbe Form und Reparatur),
+  js/coreui-work-events.js (Fehlertyp lesbar), docs/architecture/AGENT_TASK_CONTROL.md.
+- Unveraendert: Abschluss nur mit bestaetigten Werkzeugnachweisen und Auftragsjournal; hoechstens
+  eine Reparatur; keine Sprach- oder Phrasenerkennung. Ein Werkzeugmarker im Codeblock wird wie
+  bisher behandelt (der Codeblock wird nicht entfernt).
+
 ENTSCHEIDUNGEN
 - Mehrere externe Cores statt eines Core-Namens. Der Inhaber laedt die Liste des Anbieters und
   hakt an, was CoreAI anbietet (hoechstens 50; die Listen der Anbieter enthalten auch Cores fuer

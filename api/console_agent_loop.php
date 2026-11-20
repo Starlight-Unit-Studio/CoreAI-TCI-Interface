@@ -384,8 +384,12 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
           . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
           . "fuer eine neue Richtung verwende andere Suchbegriffe. "
           . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n"))
-    . 'Antworte in deinem persoenlichen Anzeigenamen:'
-    . ($max === 0 ? coreui_task_protocol_prompt() : '');
+    // 0.8.15: in project work the reply is a control decision only; Mara's own words belong inside
+    // the DONE/BLOCKED block (a request to answer as herself made models write text before it).
+    . ($max === 0
+      ? 'Den Text im COREUI_TASK_DONE- oder COREUI_TASK_BLOCKED-Block schreibst du in deinem persoenlichen Anzeigenamen.'
+        . coreui_task_protocol_prompt()
+      : 'Antworte in deinem persoenlichen Anzeigenamen:');
 }
 
 /**
@@ -712,10 +716,11 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       $decision = $parseDecision($out);
       if ($decision['kind'] === 'invalid') {
         if ($cancelled()) { $stopReason='cancelled'; break; }
+        // 0.8.15: the work view names the form of the refused reply (structure, never model text).
         $record('model','info','Arbeitsentscheidung ohne gueltigen Steuerstatus',
-          ['reason'=>'task_decision_missing','step'=>$used]);
+          ['reason'=>'task_decision_missing','step'=>$used,'error_type'=>(string)($decision['shape'] ?? '')]);
         $repairPrompt = coreui_task_decision_repair_prompt(
-          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed));
+          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed), (string)($decision['shape'] ?? ''));
         $repair = $callModel($repairPrompt);
         $decision = is_string($repair) ? $parseDecision($repair)
           : ['kind'=>'invalid','text'=>'','tool'=>null];
@@ -744,7 +749,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         default => 'task_decision_invalid',
       };
       $record('run','error','Projektauftrag ohne bestaetigten Abschluss unterbrochen',
-        ['reason'=>$stopReason,'step'=>$used]);
+        ['reason'=>$stopReason,'step'=>$used]
+          + ($decision['kind'] === 'invalid' ? ['error_type'=>(string)($decision['shape'] ?? '')] : []));
       break;
     }
     $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;

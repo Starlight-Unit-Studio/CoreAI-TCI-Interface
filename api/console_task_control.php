@@ -19,36 +19,61 @@ const COREUI_TASK_BLOCKED_OPEN = '[COREUI_TASK_BLOCKED]';
 const COREUI_TASK_BLOCKED_CLOSE = '[/COREUI_TASK_BLOCKED]';
 
 /**
+ * 0.8.15: the reply as the decision sees it (pure, no words are interpreted): trimmed, and the
+ * bounded public progress note removed together with any blank lines after it. A code fence is NOT
+ * removed: a tool marker inside a fence stays refused by the tool parser; a DONE/BLOCKED block is
+ * found wherever it stands anyway.
+ */
+function coreui_task_decision_normalise(string $reply): string {
+  return trim((string)preg_replace(
+    '~\A\[COREUI_PUBLIC_PROGRESS\][^\r\n]{1,480}\[/COREUI_PUBLIC_PROGRESS\][ \t]*(?:\r?\n[ \t]*)*~u', '', trim($reply), 1));
+}
+
+/** 0.8.15: what an invalid decision looked like (structure only, never model text). */
+const COREUI_TASK_SHAPES = [
+  'empty' => 'eine leere Antwort',
+  'prose_only' => 'nur Text ohne Werkzeugmarker und ohne Steuerblock',
+  'block_unclosed' => 'ein Steuerblock ohne passenden Abschluss-Marker',
+  'block_multiple' => 'mehrere oder vermischte Steuerbloecke',
+  'block_empty' => 'ein leerer Steuerblock',
+  'block_and_tool' => 'ein Steuerblock zusammen mit einem Werkzeugmarker',
+  'marker_unknown' => 'ein unbekannter COREUI_TASK-Marker',
+];
+
+/**
  * Pure decision from one model reply. The tool parser is the existing
  * allowlist-scoped parser, not a second, weaker tool protocol.
- * @return array{kind:string,text:string,tool:?array}
+ * 0.8.15: one complete DONE or BLOCKED block counts wherever it stands (after a progress note and
+ * blank lines, with text around it, on one line, inside a code fence, with Windows line ends); the
+ * text outside it is not shown. Two blocks, an unclosed block, a block together with a tool marker or an
+ * unknown COREUI_TASK marker stay invalid. 'shape' names what an invalid reply looked like.
+ * @return array{kind:string,text:string,tool:?array,shape:string}
  */
 function coreui_task_decision(string $reply, callable $parseTool): array {
-  $reply = trim($reply);
-  // The protocol also allows one public progress note before the next
-  // decision. Strip only the exact bounded envelope, never arbitrary prose
-  // or a second command, so a valid DONE is not rejected on formatting.
-  $reply=(string)preg_replace(
-    '~\\A\\[COREUI_PUBLIC_PROGRESS\\][^\\r\\n]{1,480}\\[/COREUI_PUBLIC_PROGRESS\\][ \\t]*\\r?\\n~u',
-    '',$reply,1);
-  foreach ([
-    'done'=>[COREUI_TASK_DONE_OPEN,COREUI_TASK_DONE_CLOSE],
-    'blocked'=>[COREUI_TASK_BLOCKED_OPEN,COREUI_TASK_BLOCKED_CLOSE]
-  ] as $kind => $markers) {
-    if (!str_starts_with($reply, $markers[0] . "\n")
-        || !str_ends_with($reply, "\n" . $markers[1])) continue;
-    $body = trim(substr($reply, strlen($markers[0]) + 1,
-      -strlen($markers[1]) - 1));
-    if ($body === '' || str_contains($body, '[COREUI_TASK_')) continue;
-    return ['kind'=>$kind,'text'=>$body,'tool'=>null];
+  $reply = coreui_task_decision_normalise($reply);
+  $invalid = static fn(string $shape): array => ['kind'=>'invalid', 'text'=>'', 'tool'=>null, 'shape'=>$shape];
+  if ($reply === '') return $invalid('empty');
+  $count = (int)preg_match_all('~\[(/?)COREUI_TASK_([A-Z_]+)\]~', $reply, $hits, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+  if ($count === 0) {
+    $action = $parseTool($reply);
+    return is_array($action) ? ['kind'=>'action', 'tool'=>$action, 'text'=>'', 'shape'=>''] : $invalid('prose_only');
   }
-  // Incomplete terminal frames must never make tool-looking text executable.
-  if (str_contains($reply, '[COREUI_TASK_')) {
-    return ['kind'=>'invalid','text'=>'','tool'=>null];
+  $kinds = ['DONE'=>'done', 'BLOCKED'=>'blocked'];
+  foreach ($hits as $hit) {
+    if (!isset($kinds[$hit[2][0]])) return $invalid('marker_unknown');
   }
-  $action = $parseTool($reply);
-  if (is_array($action)) return ['kind'=>'action','tool'=>$action,'text'=>''];
-  return ['kind'=>'invalid','text'=>'','tool'=>null];
+  // Incomplete or several terminal frames must never make tool-looking text executable.
+  if ($count === 1) return $invalid('block_unclosed');
+  if ($count > 2) return $invalid('block_multiple');
+  [$open, $close] = $hits;
+  if ($open[1][0] !== '' || $close[1][0] !== '/') return $invalid('block_unclosed');
+  if ($open[2][0] !== $close[2][0]) return $invalid('block_multiple');
+  $from = $open[0][1] + strlen($open[0][0]);
+  $body = trim(substr($reply, $from, $close[0][1] - $from));
+  if ($body === '') return $invalid('block_empty');
+  $outside = trim(substr($reply, 0, $open[0][1]) . "\n" . substr($reply, $close[0][1] + strlen($close[0][0])));
+  if (is_array($parseTool($body)) || ($outside !== '' && is_array($parseTool($outside)))) return $invalid('block_and_tool');
+  return ['kind'=>$kinds[$open[2][0]], 'text'=>$body, 'tool'=>null, 'shape'=>''];
 }
 
 /** Same contract for every model and every kind of authorized project tool. */
@@ -73,9 +98,12 @@ function coreui_task_protocol_prompt(): string {
  * the already confirmed tool. Retry at most once for a malformed decision
  * to avoid unlimited calls and runaway user costs.
  */
-function coreui_task_decision_repair_prompt(string $verifiedContext): string {
+function coreui_task_decision_repair_prompt(string $verifiedContext, string $shape = ''): string {
+  // 0.8.15: name the structural form that was refused (never the model text itself).
+  $seen = COREUI_TASK_SHAPES[$shape] ?? '';
   return $verifiedContext . coreui_task_protocol_prompt()
-    . "\nDeine letzte Ausgabe war keine gueltige Steuerentscheidung. "
+    . "\nDeine letzte Ausgabe war keine gueltige Steuerentscheidung"
+    . ($seen !== '' ? ' (erkannt: ' . $seen . ')' : '') . ". "
     . "Beantworte mit genau einem erlaubten Werkzeugmarker oder einem "
     . "vollstaendigen COREUI_TASK_DONE/COREUI_TASK_BLOCKED-Block. "
     . "Keine Erklaerung vor oder nach dem Steuerblock. Bereits bestaetigte "

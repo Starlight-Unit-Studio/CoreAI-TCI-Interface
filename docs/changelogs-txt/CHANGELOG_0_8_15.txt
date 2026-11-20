@@ -41,6 +41,28 @@ MARAS SYSTEM-TEXT FUER EXTERNE CORES
   roher lokaler Core. In 0.8.11 bis 0.8.14 bekam er keinen, solange die lokale Wahl
   des Kontos der Standard-Core war.
 
+PROJEKTLAEUFE BRECHEN NICHT MEHR NACH FERTIGER ARBEIT AB
+- Ein Lauf mit dem Cloud-Core gpt-6-luna endete nach 24 Schritten mit
+  task_decision_invalid, obwohl die Arbeit fertig war. Die Steuerregel aus
+  0.8.13 nahm einen DONE- oder BLOCKED-Block nur an, wenn die Antwort exakt
+  mit dem Marker begann und endete. Der Prompt verlangt aber eine
+  Fortschrittsnotiz vor dem naechsten Schritt; eine Leerzeile danach, ein
+  Satz vor dem Block, der Marker in derselben Zeile, ein Codeblock oder
+  Windows-Zeilenenden machten eine fertige Antwort ungueltig.
+- Ein vollstaendiger DONE- oder BLOCKED-Block zaehlt jetzt, wie auch immer
+  er eingebettet ist; der Text ausserhalb wird nicht angezeigt. Zwei
+  Bloecke, ein offener Block, ein Block zusammen mit einem Werkzeugmarker
+  oder ein unbekannter Marker bleiben ungueltig. Der Abschluss braucht
+  weiterhin die bestaetigten Werkzeugnachweise und das Auftragsjournal.
+- Im Projektmodus endet der Folge-Prompt nicht mehr mit "Antworte in
+  deinem persoenlichen Anzeigenamen:"; Maras Worte gehoeren in den Block.
+
+DIAGNOSE OHNE MODELLTEXT
+- Eine ungueltige Entscheidung wird nach ihrer Form eingeordnet (leer, nur
+  Text, offener Block, mehrere Bloecke, leerer Block, Block mit
+  Werkzeugmarker, unbekannter Marker). Der Reparaturversuch nennt die Form,
+  der Arbeitsweg zeigt sie als Fehlertyp.
+
 TESTS
 - external-provider-selftest.php: angebotene Cores, Liste des Anbieters,
   Pruefung ausgeschaltet, Freigaben, Zug je Konto (Inhaber, Admin und
@@ -49,3 +71,6 @@ TESTS
   SYSTEM-Text.
 - external-provider-ui-selftest.cjs: Karte, Freigaben, Core-Menue.
 - model-access-selftest.php: Freigaben externer Cores.
+- agent-loop-selftest.php: eingebettete DONE/BLOCKED-Antworten, jede
+  ungueltige Form, benannte Reparatur, Projektlauf mit Fortschrittsnotiz
+  und Leerzeile vor DONE; work-events-ui-selftest.js: lesbarer Fehlertyp.

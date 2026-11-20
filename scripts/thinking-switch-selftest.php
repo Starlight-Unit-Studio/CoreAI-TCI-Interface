@@ -64,11 +64,12 @@ if (in_array('sqlite', PDO::getAvailableDrivers(), true)) {
     && count(ThinkStmt::$params) === 9, 'user and value are bound, a new row starts from defaults');
   think_test(str_contains($sql, 'ON DUPLICATE KEY UPDATE thinking_enabled = VALUES(thinking_enabled), updated_at = NOW()')
     && substr_count($sql, '= VALUES(') === 1, 'an existing row changes only thinking_enabled');
-  // Core choice from the chat menu: only model_override changes.
+  // Core choice from the chat menu: only model_override changes (0.8.15: and the Core-Pfad of 0.8.11
+  // ends for good, so the old "Externe API" never overrides a Core chosen in the menu).
   think_test(coreui_ai_settings_patch($pdo, 7, ['model_override'=>'gemma4:e4b']) === ['model_override'=>'gemma4:e4b'],
     'Core choice saved');
   $sql = (string)end($pdo->sql);
-  think_test(str_contains($sql, 'ON DUPLICATE KEY UPDATE model_override = VALUES(model_override), updated_at = NOW()')
+  think_test(str_contains($sql, "ON DUPLICATE KEY UPDATE model_override = VALUES(model_override), provider = 'local', updated_at = NOW()")
     && substr_count($sql, '= VALUES(') === 1 && ThinkStmt::$params[8] === 'gemma4:e4b', 'an existing row changes only the Core');
   coreui_ai_settings_patch($pdo, 7, ['model_override'=>'']);
   think_test(ThinkStmt::$params[8] === null, 'server default is stored as NULL');
