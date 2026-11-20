@@ -1,0 +1,10 @@
+CoreAI: TCI Interface 0.8.14 - 20.11.2026
+
+- Issue #374: durable task manifest (goal references) and owner-scoped, append-only per-step claim ledger for console runs; SQL migration 057.
+- Claim file/process/tool steps before execution; a second worker cannot replay the same step, even if a prior worker crashed after the side effect.
+- Persist verified tool-result digests, saved project file hashes and revisions without storing source, prompts, thinking or credentials.
+- Checkpoint version and last confirmed step survive SSE reconnects, server process loss and UI reload. The original chat message remains the canonical user authorization.
+- Agent-run status changes update task status, including stopped/lost workers. Run history exposes compact checkpoint metadata.
+- Both native and Docker preflight require the migration and a PHP regression fixture verifying owner scoping, duplicate protection and uncertain outcomes.
+- This is a foundation for Issue #374, not automatic worker relaunch. Full resume, goal manifest verification and plan/browse/research/media adapters remain pending.
+- Next source release after merge: 0.8.15.
