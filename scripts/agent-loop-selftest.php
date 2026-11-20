@@ -226,7 +226,7 @@ loop_test($publicLoop['steps'] === 1
 loop_test(str_contains((string)coreui_agent_public_result_note(['tool'=>'prun','input'=>'npm test'],'success'), 'Exitcode 0')
   && str_contains((string)coreui_agent_public_result_note(['tool'=>'pserver_start','input'=>'8000 app.py'],'success'),'HTTP-Test')
   && str_contains((string)coreui_agent_public_result_note(['tool'=>'pserver_start','input'=>'8000 app.py'],'info'),'nicht als erfolgreich bestätigt')
-  && str_contains((string)coreui_agent_public_result_note(['tool'=>'pfile_edit','input'=>'main.js'],'error'),'fehlgeschlagen')
+  && str_contains((string)coreui_agent_public_result_note(['tool'=>'pfile_edit','input'=>'main.js'],'error'),'nicht gespeichert')
   && coreui_agent_public_result_note(['tool'=>'pfile_read','input'=>'index.html'],'success')===null,
   'public completion commentary only states real tool status, not invented file content');
 
