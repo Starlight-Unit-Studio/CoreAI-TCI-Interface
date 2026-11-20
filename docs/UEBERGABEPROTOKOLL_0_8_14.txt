@@ -1,0 +1,28 @@
+CoreAI: TCI Interface - Uebergabeprotokoll 0.8.14
+Date: 2026-11-20
+Issue: #374 Architecture: unified durable task orchestrator
+
+Decision
+Do not solve recurring "Continue" complaints with new language regexes. Use the task-control decision contract from merged PR #373 and persist authoritative owner-scoped checkpoints.
+
+Implementation
+- Migration 057_task_journal adds task manifests and unique per-run step claims. The original user turn in stu_chat_messages is the goal, so no model text grants file/command authority.
+- api/console_task_journal.php is independent of the model and dispatchers. Claims run before effects; receipts and phase advances are committed transactionally after verified effects. A duplicate or uncertain claim forbids replay. No raw tool content, source, system prompt or API secret is stored.
+- api/console_agent_loop.php accepts a journal callback. Project-capable loops claim each tool before execution, store real receipts and refuse an unconfirmed completion.
+- api/chat.php supplies an owner-scoped adapter, including verified DB file revisions and SHA-256 for project reads/edits/writes.
+- api/console_agent_runs.php and api/console_stream.php initialize and synchronize task state, including stale worker reconciliation, and expose checkpoint metadata in history.
+- Tests and native/Docker preflight updated to enforce new migration and idempotency checks.
+
+Safety
+- Local CPU Ollama and optional external API share the same queue and permissions. No model parameters, num_ctx, or browser permissions changed.
+- No auto-replay on process crash. The journal records an interrupted operation as uncertain even if the original tool may have succeeded.
+- Legacy public/global chat and simple Q&A do not gain tool authority from this module.
+
+Remaining for umbrella issue #374
+- Server-owned requirement manifest with per-deliverable proof (not just a tool-success proxy), and unified completion validation
+- Resume worker for verified checkpoints only, with lease fencing and ownership checks
+- Plan/build, research, browser, media, background jobs adapters under the same task state
+- UI control for waiting, blocked, interrupted, resume, and live event replay
+- Host acceptance with client disconnect during a successful edit and during a pending/unknown write; never duplicate a write
+
+Version follows established single-merge increment: next 0.8.15.
