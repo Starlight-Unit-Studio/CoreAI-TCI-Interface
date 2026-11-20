@@ -130,6 +130,7 @@
         });
       });
       fillRuntime(runtimeState);
+      adminLevel = typeof data.permission_level === 'number' ? data.permission_level : adminLevel;
       showExternal(data.external || null);
       showGuestGuard(data.client_address || null);
     }).catch(function (error) { show('Übersicht: ' + error.message, true); });
@@ -909,17 +910,65 @@
     base_url_invalid: 'Base-URL ungültig (HTTPS, oder http nur zu 127.0.0.1/localhost)',
     model: 'Core-Name fehlt',
     model_invalid: 'Core-Name ungültig',
-    key: 'Schlüssel fehlt auf dem Server (COREUI_EXTERNAL_API_KEY oder STU_EXTERNAL_API_KEY)'
+    key: 'API-Schlüssel fehlt (im Feld API-SCHLÜSSEL einfügen)',
+    key_unreadable: 'gespeicherter API-Schlüssel nicht mehr lesbar (die Serverkonfiguration hat sich geändert); bitte neu einfügen'
   };
+  var adminLevel = 4;
+  // 0.8.11: the key field: pasted by the Inhaber, kept sealed, never shown again.
+  function showExternalKey(external) {
+    var field = document.getElementById('externalKey');
+    var hint = document.getElementById('externalKeyHint');
+    var save = document.getElementById('externalKeySave');
+    var remove = document.getElementById('externalKeyDelete');
+    if (!field || !external) return;
+    var server = external.key_source === 'server';
+    var owner = adminLevel === 0;
+    field.disabled = server || !owner;
+    save.disabled = server || !owner;
+    remove.hidden = !(owner && external.key_source === 'admin');
+    field.placeholder = external.key_source === 'admin' ? 'Gespeichert. Zum Ersetzen neuen Schlüssel einfügen' : 'Schlüssel einfügen';
+    hint.textContent = server
+      ? 'Steht in der Serverkonfiguration (COREUI_EXTERNAL_API_KEY oder STU_EXTERNAL_API_KEY) und gilt vorrangig; hier nicht änderbar.'
+      : (owner ? 'Einfach hier einfügen. Er wird verschlüsselt gespeichert und nie wieder angezeigt.'
+        : 'Den Schlüssel setzt oder entfernt nur der Inhaber.')
+        + (external.key_source === 'admin' ? ' Ein Schlüssel ist gespeichert.' : '');
+  }
+  var KEY_ERRORS = {
+    external_key_invalid: 'Der Schlüssel muss 8 bis 400 Zeichen lang sein, ohne Leerzeichen.',
+    external_key_in_server_config: 'Der Schlüssel steht in der Serverkonfiguration und gilt dort.',
+    owner_only: 'Nur der Inhaber kann den Schlüssel setzen oder entfernen.'
+  };
+  function saveExternalKey() {
+    var field = document.getElementById('externalKey');
+    var value = field.value.trim();
+    if (!value) { show('Externer Adapter: Bitte zuerst einen Schlüssel einfügen.', true); return; }
+    post('external_api_key_save', { key: value }).then(function (data) {
+      field.value = '';
+      showExternal(data.external || null);
+      show('API-Schlüssel verschlüsselt gespeichert.');
+    }).catch(function (error) {
+      show('Externer Adapter: ' + (KEY_ERRORS[error.message] || error.message), true);
+    });
+  }
+  function deleteExternalKey() {
+    if (!window.confirm('Den gespeicherten API-Schlüssel wirklich entfernen? Der externe Adapter ist dann aus, bis ein neuer eingefügt wird.')) return;
+    post('external_api_key_delete', {}).then(function (data) {
+      showExternal(data.external || null);
+      show('API-Schlüssel entfernt.');
+    }).catch(function (error) {
+      show('Externer Adapter: ' + (KEY_ERRORS[error.message] || error.message), true);
+    });
+  }
   function showExternal(external) {
     var status = document.getElementById('externalStatus');
     if (!status || !external) return;
+    showExternalKey(external);
     if (external.status === 'ready') {
       status.textContent = 'Bereit: ' + (external.label || 'Externe API') + ' mit ' + external.model
         + '. Inhaber und Admins können ihn unter Einstellungen > KI-Profil als Core-Pfad wählen.';
     } else if (external.status === 'disabled') {
       status.textContent = 'Aus. Alle Konten nutzen ihren lokalen Core.'
-        + (external.key_configured ? '' : ' Auf dem Server ist noch kein Schlüssel gesetzt.');
+        + (external.key_configured ? '' : ' Noch kein API-Schlüssel gespeichert.');
     } else {
       status.textContent = 'Noch nicht vollständig: ' + (external.missing || []).map(function (key) {
         return EXTERNAL_MISSING[key] || key;
@@ -1041,6 +1090,8 @@
     document.getElementById('searchLore').addEventListener('click', function () { loadLore(true); });
     document.getElementById('saveRuntime').addEventListener('click', saveRuntime);
     document.getElementById('externalTest').addEventListener('click', testExternal);
+    document.getElementById('externalKeySave').addEventListener('click', saveExternalKey);
+    document.getElementById('externalKeyDelete').addEventListener('click', deleteExternalKey);
     document.getElementById('saveRuntimeAccess').addEventListener('click', saveRuntime);
     document.getElementById('reloadLogs').addEventListener('click', loadLogs);
     document.getElementById('clearLogs').addEventListener('click', clearLogs);

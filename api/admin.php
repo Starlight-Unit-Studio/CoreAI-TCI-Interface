@@ -728,10 +728,25 @@ if ($action === 'settings_save') {
   stu_json(['ok' => true, 'settings' => coreui_admin_setting_rows($pdo)]);
 }
 
+// 0.8.11: Admin Core > Externer Adapter > API-Schlüssel. The Inhaber pastes the key; it is kept
+// sealed and never sent back. A key in the server configuration wins and cannot be changed here.
+if ($action === 'external_api_key_save' || $action === 'external_api_key_delete') {
+  if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+  if (coreui_provider_server_key() !== '') stu_json(['ok' => false, 'error' => 'external_key_in_server_config'], 409);
+  try {
+    if ($action === 'external_api_key_save') coreui_provider_key_store($pdo, (string)($body['key'] ?? ''));
+    else coreui_provider_key_delete($pdo);
+  } catch (InvalidArgumentException $e) {
+    stu_json(['ok' => false, 'error' => $e->getMessage()], 400);
+  }
+  coreui_admin_audit($pdo, $actorId, $action, 'app_settings', 'external_api_key');
+  stu_json(['ok' => true, 'external' => coreui_ai_external_capability($pdo)]);
+}
+
 // 0.8.11: Admin Core > Externer Adapter > Verbindung prüfen. Asks the provider for its model list
 // with the server key (no model is asked anything, no tokens); the key never leaves the server.
 if ($action === 'external_api_test') {
-  $result = coreui_provider_test(coreui_ai_external_capability($pdo), coreui_provider_key());
+  $result = coreui_provider_test(coreui_ai_external_capability($pdo), coreui_provider_key($pdo));
   coreui_admin_audit($pdo, $actorId, 'external_api_test', 'app_settings', 'external_api',
     ['ok' => !empty($result['ok']), 'reason' => (string)($result['reason'] ?? ''), 'http_code' => (int)($result['http_code'] ?? 0)]);
   stu_json(['ok' => true, 'test' => $result, 'external' => coreui_ai_external_capability($pdo)]);

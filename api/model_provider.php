@@ -18,10 +18,19 @@ declare(strict_types=1);
  * top_k and the tuning options) are not sent. Audio, live voice and the browser worker stay local.
  *
  * coreui_provider_wire() gives both call sites one "line": unchanged for Ollama, translated for the
- * external API. The key is read only when the request is built and never stored, shown or logged.
+ * external API. The key is read only when the request is built and never shown or logged.
+ *
+ * The key: the Inhaber pastes it into Admin Core (no file to edit); it is kept sealed with
+ * api/secret_box.php (AES-256-GCM, key derived from the server configuration) and never shown
+ * again. A key in the server configuration (COREUI_EXTERNAL_API_KEY or STU_EXTERNAL_API_KEY)
+ * wins; then Admin Core only shows that it is there.
  */
 
+require_once __DIR__ . '/secret_box.php';
+
 const COREUI_PROVIDER_LABEL_DEFAULT = 'OpenAI-kompatibel';
+const COREUI_PROVIDER_KEY_SETTING = 'external_api_key_sealed';
+const COREUI_PROVIDER_KEY_PURPOSE = 'external-api-key';
 const COREUI_PROVIDER_ERROR_CHARS = 300;
 const COREUI_PROVIDER_TEST_TIMEOUT = 10;
 
@@ -49,16 +58,72 @@ function coreui_provider_model_name(string $value): string {
   return preg_match('~^[A-Za-z0-9._:/@+-]{1,160}$~D', $model) === 1 ? $model : '';
 }
 
-/** The key from the server configuration, '' without one. Never stored elsewhere. */
-function coreui_provider_key(): string {
+/** A key as pasted (pure): printable characters without spaces, 8 to 400 long; '' when not. */
+function coreui_provider_key_valid(string $value): string {
+  $key = trim($value);
+  return preg_match('~^[\x21-\x7e]{8,400}$~D', $key) === 1 ? $key : '';
+}
+
+/** The key from the server configuration, '' without one. */
+function coreui_provider_server_key(): string {
   return defined('STU_EXTERNAL_API_KEY') ? trim((string)constant('STU_EXTERNAL_API_KEY')) : '';
+}
+
+/**
+ * The key the Inhaber stored in Admin Core: ['key'=>string, 'unreadable'=>bool]. Read once per
+ * request; unreadable when the server configuration changed since (then it has to be pasted again).
+ */
+function coreui_provider_stored_key(?PDO $pdo = null): array {
+  $memo = $GLOBALS['COREUI_PROVIDER_STORED_KEY'] ?? null;
+  if (is_array($memo)) return $memo;
+  $result = ['key'=>'', 'unreadable'=>false];
+  try {
+    $pdo = $pdo ?? (function_exists('stu_pdo') ? stu_pdo() : null);
+    $sealed = $pdo instanceof PDO && function_exists('stu_app_setting_get')
+      ? trim((string)stu_app_setting_get($pdo, COREUI_PROVIDER_KEY_SETTING, '')) : '';
+    if ($sealed !== '') {
+      $plain = coreui_secret_open($sealed, COREUI_PROVIDER_KEY_PURPOSE);
+      $result = is_string($plain) && coreui_provider_key_valid($plain) !== '' ? ['key'=>$plain, 'unreadable'=>false]
+        : ['key'=>'', 'unreadable'=>true];
+    }
+  } catch (Throwable $e) {
+    $result = ['key'=>'', 'unreadable'=>false];
+  }
+  return $GLOBALS['COREUI_PROVIDER_STORED_KEY'] = $result;
+}
+
+/** The key in use: the server configuration's, else the stored one; '' without one. */
+function coreui_provider_key(?PDO $pdo = null): string {
+  $server = coreui_provider_server_key();
+  return $server !== '' ? $server : (string)coreui_provider_stored_key($pdo)['key'];
+}
+
+/** Where the key comes from: 'server', 'admin' or '' (none), and whether a stored one is unreadable. */
+function coreui_provider_key_state(?PDO $pdo = null): array {
+  if (coreui_provider_server_key() !== '') return ['source'=>'server', 'unreadable'=>false];
+  $stored = coreui_provider_stored_key($pdo);
+  return ['source'=>$stored['key'] !== '' ? 'admin' : '', 'unreadable'=>(bool)$stored['unreadable']];
+}
+
+/** Admin Core: keep a pasted key sealed (Inhaber only, checked by the caller). */
+function coreui_provider_key_store(PDO $pdo, string $value): void {
+  $key = coreui_provider_key_valid($value);
+  if ($key === '') throw new InvalidArgumentException('external_key_invalid');
+  stu_app_setting_set($pdo, COREUI_PROVIDER_KEY_SETTING, coreui_secret_seal($key, COREUI_PROVIDER_KEY_PURPOSE));
+  unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
+}
+
+/** Admin Core: forget the stored key. */
+function coreui_provider_key_delete(PDO $pdo): void {
+  stu_app_setting_set($pdo, COREUI_PROVIDER_KEY_SETTING, '');
+  unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
 }
 
 /**
  * The adapter as the operator configured it (pure): $settings are the app settings
  * external_api_enabled, _label, _base_url and _model. 'configured' only when everything is there.
  */
-function coreui_provider_capability(array $settings, bool $keyConfigured): array {
+function coreui_provider_capability(array $settings, bool $keyConfigured, string $keySource = '', bool $keyUnreadable = false): array {
   $enabled = (string)($settings['external_api_enabled'] ?? '0') === '1';
   $label = trim((string)($settings['external_api_label'] ?? ''));
   $rawUrl = trim((string)($settings['external_api_base_url'] ?? ''));
@@ -70,7 +135,7 @@ function coreui_provider_capability(array $settings, bool $keyConfigured): array
   elseif ($baseUrl === '') $missing[] = 'base_url_invalid';
   if ($rawModel === '') $missing[] = 'model';
   elseif ($model === '') $missing[] = 'model_invalid';
-  if (!$keyConfigured) $missing[] = 'key';
+  if (!$keyConfigured) $missing[] = $keyUnreadable ? 'key_unreadable' : 'key';
   $configured = $enabled && $missing === [];
   return [
     'configured' => $configured,
@@ -80,6 +145,7 @@ function coreui_provider_capability(array $settings, bool $keyConfigured): array
     'base_url' => $baseUrl !== '' ? $baseUrl : $rawUrl,
     'model' => $model !== '' ? $model : $rawModel,
     'key_configured' => $keyConfigured,
+    'key_source' => $keyConfigured ? ($keySource !== '' ? $keySource : 'server') : '',
     'missing' => $missing,
     'status' => !$enabled ? 'disabled' : ($configured ? 'ready' : 'incomplete'),
   ];

@@ -137,6 +137,35 @@ ext_test(coreui_provider_account_external($cap, 'external', 0, false) === ['labe
   && coreui_provider_account_external($cap, 'local', 0, false) === null
   && coreui_provider_account_external($incomplete, 'external', 0, false) === null, 'only the Inhaber and Admins, never guests, only when configured');
 
+// --- The key pasted in Admin Core (sealed, never shown; the server configuration wins) ---------------------
+ext_test(coreui_provider_key_valid('  gsk_live_A1b2C3d4E5  ') === 'gsk_live_A1b2C3d4E5' && coreui_provider_key_valid('kurz') === ''
+  && coreui_provider_key_valid('mit leer zeichen1') === '' && coreui_provider_key_valid("zeile\nzwei12345") === ''
+  && coreui_provider_key_valid(str_repeat('a', 401)) === '', 'what counts as a key');
+$keys = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
+ext_test(coreui_provider_stored_key($keys) === ['key'=>'', 'unreadable'=>false], 'no stored key yet');
+coreui_provider_key_store($keys, '  gsk_live_A1b2C3d4E5  ');
+$sealed = (string)stu_app_setting_get($keys, COREUI_PROVIDER_KEY_SETTING, '');
+ext_test(str_starts_with($sealed, 's1:') && !str_contains($sealed, 'gsk_live') && !str_contains(base64_decode(substr($sealed, 3)), 'gsk_live'),
+  'the key is stored sealed: ' . $sealed);
+ext_test(coreui_provider_stored_key($keys) === ['key'=>'gsk_live_A1b2C3d4E5', 'unreadable'=>false], 'and read back');
+ext_test(coreui_provider_key($keys) === EXT_KEY && coreui_provider_key_state($keys) === ['source'=>'server', 'unreadable'=>false],
+  'a key in the server configuration wins');
+$refusedKey = false;
+try { coreui_provider_key_store($keys, 'mit leer zeichen1'); } catch (InvalidArgumentException $e) { $refusedKey = $e->getMessage() === 'external_key_invalid'; }
+ext_test($refusedKey && coreui_provider_stored_key($keys)['key'] === 'gsk_live_A1b2C3d4E5', 'an invalid key is refused, the stored one stays');
+stu_app_setting_set($keys, COREUI_PROVIDER_KEY_SETTING, coreui_secret_seal('gsk_live_A1b2C3d4E5', 'another-purpose'));
+unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
+ext_test(coreui_provider_stored_key($keys) === ['key'=>'', 'unreadable'=>true], 'a key sealed for something else is unreadable');
+coreui_provider_key_delete($keys);
+ext_test(coreui_provider_stored_key($keys) === ['key'=>'', 'unreadable'=>false] && stu_app_setting_get($keys, COREUI_PROVIDER_KEY_SETTING, 'x') === '',
+  'the stored key can be removed');
+$fromAdmin = coreui_provider_capability($full, true, 'admin');
+$unreadable = coreui_provider_capability($full, false, '', true);
+ext_test($fromAdmin['configured'] && $fromAdmin['key_source'] === 'admin' && !isset($fromAdmin['key'])
+  && !$unreadable['configured'] && $unreadable['missing'] === ['key_unreadable'] && $unreadable['key_source'] === '', 'where the key comes from');
+unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
+
 // --- The request (pure) ----------------------------------------------------------------------------------
 $png = base64_encode("\x89PNG\r\n\x1a\nrest");
 $payload = ['model'=>'gemma4:e4b', 'stream'=>false, 'keep_alive'=>-1, 'think'=>'high',
@@ -308,11 +337,17 @@ ext_test(str_contains($chat, '$wire = coreui_provider_wire(coreui_provider_activ
 ext_test(str_contains($settings, "\$settings['external'] = coreui_provider_account_external(coreui_ai_external_capability(\$pdo), 'external',")
   && str_contains($settings, "coreui_ai_account_level(\$pdo, \$uid), coreui_ai_account_is_guest(\$pdo, \$uid));")
   && str_contains($settings, "if (\$settings['external'] === null) \$settings['provider'] = 'local';"), 'each turn checks the account');
+ext_test(str_contains($admin, "if (\$action === 'external_api_key_save' || \$action === 'external_api_key_delete') {\n  if (\$actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);")
+  && str_contains($admin, "if (coreui_provider_server_key() !== '') stu_json(['ok' => false, 'error' => 'external_key_in_server_config'], 409);")
+  && str_contains($admin, "coreui_admin_audit(\$pdo, \$actorId, \$action, 'app_settings', 'external_api_key');"),
+  'Admin Core: only the Inhaber stores or removes the key, never over the server configuration, the audit without the key');
 ext_test(str_contains($userSettings, "stu_json(['ok'=>false, 'error'=>'external_not_allowed'], 403);")
   && str_contains($admin, "if (\$action === 'external_api_test') {") && str_contains($admin, '$value = coreui_provider_base_url($value);'),
   'Settings refuse it for other accounts; Admin Core tests the connection and checks the address');
 $adminJs = (string)file_get_contents($root . '/js/admin.js');
 $settingsJs = (string)file_get_contents($root . '/js/settings.js');
+ext_test(str_contains($adminJs, "post('external_api_key_save', { key: value })") && str_contains($adminJs, "field.value = '';")
+  && str_contains($adminJs, "field.disabled = server || !owner;"), 'the key field: sent once, emptied, locked for admins and server keys');
 ext_test(str_contains($adminJs, "post('external_api_test', {})") && str_contains($adminJs, "document.getElementById('externalTest').addEventListener('click', testExternal);")
   && str_contains($settingsJs, 'var externalUsable = externalConfigured && external.allowed === true;'), 'the pages');
 

@@ -3,7 +3,9 @@ Version main: 0.8.10, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.11).
 ZIEL 0.8.11: externer OpenAI-kompatibler Adapter fertig, damit Inhaber
 und Admins Fehler mit einem Cloud-Core nachstellen koennen (nur der
 Endpunkt wechselt, Prompt und Arbeitsschleife bleiben gleich). Keine
-Migration. Schluessel nur auf dem Server.
+Migration. API-Schluessel fuegt der Inhaber im Admin Core ein
+(verschluesselt, nie wieder angezeigt) oder er steht in der
+Serverkonfiguration.
 Dokument: docs/UEBERGABEPROTOKOLL_0_8_11.txt.
 Naechster Schritt: Gegentest des 12B-Fehlers auf dem echten Server.
 Keine offenen Betreiberfragen.

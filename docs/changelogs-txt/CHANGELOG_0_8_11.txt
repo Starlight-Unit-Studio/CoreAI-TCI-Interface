@@ -4,9 +4,15 @@ Datum: 20.11.2026
 EXTERNER OPENAI-KOMPATIBLER ADAPTER FERTIG (CF-003, CF-005)
 - Der seit 0.3.0 vorbereitete Adapter funktioniert jetzt. Einrichtung im
   Admin Core > Betrieb > Externer Adapter: Anzeigename, Base-URL (HTTPS,
-  oder http nur zu 127.0.0.1/localhost), Core-Name beim Anbieter. Der
-  Schluessel bleibt auf dem Server (COREUI_EXTERNAL_API_KEY oder
-  STU_EXTERNAL_API_KEY).
+  oder http nur zu 127.0.0.1/localhost), Core-Name beim Anbieter.
+- API-Schluessel ohne Dateibearbeitung: Der Inhaber fuegt ihn in der
+  Karte ein und speichert. Er wird mit AES-256-GCM versiegelt (Schluessel
+  aus der Serverkonfiguration abgeleitet), nie wieder an den Browser
+  geschickt und laesst sich entfernen. Admins sehen nur, ob einer
+  gespeichert ist. Ein Schluessel in der Serverkonfiguration
+  (COREUI_EXTERNAL_API_KEY oder STU_EXTERNAL_API_KEY) gilt weiter
+  vorrangig und sperrt das Feld. Ein nicht mehr lesbarer gespeicherter
+  Schluessel wird gemeldet.
 - Die Karte zeigt, was fehlt. "Verbindung pruefen" fragt den Anbieter mit
   dem Schluessel nach seiner Modellliste, ohne Tokens (Schluessel
   abgelehnt, nicht erreichbar, Grenze, Core nicht gelistet).
@@ -47,8 +53,12 @@ BLEIBT LOKAL
 
 TESTS
 - Neu: scripts/external-provider-selftest.php (Uebersetzung, Freigabe,
-  Verbindungstest, Ende zu Ende gegen einen OpenAI-kompatiblen
+  versiegelter Schluessel, Verbindungstest, Ende zu Ende gegen einen OpenAI-kompatiblen
   Stand-in-Server auf 127.0.0.1 mit echtem ember_call_ollama() und
-  console_stream_ollama()), in beiden Preflights mit englischer Meldung.
+  console_stream_ollama()) und scripts/external-provider-ui-selftest.cjs
+  (Admin-Karte im Browser: Schluessel einmal gesendet und Feld geleert,
+  ungueltiger Schluessel, Einschalten, Verbindung pruefen, Entfernen,
+  Serverschluessel gesperrt, Admins ohne Schluesselrecht, Telefon), beide
+  in beiden Preflights mit englischer Meldung.
 - profile-stats-selftest.php folgt der neuen Zaehl-Verdrahtung, ohne
   schwaechere Pruefung.

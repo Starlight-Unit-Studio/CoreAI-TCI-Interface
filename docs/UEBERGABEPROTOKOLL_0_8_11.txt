@@ -20,6 +20,10 @@ ENTSCHEIDUNGEN
   prueft das bei jedem Zug und beim Speichern.
 - Nur das OpenAI-kompatible Format; Anbieter mit eigenem Format nur ueber deren
   OpenAI-kompatiblen Endpunkt.
+- Der API-Schluessel ohne Dateibearbeitung (Nachfrage des Betreibers: "wie machen wir das fuer User,
+  die keine Ahnung davon haben, PHP-Dateien zu bearbeiten"): der Inhaber fuegt ihn im Admin Core ein,
+  versiegelt wie das SMTP-Passwort und das Authenticator-Geheimnis (api/secret_box.php), nie wieder
+  angezeigt. Ein Schluessel in der Serverkonfiguration gilt vorrangig.
 - Keine Ausgabegrenze und kein Denk-Parameter an den Anbieter (nicht einheitlich, haeufige
   400-Fehler); liefert der Anbieter reasoning_content oder reasoning, gilt das als Denken.
 
@@ -30,7 +34,9 @@ UMSETZUNG
   Anbieter des Zugs, Anfrage aus der Ollama-Nutzlast (Nachrichten, Bilder als data-URL mit
   erkanntem Typ, temperature, top_p, seed, stop), Antwort und Ereignisstrom zurueck in Ollamas Form
   (content, thinking, done, done_reason, eval_count, prompt_eval_count, error), Schluessel in
-  Fehlermeldungen ausgeblendet und gekuerzt, "Leitung" fuer beide Aufrufstellen (fuer Ollama
+  Fehlermeldungen ausgeblendet und gekuerzt, Schluessel aus dem Admin Core (versiegelt mit
+  api/secret_box.php, Zweck external-api-key, App-Einstellung external_api_key_sealed; einmal je
+  Anfrage gelesen; nicht mehr lesbar wird gemeldet) mit Vorrang der Serverkonfiguration, "Leitung" fuer beide Aufrufstellen (fuer Ollama
   unveraendert), Verbindungstest ueber {base}/models ohne Tokens.
 - api/chat.php (ember_call_ollama): Leitung fuer URL, Header, Nutzlast, Dateivorschau-Strom und
   Antwort; LAST_CALL mit provider und extern:<modell>; keine Ausgabegrenze und kein gelerntes
@@ -42,12 +48,16 @@ UMSETZUNG
 - api/user_settings.php: externe API nur fuer Inhaber und Admins speicherbar (403
   external_not_allowed), Sicht je Konto.
 - api/admin.php: Pruefung von Base-URL und Core-Name beim Speichern, Aktion external_api_test
-  (mit Audit, ohne Schluessel).
-- admin/index.html, js/admin.js: Karte "Externer Adapter" mit Erklaerung, Status (was fehlt),
-  "Verbindung pruefen" mit Ergebnis.
+  (mit Audit, ohne Schluessel), external_api_key_save und external_api_key_delete (nur Inhaber,
+  409 bei Schluessel in der Serverkonfiguration, Audit ohne Schluessel).
+- css/settings.css: ein fehlgeschlagenes Pruefergebnis rot.
+- admin/index.html, js/admin.js: Karte "Externer Adapter" mit Erklaerung, Feld API-SCHLUESSEL
+  (Passwortfeld, einmal gesendet, danach leer; fuer Admins und bei Serverschluessel gesperrt),
+  Schluessel entfernen mit Rueckfrage, Status (was fehlt), "Verbindung pruefen" mit Ergebnis.
 - settings.html, js/settings.js: Core-Pfad "Externe API" mit Anzeigename und Core, nur fuer
   Inhaber und Admins waehlbar; Hinweise aktualisiert.
-- scripts/external-provider-selftest.php (neu), scripts/profile-stats-selftest.php (neue
+- scripts/external-provider-selftest.php (neu), scripts/external-provider-ui-selftest.cjs (neu),
+  scripts/profile-stats-selftest.php (neue
   Zaehl-Verdrahtung), Preflights (Pflichtdateien und Lauf, englische Meldung).
 - README (Integrationen, Abschnitt External API adapter), docs/CAPABILITIES.md, ROADMAP P05,
   Feature-Matrix CF-003 und CF-005, Changelogs.
@@ -57,11 +67,11 @@ UNVERAENDERT
   Live-Gespraech, Browser-Worker, Bilder.
 
 BEDIENUNG FUER DEN GEGENTEST
-1. Auf dem Server den Schluessel setzen: COREUI_EXTERNAL_API_KEY in der Umgebung oder
-   define('STU_EXTERNAL_API_KEY', '...'); in api/config.local.php; PHP neu laden.
-2. Admin Core > Betrieb > Externer Adapter: aktivieren, Anzeigename, Base-URL (zum Beispiel
-   https://api.openai.com/v1 oder https://openrouter.ai/api/v1), Core-Name; speichern;
-   "Verbindung pruefen".
+1. Admin Core > Betrieb > Externer Adapter: aktivieren, Anzeigename, Base-URL (zum Beispiel
+   https://api.openai.com/v1 oder https://openrouter.ai/api/v1), Core-Name; speichern.
+2. Als Inhaber den API-Schluessel ins Feld API-SCHLUESSEL einfuegen, SCHLUESSEL SPEICHERN,
+   dann VERBINDUNG PRUEFEN. (Wer lieber die Serverkonfiguration nutzt: COREUI_EXTERNAL_API_KEY oder
+   STU_EXTERNAL_API_KEY; die gilt dann vorrangig.)
 3. Einstellungen > KI-Profil > Expert > Core-Pfad: "Externe API", speichern.
 4. Denselben Projektauftrag wie mit dem lokalen Core wiederholen. Im Arbeitsweg steht bei jedem
    Modellaufruf "extern:<modell>". Danach Core-Pfad wieder auf "Lokal".

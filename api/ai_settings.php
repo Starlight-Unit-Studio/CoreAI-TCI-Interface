@@ -122,7 +122,8 @@ function coreui_ai_external_capability(PDO $pdo): array {
       'external_api_base_url'=>'', 'external_api_model'=>''] as $key => $default) {
     $settings[$key] = function_exists('stu_app_setting_get') ? (string)stu_app_setting_get($pdo, $key, $default) : $default;
   }
-  return coreui_provider_capability($settings, coreui_provider_key() !== '');
+  $keyState = coreui_provider_key_state($pdo);
+  return coreui_provider_capability($settings, coreui_provider_key($pdo) !== '', $keyState['source'], $keyState['unreadable']);
 }
 
 /**

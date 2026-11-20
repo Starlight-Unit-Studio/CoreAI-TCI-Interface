@@ -253,6 +253,7 @@ UI_FILES=(
   scripts/project-env-selftest.php
   api/model_provider.php
   scripts/external-provider-selftest.php
+  scripts/external-provider-ui-selftest.cjs
   scripts/sandbox-image-selftest.py
   database/migrations/049_project_versions.sql
   api/project_vcs_store.php
@@ -1899,6 +1900,16 @@ if command -v php >/dev/null 2>&1; then
       fi
     else
       ok 'Merge: UI test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.8.11: Admin Core > Operations > External adapter (key pasted once, sealed, connection test).
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/external-provider-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'External adapter: key entry, status and connection test verified in browser.'
+      else
+        fail 'External adapter: UI test failed.'
+      fi
+    else
+      ok 'External adapter: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.90 (P13 A): history, comparison, restoring, conflicts, export and import in Settings > Skills.
     if node -e "require('playwright')" >/dev/null 2>&1; then
