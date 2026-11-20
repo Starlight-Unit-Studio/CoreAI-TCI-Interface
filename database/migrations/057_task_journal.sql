@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS stu_console_task_journal (
   last_step INT UNSIGNED NOT NULL DEFAULT 0,
   last_verified_step INT UNSIGNED NOT NULL DEFAULT 0,
   last_error_code VARCHAR(64) NULL,
-  requirements_json TEXT NOT NULL,
+  requirements_json MEDIUMTEXT NOT NULL,
   evidence_json MEDIUMTEXT NOT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
