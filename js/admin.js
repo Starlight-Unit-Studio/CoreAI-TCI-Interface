@@ -1186,11 +1186,11 @@
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,
       storage_limit_mb: gbToMb(document.getElementById('storageLimitGb').value),
       artifact_retention_days: document.getElementById('artifactRetentionDays').value,
-      maintenance_message: document.getElementById('maintenanceMessage').value,
       tool_web_enabled: document.getElementById('toolWebEnabled').checked ? '1' : '0',
       tool_browse_enabled: document.getElementById('toolBrowseEnabled').checked ? '1' : '0',
       tool_python_enabled: document.getElementById('toolPythonEnabled').checked ? '1' : '0',
-      tool_image_enabled: document.getElementById('toolImageEnabled').checked ? '1' : '0'
+      tool_image_enabled: document.getElementById('toolImageEnabled').checked ? '1' : '0',
+      maintenance_message: document.getElementById('maintenanceMessage').value
     };
     // 0.8.15: the external adapter has its own button (ADAPTER SPEICHERN).
     post('settings_save', { settings: settings }).then(function (data) {

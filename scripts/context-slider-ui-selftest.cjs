@@ -173,8 +173,10 @@ function context(model, extra) {
   assert(js.includes('num_ctx: contextSlider ? contextSlider.value() : null')
     && js.includes('contextSlider.load(selectedModelOverride || defaultModel)'), 'save wired, estimate follows the chosen Core');
   // 0.5.79: the Core is chosen in the chat menu only; the KI-Profil has no Ollama list and sends no Core.
-  assert(!html.includes('id="aiModelOverride"') && !html.includes('LOKALER CORE') && html.includes('CORE-PFAD')
-    && !js.includes('model_override:'), 'no Core list in the KI-Profil, Core-Pfad stays');
+  // 0.8.15: external Cores too (EXTERNE CORES in the chat's Core menu); the Core-Pfad is gone.
+  assert(!html.includes('id="aiModelOverride"') && !html.includes('LOKALER CORE') && !html.includes('CORE-PFAD')
+    && html.includes('im Core-Menü unter EXTERNE CORES') && !js.includes('model_override:'),
+    'no Core list in the KI-Profil; external Cores are chosen in the chat');
   const settingsApi = fs.readFileSync(path.join(__dirname, '../api/user_settings.php'), 'utf8');
   assert(settingsApi.includes("$keepModel = !array_key_exists('model_override', $body);")
     && settingsApi.includes("if ($requestedModel !== '' && !$keepModel) {"), 'the server keeps the Core chosen in the chat');

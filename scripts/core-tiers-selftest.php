@@ -70,7 +70,12 @@ tier_test($persona !== '' && $persona === trim($m[1] ?? '') && str_starts_with($
 tier_test(ember_persona_system_for($default) === '' && ember_persona_system_for('ember-coreui') === '',
   'Mara\'s own Core keeps her Modelfile, nothing is sent');
 $chat = (string)file_get_contents($root . '/api/chat.php');
-tier_test(substr_count($chat, 'ember_persona_system_for(ember_model())') === 2, 'both prompt builders give other Cores the persona');
+// 0.8.15: both prompt builders take the persona of this turn's Core; for a local Core that stays
+// ember_persona_system_for(ember_model()), an external Core (no Modelfile) gets Mara's SYSTEM text.
+tier_test(substr_count($chat, '= ember_turn_persona_system();') === 2
+  && substr_count($chat, 'ember_persona_system_for(ember_model())') === 1
+  && str_contains($chat, "function ember_turn_persona_system(): string {\n  if (function_exists('coreui_provider_active') && coreui_provider_active() !== null) return ember_mara_system_text();\n  return ember_persona_system_for(ember_model());\n}"),
+  'both prompt builders give other Cores the persona');
 tier_test(str_contains($chat, "if (is_array(\$show) && trim((string)(\$show['system'] ?? '')) !== '') return \$memo[\$model] = '';"),
   'a Core with a SYSTEM text of its own keeps it');
 

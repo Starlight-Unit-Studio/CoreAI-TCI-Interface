@@ -79,9 +79,12 @@ assert.ok(!settings.includes('id="cfgExpertGroup"'));
 assert.ok(['start','ki-profil','wissen','memory','skills','system'].every(id => settings.includes('id="tab-' + id + '"')),
   'advanced categories remain accessible with Expert disabled');
 const expertNodes = [...settings.matchAll(/data-expert hidden/g)];
-assert.equal(expertNodes.length, 7, 'only raw technical controls (6) and the note of the Core path remain Expert-gated, while smart controls stay visible');
+// 0.8.15: the Core path left the KI-Profil (external Cores are chosen in the chat's Core menu);
+// its Expert note about external Cores stays.
+assert.equal(expertNodes.length, 6, 'only raw technical controls (5) and the note on external Cores remain Expert-gated, while smart controls stay visible');
+assert.ok(!settings.includes('id="aiProvider"') && !settings.includes('CORE-PFAD'), 'no Core path in the KI-Profil');
 const TAG = '<span class="cfg-expert-tag">(Expert)</span>';
-for (const [id, title] of [['aiNumPredict', 'ANTWORTBUDGET'], ['aiTemperature', 'TEMPERATUR'], ['aiProvider', 'CORE-PFAD'], ['aiMemoryLimit', 'MEMORY-KONTEXT']]) {
+for (const [id, title] of [['aiNumPredict', 'ANTWORTBUDGET'], ['aiTemperature', 'TEMPERATUR'], ['aiMemoryLimit', 'MEMORY-KONTEXT']]) {
   assert.ok(new RegExp('<label[^>]*for="' + id + '"[^>]*data-expert hidden>').test(settings),
     id + ' is a raw technical input kept behind Expert');
   assert.ok(settings.includes('<strong>' + title + ' ' + TAG + '</strong>'), id + ' says (Expert) after its title');
@@ -92,8 +95,9 @@ assert.ok(/<section[^>]*aria-labelledby="aiPromptTitle" data-expert hidden>/.tes
   settings.includes('<h3 id="aiPromptTitle">Eigener System-Prompt ' + TAG + '</h3>'),
   'system prompt editing remains an advanced instruction tool and says (Expert)');
 assert.ok(settings.includes('<div class="settings-local-note" id="externalProviderNote" data-expert hidden>'),
-  'the note about external APIs goes with the Core path');
-assert.equal((settings.match(/<span class="cfg-expert-tag">\(Expert\)<\/span>/g) || []).length, 6, 'exactly the six Expert settings carry the tag');
+  'the note about external Cores stays behind Expert');
+// 0.8.15: five, the Core path (CORE-PFAD) left the KI-Profil.
+assert.equal((settings.match(/<span class="cfg-expert-tag">\(Expert\)<\/span>/g) || []).length, 5, 'exactly the five Expert settings carry the tag');
 for (const id of ['prefShowTelemetry', 'prefLiveFrameMotion']) {
   assert.ok(new RegExp('<label[^>]*for="' + id + '"[^>]*>').test(settings),
     'normal display control ' + id + ' is present');
