@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.10: mandatory preflight sync after every source change.
+# CoreAI: TCI Interface 0.8.11: the external OpenAI-compatible adapter for comparison runs with a cloud Core.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -268,6 +268,9 @@ UI_FILES=(
   scripts/project-procs-worker-selftest.py
   scripts/project-procs-ui-selftest.cjs
   scripts/project-env-selftest.php
+  api/model_provider.php
+  scripts/external-provider-selftest.php
+  scripts/external-provider-ui-selftest.cjs
   scripts/sandbox-image-selftest.py
   database/migrations/049_project_versions.sql
   api/project_vcs_store.php
@@ -1599,6 +1602,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Project environment self-test (exit ${project_env_test_exit}): ${project_env_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
+  # 0.8.11: the external OpenAI-compatible adapter (translation, permission, connection test, end to end
+  # against a stand-in server on 127.0.0.1; the key never reaches a log).
+  external_provider_test=''
+  if external_provider_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/external-provider-selftest.php 2>&1)"; then
+    ok 'External API adapter self-test passed.'
+  else
+    external_provider_test_exit=$?
+    fail "External API adapter self-test (exit ${external_provider_test_exit}): ${external_provider_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
   # 0.7.80 (P11 A): versions and working states; the Git export is checked with git where it exists.
   project_vcs_test=''
   if project_vcs_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/project-vcs-selftest.php 2>&1)"; then
@@ -2096,6 +2109,16 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Merge: UI test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.8.11: Admin Core > Operations > External adapter (key pasted once, sealed, connection test).
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/external-provider-ui-selftest.cjs" >/dev/null 2>&1; then
+        ok 'External adapter: key entry, status and connection test verified in browser.'
+      else
+        fail 'External adapter: UI test failed.'
+      fi
+    else
+      warn 'External adapter: UI test skipped (Playwright for Node.js is not installed).'
     fi
     # 0.7.90 (P13 A): history, comparison, restoring, conflicts, export and import in Settings > Skills.
     if node -e "require('playwright')" >/dev/null 2>&1; then

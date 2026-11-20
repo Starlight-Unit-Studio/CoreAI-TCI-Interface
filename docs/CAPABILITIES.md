@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.7.91. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.8.11. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 Mara's OpenPet v2 chat Pet uses separate animation states for working, tool-waiting, reviewing, completing, errors, waving and dragging, plus idle gaze poses. Touch controls support tapping, double-tapping and dragging; legacy Pets remain compatible.
 
@@ -20,6 +20,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Choose **TCI Cores or other compatible, installed Ollama language models**, including Hugging Face-sourced models installed through Ollama, separately from **Thinking**. Account permissions and model capabilities still apply.
 - Let the operator configure which installed Original/Uncensored Ollama tag backs a tier in **Manage Cores**. The chat menu still lists just one row per tier.
 - Optionally route eligible complex private text turns to a higher allowed local Core, subject to permissions and availability.
+- Let the owner and admins send their own chats to a hosted Core through the **external OpenAI-compatible adapter** (configured in **Admin Core > Operations**, where the owner pastes the API key once; it is stored encrypted and never shown again; chosen under **Settings > AI profile**). Only the inference endpoint changes: prompt, skills, project tools, work loop, model queue and cancelling stay as with the local Core, so a fault can be reproduced with another model; each call shows as `extern:<model>` in the work timeline. Ollama-only settings are not sent; voice, live voice, browser research and image generation stay local.
 - Run a **bounded tool-and-result loop**: pick an allowed action, examine its real result, refine the task and decide whether another step is needed.
 - Save, extend and continue structured Markdown plans through validated native plan actions. This does not grant unrestricted terminal access.
 - Present real work events, technical steps and status; do not expose raw private model thinking or invent tool activity.
@@ -135,6 +136,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 ### Not yet complete (do not advertise as shipped)
 
 - General-purpose third-party **Connectors** and a fully integrated external-app marketplace.
+- Native (non-OpenAI-compatible) provider APIs, provider tool calling, external models for voice, live voice and browser research, and the external API for normal user accounts.
 - Direct Hugging Face Hub catalog browsing and one-click model installation in **Manage Cores** (in preparation). Compatible Hugging Face language models **already installed in Ollama** are usable as regular authorized chat models.
 - An unrestricted Codex/Claude-Code-equivalent coding IDE, general host terminal or unlimited self-executing agent.
 - Unsolicited scheduled conversations and broad background automations outside explicitly implemented events.

@@ -293,6 +293,8 @@
   font-weight: 500;
   line-height: 1.45;
 }
+/* 0.8.11: a failed check (Admin Core > Externer Adapter > Verbindung prüfen). */
+.cfg-card-note.is-error { color: var(--red); }
 
 .cfg-status-line {
   margin: 0 0 10px;

@@ -293,7 +293,7 @@ if ($method === 'GET') {
       'language_available' => coreui_ai_language_schema_ready($pdo),
     ],
     'default_model' => $defaultModel,
-    'external' => coreui_ai_external_capability($pdo),
+    'external' => coreui_ai_external_for_account($pdo, (int)$uid, $isGuest),
     'csrf_token' => stu_csrf_token(),
     'permission_level' => stu_get_permission_level($pdo),
     'is_guest' => $isGuest,
@@ -775,6 +775,12 @@ if ($isGuest) {
   $body['model_override'] = '';
   $body['num_ctx'] = null;
 }
+// 0.8.11: the external API only for the Inhaber and Admins (it costs money and sends prompts to a
+// third party); for everyone else the path stays local.
+if (strtolower(trim((string)($body['provider'] ?? 'local'))) === 'external'
+    && empty(coreui_ai_external_for_account($pdo, (int)$uid, $isGuest)['allowed'])) {
+  stu_json(['ok'=>false, 'error'=>'external_not_allowed'], 403);
+}
 // 0.5.79: the Core is chosen in the chat menu only; the KI-Profil keeps the
 // stored choice (also one Ollama no longer lists, so saving never fails on it).
 $keepModel = !array_key_exists('model_override', $body);
@@ -808,7 +814,7 @@ try {
   stu_json([
     'ok' => true,
     'settings' => $settings,
-    'external' => coreui_ai_external_capability($pdo),
+    'external' => coreui_ai_external_for_account($pdo, (int)$uid, $isGuest),
   ]);
 } catch (RuntimeException $e) {
   stu_json(['ok' => false, 'error' => $e->getMessage()], 503);

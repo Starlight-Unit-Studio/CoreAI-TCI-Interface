@@ -5,15 +5,15 @@
   <meta http-equiv="Content-Language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.8.10" />
+  <meta name="application-version" content="0.8.11" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Admin Core</title>
   <link rel="stylesheet" href="../css/console.css?v=0943952436201961941468104" />
-  <link rel="stylesheet" href="../css/settings.css?v=0670859574855885436519465" />
+  <link rel="stylesheet" href="../css/settings.css?v=0756487370425201399340613" />
   <link rel="stylesheet" href="../css/coreui-theme.css?v=1183734819028702551490676" />
   <link rel="stylesheet" href="../css/coreui-settings-theme.css?v=1142906450847234350551167" />
-  <script src="../js/console-gate.js?v=0811483049098705714862653"></script>
+  <script src="../js/console-gate.js?v=0819001520061613166752986"></script>
   <script src="../js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="../js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="../css/coreui-softglass.css?v=0628592918051344087306671" />
@@ -62,7 +62,7 @@
       <div class="settings-title-block"><span class="settings-rune" aria-hidden="true">⌬</span>
         <div><div class="settings-kicker">TERRANISCHE SYSTEMKONFIGURATION</div><h1>ADMIN CORE</h1></div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.8.10</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.8.11</div>
     </header>
     <section class="cfg-admin-auth-gate settings-panel" id="adminAccessGate" role="status" aria-live="polite">
       <h2 id="adminAccessMessage">Berechtigung wird geprüft ...</h2>
@@ -295,13 +295,19 @@
                 <span class="settings-panel-glyph violet" aria-hidden="true">◈</span>
                 <div><span>OPTIONAL</span><h3 id="adminExternalTitle">Externer Adapter</h3></div>
               </header>
+              <p class="cfg-card-note">Eine OpenAI-kompatible API (zum Beispiel für einen Gegentest mit einem Cloud-Core). Inhaber und Admins wählen sie unter Einstellungen &gt; KI-Profil als Core-Pfad (Expert); dann geht jeder Chat-Aufruf ihres Kontos dorthin, mit demselben Prompt und denselben Werkzeugen.</p>
               <label class="setting-row" for="externalEnabled">
-                <span class="setting-copy"><strong>EXTERNEN ADAPTER VORBEREITEN</strong><small>Noch inaktiv. API-Schlüssel gehören ausschließlich serverseitig in STU_EXTERNAL_API_KEY.</small></span>
+                <span class="setting-copy"><strong>EXTERNEN ADAPTER AKTIVIEREN</strong><small>Prompts gehen dann an diesen Anbieter; Hören, Live-Gespräch und Browser bleiben lokal.</small></span>
                 <span class="settings-switch"><input id="externalEnabled" type="checkbox" /><i aria-hidden="true"></i></span>
               </label>
               <label class="settings-field" for="externalLabel"><span><strong>ANZEIGENAME</strong></span><input id="externalLabel" type="text" maxlength="160" /></label>
-              <label class="settings-field" for="externalBaseUrl"><span><strong>HTTPS BASE-URL</strong></span><input id="externalBaseUrl" type="url" placeholder="https://api.example.com/v1" /></label>
-              <label class="settings-field" for="externalModel"><span><strong>CORE-NAME</strong></span><input id="externalModel" type="text" maxlength="160" /></label>
+              <label class="settings-field" for="externalBaseUrl"><span><strong>BASE-URL</strong><small>HTTPS, oder http nur zu diesem Rechner (127.0.0.1, localhost).</small></span><input id="externalBaseUrl" type="url" placeholder="https://api.example.com/v1" /></label>
+              <label class="settings-field" for="externalModel"><span><strong>CORE-NAME</strong><small>Name des Cores beim Anbieter, zum Beispiel gpt-4o-mini.</small></span><input id="externalModel" type="text" maxlength="160" /></label>
+              <label class="settings-field" for="externalKey"><span><strong>API-SCHLÜSSEL</strong><small id="externalKeyHint">Einfach hier einfügen. Er wird verschlüsselt gespeichert und nie wieder angezeigt; nur der Inhaber kann ihn setzen oder entfernen.</small></span><input id="externalKey" type="password" maxlength="400" autocomplete="new-password" spellcheck="false" autocapitalize="off" placeholder="Schlüssel einfügen" /></label>
+              <div class="form-actions"><button class="settings-action" id="externalKeySave" type="button">SCHLÜSSEL SPEICHERN</button><button class="settings-action compact danger" id="externalKeyDelete" type="button" hidden>SCHLÜSSEL ENTFERNEN</button></div>
+              <p class="cfg-card-note" id="externalStatus" role="status" aria-live="polite">Externer Adapter wird geprüft …</p>
+              <div class="form-actions"><button class="settings-action" id="externalTest" type="button">VERBINDUNG PRÜFEN</button></div>
+              <p class="cfg-card-note" id="externalTestResult" role="status" aria-live="polite" hidden></p>
             </section>
             <section class="settings-panel cfg-card wide mail-card" id="mailSmtpCard" aria-labelledby="adminMailTitle" hidden>
               <header class="settings-panel-head">
@@ -507,7 +513,7 @@
   </div>
   <script src="../js/coreui-settings-menu.js?v=0905731306422182746103357"></script>
   <script src="../js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
-  <script src="../js/admin.js?v=0691477151739514169730552"></script>
+  <script src="../js/admin.js?v=1069458416541895726900218"></script>
   <script src="../js/coreui-uninstall-admin.js?v=0374348787167562905928813"></script>
   <script src="../js/coreui-image-samples.js?v=0039842433260514192405892"></script>
   <script src="../js/coreui-image-ab.js?v=0935027726378517596425838"></script>

@@ -6,17 +6,17 @@
   <meta name="language" content="de-DE" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f0f4fa" />
-  <meta name="application-version" content="0.8.10" />
+  <meta name="application-version" content="0.8.11" />
   <meta name="application-name" content="CoreAI: TCI Interface" />
   <meta name="robots" content="noindex,nofollow" />
   <title>CoreAI: TCI Interface - Einstellungen</title>
   <link rel="stylesheet" href="./css/console.css?v=0943952436201961941468104" />
-  <link rel="stylesheet" href="./css/settings.css?v=0670859574855885436519465" />
+  <link rel="stylesheet" href="./css/settings.css?v=0756487370425201399340613" />
   <link rel="stylesheet" href="./css/coreui-profile-crop.css?v=0852949496159567452926853" />
   <link rel="stylesheet" href="./css/coreui-update.css?v=0362480532788383300048352" />
   <link rel="stylesheet" href="./css/coreui-theme.css?v=1183734819028702551490676" />
   <link rel="stylesheet" href="./css/coreui-settings-theme.css?v=1142906450847234350551167" />
-  <script src="./js/console-gate.js?v=0811483049098705714862653"></script>
+  <script src="./js/console-gate.js?v=0819001520061613166752986"></script>
   <script src="./js/coreui-preferences.js?v=1098190863602852320697527"></script>
   <script src="./js/coreui-ui-language.js?v=0139468212041427447470901"></script>
   <link rel="stylesheet" href="./css/coreui-softglass.css?v=0628592918051344087306671" />
@@ -101,7 +101,7 @@
           <h1>EINSTELLUNGEN</h1>
         </div>
       </div>
-      <div class="settings-version">COREAI: TCI INTERFACE // v0.8.10</div>
+      <div class="settings-version">COREAI: TCI INTERFACE // v0.8.11</div>
       <div class="cfg-header-actions" aria-label="Schnellzugriffe Einstellungen">
         <label class="cfg-header-expert" for="settingsExpertToggle" title="Technische Einstellungen in allen Kategorien anzeigen oder ausblenden">
           <span>EXPERTENMODUS</span>
@@ -583,8 +583,8 @@
                   <select id="aiLanguage"><option value="de">DEUTSCH</option><option value="en">ENGLISH</option></select>
                 </label>
                 <label class="settings-field" for="aiProvider" data-expert hidden>
-                  <span><strong>CORE-PFAD <span class="cfg-expert-tag">(Expert)</span></strong><small>CoreAI: TCI Interface ist für lokale Gemma-4-Cores ausgelegt.</small></span>
-                  <select id="aiProvider"><option value="local">LOKAL // OLLAMA + GEMMA 4</option><option value="external" disabled>EXTERNE API // VORBEREITET</option></select>
+                  <span><strong>CORE-PFAD <span class="cfg-expert-tag">(Expert)</span></strong><small>Lokal über Ollama oder über die externe API aus dem Admin Core (nur Inhaber und Admins). Mit der externen API geht jeder Chat-Aufruf deines Kontos mit demselben Prompt an den externen Core, etwa für einen Gegentest.</small></span>
+                  <select id="aiProvider"><option value="local">LOKAL // OLLAMA</option><option value="external" disabled>EXTERNE API // NICHT EINGERICHTET</option></select>
                 </label>
               </div>
 
@@ -596,7 +596,7 @@
               </div>
               <div class="settings-local-note" id="externalProviderNote" data-expert hidden>
                 <span aria-hidden="true">◇</span>
-                <p>Externe OpenAI-kompatible APIs sind als optionaler Adapter vorbereitet, standardmäßig aber deaktiviert. Es gibt keine Kompatibilitätszusage außerhalb der Gemma-4-Reihe.</p>
+                <p>Die externe API ist ein OpenAI-kompatibler Adapter, den Inhaber oder Admins im Admin Core einrichten. Prompts und Projektinhalte gehen dann an diesen Anbieter. Hören, Live-Gespräch und Browser-Recherche bleiben lokal. Im Arbeitsweg steht bei jedem Aufruf „extern:“ und der Name des Cores.</p>
               </div>
             </section>
 
@@ -1834,7 +1834,7 @@
   <script src="./js/coreui-settings-tabs.js?v=0131180580469642779294886"></script>
   <script src="./js/coreui-context-slider.js?v=1058131433773441189843644"></script>
   <script src="./js/coreui-shortcuts.js?v=0482832987385640130925630"></script>
-  <script src="./js/settings.js?v=0836387454800285755115599"></script>
+  <script src="./js/settings.js?v=0997089134213537033916606"></script>
   <script src="./js/coreui-personalization-settings.js?v=0244791164211857764278165"></script>
   <script src="./js/coreui-pets.js?v=0829989137983521266401815"></script>
   <script src="./js/coreui-pets-settings.js?v=0189374306291011128432570"></script>

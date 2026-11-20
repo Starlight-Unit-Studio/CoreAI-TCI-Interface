@@ -13,6 +13,7 @@ require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/user_policy.php';
 require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/core_tier_variants.php';
+require_once __DIR__ . '/model_provider.php';
 
 function coreui_ai_settings_schema_ready(PDO $pdo): bool {
   try {
@@ -111,33 +112,45 @@ function coreui_ai_settings_defaults(PDO $pdo): array {
   ];
 }
 
+/**
+ * 0.8.11: the external OpenAI-compatible adapter as the operator configured it in Admin Core
+ * (api/model_provider.php). 'configured' only with switch, base URL, model and the server key.
+ */
 function coreui_ai_external_capability(PDO $pdo): array {
-  $enabled = function_exists('stu_app_setting_get')
-    && stu_app_setting_get($pdo, 'external_api_enabled', '0') === '1';
-  $label = function_exists('stu_app_setting_get')
-    ? trim((string)stu_app_setting_get($pdo, 'external_api_label', 'OpenAI-kompatibel'))
-    : 'OpenAI-kompatibel';
-  $baseUrl = function_exists('stu_app_setting_get')
-    ? trim((string)stu_app_setting_get($pdo, 'external_api_base_url', ''))
-    : '';
-  $model = function_exists('stu_app_setting_get')
-    ? trim((string)stu_app_setting_get($pdo, 'external_api_model', ''))
-    : '';
-  $keyConfigured = defined('STU_EXTERNAL_API_KEY')
-    && trim((string)constant('STU_EXTERNAL_API_KEY')) !== '';
+  $settings = [];
+  foreach (['external_api_enabled'=>'0', 'external_api_label'=>COREUI_PROVIDER_LABEL_DEFAULT,
+      'external_api_base_url'=>'', 'external_api_model'=>''] as $key => $default) {
+    $settings[$key] = function_exists('stu_app_setting_get') ? (string)stu_app_setting_get($pdo, $key, $default) : $default;
+  }
+  $keyState = coreui_provider_key_state($pdo);
+  return coreui_provider_capability($settings, coreui_provider_key($pdo) !== '', $keyState['source'], $keyState['unreadable']);
+}
 
-  return [
-    // 0.3.0-alpha stores the operator configuration but deliberately keeps the
-    // selector locked until the provider adapter is released and regression-tested.
-    'configured' => false,
-    'configuration_complete' => $enabled && $baseUrl !== '' && $model !== '' && $keyConfigured,
-    'enabled' => $enabled,
-    'label' => $label !== '' ? $label : 'OpenAI-kompatibel',
-    'base_url' => $baseUrl,
-    'model' => $model,
-    'key_configured' => $keyConfigured,
-    'status' => 'adapter_reserved',
-  ];
+/**
+ * 0.8.11: what Settings > KI-Profil learns about the adapter for this account: everything for the
+ * Inhaber and Admins ('allowed'), only whether it exists for everyone else.
+ */
+function coreui_ai_external_for_account(PDO $pdo, int $uid, bool $guest): array {
+  $capability = coreui_ai_external_capability($pdo);
+  $level = coreui_ai_account_level($pdo, $uid);
+  if ($guest || $level < 0 || $level > 1) {
+    return ['configured'=>!empty($capability['configured']), 'enabled'=>!empty($capability['enabled']),
+      'status'=>(string)$capability['status'], 'label'=>(string)$capability['label'], 'allowed'=>false];
+  }
+  return $capability + ['allowed'=>true];
+}
+
+/** 0.8.11: the account's level (0 Inhaber, 1 Admin, 4 Nutzer), -1 when unknown. */
+function coreui_ai_account_level(PDO $pdo, int $uid): int {
+  if ($uid <= 0) return -1;
+  try {
+    $st = $pdo->prepare('SELECT permission_level FROM stu_users WHERE id = ? LIMIT 1');
+    $st->execute([$uid]);
+    $level = $st->fetchColumn();
+    return $level === false ? -1 : (int)$level;
+  } catch (Throwable $e) {
+    return -1;
+  }
 }
 
 function coreui_ai_settings_normalise(PDO $pdo, array $input): array {
@@ -344,6 +357,14 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
     $settings['num_ctx'] = $fixed['value'];
   } else {
     $GLOBALS['COREUI_AI_NUM_CTX_FIXED'] = ['uid'=>$uid, 'value'=>$settings['num_ctx']];
+  }
+  // 0.8.11: the external API only for the Inhaber and Admins and only when it is configured;
+  // otherwise the account chats with its local Core as before.
+  $settings['external'] = null;
+  if (($settings['provider'] ?? 'local') === 'external') {
+    $settings['external'] = coreui_provider_account_external(coreui_ai_external_capability($pdo), 'external',
+      coreui_ai_account_level($pdo, $uid), coreui_ai_account_is_guest($pdo, $uid));
+    if ($settings['external'] === null) $settings['provider'] = 'local';
   }
   $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = $settings;
   // 0.5.85: tools the Inhaber or an Admin blocked for this account are off
