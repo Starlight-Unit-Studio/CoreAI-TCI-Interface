@@ -51,6 +51,13 @@ if (($headers['authorization'] ?? '') !== 'Bearer ' . getenv('STUB_KEY') || str_
   exit;
 }
 if (str_contains($last, 'MODE:429')) { http_response_code(429); echo '{"error":{"message":"Rate limit reached"}}'; exit; }
+if (str_contains($last, 'MODE:empty')) {
+  echo json_encode(['choices'=>[['index'=>0,'message'=>['role'=>'assistant','content'=>''],'finish_reason'=>'length']],
+    'usage'=>['prompt_tokens'=>3120,'completion_tokens'=>2048,
+      'completion_tokens_details'=>['reasoning_tokens'=>2048]]]);exit;
+}
+if (str_contains($last, 'MODE:200error')) { echo '{"error":{"message":"API rejected request"}}'; exit; }
+
 $finish = str_contains($last, 'MODE:length') || str_contains($last, 'MODE:window') ? 'length' : 'stop';
 if (empty($body['stream'])) {
   // MODE:window: a cut answer whose token sum looks like a full local window (4000 + 96 = 4096).
@@ -282,6 +289,24 @@ ext_test(count($GLOBALS['ext_log']) === 1 && $GLOBALS['ext_log'][0]['type'] === 
   && !str_contains($logged, EXT_KEY) && !str_contains($logged, 'SECRET'), 'the log names the error, never the key: ' . $logged);
 ember_call_ollama('gemma4:e4b', '', 'MODE:429', 30, ['__skills'=>'none']);
 ext_test($GLOBALS['STU_EMBER_LAST_CALL']['code'] === 429 && str_contains((string)json_encode($GLOBALS['ext_log']), 'Rate limit'), 'a rate limit is logged');
+// A reasoning-heavy completion can use tokens and finish without visible text.
+// This is one of the real causes of an empty follow-up, distinct from HTTP 429.
+ext_test(ember_call_ollama('gemma4:e4b', '', 'MODE:empty', 30, ['__skills'=>'none']) === null,
+  'external completion with zero visible text remains empty');
+$emptyStatus = ember_agent_followup_last_call();
+ext_test($emptyStatus['provider']==='external'
+  && $emptyStatus['http_code']===200
+  && $emptyStatus['done_seen'] && $emptyStatus['done']
+  && $emptyStatus['done_reason']==='length'
+  && $emptyStatus['eval_count']===2048 && $emptyStatus['prompt_eval_count']===3120
+  && coreui_agent_empty_followup_retryable($emptyStatus),
+  'completed, empty reasoning-heavy answer qualifies for exactly one lean project recovery');
+ext_test(ember_call_ollama('gemma4:e4b', '', 'MODE:200error', 30, ['__skills'=>'none']) === null,
+  'HTTP 200 with provider error is not a usable assistant reply');
+ext_test(!coreui_agent_empty_followup_retryable(ember_agent_followup_last_call()),
+  'provider errors with no completed answer never trigger paid recovery');
+$requests();
+
 // The file preview of the source-only writer streams through the same translator.
 $requests();
 $chunks = [];
