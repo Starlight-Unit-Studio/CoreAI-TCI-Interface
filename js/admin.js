@@ -581,9 +581,9 @@
     var models = (modelAccess && modelAccess.models) || [];
     var granted = grantsOf(user);
     td.appendChild(el('p', 'model-access-note', models.length
-      ? 'Fremde Cores außerhalb von CoreAI für ' + (user.display_name || user.username || ('Konto ' + user.id))
+      ? 'Fremde Cores außerhalb von CoreAI und externe Cores für ' + (user.display_name || user.username || ('Konto ' + user.id))
         + '. Die Cores der TCI brauchen keine Freigabe.'
-      : 'Keine fremden Cores außerhalb von CoreAI in Ollama installiert.'));
+      : 'Keine fremden Cores außerhalb von CoreAI in Ollama und keine externen Cores angeboten.'));
     if (modelAccess && modelAccess.ollama === false) {
       td.appendChild(el('p', 'model-access-note warn', 'Ollama-Liste gerade nicht erreichbar; gezeigt werden nur bestehende Freigaben.'));
     }
@@ -595,7 +595,9 @@
       box.value = name;
       box.checked = granted.indexOf(name) >= 0;
       label.appendChild(box);
-      label.appendChild(el('span', '', name));
+      // 0.8.15: an external Core ("extern:<name>") from the external adapter.
+      var external = /^extern:/i.test(name);
+      label.appendChild(el('span', '', external ? name.replace(/^extern:/i, '') + ' (extern)' : name));
       list.appendChild(label);
     });
     td.appendChild(list);
@@ -898,22 +900,22 @@
     document.getElementById('toolBrowseEnabled').checked = boolSetting(settings.tool_browse_enabled);
     document.getElementById('toolPythonEnabled').checked = boolSetting(settings.tool_python_enabled);
     document.getElementById('toolImageEnabled').checked = settings.tool_image_enabled == null ? true : boolSetting(settings.tool_image_enabled);
-    document.getElementById('externalEnabled').checked = boolSetting(settings.external_api_enabled);
-    document.getElementById('externalLabel').value = settings.external_api_label || 'OpenAI-kompatibel';
-    document.getElementById('externalBaseUrl').value = settings.external_api_base_url || '';
-    document.getElementById('externalModel').value = settings.external_api_model || '';
   }
 
   // 0.8.11: the external adapter: what is missing, or ready; the key is never shown.
+  // 0.8.15: external Cores instead of one Core name; the card saves itself (ADAPTER SPEICHERN).
   var EXTERNAL_MISSING = {
     base_url: 'Base-URL fehlt',
     base_url_invalid: 'Base-URL ungültig (HTTPS, oder http nur zu 127.0.0.1/localhost)',
-    model: 'Core-Name fehlt',
-    model_invalid: 'Core-Name ungültig',
     key: 'API-Schlüssel fehlt (im Feld API-SCHLÜSSEL einfügen)',
-    key_unreadable: 'gespeicherter API-Schlüssel nicht mehr lesbar (die Serverkonfiguration hat sich geändert); bitte neu einfügen'
+    key_unreadable: 'gespeicherter API-Schlüssel nicht mehr lesbar (die Serverkonfiguration hat sich geändert); bitte neu einfügen',
+    models: 'noch kein externer Core angeboten (CORES VOM ANBIETER LADEN oder von Hand hinzufügen)'
   };
   var adminLevel = 4;
+  // The card's state: the saved adapter, the Cores ticked in the card and the provider's list.
+  var externalSaved = null;
+  var externalModels = [];
+  var providerModels = null;
   // 0.8.11: the key field: pasted by the Inhaber, kept sealed, never shown again.
   function showExternalKey(external) {
     var field = document.getElementById('externalKey');
@@ -959,46 +961,207 @@
       show('Externer Adapter: ' + (KEY_ERRORS[error.message] || error.message), true);
     });
   }
+  function missingText(keys) {
+    return (keys || []).map(function (key) { return EXTERNAL_MISSING[key] || key; }).join(', ');
+  }
   function showExternal(external) {
     var status = document.getElementById('externalStatus');
     if (!status || !external) return;
     showExternalKey(external);
-    if (external.status === 'ready') {
-      status.textContent = 'Bereit: ' + (external.label || 'Externe API') + ' mit ' + external.model
-        + '. Inhaber und Admins können ihn unter Einstellungen > KI-Profil als Core-Pfad wählen.';
-    } else if (external.status === 'disabled') {
-      status.textContent = 'Aus. Alle Konten nutzen ihren lokalen Core.'
-        + (external.key_configured ? '' : ' Noch kein API-Schlüssel gespeichert.');
-    } else {
-      status.textContent = 'Noch nicht vollständig: ' + (external.missing || []).map(function (key) {
-        return EXTERNAL_MISSING[key] || key;
-      }).join(', ') + '. Bis dahin bleibt jedes Konto lokal.';
+    // Unsaved changes in the card stay (for example while the key is saved).
+    var keepForm = externalChanged();
+    externalSaved = {
+      enabled: external.enabled === true,
+      label: String(external.label || 'OpenAI-kompatibel'),
+      base_url: String(external.base_url || ''),
+      models: Array.isArray(external.models) ? external.models.slice() : []
+    };
+    if (!keepForm) {
+      document.getElementById('externalEnabled').checked = externalSaved.enabled;
+      document.getElementById('externalLabel').value = externalSaved.label;
+      document.getElementById('externalBaseUrl').value = externalSaved.base_url;
+      externalModels = externalSaved.models.slice();
     }
+    renderExternalModels();
+    var owner = adminLevel === 0;
+    ['externalEnabled', 'externalLabel', 'externalBaseUrl', 'externalModelName', 'externalModelAdd', 'externalSave'].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (node) node.disabled = !owner;
+    });
+    var count = externalSaved.models.length;
+    var cores = count === 1 ? '1 externen Core' : count + ' externen Cores';
+    if (external.status === 'ready') {
+      status.textContent = 'Bereit: ' + externalSaved.label + ' mit ' + cores
+        + '. Sie stehen im Core-Menü des Chats unter EXTERNE CORES (der Inhaber sieht alle, andere Konten ihre Freigaben).';
+    } else if (external.status === 'disabled') {
+      status.textContent = (external.missing || []).length
+        ? 'Aus. Alle Konten nutzen ihre lokalen Cores. Zum Einschalten fehlt noch: ' + missingText(external.missing) + '.'
+        : 'Aus, aber eingerichtet (' + cores + '). Zum Nutzen den Schalter einschalten und ADAPTER SPEICHERN.';
+    } else {
+      status.textContent = 'Eingeschaltet, aber noch nicht vollständig: ' + missingText(external.missing)
+        + '. Bis dahin bleibt jedes Konto lokal.';
+    }
+    if (!owner) status.textContent += ' Einrichten kann den Adapter nur der Inhaber.';
   }
-  var EXTERNAL_TEST = {
-    not_configured: 'Erst vollständig einrichten und speichern.',
+  // The ticked Cores, then the rest of the provider's list (filtered); a ticked Core the provider
+  // does not list is marked.
+  function renderExternalModels() {
+    var list = document.getElementById('externalModelList');
+    var filter = document.getElementById('externalModelsFilter');
+    if (!list) return;
+    list.innerHTML = '';
+    var needle = filter && !filter.hidden ? filter.value.trim().toLowerCase() : '';
+    var names = externalModels.slice();
+    (providerModels || []).forEach(function (name) { if (names.indexOf(name) < 0) names.push(name); });
+    var owner = adminLevel === 0;
+    names.forEach(function (name) {
+      var ticked = externalModels.indexOf(name) >= 0;
+      if (!ticked && needle && name.toLowerCase().indexOf(needle) < 0) return;
+      var label = el('label', 'model-access-choice external-model-choice');
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = name;
+      box.checked = ticked;
+      box.disabled = !owner;
+      box.addEventListener('change', function () {
+        var at = externalModels.indexOf(name);
+        if (box.checked && at < 0) externalModels.push(name);
+        if (!box.checked && at >= 0) externalModels.splice(at, 1);
+        externalModelsHint();
+      });
+      label.appendChild(box);
+      label.appendChild(el('span', '', name));
+      if (ticked && providerModels && providerModels.length && providerModels.indexOf(name) < 0) {
+        label.appendChild(el('span', 'external-model-note', 'nicht in der Liste des Anbieters'));
+      }
+      list.appendChild(label);
+    });
+    externalModelsHint();
+  }
+  function externalModelsHint() {
+    var hint = document.getElementById('externalModelsHint');
+    if (!hint) return;
+    var base = 'Welche Cores des Anbieters CoreAI anbietet (höchstens 50). ';
+    hint.textContent = base + (providerModels
+      ? externalModels.length + ' angeboten, ' + providerModels.length + ' beim Anbieter. Ändern wirkt nach ADAPTER SPEICHERN.'
+      : (externalModels.length ? externalModels.length + ' angeboten. ' : '')
+        + 'Mit Base-URL und Schlüssel lädt CORES VOM ANBIETER LADEN seine Liste.');
+  }
+  function externalForm() {
+    return {
+      enabled: document.getElementById('externalEnabled').checked,
+      label: document.getElementById('externalLabel').value.trim() || 'OpenAI-kompatibel',
+      base_url: document.getElementById('externalBaseUrl').value.trim().replace(/\/+$/, ''),
+      models: externalModels.slice()
+    };
+  }
+  function externalChanged() {
+    if (!externalSaved || adminLevel !== 0) return false;
+    var form = externalForm();
+    return form.enabled !== externalSaved.enabled || form.label !== externalSaved.label
+      || form.base_url !== externalSaved.base_url.replace(/\/+$/, '') || JSON.stringify(form.models) !== JSON.stringify(externalSaved.models);
+  }
+  var EXTERNAL_SAVE_ERRORS = {
+    external_url_requires_https: 'Die Base-URL braucht HTTPS (http nur zu 127.0.0.1 oder localhost).',
+    external_model_invalid: 'Ein Core-Name darf nur Buchstaben, Ziffern und ._:/@+- enthalten (höchstens 153 Zeichen).',
+    external_models_too_many: 'Höchstens 50 externe Cores.',
+    owner_only: 'Einrichten kann den Adapter nur der Inhaber.'
+  };
+  // ADAPTER SPEICHERN; loading the list and the check save unsaved changes first, so they work
+  // with what is in the card.
+  function saveExternal(quiet) {
+    var form = externalForm();
+    return post('external_api_save', form).then(function (data) {
+      showExternal(data.external || null);
+      if (!quiet) show('Externer Adapter gespeichert.');
+      return true;
+    }).catch(function (error) {
+      show('Externer Adapter: ' + (EXTERNAL_SAVE_ERRORS[error.message] || error.message), true);
+      return false;
+    });
+  }
+  function saveIfChanged() {
+    return externalChanged() ? saveExternal(true) : Promise.resolve(true);
+  }
+  var EXTERNAL_LIST = {
+    not_ready: 'Für die Liste fehlt noch: ',
     unreachable: 'Der Anbieter ist nicht erreichbar (Adresse, DNS oder Netz).',
     key_refused: 'Der Anbieter lehnt den Schlüssel ab.',
     rate_limited: 'Der Anbieter bremst gerade (zu viele Anfragen oder kein Guthaben).',
     http_error: 'Der Anbieter antwortet mit einem Fehler.',
-    model_listed: 'Verbindung steht; der Core steht in der Liste des Anbieters.',
-    model_not_listed: 'Verbindung steht, aber der Core steht nicht in der Liste des Anbieters. Bitte den Core-Namen prüfen.',
-    no_model_list: 'Verbindung steht; der Anbieter zeigt keine Liste, der Core wird beim ersten Chat geprüft.'
+    no_model_list: 'Der Anbieter zeigt keine Liste. Cores bitte von Hand hinzufügen.'
+  };
+  function providerText(t) {
+    var text = EXTERNAL_LIST[t.reason] || ('Ergebnis: ' + (t.reason || 'unbekannt'));
+    if (t.reason === 'not_ready') text += missingText(t.missing) + '.';
+    if (t.http_code && t.reason !== 'not_ready') text += ' (HTTP ' + t.http_code + (t.elapsed_ms ? ', ' + t.elapsed_ms + ' ms' : '') + ')';
+    if (t.message) text += ' Anbieter: ' + t.message;
+    return text;
+  }
+  function loadExternalModels() {
+    var button = document.getElementById('externalModelsLoad');
+    var out = document.getElementById('externalTestResult');
+    button.disabled = true;
+    out.hidden = false;
+    out.classList.remove('is-error');
+    out.textContent = 'Lade die Cores des Anbieters …';
+    return saveIfChanged().then(function (saved) {
+      if (!saved) { out.hidden = true; return null; }
+      return post('external_api_models', {}).then(function (data) {
+        var list = data.list || {};
+        if (list.ok && list.reason === 'listed') {
+          providerModels = Array.isArray(list.ids) ? list.ids : [];
+          var filter = document.getElementById('externalModelsFilter');
+          if (filter) filter.hidden = providerModels.length < 8;
+          renderExternalModels();
+          out.textContent = providerModels.length + ' Cores beim Anbieter. Anhaken, was CoreAI anbieten soll, dann ADAPTER SPEICHERN.';
+        } else {
+          out.textContent = providerText(list);
+          out.classList.toggle('is-error', !list.ok);
+        }
+      });
+    }).catch(function (error) {
+      out.textContent = 'Liste nicht geladen: ' + error.message;
+      out.classList.add('is-error');
+    }).then(function () { button.disabled = false; });
+  }
+  function addExternalModel() {
+    var field = document.getElementById('externalModelName');
+    var name = field.value.trim();
+    if (!/^[A-Za-z0-9._:\/@+-]{1,153}$/.test(name)) {
+      show('Externer Adapter: ' + EXTERNAL_SAVE_ERRORS.external_model_invalid, true);
+      return;
+    }
+    if (externalModels.indexOf(name) < 0) externalModels.push(name);
+    field.value = '';
+    renderExternalModels();
+  }
+  var EXTERNAL_TEST = {
+    connected: 'Verbindung steht. Noch kein externer Core angeboten.',
+    models_listed: 'Verbindung steht; alle angebotenen Cores stehen in der Liste des Anbieters.',
+    models_not_listed: 'Verbindung steht, aber diese angebotenen Cores stehen nicht in der Liste des Anbieters: ',
+    no_model_list: 'Verbindung steht; der Anbieter zeigt keine Liste, die Cores werden beim ersten Chat geprüft.'
   };
   function testExternal() {
     var button = document.getElementById('externalTest');
     var out = document.getElementById('externalTestResult');
     button.disabled = true;
     out.hidden = false;
+    out.classList.remove('is-error');
     out.textContent = 'Prüfe die Verbindung …';
-    post('external_api_test', {}).then(function (data) {
-      var t = data.test || {};
-      showExternal(data.external || null);
-      var text = EXTERNAL_TEST[t.reason] || ('Ergebnis: ' + (t.reason || 'unbekannt'));
-      if (t.http_code) text += ' (HTTP ' + t.http_code + (t.elapsed_ms ? ', ' + t.elapsed_ms + ' ms' : '') + ')';
-      if (t.message) text += ' Anbieter: ' + t.message;
-      out.textContent = text;
-      out.classList.toggle('is-error', !t.ok);
+    return saveIfChanged().then(function (saved) {
+      if (!saved) { out.hidden = true; return null; }
+      return post('external_api_test', {}).then(function (data) {
+        var t = data.test || {};
+        showExternal(data.external || null);
+        var text = EXTERNAL_TEST[t.reason] ? EXTERNAL_TEST[t.reason] : providerText(t);
+        if (t.reason === 'models_not_listed') text += (t.models_not_listed || []).join(', ') + '. Bitte die Namen prüfen.';
+        if (t.reason === 'connected' && t.models_count) text = 'Verbindung steht; der Anbieter listet ' + t.models_count + ' Cores. Noch kein externer Core angeboten.';
+        if (EXTERNAL_TEST[t.reason] && t.http_code) text += ' (HTTP ' + t.http_code + (t.elapsed_ms ? ', ' + t.elapsed_ms + ' ms' : '') + ')';
+        if (t.ok && !t.enabled) text += ' Der Adapter ist noch aus: zum Nutzen den Schalter einschalten und ADAPTER SPEICHERN.';
+        out.textContent = text;
+        out.classList.toggle('is-error', !t.ok);
+      });
     }).catch(function (error) {
       out.textContent = 'Prüfung fehlgeschlagen: ' + error.message;
       out.classList.add('is-error');
@@ -1023,26 +1186,19 @@
       user_system_prompt_max_chars: document.getElementById('promptLimit').value,
       storage_limit_mb: gbToMb(document.getElementById('storageLimitGb').value),
       artifact_retention_days: document.getElementById('artifactRetentionDays').value,
-      maintenance_message: document.getElementById('maintenanceMessage').value,
       tool_web_enabled: document.getElementById('toolWebEnabled').checked ? '1' : '0',
       tool_browse_enabled: document.getElementById('toolBrowseEnabled').checked ? '1' : '0',
       tool_python_enabled: document.getElementById('toolPythonEnabled').checked ? '1' : '0',
       tool_image_enabled: document.getElementById('toolImageEnabled').checked ? '1' : '0',
-      external_api_enabled: document.getElementById('externalEnabled').checked ? '1' : '0',
-      external_api_label: document.getElementById('externalLabel').value,
-      external_api_base_url: document.getElementById('externalBaseUrl').value,
-      external_api_model: document.getElementById('externalModel').value
+      maintenance_message: document.getElementById('maintenanceMessage').value
     };
+    // 0.8.15: the external adapter has its own button (ADAPTER SPEICHERN).
     post('settings_save', { settings: settings }).then(function (data) {
       runtimeState = data.settings || settings;
       fillRuntime(runtimeState);
       show('Runtime-Einstellungen gespeichert.');
-      // The adapter's status follows the saved fields.
-      return api('overview').then(function (fresh) { showExternal(fresh.external || null); });
     }).catch(function (error) {
-      var known = { external_url_requires_https: 'Die Base-URL braucht HTTPS (http nur zu 127.0.0.1 oder localhost).',
-        external_model_invalid: 'Der Core-Name darf nur Buchstaben, Ziffern und ._:/@+- enthalten.' };
-      show('Runtime: ' + (known[error.message] || error.message), true);
+      show('Runtime: ' + error.message, true);
     });
   }
 
@@ -1090,6 +1246,13 @@
     document.getElementById('searchLore').addEventListener('click', function () { loadLore(true); });
     document.getElementById('saveRuntime').addEventListener('click', saveRuntime);
     document.getElementById('externalTest').addEventListener('click', testExternal);
+    document.getElementById('externalSave').addEventListener('click', function () { saveExternal(false); });
+    document.getElementById('externalModelsLoad').addEventListener('click', loadExternalModels);
+    document.getElementById('externalModelAdd').addEventListener('click', addExternalModel);
+    document.getElementById('externalModelName').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') { event.preventDefault(); addExternalModel(); }
+    });
+    document.getElementById('externalModelsFilter').addEventListener('input', renderExternalModels);
     document.getElementById('externalKeySave').addEventListener('click', saveExternalKey);
     document.getElementById('externalKeyDelete').addEventListener('click', deleteExternalKey);
     document.getElementById('saveRuntimeAccess').addEventListener('click', saveRuntime);

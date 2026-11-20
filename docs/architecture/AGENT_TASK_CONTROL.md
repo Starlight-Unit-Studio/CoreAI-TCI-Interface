@@ -6,7 +6,7 @@ One server-owned task contract across models, languages and long-running workflo
 
 ## Protocol (0.8.13)
 
-After each confirmed project-capable tool result the model must supply exactly one allowed tool, an explicit [COREUI_TASK_DONE] block or an explicit [COREUI_TASK_BLOCKED] block. A malformed decision receives at most one model-only format repair, without repeating side effects. Tool allowlists and owner/session/project permissions remain in the existing secure dispatchers.
+After each confirmed project-capable tool result the model must supply exactly one allowed tool, an explicit [COREUI_TASK_DONE] block or an explicit [COREUI_TASK_BLOCKED] block. A malformed decision receives at most one model-only format repair, without repeating side effects. Since 0.8.15 a single complete DONE or BLOCKED block is accepted however it is framed (after a public progress note and blank lines, with text before or after it, on one line, inside a code fence, with Windows line ends); the text outside the block is not shown. Two blocks, an unclosed block, a block together with a tool marker or an unknown COREUI_TASK marker remain invalid. An invalid reply is classified by its structure only (`empty`, `prose_only`, `block_unclosed`, `block_multiple`, `block_empty`, `block_and_tool`, `marker_unknown`); the class is named in the repair prompt and stored as `error_type` in the work timeline, never the model text. In project work the follow-up prompt no longer ends with an instruction to answer as Mara outside the control block. Tool allowlists and owner/session/project permissions remain in the existing secure dispatchers.
 
 ## Durable journal (0.8.14)
 

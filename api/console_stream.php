@@ -618,9 +618,9 @@ try {
         && empty($acc['truncated']) && isset($model,$sys,$u)
         && !ember_agent_cancel_requested()) {
       coreui_work_record($pdo,'model','info','Fortgesetzter Arbeitsauftrag: Entscheidung wird korrigiert',
-        ['reason'=>'task_decision_missing']);
+        ['reason'=>'task_decision_missing','error_type'=>(string)($decision['shape'] ?? '')]);
       $fix=console_stream_ollama($model,$sys,
-        coreui_task_decision_repair_prompt($u),false,null,false,false);
+        coreui_task_decision_repair_prompt($u,(string)($decision['shape'] ?? '')),false,null,false,false);
       if (!empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated'])) {
         $candidate=ember_sanitize_public_reply((string)($fix['content']??''),
           (string)($fix['thinking']??''));

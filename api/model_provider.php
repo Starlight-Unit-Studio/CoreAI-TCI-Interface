@@ -4,16 +4,19 @@ declare(strict_types=1);
 /*
  * 0.8.11 (CF-003, CF-005): the external OpenAI-compatible adapter.
  *
- * When the operator configured the adapter in Admin Core (switched on, base URL, model; the key
- * only on the server in COREUI_EXTERNAL_API_KEY or STU_EXTERNAL_API_KEY) and an Inhaber or Admin
- * chose "Externe API" as Core-Pfad, every chat model call of that account goes to
- * {base}/chat/completions instead of local Ollama.
+ * 0.8.15: external Cores. The operator sets the adapter up once in Admin Core (switch, base URL,
+ * key) and picks the Cores of the provider that CoreAI offers ("Cores vom Anbieter laden" reads the
+ * provider's list). They appear in the Core menu of the chat under EXTERNE CORES, chosen like a
+ * local Core and stored per account as "extern:<name>". The Inhaber uses all of them; every other
+ * account only the ones he released under Admin Core > Benutzer (the same releases as for Cores
+ * outside CoreAI); guests never. The account's choice is checked again at every turn.
  *
  * Only the inference endpoint changes. Prompt, skills, tools, work loop, the serial model queue,
- * cancelling and the time limits stay exactly as they are for the chosen Core, so a run can be
- * compared with a local one (to rule a Core in or out as the cause of a fault). The request is
- * built from the Ollama /api/chat payload and the answer is turned back into Ollama's shape
- * (message.content, message.thinking, done, done_reason, eval_count, prompt_eval_count), so the
+ * cancelling and the time limits stay exactly as they are, so a run can be compared with a local
+ * one (to rule a Core in or out as the cause of a fault). An external Core has no Modelfile, so it
+ * gets Mara's SYSTEM text from the operator Modelfile (unchanged), like a raw local Core. The
+ * request is built from the Ollama /api/chat payload and the answer is turned back into Ollama's
+ * shape (message.content, message.thinking, done, done_reason, eval_count, prompt_eval_count), so the
  * existing parsing stays untouched. Ollama-only settings (think, keep_alive, num_ctx, num_predict,
  * top_k and the tuning options) are not sent. Audio, live voice and the browser worker stay local.
  *
@@ -33,6 +36,11 @@ const COREUI_PROVIDER_KEY_SETTING = 'external_api_key_sealed';
 const COREUI_PROVIDER_KEY_PURPOSE = 'external-api-key';
 const COREUI_PROVIDER_ERROR_CHARS = 300;
 const COREUI_PROVIDER_TEST_TIMEOUT = 10;
+// 0.8.15: an account's choice of an external Core is stored as "extern:<name>".
+const COREUI_PROVIDER_PREFIX = 'extern:';
+// At most this many external Cores are offered; a provider list is read up to COREUI_PROVIDER_LIST_MAX.
+const COREUI_PROVIDER_MODELS_MAX = 50;
+const COREUI_PROVIDER_LIST_MAX = 1000;
 
 /** A base URL the adapter may call (pure): https, or http only to this machine; '' when not. */
 function coreui_provider_base_url(string $value): string {
@@ -52,10 +60,48 @@ function coreui_provider_base_url(string $value): string {
   return '';
 }
 
-/** A model name of the provider (pure): letters, digits and ._:/@+- , at most 160; '' when not. */
+/**
+ * A model name of the provider (pure): letters, digits and ._:/@+- , at most 153 (with "extern:" it
+ * fits the 160 characters of an account's Core choice and of a release); '' when not.
+ */
 function coreui_provider_model_name(string $value): string {
   $model = trim($value);
-  return preg_match('~^[A-Za-z0-9._:/@+-]{1,160}$~D', $model) === 1 ? $model : '';
+  return preg_match('~^[A-Za-z0-9._:/@+-]{1,153}$~D', $model) === 1 ? $model : '';
+}
+
+/** Whether an account's Core choice names an external Core (pure), valid or not. */
+function coreui_provider_is_choice(string $choice): bool {
+  return stripos(trim($choice), COREUI_PROVIDER_PREFIX) === 0;
+}
+
+/** The external Core of an account's Core choice "extern:<name>" (pure); '' for a local or invalid one. */
+function coreui_provider_choice(string $choice): string {
+  if (!coreui_provider_is_choice($choice)) return '';
+  return coreui_provider_model_name(substr(trim($choice), strlen(COREUI_PROVIDER_PREFIX)));
+}
+
+/**
+ * The external Cores CoreAI offers (pure): the setting external_api_models (a JSON list), valid and
+ * unique, at most COREUI_PROVIDER_MODELS_MAX. Without a list, the single Core name of 0.8.11
+ * (external_api_model) counts, so an adapter set up then keeps working.
+ */
+function coreui_provider_models_parse($value, string $legacy = ''): array {
+  if (is_string($value)) {
+    $decoded = trim($value) === '' ? null : json_decode($value, true);
+    $value = is_array($decoded) ? $decoded : null;
+  }
+  $out = [];
+  if (is_array($value)) {
+    foreach ($value as $name) {
+      $name = is_string($name) ? coreui_provider_model_name($name) : '';
+      if ($name === '' || in_array($name, $out, true)) continue;
+      $out[] = $name;
+      if (count($out) >= COREUI_PROVIDER_MODELS_MAX) break;
+    }
+    return $out;
+  }
+  $legacy = coreui_provider_model_name($legacy);
+  return $legacy !== '' ? [$legacy] : [];
 }
 
 /** A key as pasted (pure): printable characters without spaces, 8 to 400 long; '' when not. */
@@ -121,29 +167,29 @@ function coreui_provider_key_delete(PDO $pdo): void {
 
 /**
  * The adapter as the operator configured it (pure): $settings are the app settings
- * external_api_enabled, _label, _base_url and _model. 'configured' only when everything is there.
+ * external_api_enabled, _label, _base_url and _models (0.8.11: _model). 'configured' only when it is
+ * switched on and everything is there; 'connection_ready' already with base URL and key, so the
+ * connection can be checked and the provider's Cores read before it is switched on.
  */
 function coreui_provider_capability(array $settings, bool $keyConfigured, string $keySource = '', bool $keyUnreadable = false): array {
   $enabled = (string)($settings['external_api_enabled'] ?? '0') === '1';
   $label = trim((string)($settings['external_api_label'] ?? ''));
   $rawUrl = trim((string)($settings['external_api_base_url'] ?? ''));
-  $rawModel = trim((string)($settings['external_api_model'] ?? ''));
   $baseUrl = coreui_provider_base_url($rawUrl);
-  $model = coreui_provider_model_name($rawModel);
+  $models = coreui_provider_models_parse($settings['external_api_models'] ?? '', (string)($settings['external_api_model'] ?? ''));
   $missing = [];
   if ($rawUrl === '') $missing[] = 'base_url';
   elseif ($baseUrl === '') $missing[] = 'base_url_invalid';
-  if ($rawModel === '') $missing[] = 'model';
-  elseif ($model === '') $missing[] = 'model_invalid';
   if (!$keyConfigured) $missing[] = $keyUnreadable ? 'key_unreadable' : 'key';
+  if ($models === []) $missing[] = 'models';
   $configured = $enabled && $missing === [];
   return [
     'configured' => $configured,
-    'configuration_complete' => $configured,
     'enabled' => $enabled,
+    'connection_ready' => $baseUrl !== '' && $keyConfigured,
     'label' => $label !== '' ? mb_substr($label, 0, 160, 'UTF-8') : COREUI_PROVIDER_LABEL_DEFAULT,
     'base_url' => $baseUrl !== '' ? $baseUrl : $rawUrl,
-    'model' => $model !== '' ? $model : $rawModel,
+    'models' => $models,
     'key_configured' => $keyConfigured,
     'key_source' => $keyConfigured ? ($keySource !== '' ? $keySource : 'server') : '',
     'missing' => $missing,
@@ -151,14 +197,19 @@ function coreui_provider_capability(array $settings, bool $keyConfigured, string
   ];
 }
 
+/** Whether CoreAI offers this external Core (pure). */
+function coreui_provider_offered(array $capability, string $model): bool {
+  return $model !== '' && in_array($model, (array)($capability['models'] ?? []), true);
+}
+
 /**
- * Whether this account may use the external API (pure): the adapter is configured, the account
- * chose it, and it is the Inhaber (0) or an Admin (1); never a guest. The API costs money and
- * sends prompts to a third party, so this is not for every account.
+ * The external Core an account chats with this turn (pure), or null: the adapter is configured, it
+ * offers the Core, and the account may use it ($allowed: the Inhaber, or an account with the
+ * Inhaber's release; never a guest; checked by the caller with coreui_model_access_allowed).
  */
-function coreui_provider_account_external(array $capability, string $provider, int $level, bool $guest): ?array {
-  if ($provider !== 'external' || empty($capability['configured']) || $guest || $level < 0 || $level > 1) return null;
-  return ['label'=>(string)$capability['label'], 'base_url'=>(string)$capability['base_url'], 'model'=>(string)$capability['model']];
+function coreui_provider_account_external(array $capability, string $model, bool $allowed): ?array {
+  if (!$allowed || empty($capability['configured']) || !coreui_provider_offered($capability, $model)) return null;
+  return ['label'=>(string)$capability['label'], 'base_url'=>(string)$capability['base_url'], 'model'=>$model];
 }
 
 /** The external provider of this turn, or null for local Ollama (set by coreui_ai_runtime_apply). */
@@ -389,16 +440,9 @@ function coreui_provider_wire(?array $provider, string $ollamaUrl, array $payloa
   ];
 }
 
-/**
- * Admin Core > Verbindung prüfen: GET {base}/models with the key. No model is asked anything (no
- * tokens, not in the model queue). $transport is replaceable in tests: fn(url, headers) =>
- * ['code'=>int, 'body'=>string, 'error'=>string, 'ms'=>int].
- */
-function coreui_provider_test(array $capability, string $key, ?callable $transport = null): array {
-  if (empty($capability['configured'])) {
-    return ['ok'=>false, 'reason'=>'not_configured', 'missing'=>(array)($capability['missing'] ?? [])];
-  }
-  $transport = $transport ?? static function (string $url, array $headers): array {
+/** The default transport of the connection test and the provider list: one GET, short time limits. */
+function coreui_provider_transport(): callable {
+  return static function (string $url, array $headers): array {
     $ch = curl_init($url);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_HTTPHEADER=>$headers, CURLOPT_CONNECTTIMEOUT=>5,
       CURLOPT_TIMEOUT=>COREUI_PROVIDER_TEST_TIMEOUT, CURLOPT_FOLLOWLOCATION=>false, CURLOPT_NOSIGNAL=>true]);
@@ -408,24 +452,58 @@ function coreui_provider_test(array $capability, string $key, ?callable $transpo
     curl_close($ch);
     return $result;
   };
+}
+
+/**
+ * 0.8.15: the provider's Cores (Admin Core > Cores vom Anbieter laden, and the connection test):
+ * GET {base}/models with the key. No model is asked anything (no tokens, not in the model queue).
+ * Works before the adapter is switched on; it needs base URL and key. $transport is replaceable in
+ * tests: fn(url, headers) => ['code'=>int, 'body'=>string, 'error'=>string, 'ms'=>int].
+ * reason: not_ready, unreachable, key_refused, rate_limited, http_error, no_model_list or listed;
+ * ids: the valid names, sorted, at most COREUI_PROVIDER_LIST_MAX.
+ */
+function coreui_provider_list(array $capability, string $key, ?callable $transport = null): array {
+  if (empty($capability['connection_ready']) || $key === '') {
+    $missing = array_values(array_intersect((array)($capability['missing'] ?? []), ['base_url', 'base_url_invalid', 'key', 'key_unreadable']));
+    return ['ok'=>false, 'reason'=>'not_ready', 'missing'=>$missing, 'ids'=>[]];
+  }
+  $transport = $transport ?? coreui_provider_transport();
   $answer = $transport((string)$capability['base_url'] . '/models', ['Accept: application/json', 'Authorization: Bearer ' . $key]);
   $code = (int)($answer['code'] ?? 0);
-  $result = ['ok'=>false, 'http_code'=>$code, 'elapsed_ms'=>max(0, (int)($answer['ms'] ?? 0)), 'model'=>(string)$capability['model']];
+  $body = (string)($answer['body'] ?? '');
+  $result = ['ok'=>false, 'http_code'=>$code, 'elapsed_ms'=>max(0, (int)($answer['ms'] ?? 0)), 'ids'=>[]];
   if ($code === 0) return $result + ['reason'=>'unreachable'];
-  if ($code === 401 || $code === 403) {
-    return $result + ['reason'=>'key_refused', 'message'=>coreui_provider_error_message((string)($answer['body'] ?? ''), $key)];
-  }
+  if ($code === 401 || $code === 403) return $result + ['reason'=>'key_refused', 'message'=>coreui_provider_error_message($body, $key)];
   if ($code === 404 || $code === 405) return ['ok'=>true, 'reason'=>'no_model_list'] + $result;
-  if ($code === 429) return $result + ['reason'=>'rate_limited', 'message'=>coreui_provider_error_message((string)($answer['body'] ?? ''), $key)];
-  if ($code < 200 || $code >= 300) {
-    return $result + ['reason'=>'http_error', 'message'=>coreui_provider_error_message((string)($answer['body'] ?? ''), $key)];
-  }
-  $json = json_decode((string)($answer['body'] ?? ''), true);
+  if ($code === 429) return $result + ['reason'=>'rate_limited', 'message'=>coreui_provider_error_message($body, $key)];
+  if ($code < 200 || $code >= 300) return $result + ['reason'=>'http_error', 'message'=>coreui_provider_error_message($body, $key)];
+  $json = json_decode($body, true);
   $ids = [];
   foreach ((array)(is_array($json) ? ($json['data'] ?? $json['models'] ?? []) : []) as $row) {
-    if (is_array($row) && is_string($row['id'] ?? $row['name'] ?? null)) $ids[] = (string)($row['id'] ?? $row['name']);
+    $raw = is_array($row) ? ($row['id'] ?? $row['name'] ?? null) : $row;
+    $name = is_string($raw) ? coreui_provider_model_name($raw) : '';
+    if ($name !== '') $ids[$name] = true;
   }
-  $listed = in_array((string)$capability['model'], $ids, true);
-  return ['ok'=>true, 'reason'=>$ids === [] ? 'no_model_list' : ($listed ? 'model_listed' : 'model_not_listed'),
-    'models_count'=>count($ids)] + $result;
+  $ids = array_keys($ids);
+  sort($ids, SORT_NATURAL | SORT_FLAG_CASE);
+  $ids = array_slice($ids, 0, COREUI_PROVIDER_LIST_MAX);
+  return ['ok'=>true, 'reason'=>$ids === [] ? 'no_model_list' : 'listed', 'ids'=>$ids] + $result;
+}
+
+/**
+ * Admin Core > Verbindung prüfen: reads the provider's list (coreui_provider_list) and says which of
+ * the offered Cores it does not list. Works while the adapter is still switched off ('enabled' tells
+ * the page). reason: the list's failure, no_model_list, connected (no Core offered yet),
+ * models_listed or models_not_listed.
+ */
+function coreui_provider_test(array $capability, string $key, ?callable $transport = null): array {
+  $list = coreui_provider_list($capability, $key, $transport);
+  $offered = array_values((array)($capability['models'] ?? []));
+  $out = ['ok'=>(bool)$list['ok'], 'reason'=>(string)$list['reason'], 'enabled'=>!empty($capability['enabled']), 'models'=>$offered]
+    + array_intersect_key($list, array_flip(['http_code', 'elapsed_ms', 'message', 'missing']));
+  if (!$list['ok'] || $list['reason'] === 'no_model_list') return $out;
+  $out['models_count'] = count($list['ids']);
+  if ($offered === []) return ['reason'=>'connected'] + $out;
+  $notListed = array_values(array_filter($offered, static fn(string $m): bool => !in_array($m, $list['ids'], true)));
+  return ['reason'=>$notListed === [] ? 'models_listed' : 'models_not_listed', 'models_not_listed'=>$notListed] + $out;
 }

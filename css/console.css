@@ -4271,6 +4271,14 @@ html.live-open body {
   border-bottom: 0;
 }
 #coreModeStatus:empty { display: none; }
+/* 0.8.15: EXTERNE CORES below the local Cores (external adapter, Admin Core). */
+.core-mode-section[hidden] { display: none; }
+#coreModeMenu .core-mode-section--external {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+#coreModeExternalList { max-height: min(24vh, 180px); }
 
 .core-mode-section {
   display: grid;

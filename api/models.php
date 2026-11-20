@@ -8,6 +8,7 @@ require_once __DIR__ . '/core_generator_engine.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/model_access.php';
 require_once __DIR__ . '/core_tier_variants.php';
+require_once __DIR__ . '/ai_settings.php';
 
 $uid = stu_require_user_id();
 if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
@@ -35,6 +36,8 @@ try {
   $generatorLicensed = coreui_generator_license_user_accepted(stu_pdo(), (int)$uid);
   $generatorEngine = coreui_generator_engine_public(coreui_generator_engine_status());
   $selectedTiers = coreui_tier_variant_map(stu_pdo(), $models);
+  // 0.8.15: the external Cores this account may choose (Core menu > EXTERNE CORES).
+  $externalCores = coreui_ai_external_cores(stu_pdo(), (int)$uid);
   $default = defined('STU_EMBER_MODEL') ? (string)STU_EMBER_MODEL : '';
   if ($default !== '') $default = coreui_tier_variant_effective(stu_pdo(), $default);
   if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
@@ -48,6 +51,7 @@ try {
     'selected_tiers'=>$selectedTiers,
     'missing_tiers'=>coreui_core_missing_tiers($models),
     'install'=>coreui_core_install_status(),
+    'external'=>$externalCores,
   ]);
 } catch (RuntimeException $e) {
   stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);

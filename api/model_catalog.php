@@ -115,6 +115,9 @@ function coreui_core_mara_family(): string {
 
 function coreui_core_tier(string $model): ?string {
   $m = strtolower(trim($model));
+  // 0.8.15: an external Core ("extern:<name>") is never a TCI tier, whatever its name says, so it
+  // never counts as one of CoreAI's Cores (it needs the Inhaber's release) and keeps its own name.
+  if (str_starts_with($m, 'extern:')) return null;
   foreach (['ember-core', 'ember-coreui'] as $family) {
     if (str_starts_with($m, $family . ':')) return COREUI_CORE_TIER_SIZES[substr($m, strlen($family) + 1)] ?? null;
   }

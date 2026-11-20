@@ -175,7 +175,9 @@ const style = (page, sel, props) => page.$eval(sel, (el, p) => {
       tag: (el.querySelector('.cfg-expert-tag') || {}).textContent || '',
     })));
     let state = await expertState();
-    assert.equal(state.length, 7);
+    // 0.8.15: six, the Core path (CORE-PFAD) left the KI-Profil; external Cores are chosen in the chat.
+    assert.equal(state.length, 6);
+    assert.ok(!state.some(x => x.id === 'aiProvider'), 'no Core path in the KI-Profil');
     assert.deepEqual(state.filter(x => x.shown), [], 'no Expert setting is shown without Expert mode');
     // KI-Profil: the system prompt card is gone, Antwort und Gedächtnis moves up; Sprache is the first field.
     const firstCard = await page.$eval('#view-ki-profil .cfg-cards', c => [...c.children].find(x => x.getClientRects().length).getAttribute('aria-labelledby'));
@@ -186,7 +188,7 @@ const style = (page, sel, props) => page.$eval(sel, (el, p) => {
     });
     assert.equal(gap.id, 'aiLanguage');
     assert.ok(gap.offset < 2, 'Sprache sits at the top of its card, no empty space above it');
-    assert.equal(await page.isVisible('#externalProviderNote'), false, 'the external API note goes with the Core path');
+    assert.equal(await page.isVisible('#externalProviderNote'), false, 'the note on external Cores stays behind Expert');
     await page.click('#settingsExpertToggle + i');
     await page.waitForFunction(() => document.getElementById('settingsExpertToggle').checked);
     state = await expertState();

@@ -4237,6 +4237,16 @@ function ember_persona_system_for(string $model): string {
 }
 
 /**
+ * 0.8.15: the persona of this turn's Core. An external Core has no Modelfile, so it gets Mara's
+ * SYSTEM text from the operator Modelfile (unchanged), like a raw local Core; without this it got
+ * none while the account's local choice was the default Core. Local Cores: ember_persona_system_for().
+ */
+function ember_turn_persona_system(): string {
+  if (function_exists('coreui_provider_active') && coreui_provider_active() !== null) return ember_mara_system_text();
+  return ember_persona_system_for(ember_model());
+}
+
+/**
  * Effective context window of a LOCAL Ollama model: the KI-Profil choice sent
  * with every request of this run, otherwise reported by /api/ps, otherwise
  * num_ctx from its Modelfile (/api/show), otherwise remembered from an
@@ -5232,7 +5242,7 @@ function ember_build_chat_prompt(
 
   $emberZeit = ember_formatted_chat_time($channel);
   // 0.5.76: empty for Mara's own Core (Modelfile SYSTEM), her persona for other Cores.
-  $sys = ember_persona_system_for(ember_model());
+  $sys = ember_turn_persona_system();
 
   $nativeProjects = $channel === 'console' && $imageUrl === null
     && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
@@ -5818,7 +5828,7 @@ function ember_generate_reply(
   // Andere Cores ohne SYSTEM bekommen seit 0.5.76 denselben Text (ember_persona_system_for).
   // Datum/Uhrzeit wird pro Nachricht direkt in $u eingefuegt.
   $emberZeit = ember_formatted_chat_time($channel);
-  $sysBase = ember_persona_system_for(ember_model());
+  $sysBase = ember_turn_persona_system();
   $sys = $sysBase;
   // Memory wird in $u eingefuegt (nicht in $sys) damit das Modelfile-SYSTEM nicht ueberschrieben wird
 

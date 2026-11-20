@@ -341,6 +341,14 @@ const genericFailure = work.create({events:[{
 assert(genericFailure.textContent.includes('Grund: response_invalid')
   && genericFailure.textContent.includes('Fehlertyp: ValueError'),
   'generic errors show available verified metadata without inventing causes');
+// 0.8.15: a refused work decision names its form in words (structure only, never model text).
+const decisionFailure = work.create({events:[{
+  id: 283,kind:'run',state:'error',title:'Projektauftrag ohne bestaetigten Abschluss unterbrochen',
+  meta:{reason:'task_decision_invalid',error_type:'block_unclosed',step:24}
+}]});
+assert(decisionFailure.textContent.includes('Grund: task_decision_invalid')
+  && decisionFailure.textContent.includes('Fehlertyp: ein Steuerblock ohne passenden Abschluss-Marker'),
+  'the form of a refused decision is readable');
 
 // 0.5.62: actual source-code chunks display below the same live work
 // timeline. They are never loaded into saved events or rendered as HTML.

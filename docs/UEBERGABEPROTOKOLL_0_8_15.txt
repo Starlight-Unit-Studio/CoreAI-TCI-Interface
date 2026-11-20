@@ -1,0 +1,128 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.15
+Datum: 20.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.14 nach PR #375 (Arbeit begonnen auf 0.8.11, main 0.8.12 bis 0.8.14 eingemischt)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Nach dem ersten Test von 0.8.11 auf dem echten Server: "ich vermisse hier irgendwie modell
+auswahlliste von der api", die Auswahl "vorzugsweise mit im corechip ... unter Externe Cores", und
+"du arbeitest die ganze Zeit so als waere coreai nur fuer eine Person privat aber ist es nicht".
+Dazu die Schwaechen, die beim Test auffielen: die Verbindungspruefung lief nur mit eingeschaltetem
+Schalter und sagte das nicht ("Erst vollstaendig einrichten und speichern."), der zugehoerige
+Speichern-Knopf lag weit oben, und im Chat war nicht zu sehen, dass ein externer Core antwortet.
+
+NACHTRAG IM SELBEN PR: task_decision_invalid
+- Der Betreiber hat den Projektauftrag ("Homepage mit Gaestebuch") schon mit dem externen Core
+  gpt-6-luna laufen lassen (in 0.8.11 zeigte der Chip den lokalen Core, daher "Core Normal" auf
+  den Screenshots). Auch dort Abbruch nach Planungsabschnitt 24 mit task_decision_invalid,
+  ausserhalb und innerhalb eines Projekts. Damit war das Modell als Ursache ausgeschlossen.
+- Ursache im Code: coreui_task_decision() (0.8.13) nahm DONE/BLOCKED nur an, wenn die Antwort
+  exakt mit dem Marker begann und endete. Abgelehnt wurden: Fortschrittsnotiz plus Leerzeile vor
+  dem Block (genau die Form, die der Prompt nahelegt), ein Satz vor dem Block, Marker in derselben
+  Zeile, Codeblock, Windows-Zeilenenden. Der Folge-Prompt im Projektmodus endete zudem mit
+  "Antworte in deinem persoenlichen Anzeigenamen:" und lud so zu Text vor dem Block ein. Die
+  Reparatur nannte nicht, was falsch war.
+- Umsetzung: api/console_task_control.php (ein vollstaendiger Block zaehlt, wo er steht; mehrdeutige
+  Antworten bleiben ungueltig; Form der ungueltigen Antwort ohne Modelltext; Reparatur nennt die
+  Form), api/console_agent_loop.php (Form als error_type im Arbeitsweg, Prompt-Zeile im
+  Projektmodus ersetzt durch "Den Text im ...-Block schreibst du in deinem persoenlichen
+  Anzeigenamen."), api/console_stream.php (fortgesetzter Lauf: dieselbe Form und Reparatur),
+  js/coreui-work-events.js (Fehlertyp lesbar), docs/architecture/AGENT_TASK_CONTROL.md.
+- Unveraendert: Abschluss nur mit bestaetigten Werkzeugnachweisen und Auftragsjournal; hoechstens
+  eine Reparatur; keine Sprach- oder Phrasenerkennung. Ein Werkzeugmarker im Codeblock wird wie
+  bisher behandelt (der Codeblock wird nicht entfernt).
+
+ENTSCHEIDUNGEN
+- Mehrere externe Cores statt eines Core-Namens. Der Inhaber laedt die Liste des Anbieters und
+  hakt an, was CoreAI anbietet (hoechstens 50; die Listen der Anbieter enthalten auch Cores fuer
+  Embeddings, Sprache und Bilder). Fuer Anbieter ohne Liste: Name von Hand.
+- Die Wahl liegt im Core-Menue des Chats unter EXTERNE CORES, je Konto gespeichert als
+  "extern:<name>" im bestehenden Feld der Core-Wahl. Der Core-Pfad im KI-Profil entfaellt; ein
+  Konto mit "Externe API" aus 0.8.11 nutzt den ersten angebotenen externen Core.
+- Rechte wie bei Cores ausserhalb von CoreAI (seit 0.5.83): der Inhaber alle, alle anderen Konten,
+  auch Admins, nach seiner Freigabe unter Admin Core > Benutzer, Gaeste nie. Damit faellt die feste
+  Regel "Inhaber und Admins" aus 0.8.11 weg; Admins brauchen jetzt eine Freigabe wie bei fremden
+  lokalen Cores.
+- Den Adapter aendert nur der Inhaber: die Adresse bestimmt, wohin sein Schluessel geht. In 0.8.11
+  konnte ein Admin die Base-URL aendern und damit den Schluessel des Inhabers an eine andere Adresse
+  schicken lassen. Admins sehen den Status und duerfen pruefen.
+- Ein externer Core hat kein Modelfile und bekommt Maras SYSTEM-Text aus dem Modelfile des
+  Betreibers unveraendert (wie ein roher lokaler Core). Das Modelfile wird nicht geaendert.
+
+UMSETZUNG
+- api/model_provider.php: angebotene Cores (external_api_models als JSON-Liste, Altwert
+  external_api_model ohne Liste), Core-Namen hoechstens 153 Zeichen (mit "extern:" passend in die
+  160 Zeichen der Core-Wahl und der Freigaben), Wahl "extern:<name>", connection_ready (Base-URL und
+  Schluessel), angeboten, Zug je Konto, Liste des Anbieters (gueltige Namen, eindeutig, sortiert,
+  hoechstens 1000), Verbindungspruefung auch ausgeschaltet (connected, models_listed,
+  models_not_listed mit Namen, enabled).
+- api/ai_settings.php: Faehigkeit mit Liste, externe Cores je Konto, Nutzbarkeit je Konto, Zug:
+  externe Wahl vor den lokalen Pruefungen herausgenommen, dann nur bei Freigabe extern; alter
+  Core-Pfad wird zur Wahl des ersten angebotenen Cores; eine Core-Wahl im Menue setzt provider auf
+  local.
+- api/user_settings.php: Core-Wahl extern (409 external_not_available, 403 model_not_allowed,
+  kein Vorladen, preload external), Anzeige ohne nicht mehr nutzbare externe Wahl, Name des Cores
+  als Chip-Beschriftung; Core-Pfad-Pruefung und Feld external entfernt.
+- api/models.php: Liste external fuer das Core-Menue.
+- api/model_access.php: Freigaben fuer "extern:<name>" (auch mit @ und +).
+- api/model_catalog.php: "extern:" ist nie eine TCI-Stufe (sonst haette ein externer Core mit
+  gemma-4 im Namen als Core von CoreAI gegolten und waere fuer jedes Konto offen gewesen).
+- api/admin.php: external_api_save (nur Inhaber), external_api_models, Freigabeliste mit den
+  angebotenen externen Cores; die Adapterfelder nicht mehr in settings_save.
+- api/chat.php: ember_turn_persona_system() fuer beide Chat-Zuege.
+- admin/index.html, js/admin.js, css/settings.css: Karte mit Liste (laden, filtern, anhaken, von
+  Hand), ADAPTER SPEICHERN, Pruefen und Laden speichern vorher ungespeicherte Aenderungen,
+  Statuszeile mit dem, was fehlt, fuer Admins gesperrt; Freigaben zeigen "(extern)".
+- app.html, js/coreui-core-mode.js, css/console.css: EXTERNE CORES im Core-Menue, Chip mit
+  "· extern", nicht mehr angebotener Core ausgegraut.
+- settings.html, js/settings.js: Core-Pfad entfernt, Hinweis aktualisiert.
+- Tests, beide Preflights, Doku.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Ollama, Datenbankschema (keine Migration).
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien, node --check fuer die geaenderten JavaScript-Dateien,
+  bash -n fuer beide Preflights: ohne Fehler. Version-Guard (0.8.14 auf 0.8.15), Branding,
+  Cache-Fingerabdruecke, Preflight-Sync, Terminal-Sprache, TCI-Sprache, Terran-Terminologie: OK.
+- external-provider-selftest.php: OK mit SQLite und gegen MariaDB (COREUI_SELFTEST_DB=1); keine
+  Testwerte bleiben in der Datenbank oder in logs/stu_app_settings.json (beim ersten Lauf landeten
+  die SQLite-Einstellungen in dieser Ausweichdatei, weil die Helfer die Tabelle nur fuer die erste
+  Verbindung anlegen; der Test legt sie jetzt selbst an und prueft das).
+- external-provider-ui-selftest.cjs (Admin-Karte, Freigaben, Core-Menue), model-access-selftest.php,
+  agent-loop-selftest.php (neue Faelle fuer die Steuerentscheidung), work-events-ui-selftest.js,
+  work-events-selftest.php, task-journal-selftest.php: OK.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf dem finalen Stand: 202 bestanden, 18
+  fehlgeschlagen. Vergleich auf main 0.8.14 in derselben Umgebung: 203 bestanden, 17
+  fehlgeschlagen; die 17 sind auf beiden Seiten dieselben (browse-image, browse-live-ui,
+  chat-menu-ui, data-controls, image-progress-ui, insights-chat-visibility-ui, long-chat,
+  model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui,
+  settings-tabs-ui, update-ui, voice-input, voice-samples-ui). Der eine zusaetzliche Fehlschlag
+  (storage-ui-selftest.cjs) trat nur einmal unter Last der Testreihe auf; einzeln sieben Laeufe
+  hintereinander gruen, im ersten Branch-Lauf ebenfalls gruen; der Test beruehrt keinen geaenderten
+  Code.
+- Sieben Tests mit woertlichen Erwartungen an den alten Stand nachgezogen, ohne Pruefungen zu
+  schwaechen: core-tiers, vision-persona, thinking-switch, image-gen, settings-navigation-foundation,
+  settings-theme-ui, context-slider-ui (dazu settings-tabs-ui, schon auf main rot).
+- GitHub-Pruefungen: nach dem ersten Push drei rote Jobs (model-variant-choice, guest-image-quota,
+  image-service) wegen dieser woertlichen Erwartungen; nach der Korrektur alle Befehle dieser Jobs
+  lokal und auf GitHub gruen.
+- Gezielte Fehlereinbauten: externe Cores 29 von 30 erkannt (der uebersehene entfernt die doppelte
+  Gastpruefung in coreui_ai_external_cores; die Freigabepruefung lehnt Gaeste ohnehin ab, also
+  gleiches Verhalten); Steuerentscheidung 12 von 12 erkannt. Dabei gefunden: das zuerst geplante
+  Entfernen eines umschliessenden Codeblocks haette die Behandlung von Werkzeugmarkern veraendert;
+  es ist wieder entfernt (fuer DONE/BLOCKED nicht noetig).
+
+NICHT GETESTET
+- Ein echter Anbieter (kein Schluessel in dieser Umgebung); geprueft gegen einen
+  OpenAI-kompatiblen Stand-in-Server.
+- Ein echter Projektlauf auf dem Server; die Steuerentscheidung ist mit nachgestellten Antworten
+  geprueft (Fortschrittsnotiz, Leerzeile, DONE).
+
+NAECHSTER SCHRITT
+- Auf dem echten Server: Cores vom Anbieter laden, anhaken, ADAPTER SPEICHERN, im Chat unter
+  EXTERNE CORES waehlen und den Auftrag "Homepage mit Gaestebuch" erneut laufen lassen (normaler
+  Chat und Projekt). Bricht er wieder ab, steht die Form der Antwort als Fehlertyp im Arbeitsweg.
+
+Version: 0.8.15

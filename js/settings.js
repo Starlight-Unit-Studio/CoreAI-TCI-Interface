@@ -78,9 +78,7 @@
   var aiMemoryLimit = document.getElementById('aiMemoryLimit');
   var aiNumPredict = document.getElementById('aiNumPredict');
   var aiTemperature = document.getElementById('aiTemperature');
-  var aiProvider = document.getElementById('aiProvider');
   var aiLanguage = document.getElementById('aiLanguage');
-  var externalNote = document.getElementById('externalProviderNote');
   var memoryFact = document.getElementById('memoryFact');
   var memoryRelevance = document.getElementById('memoryRelevance');
   var memoryList = document.getElementById('memoryList');
@@ -631,27 +629,9 @@
           !(data.limits && data.limits.num_ctx_available === false));
       }
       // 0.5.79: the Core is chosen in the chat menu; the window estimate follows it.
-      selectedModelOverride = s.model_override || '';
-      // 0.8.11: the external API once the adapter is configured, for the Inhaber and Admins.
-      var external = data.external || {};
-      var externalConfigured = external.configured === true;
-      var externalUsable = externalConfigured && external.allowed === true;
-      if (aiProvider) {
-        var externalOption = aiProvider.querySelector('option[value="external"]');
-        if (externalOption) {
-          externalOption.disabled = !externalUsable;
-          externalOption.textContent = externalUsable
-            ? 'EXTERNE API // ' + String(external.label || 'OpenAI-kompatibel').toUpperCase() + ' (' + external.model + ')'
-            : (externalConfigured ? 'EXTERNE API // NUR INHABER UND ADMINS' : 'EXTERNE API // NICHT EINGERICHTET');
-        }
-        aiProvider.value = externalUsable && s.provider === 'external' ? 'external' : 'local';
-      }
-      if (externalNote) {
-        var p = externalNote.querySelector('p');
-        if (p && external.enabled && !externalConfigured && external.allowed) {
-          p.textContent = 'Der externe Adapter ist im Admin Core aktiviert, aber noch nicht vollständig eingerichtet (Base-URL, Core-Name und Schlüssel auf dem Server). Bis dahin bleibt dein Konto auf lokalem Ollama.';
-        }
-      }
+      // 0.8.15: external Cores are chosen in the chat's Core menu (EXTERNE CORES), not here; they
+      // have no local context window, so the estimate follows the default Core.
+      selectedModelOverride = /^extern:/i.test(String(s.model_override || '')) ? '' : (s.model_override || '');
       updatePromptCounter();
       loadContextEstimate();
     }).catch(function (error) {
@@ -685,7 +665,6 @@
       memory_limit: aiMemoryLimit ? Number(aiMemoryLimit.value) : 16,
       num_predict: aiNumPredict ? Number(aiNumPredict.value) : 6500,
       temperature: aiTemperature ? Number(aiTemperature.value) : 1,
-      provider: aiProvider ? aiProvider.value : 'local',
       num_ctx: contextSlider ? contextSlider.value() : null,
       main_language: aiLanguage && aiLanguage.value === 'en' ? 'en' : 'de'
     };
@@ -696,7 +675,6 @@
       body.system_prompt = old.system_prompt || '';
       body.num_predict = old.num_predict == null ? 6500 : Number(old.num_predict);
       body.temperature = old.temperature == null ? 1 : Number(old.temperature);
-      body.provider = old.provider || 'local';
       body.num_ctx = old.num_ctx == null ? null : Number(old.num_ctx);
       body.main_language = old.main_language === 'en' ? 'en' : 'de';
     }

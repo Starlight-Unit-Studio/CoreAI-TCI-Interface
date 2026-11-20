@@ -443,6 +443,49 @@ loop_test(coreui_task_decision($promisedText,$taskParser)['kind']==='invalid'
   && coreui_task_decision("[COREUI_TASK_DONE]\n[DATEI: secret.php]",$taskParser)['kind']==='invalid',
   'generic protocol accepts authorized tool, explicit done or blocked, not model phrasing');
 
+// 0.8.15: one complete DONE/BLOCKED block counts however it is framed (observed with a cloud Core:
+// a progress note, a blank line, then the block). Ambiguous replies stay invalid and name their form.
+$framed = [
+  "[COREUI_PUBLIC_PROGRESS]Alles geprueft.[/COREUI_PUBLIC_PROGRESS]\n\n[COREUI_TASK_DONE]\nFertig.\n[/COREUI_TASK_DONE]",
+  "Alles erledigt.\n\n[COREUI_TASK_DONE]\nFertig.\n[/COREUI_TASK_DONE]\nViele Gruesse",
+  "[COREUI_TASK_DONE] Fertig. [/COREUI_TASK_DONE]",
+  "```text\n[COREUI_TASK_DONE]\nFertig.\n[/COREUI_TASK_DONE]\n```",
+  "[COREUI_TASK_DONE]\r\nFertig.\r\n[/COREUI_TASK_DONE]\r\n",
+];
+foreach ($framed as $i => $reply) {
+  $d = coreui_task_decision($reply, $taskParser);
+  loop_test($d['kind'] === 'done' && $d['text'] === 'Fertig.' && $d['shape'] === '', 'framed DONE #' . $i . ' is a decision: ' . json_encode($d));
+}
+$blockedFramed = coreui_task_decision("Kurz:\n[COREUI_TASK_BLOCKED]\nKein Zugriff.\n[/COREUI_TASK_BLOCKED]", $taskParser);
+loop_test($blockedFramed['kind'] === 'blocked' && $blockedFramed['text'] === 'Kein Zugriff.', 'framed BLOCKED');
+foreach ([
+  ['', 'empty'],
+  ['Die Seite ist fertig.', 'prose_only'],
+  ["[COREUI_TASK_DONE]\nFertig.", 'block_unclosed'],
+  ["Fertig.\n[/COREUI_TASK_DONE]", 'block_unclosed'],
+  ["[/COREUI_TASK_DONE]\nFertig.\n[COREUI_TASK_DONE]", 'block_unclosed'],
+  ["[COREUI_TASK_DONE]\na\n[/COREUI_TASK_DONE]\n[COREUI_TASK_DONE]\nb\n[/COREUI_TASK_DONE]", 'block_multiple'],
+  ["[COREUI_TASK_DONE]\na\n[/COREUI_TASK_BLOCKED]", 'block_multiple'],
+  ["[COREUI_TASK_DONE]\n \n[/COREUI_TASK_DONE]", 'block_empty'],
+  ["[DATEI: assets/app.js]\n[COREUI_TASK_DONE]\nFertig.\n[/COREUI_TASK_DONE]", 'block_and_tool'],
+  ["[COREUI_TASK_DONE]\n[DATEI: assets/app.js]\n[/COREUI_TASK_DONE]", 'block_and_tool'],
+  ["[COREUI_TASK_FINISHED]\nFertig.\n[/COREUI_TASK_FINISHED]", 'marker_unknown'],
+] as [$reply, $shape]) {
+  $d = coreui_task_decision($reply, $taskParser);
+  loop_test($d['kind'] === 'invalid' && $d['shape'] === $shape && $d['tool'] === null && $d['text'] === '',
+    'invalid decision named ' . $shape . ': ' . json_encode($d));
+}
+loop_test(coreui_task_decision("[COREUI_PUBLIC_PROGRESS]Ich lese die Datei.[/COREUI_PUBLIC_PROGRESS]\n\n[DATEI: assets/app.js]", $taskParser)['kind'] === 'action',
+  'a progress note with a blank line before a tool is still that tool');
+loop_test(str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'prose_only'), '(erkannt: nur Text ohne Werkzeugmarker und ohne Steuerblock)')
+  && !str_contains(coreui_task_decision_repair_prompt('KONTEXT'), 'erkannt:')
+  && !str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'unbekannt'), 'erkannt:'), 'the repair names the refused form');
+loop_test(!str_contains($projectGuidance, 'Antworte in deinem persoenlichen Anzeigenamen:')
+  && str_contains($projectGuidance, 'Den Text im COREUI_TASK_DONE- oder COREUI_TASK_BLOCKED-Block schreibst du in deinem persoenlichen Anzeigenamen.')
+  && str_contains(coreui_agent_step_prompt('AUFTRAG', [['label'=>'Suche', 'result'=>'Treffer', 'state'=>'success']], 1, 6, ['web']),
+    'Antworte in deinem persoenlichen Anzeigenamen:'),
+  'project work asks for the decision only; ordinary answers keep the persona line');
+
 $pendingReplies=[$promisedText,'[DATEI: assets/app.js]',$taskDone('Die Dateien wurden gelesen.')];
 $pendingPrompts=[];$pendingTools=[];$pendingEvents=[];
 $pendingLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
@@ -465,6 +508,36 @@ loop_test(array_column($pendingTools,'tool')===['pfile_read','pfile_read']
   && count(array_filter($pendingEvents,static fn(array $e):bool =>
     ($e['meta']['reason']??'')==='task_decision_repaired'))===1,
   'one generic decision repair continues project without repeating any real tool');
+
+// 0.8.15 end to end: a cloud-style finish (progress note, blank line, DONE) completes the run; a
+// reply that stays prose names its form in the repair and in the interruption.
+$framedReplies=["[COREUI_PUBLIC_PROGRESS]Alles geprueft.[/COREUI_PUBLIC_PROGRESS]\n\n" . $taskDone('Die Dateien wurden gelesen.')];
+$framedEvents=[];
+$framedLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$framedReplies):?string { return array_shift($framedReplies); },
+  static fn(array $tool):string => 'Bestaetigte Datei: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta) use (&$framedEvents):void {
+    $framedEvents[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  },static fn():bool=>false);
+loop_test(($framedLoop['outcome']??'')==='completed' && $framedLoop['out']==='Die Dateien wurden gelesen.'
+  && !array_filter($framedEvents,static fn(array $e):bool=>($e['meta']['reason']??'')==='task_decision_missing'),
+  'a framed DONE completes the project run without a repair');
+$proseReplies=['Die Seite ist fertig.','Wirklich, alles ist fertig.'];
+$prosePrompts=[];$proseEvents=[];
+$proseLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$proseReplies,&$prosePrompts):?string { $prosePrompts[]=$prompt; return array_shift($proseReplies); },
+  static fn(array $tool):string => 'Bestaetigte Datei: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta) use (&$proseEvents):void {
+    $proseEvents[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  },static fn():bool=>false);
+$proseStop=array_values(array_filter($proseEvents,static fn(array $e):bool=>$e['title']==='Projektauftrag ohne bestaetigten Abschluss unterbrochen'));
+$proseMissing=array_values(array_filter($proseEvents,static fn(array $e):bool=>($e['meta']['reason']??'')==='task_decision_missing'));
+loop_test(($proseLoop['outcome']??'')==='interrupted' && ($proseLoop['reason']??'')==='task_decision_invalid'
+  && count($prosePrompts)===2 && str_contains($prosePrompts[1],'(erkannt: nur Text ohne Werkzeugmarker und ohne Steuerblock)')
+  && ($proseMissing[0]['meta']['error_type']??'')==='prose_only' && ($proseStop[0]['meta']['error_type']??'')==='prose_only',
+  'an invalid decision names its form in the repair and in the interruption: ' . json_encode([$proseStop, $proseMissing]));
 
 $stillPendingCalls=0;$stillPendingTools=[];
 $stillPending=coreui_agent_loop_run('[DATEI: assets/site.css]',

@@ -474,9 +474,9 @@ const smallText = page => page.evaluate(() => {
     assert.equal(save.post.settings.captcha_enabled, '0');
     assert.equal(save.post.settings.tool_python_enabled, '0', 'the Betrieb values travel along');
     // Every runtime key travels along (0.7.28: storage_limit_mb, the storage limit for all accounts; 0.7.82:
-    // artifact_retention_days, how long Mara's files are kept).
-    assert.deepEqual(Object.keys(save.post.settings).sort(), ['artifact_retention_days', 'captcha_enabled', 'external_api_base_url', 'external_api_enabled', 'external_api_label',
-      'external_api_model', 'guest_daily_messages', 'guest_enabled', 'guest_image_daily_limit', 'guest_message_limit', 'guest_network_guests',
+    // artifact_retention_days, how long Mara's files are kept). 0.8.15: the external adapter has its own
+    // button (ADAPTER SPEICHERN), so its keys no longer travel with this save.
+    assert.deepEqual(Object.keys(save.post.settings).sort(), ['artifact_retention_days', 'captcha_enabled', 'guest_daily_messages', 'guest_enabled', 'guest_image_daily_limit', 'guest_message_limit', 'guest_network_guests',
       'guest_tool_browse_enabled', 'guest_tool_image_enabled', 'guest_tool_python_enabled', 'guest_tool_web_enabled', 'maintenance_enabled',
       'maintenance_message', 'memory_default_enabled', 'registration_enabled', 'storage_limit_mb', 'tool_browse_enabled', 'tool_image_enabled',
       'tool_python_enabled', 'tool_web_enabled', 'user_system_prompt_max_chars']);

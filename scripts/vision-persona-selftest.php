@@ -45,7 +45,8 @@ vision_test(str_contains($chat, 'COREUI_TURN_IMAGE_REFERENCES')
 
 // The regular sync prompt keeps the Modelfile SYSTEM: empty for Mara's own
 // Core; since 0.5.76 other Cores get the same persona text. Images use it too.
-vision_test(str_contains($chat, "\$sysBase = ember_persona_system_for(ember_model());\n  \$sys = \$sysBase;"),
+// 0.8.15: through ember_turn_persona_system() (the same for local Cores, Mara's text for external ones).
+vision_test(str_contains($chat, "\$sysBase = ember_turn_persona_system();\n  \$sys = \$sysBase;"),
   'sync system prompt stays empty for Mara\'s own Core (runtime check in core-tiers-selftest)');
 
 // No memory reflection from an image description (console only).

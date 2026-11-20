@@ -37,6 +37,17 @@
     tool_marker_without_block:'Marker ohne Werkzeugblock'
   };
 
+  // 0.8.15: what a refused work decision looked like (api/console_task_control.php, never model text).
+  var DECISION_SHAPES = {
+    empty:'eine leere Antwort',
+    prose_only:'nur Text ohne Werkzeugmarker und ohne Steuerblock',
+    block_unclosed:'ein Steuerblock ohne passenden Abschluss-Marker',
+    block_multiple:'mehrere oder vermischte Steuerblöcke',
+    block_empty:'ein leerer Steuerblock',
+    block_and_tool:'ein Steuerblock zusammen mit einem Werkzeugmarker',
+    marker_unknown:'ein unbekannter Steuermarker'
+  };
+
   var IMAGE_PHASES = {
     load:'Modellgewichte laden', text:'Bildbeschreibung verarbeiten',
     sampling:'Bild berechnen', decode:'Bildpixel dekodieren',
@@ -287,7 +298,7 @@
         }
         if (event.state === 'error') {
           var reason = event.meta.reason ? ' (Grund: ' + event.meta.reason + ')' : '';
-          var type = event.meta.error_type ? ' (Fehlertyp: ' + event.meta.error_type + ')' : '';
+          var type = event.meta.error_type ? ' (Fehlertyp: ' + (DECISION_SHAPES[event.meta.error_type] || event.meta.error_type) + ')' : '';
           return 'Der Schritt ' + step + ' ist fehlgeschlagen' + reason + type
             + '. Der Abschluss ist nicht bestätigt; weitere technische Angaben stehen im Detail.';
         }
