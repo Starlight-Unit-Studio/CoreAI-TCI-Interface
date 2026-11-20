@@ -495,7 +495,7 @@ function coreui_agent_empty_followup_meta(array $report, int $step): array {
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
     callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null,
-    ?callable $imageReview = null, ?callable $modelReport = null): array {
+    ?callable $imageReview = null, ?callable $modelReport = null, ?callable $journal = null): array {
   $steps = [];
   $prompt = null;
   // A project workflow must not stop after six files/commands or ten
@@ -522,6 +522,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     // Keep legacy image/research cancellation semantics, but never launch a new
     // project command after an explicit cancellation.
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
+    if ($projectWorkflow && $journal !== null) {
+      // Claim the exact step BEFORE executing any side effect. A previous
+      // claim can mean the old worker died during a write; never replay it.
+      $claim=$journal('claim',$tool,$used + 1,null,null);
+      if (!is_array($claim) || ($claim['status'] ?? '') !== 'claimed') {
+        $stopReason='tool_checkpoint_conflict';
+        $record('tool','error','Projektwerkzeug ohne sicheren Checkpoint gestoppt',
+          ['reason'=>'tool_checkpoint_conflict','step'=>$used+1]);
+        break;
+      }
+    }
     if (!empty($tool['recovered_read_intent'])) {
       $record('tool','info','Angekündigte Projektdatei wird tatsächlich gelesen',
         ['reason'=>'read_intent_without_marker','step'=>$used + 1]);
@@ -544,6 +555,15 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $record('tool', 'running', $title, ['step'=>$used, 'reason'=>'agent_loop']);
     $result = $runTool($tool);
     $state = coreui_agent_tool_result_state($tool, $result);
+    if ($projectWorkflow && $journal !== null
+        && $journal('finish',$tool,$used,$result,$state) !== true) {
+      // The tool may have succeeded but its receipt is unconfirmed. Never
+      // dispatch another tool or mark this run completed on such evidence.
+      $stopReason='task_checkpoint_failed';
+      $record('tool','error','Werkzeugergebnis nicht dauerhaft bestaetigt',
+        ['reason'=>'task_checkpoint_failed','step'=>$used]);
+      break;
+    }
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
       'reason'=>$state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state]);
     if ($projectWorkflow) {
@@ -702,7 +722,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         if ($tool !== null && $route !== null) $tool = $route($tool);
         continue;
       }
-      if ($decision['kind'] === 'done' && coreui_task_completion_evidence($steps, $fileEditFailures)) {
+      if ($decision['kind'] === 'done'
+          && coreui_task_completion_evidence($steps, $fileEditFailures)
+          && ($journal === null || $journal('can_finish',[], $used, null,null) === true)) {
         $out = (string)$decision['text'];
         $taskOutcome = 'completed';
         $record('run','success','Arbeitsabschluss auf gepruefte Werkzeugschritte gestuetzt',
