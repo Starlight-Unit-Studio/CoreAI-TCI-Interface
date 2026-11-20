@@ -9,7 +9,7 @@
   var DETAIL_LABELS = {
     model:'Core', job_id:'Job', exit_code:'Exitcode', duration_ms:'Laufzeit (ms)',
     error_type:'Fehlertyp', file_name:'Datei', file_count:'Dateien', attempt:'Versuch',
-    http_code:'HTTP', reason:'Grund', source:'Quelle', elapsed_ms:'Dauer (ms)',
+    http_code:'HTTP', curl_errno:'Transportfehler', provider:'Anbindung', reason:'Grund', source:'Quelle', elapsed_ms:'Dauer (ms)',
     source_chars:'Quelltext (Zeichen)', eval_count:'Ausgabe-Tokens',
     prompt_eval_count:'Eingabe-Tokens', plan_version:'Planversion',
     step:'Planungsabschnitt', done_reason:'Core-Endgrund',
