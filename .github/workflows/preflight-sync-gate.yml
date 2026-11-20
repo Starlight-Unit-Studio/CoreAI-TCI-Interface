@@ -26,6 +26,8 @@ jobs:
         run: |
           set -eu
           for file in api/console_native_tools.php api/console_build_intent.php api/console_data_link_bridge.php \
+            api/console_task_journal.php api/console_agent_runs.php api/console_agent_loop.php api/console_stream.php \
+            scripts/task-journal-selftest.php \
             scripts/model-project-intent-selftest.php scripts/contextual-project-selftest.php \
             scripts/native-tools-selftest.php scripts/plan-autocontinue-selftest.php \
             scripts/agent-loop-selftest.php scripts/project-files-selftest.php \
@@ -40,6 +42,7 @@ jobs:
           php scripts/native-tools-selftest.php
           php scripts/plan-autocontinue-selftest.php
           php scripts/agent-loop-selftest.php
+          php scripts/task-journal-selftest.php
           php scripts/project-files-selftest.php
           php scripts/chat-workspace-selftest.php
           php scripts/project-env-selftest.php

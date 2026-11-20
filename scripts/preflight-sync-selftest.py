@@ -19,6 +19,7 @@ REQUIRED_TESTS = (
     "scripts/native-tools-selftest.php",
     "scripts/plan-autocontinue-selftest.php",
     "scripts/agent-loop-selftest.php",
+    "scripts/task-journal-selftest.php",
     "scripts/project-files-selftest.php",
     "scripts/chat-workspace-selftest.php",
     "scripts/project-env-selftest.php",

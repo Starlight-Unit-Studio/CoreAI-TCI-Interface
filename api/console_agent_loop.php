@@ -363,20 +363,27 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
     . "wirklich vorhandenen Quelle zu; sonst benenne die Unsicherheit.\n"
     . ($max > 0 ? 'Du hast ' . $used . ' von ' . $max . " Arbeitsschritten genutzt.\n"
       : 'Du hast bisher ' . $used . " Arbeitsschritte genutzt. Setze den Projektauftrag ohne Nutzer-Nachricht fort, bis er wirklich verifiziert ist.\n")
-    . ($last
-      ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
-        . "Sag offen, was offen geblieben ist.\n"
-      : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
-        . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
-        . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
-        . "Bei laengeren Projektauftraegen SOLLST du vor dem naechsten Werkzeugmarker in einer kurzen, ausdruecklich oeffentlichen Fortschrittsnotiz erklaeren, was das bestaetigte Ergebnis bedeutet und was du als Naechstes tust: "
-        . "[COREUI_PUBLIC_PROGRESS]Ich habe die bisher bestaetigten Ergebnisse geprueft und kontrolliere nun die naechste Projektdatei.[/COREUI_PUBLIC_PROGRESS] "
-        . "Danach folgt in einer NEUEN Zeile der einzelne Werkzeugmarker. Nenne nur gepruefte Ergebnisse und deinen naechsten Arbeitsschritt; "
-        . "kein privates Reasoning, keine geheimen Daten, keine erfundenen Erfolge. Ohne Notiz bleibt das Markerformat unveraendert.\n"
+    . ($max === 0
+      // Project work: no contradictory "finish in free prose" instruction.
+      // Every turn is a tool decision, verified DONE or BLOCKED.
+      ? "Aktiver Projektauftrag: freie Zwischenprosa ist KEIN Abschluss. "
+        . "Antworte mit genau einem autorisierten Werkzeugmarker oder dem exakten "
+        . "COREUI_TASK_DONE/COREUI_TASK_BLOCKED-Block. "
+        . "Bei fehlender Datei pruefe die vom Werkzeug bestaetigte Dateiliste "
+        . "und wiederhole keinen erfolglosen Leseaufruf.\n"
         . coreui_agent_tool_menu($allowed) . "\n"
-        . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
-        . "fuer eine neue Richtung verwende andere Suchbegriffe. "
-        . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n")
+      : ($last
+        ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
+          . "Sag offen, was offen geblieben ist.\n"
+        : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
+          . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
+          . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
+          . "Du kannst eine ausdruecklich oeffentliche Fortschrittsnotiz mit "
+          . "[COREUI_PUBLIC_PROGRESS]...[/COREUI_PUBLIC_PROGRESS] vor einen Werkzeugmarker stellen.\n"
+          . coreui_agent_tool_menu($allowed) . "\n"
+          . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
+          . "fuer eine neue Richtung verwende andere Suchbegriffe. "
+          . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n"))
     . 'Antworte in deinem persoenlichen Anzeigenamen:'
     . ($max === 0 ? coreui_task_protocol_prompt() : '');
 }
@@ -495,7 +502,7 @@ function coreui_agent_empty_followup_meta(array $report, int $step): array {
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
     callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null,
-    ?callable $imageReview = null, ?callable $modelReport = null): array {
+    ?callable $imageReview = null, ?callable $modelReport = null, ?callable $journal = null): array {
   $steps = [];
   $prompt = null;
   // A project workflow must not stop after six files/commands or ten
@@ -522,6 +529,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     // Keep legacy image/research cancellation semantics, but never launch a new
     // project command after an explicit cancellation.
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
+    if ($projectWorkflow && $journal !== null && $tool['tool'] !== 'browse') {
+      // Claim the exact step BEFORE executing any side effect. A previous
+      // claim can mean the old worker died during a write; never replay it.
+      $claim=$journal('claim',$tool,$used + 1,null,null);
+      if (!is_array($claim) || ($claim['status'] ?? '') !== 'claimed') {
+        $stopReason='tool_checkpoint_conflict';
+        $record('tool','error','Projektwerkzeug ohne sicheren Checkpoint gestoppt',
+          ['reason'=>'tool_checkpoint_conflict','step'=>$used+1]);
+        break;
+      }
+    }
     if (!empty($tool['recovered_read_intent'])) {
       $record('tool','info','Angekündigte Projektdatei wird tatsächlich gelesen',
         ['reason'=>'read_intent_without_marker','step'=>$used + 1]);
@@ -544,6 +562,15 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $record('tool', 'running', $title, ['step'=>$used, 'reason'=>'agent_loop']);
     $result = $runTool($tool);
     $state = coreui_agent_tool_result_state($tool, $result);
+    if ($projectWorkflow && $journal !== null
+        && $journal('finish',$tool,$used,$result,$state) !== true) {
+      // The tool may have succeeded but its receipt is unconfirmed. Never
+      // dispatch another tool or mark this run completed on such evidence.
+      $stopReason='task_checkpoint_failed';
+      $record('tool','error','Werkzeugergebnis nicht dauerhaft bestaetigt',
+        ['reason'=>'task_checkpoint_failed','step'=>$used]);
+      break;
+    }
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
       'reason'=>$state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state]);
     if ($projectWorkflow) {
@@ -702,7 +729,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         if ($tool !== null && $route !== null) $tool = $route($tool);
         continue;
       }
-      if ($decision['kind'] === 'done' && coreui_task_completion_evidence($steps, $fileEditFailures)) {
+      if ($decision['kind'] === 'done'
+          && coreui_task_completion_evidence($steps, $fileEditFailures)
+          && ($journal === null || $journal('can_finish',[], $used, null,null) === true)) {
         $out = (string)$decision['text'];
         $taskOutcome = 'completed';
         $record('run','success','Arbeitsabschluss auf gepruefte Werkzeugschritte gestuetzt',

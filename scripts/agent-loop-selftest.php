@@ -414,6 +414,22 @@ loop_test(coreui_agent_empty_followup_retryable(['provider'=>'external','http_co
     'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>'']),
   'one external retry is gated by a completed successful transport');
 
+// Project instructions must not tell the model to finish in bare prose
+// while the shared protocol requires a verified DONE/BLOCKED envelope.
+$projectGuidance=coreui_agent_step_prompt('AUFTRAG',
+  [['label'=>'Datei gelesen','result'=>'Datei vorhanden','state'=>'success']],
+  1,0,['pfile_read','pfile_write','pfile_edit','prun']);
+loop_test(str_contains($projectGuidance,'COREUI_TASK_DONE')
+  && str_contains($projectGuidance,'Aktiver Projektauftrag')
+  && !str_contains($projectGuidance,'vollstaendig und ohne Werkzeugmarker')
+  && !str_contains($projectGuidance,'antworte jetzt in deinem persoenlichen Anzeigenamen'),
+  'project prompt has one noncontradictory terminal decision contract');
+$prefixedDone="[COREUI_PUBLIC_PROGRESS]Die Datei ist geprueft.[/COREUI_PUBLIC_PROGRESS]\n"
+  . "[COREUI_TASK_DONE]\nDie Aufgabe ist abgeschlossen.\n[/COREUI_TASK_DONE]";
+loop_test(coreui_task_decision($prefixedDone,
+  static fn(string $r):?array=>null)['kind']==='done',
+  'valid bounded progress note cannot hide a correctly framed task completion');
+
 // 0.8.13: the same explicit control protocol works across model
 // phrasings and tool kinds; it never infers an executable operation from prose.
 $promisedText = 'Die Startseite hat Unterseiten. Ich prüfe als Nächstes das JavaScript.';

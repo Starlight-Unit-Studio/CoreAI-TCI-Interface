@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.13: the external OpenAI-compatible adapter for comparison runs with a cloud Core.
+# CoreAI: TCI Interface 0.8.14: the external OpenAI-compatible adapter for comparison runs with a cloud Core.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -351,6 +351,9 @@ UI_FILES=(
   database/migrations/011_console_artifacts.sql
   database/migrations/012_console_work_events.sql
   database/migrations/013_console_agent_runs.sql
+  database/migrations/057_task_journal.sql
+  api/console_task_journal.php
+  scripts/task-journal-selftest.php
   api/console_work_events.php
   api/console_work_store.php
   api/console_agent_runs.php
@@ -515,6 +518,7 @@ UI_FILES=(
   scripts/compaction-selftest.php
   api/console_compaction.php
   scripts/agent-loop-selftest.php
+  scripts/task-journal-selftest.php
   api/console_agent_loop.php
   scripts/browse-worker-selftest.py
   scripts/browse-live-ui-selftest.cjs
@@ -1090,6 +1094,20 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail 'Migration 013: model queue missing.'
   fi
 
+  if compose exec -T php php -r \
+      'require "/var/www/coreui/api/db.php"; require "/var/www/coreui/api/console_task_journal.php"; exit(coreui_task_journal_schema_ready(stu_pdo()) ? 0 : 1);' \
+      >/dev/null 2>&1; then
+    ok 'Migration 057: durable task journal and claim ledger ready.'
+  else
+    fail 'Migration 057 missing: durable task journal is required for autonomous project tools.'
+  fi
+
+  if compose exec -T php php scripts/task-journal-selftest.php >/dev/null 2>&1; then
+    ok 'Task journal: idempotent tool claims, checkpoints and owner isolation verified.'
+  else
+    fail 'Task journal: checkpoint and safe-replay regression failed.'
+  fi
+
   if compose exec -T php php scripts/agent-runs-selftest.php >/dev/null 2>&1; then
     ok 'P05: agent-run idempotency and account isolation verified offline.'
   else
@@ -1602,7 +1620,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Project environment self-test (exit ${project_env_test_exit}): ${project_env_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
-  # 0.8.13: the external OpenAI-compatible adapter (translation, permission, connection test, end to end
+  # 0.8.14: the external OpenAI-compatible adapter (translation, permission, connection test, end to end
   # against a stand-in server on 127.0.0.1; the key never reaches a log).
   external_provider_test=''
   if external_provider_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/external-provider-selftest.php 2>&1)"; then
@@ -2110,7 +2128,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Merge: UI test skipped (Playwright for Node.js is not installed).'
     fi
-    # 0.8.13: Admin Core > Operations > External adapter (key pasted once, sealed, connection test).
+    # 0.8.14: Admin Core > Operations > External adapter (key pasted once, sealed, connection test).
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/external-provider-ui-selftest.cjs" >/dev/null 2>&1; then
         ok 'External adapter: key entry, status and connection test verified in browser.'

@@ -22,6 +22,7 @@ require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
 require_once __DIR__ . '/console_agent_runs.php';
+require_once __DIR__ . '/console_task_journal.php';
 require_once __DIR__ . '/console_web_research.php';
 require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
@@ -6961,7 +6962,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
       }
       $agentWebSession = [];
-      $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
+      $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed,
+        max($pyHandled ? 1 : 0, (int)($GLOBALS['COREUI_TASK_RESUME_STEP'] ?? 0)),
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
         static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
           $triggerMessageId, $triggerRevision, $composerIntent, &$agentWebSession): string {
@@ -6975,7 +6977,39 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed),
         static fn(string $prompt): ?string => ember_generated_image_review($pdo, $consoleUid,
           $primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel)),
-        static fn(): array => ember_agent_followup_last_call());
+        static fn(): array => ember_agent_followup_last_call(),
+        // A verified tool receipt is committed before the model proceeds.
+        // The task journal is also used by plain CORE CHANNEL workspaces.
+        static function(string $event, array $tool, int $step, ?string $result,
+            ?string $state) use ($pdo, $consoleUid, $consoleSessionId): mixed {
+          $ctx=$GLOBALS['COREUI_WORK_CONTEXT'] ?? [];
+          $runId=(string)($ctx['agent_run_id'] ?? '');
+          $sid=(string)$consoleSessionId;
+          if ($runId==='' || !coreui_task_journal_schema_ready($pdo))
+            return $event==='claim' ? ['status'=>'unavailable'] : false;
+          if ($event==='claim')
+            return coreui_task_journal_claim($pdo,$consoleUid,$sid,$runId,$step,$tool);
+          if ($event==='can_finish')
+            return coreui_task_journal_can_finish($pdo,$consoleUid,$sid,$runId);
+          if ($event!=='finish' || !is_string($result) || !is_string($state)) return false;
+          $proof=[];
+          if ($state==='success'
+              && in_array((string)($tool['tool'] ?? ''),
+                ['pfile_read','pfile_write','pfile_edit'],true)) {
+            $path=coreui_agent_file_target($tool);
+            if ($path==='') return false;
+            try {
+              $projectId=coreui_pftools_project($pdo,$consoleUid,$sid);
+              if ($projectId==='') return false;
+              $file=coreui_pfiles_row($pdo,$consoleUid,$projectId,coreui_pfiles_path($path));
+              if (!is_array($file)) return false;
+              $proof=['file_revision'=>(int)$file['revision'],
+                'file_sha256'=>(string)$file['sha256']];
+            } catch (Throwable $e) { return false; }
+          }
+          return coreui_task_journal_finish($pdo,$consoleUid,$sid,$runId,
+            $step,$tool,$state,$result,$proof);
+        });
       // Carry the tool-run outcome to the single server-owned run state.
       // A saved interruption notice must not be counted as completed work.
       $GLOBALS['COREUI_AGENT_TASK_OUTCOME'] = (string)($loop['outcome'] ?? 'completed');
@@ -10188,6 +10222,42 @@ if ($action === 'send') {
     ember_prepare_background_runtime();
     $emberLock = ember_generation_lock_acquire($channel, (int)$id, $char, $message);
     if ($emberLock === false) exit;
+    $backgroundRunId='';
+    if ($channel === 'console') {
+      // The detached fallback uses the SAME owner-scoped durable runner as
+      // EventSource, not a tool-capable path with no run/checkpoint record.
+      try {
+        if (!coreui_agent_run_schema_ready($pdo))
+          throw new RuntimeException('agent_runs_migration_required');
+        $queued=coreui_agent_run_ensure($pdo,(int)$uid,(string)$consoleSessionId,(int)$id,'base');
+        if (($queued['status']??'')!=='queued'
+            || !coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
+              (string)$queued['run_id'],'queued','running'))
+          throw new RuntimeException('agent_run_already_claimed');
+        $backgroundRunId=(string)$queued['run_id'];
+        $GLOBALS['COREUI_WORK_CONTEXT']=[
+          'user_id'=>(int)$uid,'session_id'=>(string)$consoleSessionId,
+          'turn_id'=>(int)$id,'run_key'=>'base','agent_run_id'=>$backgroundRunId
+        ];
+        $GLOBALS['COREUI_WORK_PDO']=$pdo;
+        if (coreui_task_journal_begin($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,(int)$id,'chat')) {
+          $requirements=coreui_task_journal_requirements_from_goal($message);
+          coreui_task_journal_seed_requirements($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,$requirements);
+        }
+        register_shutdown_function(static function() use ($pdo,$uid,$consoleSessionId,$backgroundRunId):void {
+          try { coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,'running','interrupted','worker_exit'); }
+          catch(Throwable $ignored) {}
+        });
+      } catch(Throwable $e) {
+        error_log('[CoreAI] Detached agent startup: '.get_class($e));
+        ember_generation_lock_release($emberLock ?? null);
+        exit;
+      }
+    }
+    $backgroundSavedId=0;
     $reply = ember_generate_reply(
       $pdo,
       $char,
@@ -10200,7 +10270,7 @@ if ($action === 'send') {
       (int)$id,
       0
     );
-    ember_browse_consume_request(
+    $backgroundBrowsed=ember_browse_consume_request(
       $pdo,
       $channel,
       isset($uid) ? (int)$uid : null,
@@ -10226,7 +10296,7 @@ if ($action === 'send') {
           ? ember_public_thinking_status('complete')
           : null;
         $emberRecipient = ($channel === 'console') ? $uid : null;
-        ember_insert(
+        $backgroundSavedId=ember_insert(
           $pdo,
           $reply,
           $channel,
@@ -10240,8 +10310,45 @@ if ($action === 'send') {
         }
       }
     }
+    if ($backgroundRunId !== '') {
+      $bgBrowseJob=0;
+      if (!empty($backgroundBrowsed)) {
+        $q=$pdo->prepare("SELECT id FROM stu_ember_browse_jobs WHERE channel='console' "
+          . "AND recipient_uid=? AND session_id=? AND trigger_message_id=? "
+          . "ORDER BY id DESC LIMIT 1");
+        $q->execute([(int)$uid,(string)$consoleSessionId,(int)$id]);
+        $bgBrowseJob=(int)($q->fetchColumn() ?: 0);
+      }
+      if ($backgroundSavedId>0) {
+        coreui_work_bind_response($pdo,(int)$uid,(string)$consoleSessionId,
+          (int)$id,'base',$backgroundSavedId);
+        if (!coreui_agent_run_bind_response($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,$backgroundSavedId))
+          throw new RuntimeException('background_response_unconfirmed');
+        $interrupted=($GLOBALS['COREUI_AGENT_TASK_OUTCOME']??'')==='interrupted';
+        coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
+          $backgroundRunId,'running',$interrupted?'interrupted':'completed',
+          $interrupted?'task_incomplete':null);
+      } elseif ($bgBrowseJob>0) {
+        if (!coreui_agent_run_attach_browse($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,$bgBrowseJob))
+          throw new RuntimeException('background_browse_unconfirmed');
+        coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
+          $backgroundRunId,'running','waiting_tool');
+      } else {
+        coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
+          $backgroundRunId,'running','failed','empty_response');
+      }
+      unset($GLOBALS['COREUI_WORK_CONTEXT'],$GLOBALS['COREUI_WORK_PDO']);
+    }
     ember_generation_lock_release($emberLock ?? null);
   } catch (Throwable $e) {
+    if (!empty($backgroundRunId)) {
+      try { coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
+        $backgroundRunId,'running','interrupted','background_exception'); }
+      catch (Throwable $ignored) {}
+    }
+    unset($GLOBALS['COREUI_WORK_CONTEXT'],$GLOBALS['COREUI_WORK_PDO']);
     ember_generation_lock_release($emberLock ?? null);
     // Never break chat on AI issues, but log for debugging.
     if (function_exists('stu__log_error')) {

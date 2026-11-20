@@ -371,7 +371,32 @@ try {
       'running', 'interrupted', 'unconfirmed_restart');
     $priorState = 'interrupted';
   }
-  if ($priorState !== 'queued') {
+  // The only automatic restart permitted after a worker loss is a
+  // server-verified checkpoint with NO unconfirmed side effects. The DB
+  // claim and one-use checkpoint fence occur before any fresh model call.
+  $resumedFromCheckpoint = false;
+  if ($priorState === 'interrupted'
+      && $generationRequest === null && $workRunKey === 'base'
+      && empty($agentRun['response_message_id'])
+      && coreui_task_journal_schema_ready($pdo)) {
+    $safe=coreui_task_journal_resume_check($pdo,(int)$uid,$sessionId,$agentRunId);
+    if (($safe['safe']??false)===true) {
+      try {
+        $receiptContext=coreui_task_journal_resume_context($pdo,(int)$uid,$sessionId,$agentRunId);
+      } catch (Throwable $e) { $receiptContext=''; }
+      if ($receiptContext!=='') {
+        $takeover=coreui_task_journal_resume_claim($pdo,(int)$uid,$sessionId,$agentRunId);
+        if (($takeover['ok']??false)===true) {
+          $resumedFromCheckpoint=true;
+          $priorState='running';
+          $GLOBALS['COREUI_TASK_RESUME_ACTIVE']=true;
+          $GLOBALS['COREUI_TASK_RESUME_STEP']=(int)$takeover['last_step'];
+          $promptMessage .= "\n\n" . $receiptContext . coreui_task_protocol_prompt();
+        }
+      }
+    }
+  }
+  if ($priorState !== 'queued' && !$resumedFromCheckpoint) {
     if ($priorState === 'cancelled') {
       sse_send('cancelled', ['agent_run_id'=>$agentRunId,'status'=>'cancelled']);
     } elseif ($priorState === 'waiting_tool') {
@@ -382,7 +407,8 @@ try {
     ember_generation_lock_release($turnLock);
     exit;
   }
-  if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+  if (!$resumedFromCheckpoint
+      && !coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
       'queued', 'running')) {
     sse_send('busy', ['note'=>'agent_run_claimed']);
     ember_generation_lock_release($turnLock);
@@ -402,6 +428,21 @@ try {
     'run_key'=>$workRunKey
   ];
   $GLOBALS['COREUI_WORK_CONTEXT']['agent_run_id'] = $agentRunId;
+  // The canonical goal remains the already owned user turn, not a model
+  // paraphrase. A missing migration does not break ordinary Q&A, but a
+  // project action cannot be dispatched without its durable claim.
+  $taskJournalReady = coreui_task_journal_begin($pdo, (int)$uid,
+    $sessionId, $agentRunId, $afterId, 'chat');
+  $GLOBALS['COREUI_TASK_JOURNAL_READY'] = $taskJournalReady;
+  if ($taskJournalReady && !$resumedFromCheckpoint) {
+    // The signed-in user's ORIGINAL turn is the only source of explicit
+    // deliverables. A model-authored plan never silently expands this scope.
+    $requirements = coreui_task_journal_requirements_from_goal($message);
+    if (!coreui_task_journal_seed_requirements($pdo, (int)$uid,
+        $sessionId, $agentRunId, $requirements)) {
+      error_log('[CoreAI] Task deliverables could not be seeded');
+    }
+  }
   $GLOBALS['COREUI_WORK_PDO'] = $pdo;
   sse_send('agent_run', ['id'=>$agentRunId,'status'=>'running']);
   $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
@@ -410,7 +451,10 @@ try {
   $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH'] = static function (array $preview): void {
     sse_send('source_preview',$preview);
   };
-  coreui_work_record($pdo, 'run', 'running', 'Auftrag gestartet');
+  coreui_work_record($pdo, 'run', 'running',
+    $resumedFromCheckpoint ? 'Bestaetigter Projektstand wird fortgesetzt' : 'Auftrag gestartet',
+    $resumedFromCheckpoint ? ['reason'=>'task_checkpoint_resumed',
+      'step'=>(int)($GLOBALS['COREUI_TASK_RESUME_STEP']??0)] : []);
 
   $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue' && $composerIntentStream === null)
     ? ember_exact_integer_calculation($promptMessage)
@@ -561,6 +605,49 @@ try {
       ember_agent_allowed_tools((int)$uid,$sessionId,false),
       array_merge(['pfile_read','pfile_edit','pfile_write','prun',
         'pvcs_commit','pvcs_branch','pvcs_merge'],COREUI_PFTOOLS_PROC_KINDS)));
+  }
+  if (!empty($GLOBALS['COREUI_TASK_RESUME_ACTIVE'])) {
+    // On a resumed run, the first model reply is still an active TASK
+    // decision. Never mistake unmarked prose for a completed interrupted
+    // project merely because the SSE stream itself ended successfully.
+    $parseTask = static fn(string $text): array => coreui_task_decision(
+      $text, static fn(string $r): ?array => coreui_agent_next_tool($r,$projectToolAllowed));
+    $decision=$parseTask($reply);
+    if ($decision['kind']==='invalid'
+        && !empty($acc['ok']) && !empty($acc['done'])
+        && empty($acc['truncated']) && isset($model,$sys,$u)
+        && !ember_agent_cancel_requested()) {
+      coreui_work_record($pdo,'model','info','Fortgesetzter Arbeitsauftrag: Entscheidung wird korrigiert',
+        ['reason'=>'task_decision_missing']);
+      $fix=console_stream_ollama($model,$sys,
+        coreui_task_decision_repair_prompt($u),false,null,false,false);
+      if (!empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated'])) {
+        $candidate=ember_sanitize_public_reply((string)($fix['content']??''),
+          (string)($fix['thinking']??''));
+        $repaired=$parseTask($candidate);
+        if ($repaired['kind']!=='invalid') {
+          $decision=$repaired;
+          $reply=$candidate;
+        }
+      }
+    }
+    if ($decision['kind']==='done') {
+      if (coreui_task_journal_can_finish($pdo,(int)$uid,$sessionId,$agentRunId)) {
+        $reply=(string)$decision['text'];
+      } else {
+        $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
+        $reply='Der gespeicherte Projektstand reicht noch nicht fuer einen bestaetigten '
+          . 'Abschluss. Bereits gepruefte Dateien sind erhalten; die Aufgabe bleibt offen.';
+      }
+    } elseif ($decision['kind']==='blocked') {
+      $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
+      $reply=(string)$decision['text'];
+    } elseif ($decision['kind']==='invalid') {
+      $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
+      $reply='Der unterbrochene Projektlauf konnte trotz bestaetigtem Checkpoint '
+        . 'keine gueltige naechste Werkzeugentscheidung liefern. Es wurde '
+        . 'keine alte Dateioperation wiederholt; der Arbeitsstand bleibt erhalten.';
+    }
   }
   $projectToolPending = static function(string $text) use ($projectToolAllowed): bool {
     if ($projectToolAllowed === []) return false;
@@ -932,7 +1019,21 @@ try {
       error_log('[CoreUI] Work events not ready: ' . get_class($eWork));
     }
   }
+  $taskSnapshot = null;
+  if ($agentRunId !== '' && coreui_task_journal_schema_ready($pdo)) {
+    try {
+      $task = coreui_task_journal_get($pdo,(int)$uid,$sessionId,$agentRunId);
+      if (is_array($task)) $taskSnapshot = [
+        'status'=>(string)$task['status'],
+        'phase'=>(string)$task['phase'],
+        'checkpoint_version'=>(int)$task['checkpoint_version'],
+        'last_step'=>(int)$task['last_step'],
+        'last_verified_step'=>(int)$task['last_verified_step'],
+      ];
+    } catch (Throwable $e) { /* history remains authoritative */ }
+  }
   sse_send('done', [
+    'agent_task'   => $taskSnapshot,
     'work_events'   => $workEvents,
     'agent_run_id'  => $agentRunId,
     'text'          => $replyFinal,

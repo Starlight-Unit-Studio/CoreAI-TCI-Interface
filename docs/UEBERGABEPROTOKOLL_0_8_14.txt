@@ -1,0 +1,34 @@
+CoreAI: TCI Interface - Uebergabeprotokoll 0.8.14
+Date: 2026-11-20
+Issue: #374 Architecture: unified durable task orchestrator
+PR: #375
+
+Goal
+Stop patching each new "Continue" phrase. Replace model-prose-driven completions with a persistent server-owned authority and task checkpoint.
+
+Implemented
+- Migration 057_task_journal creates stu_console_task_journal and stu_console_task_actions with owner + session + run scoping, cascade deletion, monotonic checkpoint and unique per-run step number.
+- api/console_task_journal.php stores safe receipts without prompts, source code, stdout, thinking or API secrets. Every project tool is claimed before execution. Verified tool results save a digest; file reads/writes/edits also check actual stored file SHA-256 and revision.
+- api/console_agent_loop.php gates progress on successful journal receipt; a duplicate or ambiguous action is never re-executed.
+- api/chat.php supports both normal CORE CHANNEL workspaces and project chats, and routes detached console replies through the same owner-bound run journal.
+- api/console_agent_runs.php and api/console_stream.php mirror lifecycle and surface verified checkpoint/status. A lost worker produces interrupted, never false completed.
+- A response-less, interrupted base run may be resumed on authenticated chat reconnect if its checkpoint contains verified tool steps and NO previously claimed/uncertain side effects. The takeover is atomic and at most one per checkpoint. No replay of earlier actions. A fresh checkpoint permits a later guarded restart if needed.
+- The resumed model must return a valid tool, explicit DONE, or BLOCKED. DONE after resume is checked against saved evidence.
+- Direct file deliverables explicitly named in the original USER turn are stored and validated against current saved project file SHA-256 values. This is structural validation, NOT full semantic verification of all requested features.
+- js/console-app.js displays server-saved task state and last verified checkpoint in message details on all screen sizes; old chat history remains supported.
+- Native and Docker preflight enforce the new migration and offline contract tests; GitHub CI additionally checks PHP syntax and task journal/run status UI regressions.
+
+Safety invariants
+- No model can invent a project scope or bypass the account/session/project tool allowlist.
+- No arbitrary work-step/time limits or silent truncation of explicitly named deliverables.
+- No automatic replay of uncertain tool side effects or forced duplicate paid inference on the same checkpoint.
+- The model queue and operator's num_ctx and existing local/external provider settings are unchanged.
+- A model's claimed final answer is not evidence of a completed task by itself.
+
+Pending for Issue #374
+- Unified durable goal/dependency manifest for requirements without explicit filenames, including verified tests, HTTP response, preview and export as separate obligations.
+- Apply the same task journal and checkpoints to native plan save/append/build, browser/Playwright, Deep Research, media/image jobs, plus provider-specific failure classification.
+- Full worker restart/resume beyond safe console base runs and the whole global adapter system; live host acceptance after real worker kill at several stages, with zero duplicate writes.
+- Visual project task controls for blocked/paused/waiting/resume and robust multi-worker delivery.
+
+No merge or production deployment until CI and actual server-side Preflight verification. Next version after merge: 0.8.15.
