@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - UEBERGABEPROTOKOLL 0.8.12
+Datum: 20.11.2026
+
+Context
+On 0.8.11, Mara built files in a normal CORE CHANNEL through the external OpenAI-compatible API. Immediately after reading assets/site.css, the next model completion returned no usable content and the 0.8.10 guard reported empty_followup_after_tool. That guard protected persisted files but prematurely ended the autonomous project workflow.
+
+Confirmed implementation
+- api/chat.php calls ember_call_ollama() for each subsequent agent model step, which can return null for HTTP/API failures and for successfully transported empty completions. The initial answer can be streamed by api/console_stream.php; the follow-ups use the synchronous path. No local 8.4K token cap has been demonstrated.
+- api/console_agent_loop.php previously stopped immediately after any such null/blank follow-up.
+- In 0.8.12, only an external 2xx, parsed, completed, transport-OK blank completion can trigger exactly one lean follow-up. The already executed file read/write is NOT replayed; the verified state is reused. Further empty content, rate limit, HTTP failures or cancellations stop honestly.
+- Recovery prompts keep the latest tool result intact and replace older successful large results with verifiable length/digest receipts; files can be reread. Normal successful operation retains its previous full prompt behavior. This is NOT a project step cap or output limit.
+- Safe provider diagnostics are placed in bounded work event metadata (provider/http_code/curl_errno/done_reason/prompt_eval_count/eval_count).
+- Regression suites: scripts/agent-loop-selftest.php, scripts/external-provider-selftest.php, scripts/work-events-selftest.php, scripts/work-events-ui-selftest.js.
+
+Acceptance
+1. Verify PHP syntax, work events, external-provider integration and agent loop tests, and both scripts/preflight.sh and scripts/preflight-native.sh.
+2. Verify VERSION 0.8.12, release metadata, deterministic JS cache-bust and all CI checks before merge. Do not merge while tests fail.
+3. Live: validate the selected external model, actual HTTP status, done/finish_reason and token usage on failed follow-ups. Reproduce project completion in normal chat and project chat.
+4. No model selection UX adjustments in this PR: the Core chip change belongs to the operator's separate work.
+5. Preserve the global serial model queue and paid API limits. No automatic retries on 429 or unknown provider failures.
+
+Next version after merge: 0.8.13.
