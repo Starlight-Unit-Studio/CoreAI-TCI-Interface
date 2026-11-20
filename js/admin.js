@@ -130,6 +130,7 @@
         });
       });
       fillRuntime(runtimeState);
+      showExternal(data.external || null);
       showGuestGuard(data.client_address || null);
     }).catch(function (error) { show('Übersicht: ' + error.message, true); });
   }
@@ -902,6 +903,59 @@
     document.getElementById('externalModel').value = settings.external_api_model || '';
   }
 
+  // 0.8.11: the external adapter: what is missing, or ready; the key is never shown.
+  var EXTERNAL_MISSING = {
+    base_url: 'Base-URL fehlt',
+    base_url_invalid: 'Base-URL ungültig (HTTPS, oder http nur zu 127.0.0.1/localhost)',
+    model: 'Core-Name fehlt',
+    model_invalid: 'Core-Name ungültig',
+    key: 'Schlüssel fehlt auf dem Server (COREUI_EXTERNAL_API_KEY oder STU_EXTERNAL_API_KEY)'
+  };
+  function showExternal(external) {
+    var status = document.getElementById('externalStatus');
+    if (!status || !external) return;
+    if (external.status === 'ready') {
+      status.textContent = 'Bereit: ' + (external.label || 'Externe API') + ' mit ' + external.model
+        + '. Inhaber und Admins können ihn unter Einstellungen > KI-Profil als Core-Pfad wählen.';
+    } else if (external.status === 'disabled') {
+      status.textContent = 'Aus. Alle Konten nutzen ihren lokalen Core.'
+        + (external.key_configured ? '' : ' Auf dem Server ist noch kein Schlüssel gesetzt.');
+    } else {
+      status.textContent = 'Noch nicht vollständig: ' + (external.missing || []).map(function (key) {
+        return EXTERNAL_MISSING[key] || key;
+      }).join(', ') + '. Bis dahin bleibt jedes Konto lokal.';
+    }
+  }
+  var EXTERNAL_TEST = {
+    not_configured: 'Erst vollständig einrichten und speichern.',
+    unreachable: 'Der Anbieter ist nicht erreichbar (Adresse, DNS oder Netz).',
+    key_refused: 'Der Anbieter lehnt den Schlüssel ab.',
+    rate_limited: 'Der Anbieter bremst gerade (zu viele Anfragen oder kein Guthaben).',
+    http_error: 'Der Anbieter antwortet mit einem Fehler.',
+    model_listed: 'Verbindung steht; der Core steht in der Liste des Anbieters.',
+    model_not_listed: 'Verbindung steht, aber der Core steht nicht in der Liste des Anbieters. Bitte den Core-Namen prüfen.',
+    no_model_list: 'Verbindung steht; der Anbieter zeigt keine Liste, der Core wird beim ersten Chat geprüft.'
+  };
+  function testExternal() {
+    var button = document.getElementById('externalTest');
+    var out = document.getElementById('externalTestResult');
+    button.disabled = true;
+    out.hidden = false;
+    out.textContent = 'Prüfe die Verbindung …';
+    post('external_api_test', {}).then(function (data) {
+      var t = data.test || {};
+      showExternal(data.external || null);
+      var text = EXTERNAL_TEST[t.reason] || ('Ergebnis: ' + (t.reason || 'unbekannt'));
+      if (t.http_code) text += ' (HTTP ' + t.http_code + (t.elapsed_ms ? ', ' + t.elapsed_ms + ' ms' : '') + ')';
+      if (t.message) text += ' Anbieter: ' + t.message;
+      out.textContent = text;
+      out.classList.toggle('is-error', !t.ok);
+    }).catch(function (error) {
+      out.textContent = 'Prüfung fehlgeschlagen: ' + error.message;
+      out.classList.add('is-error');
+    }).then(function () { button.disabled = false; });
+  }
+
   function saveRuntime() {
     var settings = {
       registration_enabled: document.getElementById('registrationEnabled').checked ? '1' : '0',
@@ -934,7 +988,13 @@
       runtimeState = data.settings || settings;
       fillRuntime(runtimeState);
       show('Runtime-Einstellungen gespeichert.');
-    }).catch(function (error) { show('Runtime: ' + error.message, true); });
+      // The adapter's status follows the saved fields.
+      return api('overview').then(function (fresh) { showExternal(fresh.external || null); });
+    }).catch(function (error) {
+      var known = { external_url_requires_https: 'Die Base-URL braucht HTTPS (http nur zu 127.0.0.1 oder localhost).',
+        external_model_invalid: 'Der Core-Name darf nur Buchstaben, Ziffern und ._:/@+- enthalten.' };
+      show('Runtime: ' + (known[error.message] || error.message), true);
+    });
   }
 
   function loadLogs() {
@@ -980,6 +1040,7 @@
     document.getElementById('reloadLore').addEventListener('click', function () { loadLore(false); });
     document.getElementById('searchLore').addEventListener('click', function () { loadLore(true); });
     document.getElementById('saveRuntime').addEventListener('click', saveRuntime);
+    document.getElementById('externalTest').addEventListener('click', testExternal);
     document.getElementById('saveRuntimeAccess').addEventListener('click', saveRuntime);
     document.getElementById('reloadLogs').addEventListener('click', loadLogs);
     document.getElementById('clearLogs').addEventListener('click', clearLogs);

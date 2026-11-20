@@ -161,8 +161,8 @@ if (getenv('COREUI_SELFTEST_DB') === '1') {
 $read = static fn(string $f): string => (string)file_get_contents($root . '/' . $f);
 $chat = $read('api/chat.php');
 p_test(str_contains($chat, "require_once __DIR__ . '/usage_store.php';")
-  && str_contains($chat, "coreui_usage_record_call(\$model, (int)\$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],"), 'chat.php counts');
-p_test(str_contains($read('api/console_stream.php'), "coreui_usage_record_call(\$model, \$promptEvalCount, \$evalCount, \$payload['think'] ?? false);"), 'stream counts');
+  && str_contains($chat, "coreui_usage_record_call(\$wire['model'], (int)\$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],"), 'chat.php counts');
+p_test(str_contains($read('api/console_stream.php'), "coreui_usage_record_call(\$wire['model'], \$promptEvalCount, \$evalCount, \$wire['external'] ? false : (\$payload['think'] ?? false));"), 'stream counts');
 $endpoint = $read('api/profile_stats.php');
 p_test(str_contains($endpoint, "'guest_not_allowed'") && str_contains($endpoint, 'coreui_profile_stats($pdo, $uid, $assistantId)')
   && str_contains($endpoint, "header('Allow: GET');"), 'endpoint: own data, no guests, GET only');

@@ -3823,7 +3823,11 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     && preg_match('~^[A-Za-z0-9][A-Za-z0-9._-]{0,90}\\.(?:html?|css|js|json|svg)$~D',
       (string)($sourcePreview['file_name'] ?? '')) === 1;
   if ($previewActive) $payload['stream'] = true;
-  $body = json_encode($payload, $flags);
+  // 0.8.11: an external OpenAI-compatible API instead of Ollama when this account chose it; only the
+  // endpoint changes, the answer comes back in Ollama's shape (api/model_provider.php).
+  $wire = coreui_provider_wire(coreui_provider_active(), $url, $payload, $model);
+  $url = $wire['url'];
+  $body = json_encode($wire['body'], $flags);
   if ($body === false) {
     if (function_exists('stu__log_error')) {
       stu__log_error([
@@ -3838,10 +3842,12 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
 
   $ch = curl_init($url);
   if (!$ch) return null;
+  // The external API has no local window or output cap of the chosen Core.
+  if ($wire['external']) unset($options['num_predict']);
 
   $GLOBALS['STU_EMBER_LAST_CALL'] = [
     'ok' => false,
-    'model' => $model,
+    'model' => $wire['model'],
     'url' => $url,
     'code' => 0,
     'err' => '',
@@ -3856,9 +3862,9 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+    CURLOPT_HTTPHEADER => $wire['headers'],
     CURLOPT_POSTFIELDS => $body,
-    CURLOPT_CONNECTTIMEOUT => 2,
+    CURLOPT_CONNECTTIMEOUT => $wire['external'] ? 10 : 2,
     // Der alte 480s-Deckel widersprach ember_timeout_for_model() und schnitt
     // insbesondere Mehrbild-Videoanalyse ab. PHP-FPM und Nginx sind auf 900s
     // abgestimmt, deshalb darf auch der Ollama-Call diesen Rahmen nutzen.
@@ -3876,7 +3882,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   if ($modelSlot === false) {
     curl_close($ch);
     $GLOBALS['STU_EMBER_LAST_CALL'] = [
-      'ok'=>false, 'model'=>$model, 'url'=>$url, 'code'=>0,
+      'ok'=>false, 'model'=>$wire['model'], 'url'=>$url, 'code'=>0,
       'err'=>'model_queue_timeout', 'done_seen'=>false, 'done'=>null,
       'done_reason'=>'', 'eval_count'=>0, 'prompt_eval_count'=>0,
       'num_predict'=>(int)($options['num_predict'] ?? 0),
@@ -3923,16 +3929,18 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
         if (isset($json['prompt_eval_count'])) $previewPromptEval = (int)$json['prompt_eval_count'];
       };
       curl_setopt($ch,CURLOPT_RETURNTRANSFER,false);
-      curl_setopt($ch,CURLOPT_WRITEFUNCTION,static function ($handle,string $chunk) use (&$previewBuffer,$consumePreview): int {
+      $feed = $wire['feed'];
+      curl_setopt($ch,CURLOPT_WRITEFUNCTION,static function ($handle,string $chunk) use (&$previewBuffer,$consumePreview,$feed): int {
         $previewBuffer .= $chunk;
         while (($nl = strpos($previewBuffer,"\n")) !== false) {
-          $consumePreview(substr($previewBuffer,0,$nl));
+          foreach ($feed(substr($previewBuffer,0,$nl)) as $line) $consumePreview($line);
           $previewBuffer = substr($previewBuffer,$nl+1);
         }
         return strlen($chunk);
       });
       $raw = curl_exec($ch);
-      if (trim($previewBuffer) !== '') $consumePreview($previewBuffer);
+      if (trim($previewBuffer) !== '') foreach ($feed($previewBuffer) as $line) $consumePreview($line);
+      foreach ($wire['finish']() as $line) $consumePreview($line);
       $raw = $raw === false ? false : json_encode(['message'=>['content'=>$previewContent,
         'thinking'=>$previewThinking],'done'=>$previewDone ?? false,
         'done_reason'=>$previewDoneReason,'eval_count'=>$previewEval,
@@ -3940,6 +3948,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
       $publish(['phase'=>'end','file_name'=>$fileName,'attempt'=>$attemptNo]);
     } else {
       $raw = curl_exec($ch);
+      if (is_string($raw) && $raw !== '') $raw = $wire['decode']($raw);
     }
     $err = curl_error($ch);
     $curlErrno = curl_errno($ch);
@@ -3952,7 +3961,8 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
 
   $GLOBALS['STU_EMBER_LAST_CALL'] = [
     'ok' => ($raw !== false && $raw !== '' && $code >= 200 && $code < 300),
-    'model' => $model,
+    'model' => $wire['model'],
+    'provider' => $wire['external'] ? 'external' : 'ollama',
     'url' => $url,
     'code' => $code,
     'err' => $err,
@@ -3990,7 +4000,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
         'api_err' => $apiErr,
         'url'  => $url,
         'mode' => $isChat ? 'chat' : 'generate',
-        'model'=> $model,
+        'model'=> $wire['model'],
         'resp_snip' => $snippet,
       ], $promptMeta));
     }
@@ -4012,10 +4022,11 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   $GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'] = max(0, (int)($j['prompt_eval_count'] ?? 0));
   // 0.6.84: Settings > Profil counts the tokens of the account's calls (numbers only).
   if (function_exists('coreui_usage_record_call')) {
-    coreui_usage_record_call($model, (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],
-      (int)$GLOBALS['STU_EMBER_LAST_CALL']['eval_count'], $payload['think'] ?? false);
+    coreui_usage_record_call($wire['model'], (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],
+      (int)$GLOBALS['STU_EMBER_LAST_CALL']['eval_count'], $wire['external'] ? false : ($payload['think'] ?? false));
   }
-  $GLOBALS['STU_EMBER_LAST_CALL']['context_tokens'] = (int)(ember_ollama_context_observe(
+  // A local window is learnt only from local Ollama answers.
+  $GLOBALS['STU_EMBER_LAST_CALL']['context_tokens'] = $wire['external'] ? 0 : (int)(ember_ollama_context_observe(
     $model, (string)$GLOBALS['STU_EMBER_LAST_CALL']['done_reason'],
     (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],
     (int)$GLOBALS['STU_EMBER_LAST_CALL']['eval_count'],

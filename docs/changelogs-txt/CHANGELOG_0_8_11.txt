@@ -1,0 +1,54 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.11
+Datum: 20.11.2026
+
+EXTERNER OPENAI-KOMPATIBLER ADAPTER FERTIG (CF-003, CF-005)
+- Der seit 0.3.0 vorbereitete Adapter funktioniert jetzt. Einrichtung im
+  Admin Core > Betrieb > Externer Adapter: Anzeigename, Base-URL (HTTPS,
+  oder http nur zu 127.0.0.1/localhost), Core-Name beim Anbieter. Der
+  Schluessel bleibt auf dem Server (COREUI_EXTERNAL_API_KEY oder
+  STU_EXTERNAL_API_KEY).
+- Die Karte zeigt, was fehlt. "Verbindung pruefen" fragt den Anbieter mit
+  dem Schluessel nach seiner Modellliste, ohne Tokens (Schluessel
+  abgelehnt, nicht erreichbar, Grenze, Core nicht gelistet).
+
+FUER GEGENTESTS
+- Inhaber und Admins waehlen unter Einstellungen > KI-Profil (Expert) den
+  Core-Pfad "Externe API". Normale Konten und Gaeste nicht (Server lehnt
+  ab und bleibt bei jedem Zug lokal).
+- Nur der Endpunkt wechselt: Prompt, Skills, Projektwerkzeuge,
+  Arbeitsschleife, serielle Modellwarteschlange, Abbruch und Zeitgrenzen
+  bleiben wie beim gewaehlten lokalen Core. So laesst sich ein Fehler mit
+  einem Cloud-Core nachstellen und das lokale Modell als Ursache ein- oder
+  ausschliessen.
+- Jeder Aufruf steht im Arbeitsweg und in der Nutzung als
+  "extern:<modell>".
+
+UEBERSETZUNG
+- Beide Modellaufrufe (synchron samt gestreamter Dateivorschau, und der
+  SSE-Weg) senden OpenAI-chat/completions (Nachrichten, Bilder als
+  data-URL, temperature, top_p, seed, stop) und wandeln Antwort und
+  Ereignisstrom zurueck in Ollamas Form: Inhalt, reasoning_content bzw.
+  reasoning als Denken, Abschlussgrund (abgeschnittene Antwort wird
+  erkannt), Token-Zaehlung, Fehler des Anbieters. Ein abgebrochener Strom
+  bleibt unvollstaendig.
+- Nicht gesendet: Denken an/aus und Denkaufwand, keep_alive,
+  Kontextfenster, Ausgabegrenze, top_k und Tuning-Optionen. Das lokale
+  Kontextfenster wird aus externen Antworten nicht gelernt.
+
+SICHERHEIT
+- Der Schluessel wird nur beim Bau einer Anfrage gelesen und nur im
+  Authorization-Header gesendet. Fehlermeldungen des Anbieters werden
+  gekuerzt, schluesselartige Zeichenfolgen entfernt, bevor sie ins
+  Protokoll oder in den Admin Core gelangen. Base-URLs mit Zugangsdaten,
+  Query oder Fragment werden abgelehnt.
+
+BLEIBT LOKAL
+- Hoeren (Mitschrift), Live-Gespraech, Browser-Recherche und Bilder.
+
+TESTS
+- Neu: scripts/external-provider-selftest.php (Uebersetzung, Freigabe,
+  Verbindungstest, Ende zu Ende gegen einen OpenAI-kompatiblen
+  Stand-in-Server auf 127.0.0.1 mit echtem ember_call_ollama() und
+  console_stream_ollama()), in beiden Preflights mit englischer Meldung.
+- profile-stats-selftest.php folgt der neuen Zaehl-Verdrahtung, ohne
+  schwaechere Pruefung.

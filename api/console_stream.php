@@ -1082,7 +1082,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
 
   $flags = JSON_UNESCAPED_UNICODE;
   if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) $flags |= JSON_INVALID_UTF8_SUBSTITUTE;
-  $body = json_encode($payload, $flags);
+  // 0.8.11: an external OpenAI-compatible API instead of Ollama when this account chose it; its
+  // event stream is turned into Ollama lines, so everything below stays (api/model_provider.php).
+  $wire = coreui_provider_wire(coreui_provider_active(), $url, $payload, $model);
+  $body = json_encode($wire['body'], $flags);
+  $feed = $wire['feed'];
 
   $thinkingAcc = '';
   $contentAcc  = '';
@@ -1125,14 +1129,14 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
 
   $workDb = $GLOBALS['COREUI_WORK_PDO'] ?? null;
   if ($workDb instanceof PDO) {
-    coreui_work_record($workDb, 'model', 'info', 'Modellstream vorbereitet', ['model'=>$model]);
+    coreui_work_record($workDb, 'model', 'info', 'Modellstream vorbereitet', ['model'=>$wire['model']]);
   }
-  $ch = curl_init($url);
+  $ch = curl_init($wire['url']);
   curl_setopt_array($ch, [
     CURLOPT_POST           => true,
-    CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+    CURLOPT_HTTPHEADER     => $wire['headers'],
     CURLOPT_POSTFIELDS     => $body,
-    CURLOPT_CONNECTTIMEOUT => 3,
+    CURLOPT_CONNECTTIMEOUT => $wire['external'] ? 10 : 3,
     CURLOPT_TIMEOUT        => $timeoutOverride === null
       ? max(30, min(900, ember_timeout_for_model($model)))
       : max(30, min(240, $timeoutOverride)),
@@ -1155,12 +1159,12 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       return 0;
     },
     // Ollama streamt NDJSON: eine JSON-Zeile pro Token-Schritt.
-    CURLOPT_WRITEFUNCTION  => static function ($ch, $chunk) use (&$buf, $consumeLine, &$lastHeartbeat) {
+    CURLOPT_WRITEFUNCTION  => static function ($ch, $chunk) use (&$buf, $consumeLine, $feed, &$lastHeartbeat) {
       $buf .= $chunk;
       while (($nl = strpos($buf, "\n")) !== false) {
         $line = substr($buf, 0, $nl);
         $buf  = substr($buf, $nl + 1);
-        $consumeLine($line);
+        foreach ($feed($line) as $translated) $consumeLine($translated);
         $now = microtime(true);
         if (($now - $lastHeartbeat) >= 10.0) {
           $lastHeartbeat = $now;
@@ -1183,10 +1187,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   $modelStartedAt = microtime(true);
   try {
     if ($workDb instanceof PDO) {
-      coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$model]);
+      coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$wire['model']]);
     }
     $curlOk = curl_exec($ch);
-    if (trim($buf) !== '') $consumeLine($buf);
+    if (trim($buf) !== '') foreach ($feed($buf) as $translated) $consumeLine($translated);
+    foreach ($wire['finish']() as $translated) $consumeLine($translated);
     $curlErrno = curl_errno($ch);
     $curlError = curl_error($ch);
     $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -1197,7 +1202,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   // Model time covers the actual provider request, not the preceding queue.
   $modelDurationMs = max(0, (int)round((microtime(true) - $modelStartedAt) * 1000));
 
-  $numPredict = (int)($options['num_predict'] ?? 0);
+  // The external API has no local window or output cap of the chosen Core.
+  $numPredict = $wire['external'] ? 0 : (int)($options['num_predict'] ?? 0);
   $reasonLower = strtolower($doneReason);
   $truncated = in_array($reasonLower, ['length', 'max_tokens', 'token_limit'], true)
     || ($numPredict > 0 && $evalCount >= $numPredict)
@@ -1211,7 +1217,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     && $done;
   // Prompt plus answer filling the local window is a different cause than
   // an explicit output cap; show and remember it instead of guessing.
-  $contextTokens = $truncated
+  $contextTokens = $truncated && !$wire['external']
     ? (int)(ember_ollama_context_observe($model, $doneReason, $promptEvalCount, $evalCount, $numPredict) ?? 0)
     : 0;
 
@@ -1234,7 +1240,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
 
   // 0.6.84: Settings > Profil counts the tokens of the account's calls (numbers only).
   if (function_exists('coreui_usage_record_call')) {
-    coreui_usage_record_call($model, $promptEvalCount, $evalCount, $payload['think'] ?? false);
+    coreui_usage_record_call($wire['model'], $promptEvalCount, $evalCount, $wire['external'] ? false : ($payload['think'] ?? false));
   }
   if ($workDb instanceof PDO) {
     // A completed HTTP exchange can still stop at an output-token limit.
@@ -1243,7 +1249,7 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       $truncated ? 'info' : ($ok ? 'success' : 'error'),
       $truncated ? 'Modellstream abgeschnitten'
         : ($ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen'),
-      ['model'=>$model,'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
+      ['model'=>$wire['model'],'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
         'reason'=>$truncated ? ($contextTokens > 0 ? 'context_window_full' : 'output_truncated')
           : ($ok ? 'completed' : 'request_failed'),
         'done_reason'=>$doneReason, 'eval_count'=>$evalCount,

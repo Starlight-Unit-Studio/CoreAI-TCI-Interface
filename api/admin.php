@@ -709,12 +709,13 @@ if ($action === 'settings_save') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);
     }
+    // 0.8.11: https, or http only to this machine (a local proxy); no login or query in the address.
     if ($key === 'external_api_base_url' && $value !== '') {
-      $valid = filter_var($value, FILTER_VALIDATE_URL);
-      if (!$valid || strtolower((string)parse_url($value, PHP_URL_SCHEME)) !== 'https') {
-        stu_json(['ok' => false, 'error' => 'external_url_requires_https'], 400);
-      }
-      $value = rtrim($value, '/');
+      $value = coreui_provider_base_url($value);
+      if ($value === '') stu_json(['ok' => false, 'error' => 'external_url_requires_https'], 400);
+    }
+    if ($key === 'external_api_model' && $value !== '' && coreui_provider_model_name($value) === '') {
+      stu_json(['ok' => false, 'error' => 'external_model_invalid'], 400);
     }
     if (in_array($key, ['external_api_label', 'external_api_model'], true)) {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 160, 'UTF-8');
@@ -725,6 +726,15 @@ if ($action === 'settings_save') {
   }
   coreui_admin_audit($pdo, $actorId, 'settings_save', 'app_settings', '', ['keys' => array_keys($saved)]);
   stu_json(['ok' => true, 'settings' => coreui_admin_setting_rows($pdo)]);
+}
+
+// 0.8.11: Admin Core > Externer Adapter > Verbindung prüfen. Asks the provider for its model list
+// with the server key (no model is asked anything, no tokens); the key never leaves the server.
+if ($action === 'external_api_test') {
+  $result = coreui_provider_test(coreui_ai_external_capability($pdo), coreui_provider_key());
+  coreui_admin_audit($pdo, $actorId, 'external_api_test', 'app_settings', 'external_api',
+    ['ok' => !empty($result['ok']), 'reason' => (string)($result['reason'] ?? ''), 'http_code' => (int)($result['http_code'] ?? 0)]);
+  stu_json(['ok' => true, 'test' => $result, 'external' => coreui_ai_external_capability($pdo)]);
 }
 
 // 0.6.82: E-Mail-Versand (SMTP) set up in Admin Core, Inhaber only. The server configuration

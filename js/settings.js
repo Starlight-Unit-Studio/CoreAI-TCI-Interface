@@ -632,16 +632,24 @@
       }
       // 0.5.79: the Core is chosen in the chat menu; the window estimate follows it.
       selectedModelOverride = s.model_override || '';
-      var externalConfigured = data.external && data.external.configured === true;
+      // 0.8.11: the external API once the adapter is configured, for the Inhaber and Admins.
+      var external = data.external || {};
+      var externalConfigured = external.configured === true;
+      var externalUsable = externalConfigured && external.allowed === true;
       if (aiProvider) {
         var externalOption = aiProvider.querySelector('option[value="external"]');
-        if (externalOption) externalOption.disabled = !externalConfigured;
-        aiProvider.value = externalConfigured && s.provider === 'external' ? 'external' : 'local';
+        if (externalOption) {
+          externalOption.disabled = !externalUsable;
+          externalOption.textContent = externalUsable
+            ? 'EXTERNE API // ' + String(external.label || 'OpenAI-kompatibel').toUpperCase() + ' (' + external.model + ')'
+            : (externalConfigured ? 'EXTERNE API // NUR INHABER UND ADMINS' : 'EXTERNE API // NICHT EINGERICHTET');
+        }
+        aiProvider.value = externalUsable && s.provider === 'external' ? 'external' : 'local';
       }
       if (externalNote) {
         var p = externalNote.querySelector('p');
-        if (p && data.external && data.external.enabled && !externalConfigured) {
-          p.textContent = 'Der externe Adapter ist im Adminbereich aktiviert, aber noch nicht vollständig mit HTTPS-Endpunkt, Core und serverseitigem Schlüssel konfiguriert. CoreAI: TCI Interface bleibt deshalb sicher auf lokalem Ollama.';
+        if (p && external.enabled && !externalConfigured && external.allowed) {
+          p.textContent = 'Der externe Adapter ist im Admin Core aktiviert, aber noch nicht vollständig eingerichtet (Base-URL, Core-Name und Schlüssel auf dem Server). Bis dahin bleibt dein Konto auf lokalem Ollama.';
         }
       }
       updatePromptCounter();

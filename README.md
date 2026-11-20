@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.10`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.11`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -195,8 +195,19 @@ CoreAI has its **own HTTP/SSE application API** for local inference, research, i
 | **Hugging Face GGUFs (via Ollama)** | **Public GGUF discovery and local install integrated** | One combined Core search lists public Hub GGUF repositories and verified single-file variants. These install locally into Ollama using the established worker; installed models can be authorized and selected as regular chat Cores. Private/gated models need a future protected authorization flow. Repository/model licensing remains the operator's responsibility. |
 | **TCI Original / Uncensored variants** | **Integrated (admin)** | In **Manage Cores**, the operator binds an installed local Ollama tag to each TCI tier. The chat displays one tier entry, not an extra model gallery. |
 | **Ollama Cloud tags** | **Optional** | Available only through a suitable configured Ollama runtime/account, with the remote provider's terms and availability. A cloud model is not equivalent to local/offline processing. |
-| **Generic OpenAI-compatible external API** | **Prepared, not activated** | Admin Core can store an HTTPS endpoint, label and model name, with server-side key configuration. The provider adapter currently reports `adapter_reserved` and is intentionally not available as a working chat model. |
-| **Direct OpenAI, Anthropic, Gemini and other hosted API adapters** | **Not generally shipped** | The roadmap may reference these services or their architectures; an API key alone does not create a tested account integration. |
+| **Generic OpenAI-compatible external API** | **Optional (owner/admin)** | Any service with an OpenAI-compatible `chat/completions` endpoint (hosted APIs, OpenRouter-style gateways, or a local proxy such as LiteLLM on the same machine). See *External API adapter* below. |
+| **Direct OpenAI, Anthropic, Gemini and other native API formats** | **Not shipped** | Only the OpenAI-compatible format is implemented. Providers that offer an OpenAI-compatible endpoint can be used through the generic adapter; their native APIs, tool calling and provider-specific options are not. |
+
+### External API adapter
+
+The adapter lets the owner and admins send their own chats to a hosted Core, for example to compare a run with the local Core and rule the model in or out as the cause of a fault.
+
+- **Setup (owner or admin):** In **Admin Core > Operations > External adapter**, switch the adapter on and enter a display name, the base URL (HTTPS, or `http://` only to `127.0.0.1`/`localhost`) and the provider's model name. The API key is never entered in the browser: set `COREUI_EXTERNAL_API_KEY` in the environment or `define('STU_EXTERNAL_API_KEY', '...');` in `api/config.local.php`. **Check connection** asks the provider for its model list with that key (no tokens are used) and reports whether the key is accepted and the model is listed.
+- **Use:** The owner and admins choose **External API** as the Core path under **Settings > AI profile** (Expert). Other accounts and guests cannot select it.
+- **What changes:** Only the inference endpoint. The prompt, skills, project tools, work loop, serial model queue, cancelling and time limits stay exactly as with the chosen local Core. Each call appears in the work timeline as `extern:<model>`. Reasoning that a provider returns as `reasoning_content` or `reasoning` is treated like local thinking; token counts come from the provider's usage report.
+- **What is not sent:** Ollama-only settings (thinking switch and level, `keep_alive`, context window, output limit, `top_k` and tuning options). The local context window and output limit of the chosen Core do not apply to the provider.
+- **What stays local:** Voice transcription, live voice conversation, the browser research worker and image generation.
+- **Privacy:** Prompts, chat history and project file contents of these accounts go to the configured provider and are subject to its terms. Error messages are shortened and keys are removed before anything is logged.
 
 A Core can have text, tools, image understanding, speech or other capabilities only when its **actual model implementation supports them**. A tier name, license acceptance or installation alone does not guarantee those modalities. The owner can enable/disable available models and tools independently.
 
