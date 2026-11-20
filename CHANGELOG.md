@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.8.13 - 20.11.2026
+
+- **Shared task-control protocol:** Tool-driven project work now requires an explicit next allowed tool, a declared blocker, or a terminal completion marker instead of mistaking arbitrary prose for a finished task. This is independent of language, local/remote model and file type.
+- **One safe format repair:** Missing or malformed control decisions cause one same-turn decision-only correction. No already verified file, command or server action is replayed. On repeated invalid output, the run is marked interrupted and saved files are retained.
+- **Real completion evidence:** A model assertion cannot complete an agent run without at least one confirmed successful tool result, or while a file edit remains unresolved. Model text alone is not a verification of the entire original goal.
+- **Run state correctness:** An interruption message is saved for the user, but the agent run remains interrupted rather than completed. Interrupted runs receive a terminal timestamp. Existing explicit cancellation, tool failures, external empty-response recovery and model queue remain intact.
+- **Regression tests:** Multi-step tool dispatch, malformed prose in German and English, repaired next action, a real terminal response, missing/failed evidence, and backward-compatible research chains.
+- **Follow-up architecture:** Server-owned goal manifests and durable checkpoints are still needed for full objective-by-objective completion validation and restart across worker deaths. This release does not claim those features.
+
 ## 0.8.12 - 20.11.2026
 
 - **Autonomous external API follow-up recovery:** A completed but empty OpenAI-compatible reply after a verified project tool step can now be requested once again with a compact, auditable project history. Already completed file operations are not replayed.
