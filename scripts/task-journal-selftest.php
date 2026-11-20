@@ -57,6 +57,21 @@ final class JournalFakeStatement extends PDOStatement {
         $this->changed=1;
       }
       unset($row);
+    } elseif (str_contains($this->sql,"UPDATE stu_console_agent_runs SET status='running'")) {
+      [$run,$uid,$sid]=$p;
+      if ($run===$this->db->runId && $uid===7 && $sid==='session_demo'
+          && $this->db->runStatus==='interrupted') {
+        $this->db->runStatus='running';$this->changed=1;
+      }
+    } elseif (str_contains($this->sql,'resume_checkpoint_version=checkpoint_version')) {
+      [$run,$uid,$sid,$version]=$p;
+      if ($run===$this->db->runId && $uid===7 && $sid==='session_demo'
+          && $this->db->journal[$run]['status']==='interrupted'
+          && $this->db->journal[$run]['checkpoint_version']===$version) {
+        $this->db->journal[$run]['status']='running';
+        $this->db->journal[$run]['resume_checkpoint_version']=$version;
+        $this->changed=1;
+      }
     } elseif (str_contains($this->sql,'UPDATE stu_console_task_journal SET status=')) {
       [$status,$phase,$error,$finished,$run,$uid,$sid]=$p;
       if ($run===$this->db->runId && $uid===7 && $sid==='session_demo') {
@@ -87,6 +102,14 @@ final class JournalFakeStatement extends PDOStatement {
       if ($run===$this->db->runId && $uid===7 && $sid==='session_demo'
           && isset($this->db->actions[$run][$step]))
         $this->rows=[$this->db->actions[$run][$step]];
+    } elseif (str_contains($this->sql,'FROM stu_console_agent_runs WHERE run_id=')) {
+      [$run,$uid,$sid]=$p;
+      if ($run===$this->db->runId && $uid===7 && $sid==='session_demo')
+        $this->rows=[[
+          'run_id'=>$run,'turn_id'=>23,'run_key'=>'base',
+          'status'=>$this->db->runStatus,'response_message_id'=>null,
+          'cancel_requested_at'=>null
+        ]];
     } elseif (str_contains($this->sql,'FROM stu_console_task_journal')) {
       if (count($p)===4) [$run,$uid,$sid,$turn]=$p;
       else {[$run,$uid,$sid]=$p;$turn=23;}
@@ -107,6 +130,7 @@ final class JournalFakeStatement extends PDOStatement {
 final class JournalFakePDO extends PDO {
   public array $journal=[],$actions=[],$queries=[];
   public string $runId;
+  public string $runStatus='running';
   private bool $tx=false;
   public function __construct(string $runId){$this->runId=$runId;}
   public function query(string $query,?int $fetchMode=null,mixed ...$fetchModeArgs):PDOStatement|false {
@@ -150,7 +174,19 @@ journal_test(coreui_task_journal_resume_check($db,7,'session_demo',$run)['reason
 coreui_task_journal_sync($db,7,'session_demo',$run,'interrupted','worker_lost');
 journal_test(coreui_task_journal_resume_check($db,7,'session_demo',$run)['safe']===true,
   'interrupted verified checkpoint is safe for model-side continuation');
-// Simulate an owner-checked recovery claim for the next distinct operation.
+// The same automatic attempt can be claimed once, atomically. A second
+// reconnect cannot re-bill tokens or replay an already completed file.
+$db->runStatus='interrupted';
+$resume=coreui_task_journal_resume_claim($db,7,'session_demo',$run);
+journal_test(($resume['ok']??false)===true && $db->runStatus==='running'
+  && ($db->journal[$run]['resume_checkpoint_version']??-1)===1,
+  'authenticated SSE takeover claims one verified checkpoint exactly once');
+$db->runStatus='interrupted';
+coreui_task_journal_sync($db,7,'session_demo',$run,'interrupted','worker_lost');
+journal_test(coreui_task_journal_resume_check($db,7,'session_demo',$run)['reason']==='checkpoint_already_resumed'
+  && (coreui_task_journal_resume_claim($db,7,'session_demo',$run)['ok']??false)===false,
+  'same checkpoint cannot trigger another paid recovery without new progress');
+$db->runStatus='running';
 coreui_task_journal_sync($db,7,'session_demo',$run,'running');
 $command=['tool'=>'prun','input'=>'npm test'];
 journal_test(coreui_task_journal_claim($db,7,'session_demo',$run,2,$command)['status']==='claimed',
