@@ -6976,6 +6976,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static fn(string $prompt): ?string => ember_generated_image_review($pdo, $consoleUid,
           $primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel)),
         static fn(): array => ember_agent_followup_last_call());
+      // Carry the tool-run outcome to the single server-owned run state.
+      // A saved interruption notice must not be counted as completed work.
+      $GLOBALS['COREUI_AGENT_TASK_OUTCOME'] = (string)($loop['outcome'] ?? 'completed');
       if ($loop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
         return null;
