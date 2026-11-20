@@ -284,7 +284,7 @@ loop_test(coreui_agent_edit_failure_reason('Die Datei x wurde NICHT geaendert: K
 // file work. Once an actual edit is saved, its failure counter is cleared.
 $fixMessages=[
   "[DATEI_AENDERN: guestbook.html]\n<<<<<<< SUCHEN\n<form>saved original</form>\n=======\n<form>new guestbook</form>\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]",
-  'Gästebuch erfolgreich geändert, gespeicherter Stand bestätigt.',
+  $taskDone('Gästebuch erfolgreich geändert, gespeicherter Stand bestätigt.'),
 ];
 $fixTools=[];$fixModelCalls=0;
 $fixedLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFileTools),
