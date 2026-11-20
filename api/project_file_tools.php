@@ -512,6 +512,32 @@ function coreui_pftools_proc(PDO $pdo, int $uid, string $projectId, string $kind
   return 'Unbekanntes Prozess-Werkzeug.';
 }
 
+/**
+ * On a missing file, use the CURRENT owner-scoped inventory; never invent a
+ * replacement path. Shared by normal-chat workspaces and named projects.
+ */
+function coreui_pftools_missing_file_inventory(PDO $pdo,int $uid,string $projectId): string {
+  if ($projectId==='') return '';
+  try {
+    $inventory=coreui_pfiles_list($pdo,$uid,$projectId);
+    $files=$inventory['files']??[];
+    if (!is_array($files)||$files===[]) return
+      'Der Arbeitsbereich hat noch keine gespeicherten Dateien. Nur beauftragte Dateien neu erstellen.';
+    $paths=[];
+    foreach ($files as $row) {
+      $path=(string)($row['path']??'');
+      if ($path!=='' && strlen($path)<=200 && !str_contains($path,"\n"))
+        $paths[]=$path;
+    }
+    return "Vorhandene Dateien im gebundenen Arbeitsbereich:\n"
+      . implode("\n",$paths)
+      . "\nEinen vorhandenen Pfad waehlen oder eine beauftragte Datei erstellen. Fehlgeschlagenen Leseaufruf nicht wiederholen.";
+  } catch(Throwable $e) {
+    error_log('[CoreAI] inventory after missing read: '.get_class($e));
+    return 'Dateiliste konnte nicht bestaetigt werden; keine Pfade erraten.';
+  }
+}
+
 /** Run one file tool of the work loop; the result is what Mara reads next. $sleep is replaceable in tests. */
 function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, ?callable $sleep = null): string {
   $projectId = coreui_pftools_project($pdo, $uid, $sessionId);
@@ -611,6 +637,10 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
       'fetch_failed'=>'die Anfrage an den Server ist fehlgeschlagen',
       'fetch_busy'=>'es warten schon zu viele Anfragen an den Server',
     ][$e->getMessage()] ?? $e->getMessage();
+    if ($kind==='pfile_read' && $e->getMessage()==='file_not_found') {
+      return 'Das ging nicht: ' . $why . ".\n"
+        . coreui_pftools_missing_file_inventory($pdo,$uid,$projectId);
+    }
     return 'Das ging nicht: ' . $why . '.';
   }
   return 'Unbekanntes Datei-Werkzeug.';
