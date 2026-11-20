@@ -188,7 +188,7 @@ function coreui_agent_run_transition(
   $stmt = $pdo->prepare(
     "UPDATE stu_console_agent_runs SET status=?,error_code=?,updated_at=NOW(3),"
     . "started_at=CASE WHEN ?='running' THEN COALESCE(started_at,NOW(3)) ELSE started_at END,"
-    . "finished_at=CASE WHEN ? IN ('completed','failed','cancelled') THEN NOW(3) ELSE finished_at END "
+    . "finished_at=CASE WHEN ? IN ('completed','failed','interrupted','cancelled') THEN NOW(3) ELSE finished_at END "
     . "WHERE run_id=? AND user_id=? AND session_id=? AND status=?"
   );
   $stmt->execute([$to,$errorCode,$to,$to,$runId,$uid,$sessionId,$from]);
