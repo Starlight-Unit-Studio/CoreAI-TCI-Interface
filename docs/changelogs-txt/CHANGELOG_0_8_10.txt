@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.8.10 - 20.11.2026
+
+- Project-agent follow-ups returning an empty response after a confirmed tool operation now produce a truthful interruption message, retain verified project files, and publish a bounded diagnostic work event.
+- An empty final SSE reply no longer leaves the live "Arbeite weiter" timer indefinitely visible. The browser freezes the confirmed work log and displays a failed reply status.
+- Empty-reply diagnostics include Ollama done reason, prompt/output token counts, public content/thinking sizes and HTTP status, but never private reasoning or raw generated source.
+- Regression tests cover the empty follow-up and UI terminal path.
+- Known limit: 128K context display is not evidence of Ollama's loaded 128K window; a host-side test is required. The exact 12B model/proxy cause is still unknown.
+- Next release after merge: 0.8.11.
