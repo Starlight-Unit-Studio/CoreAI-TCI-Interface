@@ -177,7 +177,7 @@ function coreui_agent_tool_result_state(array $tool, string $result): string {
   $kind = (string)($tool['tool'] ?? '');
   $result = trim($result);
   if ($result === '') return 'error';
-  if (preg_match('~^(?:Das ging nicht:|Der Server wurde NICHT|Die Projektdatei konnte|Projektdateien gibt es nur|Unbekanntes |Die Datei .+ wurde NICHT)~u', $result)) return 'error';
+  if (preg_match('~^(?:Das ging nicht:|Der Server wurde NICHT|Die Projektdatei konnte|Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar|Projektdateien gibt es nur|Unbekanntes |Die Datei .+ wurde NICHT)~u', $result)) return 'error';
   if (str_starts_with($result, 'Gerade laeuft kein Prozess') || str_starts_with($result,'In diesem Projekt wurde noch kein Prozess')) return 'info';
   if ($kind === 'pserver_start') {
     if (!str_contains($result, "Läuft.")) return str_contains($result,'wartet') ? 'info' : 'error';
@@ -194,13 +194,42 @@ function coreui_agent_tool_result_state(array $tool, string $result): string {
 }
 
 /**
+ * Stable, server-owned reason for a rejected source edit. Never reflect code,
+ * model prompts, database diagnostics or an arbitrary tool result into the UI.
+ */
+function coreui_agent_edit_failure_reason(string $result): string {
+  if (str_contains($result, 'Kein SUCHEN/ERSETZEN-Block gefunden')) return 'Änderungsblock nicht erkannt';
+  if (preg_match('~SUCHEN-Text kommt nicht in der Datei vor~u', $result)) return 'SUCHEN-Text stimmt nicht mit dem gespeicherten Dateiinhalt überein';
+  if (preg_match('~SUCHEN-Text kommt [0-9]+ Mal in der Datei vor~u', $result)) return 'SUCHEN-Text ist nicht eindeutig';
+  if (str_contains($result, 'SUCHEN ist leer')) return 'SUCHEN-Text ist leer';
+  if (str_contains($result, 'Datenbankfehler')) return 'Datenbankfehler beim Dateizugriff';
+  if (str_contains($result, 'lies sie neu')) return 'gespeicherte Datei hat sich zwischenzeitlich verändert';
+  if (str_contains($result, 'Speicher des Kontos ist voll') || str_contains($result, 'Projekt ist voll'))
+    return 'Speichergrenze erreicht';
+  if (str_contains($result, 'noch nicht verfügbar')) return 'Datei-Arbeitsbereich ist nicht verfügbar';
+  return 'Werkzeug konnte die Änderung nicht bestätigen';
+}
+
+/** Project file path only, never the generated patch body. */
+function coreui_agent_file_target(array $tool): string {
+  if (!in_array((string)($tool['tool'] ?? ''), ['pfile_read','pfile_edit','pfile_write'],true)) return '';
+  $path=trim(explode("\n",(string)($tool['input']??''),2)[0]);
+  return preg_match('~^[\p{L}\p{N}._/()+ -]{1,200}$~uD',$path) === 1
+    && !str_contains($path,'..') ? $path : '';
+}
+
+/**
  * Public outcome of a confirmed tool return, with no raw stdout, source code
  * or model-internal reasoning. Only facts established by the tool state are
  * announced; the entire project is not declared finished by an exit code.
  */
-function coreui_agent_public_result_note(array $tool, string $state): ?string {
+function coreui_agent_public_result_note(array $tool, string $state, string $result = ''): ?string {
   $kind = (string)($tool['tool'] ?? '');
   if ($state === 'error') {
+    if ($kind === 'pfile_edit') {
+      $reason=coreui_agent_edit_failure_reason($result);
+      return 'Dateiänderung nicht gespeichert: ' . $reason . '. Der gespeicherte Stand bleibt erhalten.';
+    }
     return 'Der Werkzeugschritt ist fehlgeschlagen. Ich werte den Fehler aus, bevor ich eine Korrektur versuche.';
   }
   if ($state === 'info' && in_array($kind, ['pserver_start','pproc_start','pserver_fetch'], true)) {
@@ -425,6 +454,11 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $lastSignature = '';
   $stalled = 0;
   $stopReason = '';
+  $blockedPath = '';
+  $blockedExplanation = '';
+  // This is NOT a total-work limit. Only unsuccessful writes to the SAME
+  // file are counted. Verified writes reset their own failure counter.
+  $fileEditFailures = [];
   // 0.6.22: $route(array $tool): array may send a step another way (a weather question about
   // a place in NRW goes to the WDR place search in the browser, api/weather_live.php).
   if ($tool !== null && $route !== null) $tool = $route($tool);
@@ -457,7 +491,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
       'reason'=>$state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state]);
     if ($projectWorkflow) {
-      $outcomeNote = coreui_agent_public_result_note($tool, $state);
+      $outcomeNote = coreui_agent_public_result_note($tool, $state, $result);
       if ($outcomeNote !== null) $record('commentary','info','Mara ordnet das Werkzeugergebnis ein',
         ['public_note'=>$outcomeNote,'source'=>'verified_tool_result']);
     }
@@ -468,6 +502,46 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $signature = hash('sha256', (string)$tool['tool'] . "\n" . (string)$tool['input'] . "\n" . $result);
     $stalled = $signature === $lastSignature ? $stalled + 1 : 0;
     $lastSignature = $signature;
+    $filePath=coreui_agent_file_target($tool);
+    if ($filePath !== '' && $state === 'success'
+        && in_array((string)$tool['tool'], ['pfile_edit','pfile_write'],true)) {
+      unset($fileEditFailures[$filePath]);
+    }
+    if ($filePath !== '' && $tool['tool']==='pfile_edit' && $state === 'error') {
+      $fileEditFailures[$filePath]=($fileEditFailures[$filePath] ?? 0)+1;
+      $blockedPath=$filePath;
+      $blockedExplanation=coreui_agent_edit_failure_reason($result);
+      // A different generated patch is NOT evidence of progress. Trying
+      // ten variants of a search string against the same unchanged file is
+      // the same failed action, even when its input hash keeps changing.
+      if ($fileEditFailures[$filePath] >= 2) {
+        $stopReason='file_edit_not_applicable';
+        $record('tool','error','Wiederholte Dateiänderung ohne Speicherung gestoppt',
+          ['reason'=>'same_file_edit_rejected_twice','step'=>$used,'file'=>$filePath]);
+        break;
+      }
+      // The first failed exact-match patch gets a deterministic, verified
+      // re-read before the Core is allowed to invent another patch. Never
+      // infer a write or overwrite the whole file to bypass validation.
+      if (str_starts_with($result, 'Die Datei ')) {
+        $record('tool','info','Datei nach fehlgeschlagener Änderung erneut lesen',
+          ['reason'=>'edit_recovery_read','step'=>$used,'file'=>$filePath]);
+        $tool=['tool'=>'pfile_read','input'=>$filePath,'recovery_read'=>true];
+        continue;
+      }
+      // Database, permissions and storage failures cannot be repaired by
+      // changing the text repeatedly. Fail clearly without more writes.
+      $stopReason='file_edit_unavailable';
+      break;
+    }
+    if (($tool['recovery_read'] ?? false) === true && $state === 'error') {
+      $stopReason='file_reread_failed';
+      $blockedPath=$filePath;
+      $blockedExplanation='erneutes Lesen des aktuellen Dateistands fehlgeschlagen';
+      $record('tool','error','Datei nach Schreibfehler nicht erneut lesbar',
+        ['reason'=>'edit_recovery_read_failed','step'=>$used,'file'=>$filePath]);
+      break;
+    }
     if ($projectWorkflow && $stalled >= 2) {
       $stopReason = 'no_progress';
       $record('tool','error','Projektarbeit ohne Fortschritt beendet',
@@ -523,9 +597,16 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   if ($projectWorkflow && $stopReason !== '') {
     $record('run','info','Projektauftrag unterbrochen; Dateien bleiben erhalten',
       ['reason'=>$stopReason,'steps'=>$used]);
-    $out = 'Der Projektauftrag ist noch nicht abgeschlossen (Grund: ' . $stopReason
-      . '). Bereits bestaetigte Projektdateien bleiben gespeichert. '
-      . 'Ich behaupte weder bestandene Tests noch einen laufenden Server ohne Werkzeugnachweis.';
+    if (str_starts_with($stopReason,'file_')) {
+      $out='Die Änderung an ' . ($blockedPath !== '' ? $blockedPath : 'der Projektdatei')
+        . ' wurde nicht gespeichert: ' . ($blockedExplanation !== '' ? $blockedExplanation : 'Werkzeugfehler')
+        . '. Ich habe die Wiederholung beendet, statt dieselbe fehlgeschlagene Änderung erneut zu versuchen. '
+        . 'Bereits gespeicherte Dateien bleiben unverändert. Details stehen im Arbeitsweg.';
+    } else {
+      $out = 'Der Projektauftrag ist noch nicht abgeschlossen (Grund: ' . $stopReason
+        . '). Bereits bestaetigte Projektdateien bleiben gespeichert. '
+        . 'Ich behaupte weder bestandene Tests noch einen laufenden Server ohne Werkzeugnachweis.';
+    }
   } elseif ($out !== '' && coreui_agent_next_tool($out, $allowed) !== null) {
     $prose = trim(function_exists('ember_strip_stray_tool_markers') ? ember_strip_stray_tool_markers($out)
       : (string)preg_replace('~\[(?:WEB|BROWSE|ARCHIV|SKILL|BILD(?:\s+GROSS)?(?:\s+ICH)?):[^\]]*\]|\[/?PY\]~iu', '', $out));

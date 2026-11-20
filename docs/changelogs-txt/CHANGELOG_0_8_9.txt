@@ -1,0 +1,21 @@
+COREAI: TCI INTERFACE - 0.8.9
+Date: 2026-11-20
+Base: 0.8.8
+
+Symptom:
+The 20 November 08:09 screenshots show repeated pfile_edit failures on guestbook.html and main.js with tool_result_error. Reads succeeded, and the development server responded, but Mara repeated file edits for more than 18 minutes. The exact underlying rejected snippet is hidden inside collapsed tool details, so it is not known from the screenshots.
+
+Confirmed source cause:
+The previous no-progress detector combined tool type, its complete generated input, and tool result in one hash. Every changed but rejected SEARCH/REPLACE payload changed the hash and evaded the detector.
+
+Fix:
+- After one server-rejected text edit, reread the same saved file using the existing authorized pfile_read tool, before asking the model for a corrected patch.
+- If the corrected edit also fails for the same file, stop the failing action, preserve saved revisions and give the operator the confirmed error category.
+- Storage and permission errors stop immediately; failed recovery reads stop and do not trigger more write attempts.
+- No guessed rewrites of the full file, fuzzy string matches or bypasses of exact-match and base SHA conflict checks.
+- Successful writes reset that file's failure counter. The project workflow is still not limited to six total confirmed steps.
+- More informative public work events identify missing/ambiguous search texts and invalid edit-block syntax without exposing model internals.
+- Tests reproduce multiple distinct failed edits against one saved file, automatic reread, corrected success, storage errors, Unicode path safety, and the mandatory native/Docker Preflight contract.
+
+Verification:
+Source tests and CI prove the retry behavior when passing. The exact production error from the collapsed log and the live hosted environment require separate verification after merge.

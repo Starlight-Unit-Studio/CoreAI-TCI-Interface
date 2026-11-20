@@ -80,6 +80,26 @@ def verify(root: Path) -> list[str]:
     if "Der alte, abgeschlossene Projektplan ist nur historischer Kontext" not in file_tools:
         failures.append("api/project_file_tools.php: existing project changes must honor current user request")
 
+    # A failed exact-match edit is never an endless autonomous retry.
+    # Protect the existing unrestricted successful project workflow, while
+    # requiring a verified reread and a same-file failure circuit breaker.
+    loop_code = (root / "api/console_agent_loop.php").read_text(encoding="utf-8")
+    loop_selftest = (root / "scripts/agent-loop-selftest.php").read_text(encoding="utf-8")
+    for token in ("function coreui_agent_edit_failure_reason(",
+                  "same_file_edit_rejected_twice",
+                  "'recovery_read'=>true",
+                  "file_edit_not_applicable",
+                  "file_reread_failed"):
+        if token not in loop_code:
+            failures.append("api/console_agent_loop.php: failed-edit recovery contract missing: " + token)
+    if "COREUI_AGENT_MAX_STEPS" not in loop_code or "$maxSteps = $projectWorkflow ? 0" not in loop_code:
+        failures.append("api/console_agent_loop.php: confirmed project work must remain unbounded")
+    for token in ("changed patch body cannot bypass no-progress guard",
+                  "a valid second patch completes normally",
+                  "a storage failure stops immediately"):
+        if token not in loop_selftest:
+            failures.append("scripts/agent-loop-selftest.php: missing repeated-edit regression: " + token)
+
     # The pinned section must remain a visible, independently foldable
     # navigation destination immediately beneath the single Projects link.
     # This contract is checked on CPU-only installations without Node.js.
