@@ -11,7 +11,7 @@ declare(strict_types=1);
  */
 function coreui_task_journal_schema_ready(PDO $pdo): bool {
   try {
-    $pdo->query('SELECT run_id,user_id,session_id,turn_id,status,phase,checkpoint_version,'
+    $pdo->query('SELECT run_id,user_id,session_id,turn_id,status,phase,checkpoint_version,resume_checkpoint_version,'
       . 'last_step,last_verified_step,requirements_json,evidence_json FROM stu_console_task_journal LIMIT 0');
     $pdo->query('SELECT id,run_id,user_id,session_id,step_no,tool_name,input_sha256,'
       . 'state,proof_kind,proof_sha256,proof_json FROM stu_console_task_actions LIMIT 0');
