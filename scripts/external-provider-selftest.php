@@ -51,11 +51,12 @@ if (($headers['authorization'] ?? '') !== 'Bearer ' . getenv('STUB_KEY') || str_
   exit;
 }
 if (str_contains($last, 'MODE:429')) { http_response_code(429); echo '{"error":{"message":"Rate limit reached"}}'; exit; }
-$finish = str_contains($last, 'MODE:length') ? 'length' : 'stop';
+$finish = str_contains($last, 'MODE:length') || str_contains($last, 'MODE:window') ? 'length' : 'stop';
 if (empty($body['stream'])) {
+  // MODE:window: a cut answer whose token sum looks like a full local window (4000 + 96 = 4096).
+  $usage = str_contains($last, 'MODE:window') ? ['prompt_tokens'=>4000, 'completion_tokens'=>96] : ['prompt_tokens'=>42, 'completion_tokens'=>7, 'total_tokens'=>49];
   echo json_encode(['id'=>'c1', 'object'=>'chat.completion', 'choices'=>[['index'=>0, 'message'=>['role'=>'assistant',
-    'content'=>'Hallo vom Stub', 'reasoning_content'=>'kurz nachgedacht'], 'finish_reason'=>$finish]],
-    'usage'=>['prompt_tokens'=>42, 'completion_tokens'=>7, 'total_tokens'=>49]]);
+    'content'=>'Hallo vom Stub', 'reasoning_content'=>'kurz nachgedacht'], 'finish_reason'=>$finish]], 'usage'=>$usage]);
   exit;
 }
 header('Content-Type: text/event-stream');
@@ -173,6 +174,7 @@ $error = json_decode(coreui_provider_decode('{"error":{"message":"Incorrect API 
 ext_test(is_string($error['error'] ?? null) && !str_contains($error['error'], EXT_KEY) && !str_contains($error['error'], 'SECRET')
   && str_contains($error['error'], '[Schlüssel ausgeblendet]'), 'an error, the key hidden: ' . json_encode($error));
 ext_test(coreui_provider_redact('Bad key sk-proj-abcd1234efgh and Bearer xyz.123 and api-version 2024') === 'Bad key [Schlüssel ausgeblendet] and Bearer [Schlüssel ausgeblendet] and api-version 2024'
+  && coreui_provider_redact('invalid credential ZZQ9876543210QQZ given', 'ZZQ9876543210QQZ') === 'invalid credential [Schlüssel ausgeblendet] given'
   && coreui_provider_error_message('{"detail":"Not Found"}') === 'Not Found' && coreui_provider_error_message('nonsense') === ''
   && mb_strlen(coreui_provider_error_message('{"error":"' . str_repeat('x', 500) . '"}')) === COREUI_PROVIDER_ERROR_CHARS + 3, 'messages: hidden keys, other shapes, cut');
 ext_test(json_decode(coreui_provider_decode('{"choices":[]}'), true)['error'] === 'Die externe API hat keine Antwort geliefert.'
@@ -238,6 +240,11 @@ ext_test($last['ok'] && $last['provider'] === 'external' && $last['model'] === '
   && $GLOBALS['STU_EMBER_LAST_THINKING'] === 'kurz nachgedacht' && !ember_last_call_was_truncated(), 'what the call noted: ' . json_encode($last));
 ember_call_ollama('gemma4:e4b', '', 'MODE:length', 30, ['__skills'=>'none']);
 ext_test(ember_last_call_was_truncated(), 'a cut answer is noticed');
+// A cut external answer never teaches the local Core a context window (its sum looks like one).
+unset($GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO']);
+ember_call_ollama('gemma4:e4b', '', 'MODE:window', 30, ['__skills'=>'none']);
+ext_test(ember_last_call_was_truncated() && $GLOBALS['STU_EMBER_LAST_CALL']['context_tokens'] === 0
+  && !isset($GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO']['gemma4:e4b']), 'no local window learnt from an external answer');
 $GLOBALS['ext_log'] = [];
 ext_test(ember_call_ollama('gemma4:e4b', '', 'MODE:401', 30, ['__skills'=>'none']) === null
   && $GLOBALS['STU_EMBER_LAST_CALL']['code'] === 401, 'a refused key gives no answer');
