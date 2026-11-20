@@ -880,7 +880,8 @@ try {
       throw new RuntimeException('agent_response_binding_failed');
     }
     if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
-        'running', 'completed')) {
+        'running', $taskInterrupted ? 'interrupted' : 'completed',
+        $taskInterrupted ? 'task_incomplete' : null)) {
       throw new RuntimeException('agent_run_finish_conflict');
     }
   } elseif ($browseJobId > 0) {
@@ -917,8 +918,10 @@ try {
   $elapsed = (int)round($elapsedMs / 1000);
   if ($browseJobId > 0) coreui_work_record($pdo, 'tool', 'running', 'Browserauftrag eingereiht',
     ['job_id'=>$browseJobId]);
-  if ($emberMsgId > 0) coreui_work_record($pdo, 'run', 'success', 'Antwort gespeichert',
-    ['elapsed_ms'=>$elapsedMs]);
+  if ($emberMsgId > 0) coreui_work_record($pdo, 'run',
+    $taskInterrupted ? 'info' : 'success',
+    $taskInterrupted ? 'Unterbrechung gespeichert, Auftrag bleibt offen' : 'Antwort gespeichert',
+    ['elapsed_ms'=>$elapsedMs] + ($taskInterrupted ? ['reason'=>'task_incomplete'] : []));
   elseif ($browseJobId <= 0) coreui_work_record($pdo, 'run', 'error', 'Kein Antwortdatensatz gespeichert',
     ['reason'=>'empty_response']);
   $workEvents = [];
