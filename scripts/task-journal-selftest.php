@@ -20,7 +20,8 @@ final class JournalFakeStatement extends PDOStatement {
           && !isset($this->db->journal[$run])) {
         $this->db->journal[$run]=[
           'run_id'=>$run,'turn_id'=>23,'status'=>'running','phase'=>'prepare',
-          'checkpoint_version'=>0,'last_step'=>0,'last_verified_step'=>0,
+          'checkpoint_version'=>0,'resume_checkpoint_version'=>null,
+          'last_step'=>0,'last_verified_step'=>0,
           'last_error_code'=>null,'requirements_json'=>'[]','evidence_json'=>'{}',
           'updated_at'=>'now'];
         $this->changed=1;
