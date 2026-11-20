@@ -363,20 +363,27 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
     . "wirklich vorhandenen Quelle zu; sonst benenne die Unsicherheit.\n"
     . ($max > 0 ? 'Du hast ' . $used . ' von ' . $max . " Arbeitsschritten genutzt.\n"
       : 'Du hast bisher ' . $used . " Arbeitsschritte genutzt. Setze den Projektauftrag ohne Nutzer-Nachricht fort, bis er wirklich verifiziert ist.\n")
-    . ($last
-      ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
-        . "Sag offen, was offen geblieben ist.\n"
-      : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
-        . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
-        . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
-        . "Bei laengeren Projektauftraegen SOLLST du vor dem naechsten Werkzeugmarker in einer kurzen, ausdruecklich oeffentlichen Fortschrittsnotiz erklaeren, was das bestaetigte Ergebnis bedeutet und was du als Naechstes tust: "
-        . "[COREUI_PUBLIC_PROGRESS]Ich habe die bisher bestaetigten Ergebnisse geprueft und kontrolliere nun die naechste Projektdatei.[/COREUI_PUBLIC_PROGRESS] "
-        . "Danach folgt in einer NEUEN Zeile der einzelne Werkzeugmarker. Nenne nur gepruefte Ergebnisse und deinen naechsten Arbeitsschritt; "
-        . "kein privates Reasoning, keine geheimen Daten, keine erfundenen Erfolge. Ohne Notiz bleibt das Markerformat unveraendert.\n"
+    . ($max === 0
+      // Project work: no contradictory "finish in free prose" instruction.
+      // Every turn is a tool decision, verified DONE or BLOCKED.
+      ? "Aktiver Projektauftrag: freie Zwischenprosa ist KEIN Abschluss. "
+        . "Antworte mit genau einem autorisierten Werkzeugmarker oder dem exakten "
+        . "COREUI_TASK_DONE/COREUI_TASK_BLOCKED-Block. "
+        . "Bei fehlender Datei pruefe die vom Werkzeug bestaetigte Dateiliste "
+        . "und wiederhole keinen erfolglosen Leseaufruf.\n"
         . coreui_agent_tool_menu($allowed) . "\n"
-        . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
-        . "fuer eine neue Richtung verwende andere Suchbegriffe. "
-        . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n")
+      : ($last
+        ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
+          . "Sag offen, was offen geblieben ist.\n"
+        : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
+          . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
+          . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
+          . "Du kannst eine ausdruecklich oeffentliche Fortschrittsnotiz mit "
+          . "[COREUI_PUBLIC_PROGRESS]...[/COREUI_PUBLIC_PROGRESS] vor einen Werkzeugmarker stellen.\n"
+          . coreui_agent_tool_menu($allowed) . "\n"
+          . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
+          . "fuer eine neue Richtung verwende andere Suchbegriffe. "
+          . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n"))
     . 'Antworte in deinem persoenlichen Anzeigenamen:'
     . ($max === 0 ? coreui_task_protocol_prompt() : '');
 }
