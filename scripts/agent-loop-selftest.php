@@ -407,7 +407,7 @@ foreach ($blockedStatuses as $status) {
     'no charge-generating blind retries on HTTP failures, throttling, local models or filters');
 }
 loop_test(coreui_agent_empty_followup_retryable(['provider'=>'external','http_code'=>200,
-  'transport_ok'=>true,'curl_errno'=>0,'done_reason'=>'stop'])
+  'transport_ok'=>true,'curl_errno'=>0,'done_seen'=>true,'done'=>true,'done_reason'=>'stop'])
   && !coreui_agent_empty_followup_retryable(['provider'=>'external','http_code'=>429,
     'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>'']),
   'one external retry is gated by a completed successful transport');
