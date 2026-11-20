@@ -56,6 +56,75 @@ function coreui_task_journal_get(PDO $pdo, int $uid, string $session, string $ru
   return is_array($row) ? $row : null;
 }
 
+/**
+ * Structural deliverables named explicitly by the user, not inferred from
+ * general phrasing. A URL, code block or model-written guess cannot
+ * silently enlarge the user's scope.
+ */
+function coreui_task_journal_requirements_from_goal(string $goal): array {
+  if ($goal==='' || strlen($goal)>20000 || preg_match('//u',$goal)!==1) return [];
+  $safe=(string)preg_replace('~```[\s\S]*?```~u','', $goal);
+  preg_match_all(
+    '~(?<![A-Za-z0-9_./:@-])([A-Za-z0-9_+-]+(?:/[A-Za-z0-9_.+-]+){0,6}\\.(?:html?|css|js|mjs|json|md|txt|svg|py|ts|tsx|jsx|vue|svelte))(?![A-Za-z0-9_./-])~iu',
+    $safe,$matches);
+  $unique=[];
+  foreach (($matches[1]??[]) as $name) {
+    if (count($unique)>=100) break; // metadata size bound, not a work limit
+    $name=(string)$name;
+    try {
+      if (!function_exists('coreui_pfiles_path')) continue;
+      $path=coreui_pfiles_path($name);
+      $unique[$path]=['kind'=>'file','path'=>$path,'origin'=>'user_turn'];
+    } catch (Throwable $ignored) {}
+  }
+  return array_values($unique);
+}
+
+/** Store explicit target paths only before the first tool claim. */
+function coreui_task_journal_seed_requirements(PDO $pdo,int $uid,string $session,
+    string $run,array $requirements): bool {
+  if (!coreui_task_journal_valid_ref($uid,$session,$run)) return false;
+  $safe=[];
+  foreach (array_slice($requirements,0,100) as $r) {
+    if (!is_array($r) || ($r['kind']??'')!=='file'
+        || ($r['origin']??'')!=='user_turn') return false;
+    $path=(string)($r['path']??'');
+    try { if (!function_exists('coreui_pfiles_path')) return false;
+      $path=coreui_pfiles_path($path);
+    } catch(Throwable $e) { return false; }
+    $safe[]=['kind'=>'file','path'=>$path,'origin'=>'user_turn'];
+  }
+  $payload=json_encode($safe,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+  $q=$pdo->prepare('UPDATE stu_console_task_journal SET requirements_json=?,updated_at=NOW(3) '
+    . "WHERE run_id=? AND user_id=? AND session_id=? AND checkpoint_version=0 "
+    . "AND phase='prepare' AND requirements_json='[]'");
+  $q->execute([$payload,$run,$uid,$session]);
+  return $q->rowCount()===1 || $safe===[];
+}
+
+function coreui_task_journal_requirements_satisfied(PDO $pdo,int $uid,string $session,
+    array $requirements): bool {
+  if ($requirements===[])return true;
+  if (!function_exists('coreui_pftools_project') || !function_exists('coreui_pfiles_list'))
+    return false;
+  try {
+    $projectId=coreui_pftools_project($pdo,$uid,$session);
+    if ($projectId==='') return false;
+    $listing=coreui_pfiles_list($pdo,$uid,$projectId);
+    $files=[];
+    foreach (($listing['files']??[]) as $f) {
+      $files[(string)($f['path']??'')]=(string)($f['sha256']??'');
+    }
+    foreach ($requirements as $r) {
+      if (!is_array($r) || ($r['kind']??'')!=='file')return false;
+      $name=(string)($r['path']??'');
+      if (!isset($files[$name]) || preg_match('/^[a-f0-9]{64}$/D',$files[$name])!==1)
+        return false;
+    }
+    return true;
+  } catch(Throwable $e) {return false;}
+}
+
 /** Tool arguments are not persisted. Only the cryptographic identity is. */
 function coreui_task_journal_tool_sha(array $tool): string {
   return hash('sha256', (string)($tool['tool'] ?? '') . "\n" . (string)($tool['input'] ?? ''));
@@ -331,6 +400,11 @@ function coreui_task_journal_can_finish(PDO $pdo, int $uid, string $session, str
     . 'FROM stu_console_task_actions WHERE run_id=? AND user_id=? AND session_id=?');
   $s->execute([$run,$uid,$session]);
   $row=$s->fetch(PDO::FETCH_ASSOC) ?: [];
-  return (int)($row['total']??0)>0 && (int)($row['verified']??0)>0
-    && (int)($row['pending']??0)===0;
+  if (!((int)($row['total']??0)>0 && (int)($row['verified']??0)>0
+      && (int)($row['pending']??0)===0)) return false;
+  $task=coreui_task_journal_get($pdo,$uid,$session,$run);
+  if ($task===null) return false;
+  $requirements=json_decode((string)($task['requirements_json']??'[]'),true);
+  return is_array($requirements)
+    && coreui_task_journal_requirements_satisfied($pdo,$uid,$session,$requirements);
 }
