@@ -70,11 +70,6 @@ final class JournalFakeStatement extends PDOStatement {
       $this->rows=[['total'=>count($rows),
         'verified'=>count(array_filter($rows,fn($x)=>$x['state']==='verified')),
         'pending'=>count(array_filter($rows,fn($x)=>in_array($x['state'],['claimed','uncertain'],true)))]];
-    } elseif (str_contains($this->sql,'FROM stu_console_task_actions WHERE run_id=')) {
-      [$run,$uid,$sid,$step]=$p;
-      if ($run===$this->db->runId && $uid===7 && $sid==='session_demo'
-          && isset($this->db->actions[$run][$step]))
-        $this->rows=[$this->db->actions[$run][$step]];
     } elseif (str_contains($this->sql,'FROM stu_console_task_actions ')
         && str_contains($this->sql,"state IN ('claimed','uncertain')")) {
       [$run,$uid,$sid]=$p;
@@ -86,6 +81,11 @@ final class JournalFakeStatement extends PDOStatement {
           }
         }
       }
+    } elseif (str_contains($this->sql,'FROM stu_console_task_actions WHERE run_id=')) {
+      [$run,$uid,$sid,$step]=$p;
+      if ($run===$this->db->runId && $uid===7 && $sid==='session_demo'
+          && isset($this->db->actions[$run][$step]))
+        $this->rows=[$this->db->actions[$run][$step]];
     } elseif (str_contains($this->sql,'FROM stu_console_task_journal')) {
       if (count($p)===4) [$run,$uid,$sid,$turn]=$p;
       else {[$run,$uid,$sid]=$p;$turn=23;}
