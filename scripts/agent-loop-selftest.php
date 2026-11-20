@@ -126,6 +126,8 @@ loop_test(str_contains($chain,'Menschen mit gleichem Namen') && str_contains($ch
 loop_test(str_contains(coreui_agent_loop_hint(false, true), 'ohne vorher zu fragen') && str_contains(coreui_agent_loop_hint(false, true), '[ARCHIV:')
   && !str_contains(coreui_agent_loop_hint(true, false), '[ARCHIV:'), 'first prompt tells Mara to act on her own');
 
+$taskDone = static fn(string $body):string => "[COREUI_TASK_DONE]\n" . $body . "\n[/COREUI_TASK_DONE]";
+
 // Scripted runs.
 $run = static function (array $replies, string $first, ?callable $cancel = null) use ($all): array {
   $events = [];
@@ -167,7 +169,7 @@ loop_test(str_contains(coreui_agent_step_prompt('B', [], 10, 0, ['web','pfile_wr
 $projectAllowed = ['web','pfile_write','pfile_edit','prun'];
 $projectResponses = [];
 for ($i=1; $i<=8; $i++) $projectResponses[] = '[WEB: neuer-schritt-' . $i . ']';
-$projectResponses[] = 'Projektauftrag abgeschlossen mit geprueften Werkzeugen.';
+$projectResponses[] = $taskDone('Projektauftrag abgeschlossen mit geprueften Werkzeugen.');
 $projectTools = [];
 $projectEvents = [];
 $projectLoop = coreui_agent_loop_run('[WEB: projekt-start]', ['tool'=>'web','input'=>'projekt-start'],
@@ -187,7 +189,7 @@ loop_test(count($projectTools)===9 && $projectLoop['steps']===9
 // real tool; the same loop must read the file before returning a final reply.
 $readSteps = [];
 $readEvents = [];
-$readReplies = [$readPromise,'Die Datei wurde mit dem Werkzeug geprüft; weitere Änderungen sind noch offen.'];
+$readReplies = [$readPromise,'[DATEI: style.css]',$taskDone('Die Datei wurde mit dem Werkzeug geprüft; weitere Änderungen sind noch offen.')];
 $recoveredLoop = coreui_agent_loop_run('[DATEI: index.html]',
   ['tool'=>'pfile_read','input'=>'index.html'], 'BASIS', $readAllowed, 0,
   static function(string $prompt) use (&$readReplies): ?string { return array_shift($readReplies); },
@@ -199,11 +201,11 @@ $recoveredLoop = coreui_agent_loop_run('[DATEI: index.html]',
     $readEvents[]=['kind'=>$kind,'state'=>$state,'meta'=>$meta];
   }, static fn():bool=>false);
 loop_test(count($readSteps)===2
-  && $readSteps[1] === $expectedRead
+  && $readSteps[1] === ['tool'=>'pfile_read','input'=>'style.css']
   && $recoveredLoop['steps']===2
   && str_contains((string)$recoveredLoop['out'],'noch offen')
   && count(array_filter($readEvents,static fn(array $e): bool =>
-    ($e['meta']['reason']??'')==='read_intent_without_marker'))===1,
+    ($e['meta']['reason']??'')==='task_decision_repaired'))===1,
   'file-read promise results in real verified tool result and autonomous continuation');
 
 // A project run sends the model's own public note before each real tool.
@@ -211,7 +213,7 @@ $projectNotes = [];
 $publicLoop = coreui_agent_loop_run(
   $publicToolReply, coreui_agent_next_tool($publicToolReply,['web']), 'BASIS',
   ['web','pfile_write','pfile_edit','prun'], 0,
-  static fn(string $prompt): ?string => 'Ich habe die Suche abgeschlossen. Jetzt kann ich antworten.',
+  static fn(string $prompt): ?string => $taskDone('Ich habe die Suche abgeschlossen. Jetzt kann ich antworten.'),
   static fn(array $tool): string => 'Werkzeug bestaetigt: ' . $tool['input'],
   static function(string $kind,string $state,string $title,array $meta) use (&$projectNotes): void {
     $projectNotes[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
@@ -282,7 +284,7 @@ loop_test(coreui_agent_edit_failure_reason('Die Datei x wurde NICHT geaendert: K
 // file work. Once an actual edit is saved, its failure counter is cleared.
 $fixMessages=[
   "[DATEI_AENDERN: guestbook.html]\n<<<<<<< SUCHEN\n<form>saved original</form>\n=======\n<form>new guestbook</form>\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]",
-  'Gästebuch erfolgreich geändert, gespeicherter Stand bestätigt.',
+  $taskDone('Gästebuch erfolgreich geändert, gespeicherter Stand bestätigt.'),
 ];
 $fixTools=[];$fixModelCalls=0;
 $fixedLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFileTools),
@@ -343,7 +345,7 @@ loop_test($emptyFollowCalls===1 && $emptyFollow['steps']===1
 
 // 0.8.12: one transient, successfully transported but blank external API
 // follow-up may be recovered with compact receipts. No tool is replayed.
-$recoveryReplies = [null, '[DATEI: contact.html]', 'Die Kontaktseite wurde gelesen; weitere Arbeit bleibt offen.'];
+$recoveryReplies = [null, '[DATEI: contact.html]', $taskDone('Die Kontaktseite wurde gelesen; weitere Arbeit bleibt offen.')];
 $recoveryPrompts=[]; $recoveryTools=[]; $recoveryEvents=[];
 $externalRecovery=coreui_agent_loop_run('[DATEI: style.css]',
   ['tool'=>'pfile_read','input'=>'style.css'], 'BASIS',$projectFileTools,0,
@@ -411,6 +413,81 @@ loop_test(coreui_agent_empty_followup_retryable(['provider'=>'external','http_co
   && !coreui_agent_empty_followup_retryable(['provider'=>'external','http_code'=>429,
     'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>'']),
   'one external retry is gated by a completed successful transport');
+
+// 0.8.13: the same explicit control protocol works across model
+// phrasings and tool kinds; it never infers an executable operation from prose.
+$promisedText = 'Die Startseite hat Unterseiten. Ich prüfe als Nächstes das JavaScript.';
+$taskParser = static fn(string $r):?array => coreui_agent_next_tool($r,$projectFileTools);
+loop_test(coreui_task_decision($promisedText,$taskParser)['kind']==='invalid'
+  && coreui_task_decision('Next I will inspect the JavaScript.',$taskParser)['kind']==='invalid'
+  && coreui_task_decision('Es wird jetzt das Skript geprüft.',$taskParser)['kind']==='invalid'
+  && coreui_task_decision('[DATEI: assets/app.js]',$taskParser)['kind']==='action'
+  && coreui_task_decision($taskDone('Alles nachgewiesen.'),$taskParser)['kind']==='done'
+  && coreui_task_decision("[COREUI_TASK_BLOCKED]\nZugriff verweigert.\n[/COREUI_TASK_BLOCKED]",$taskParser)['kind']==='blocked'
+  && coreui_task_decision("[COREUI_TASK_DONE]\n[DATEI: secret.php]",$taskParser)['kind']==='invalid',
+  'generic protocol accepts authorized tool, explicit done or blocked, not model phrasing');
+
+$pendingReplies=[$promisedText,'[DATEI: assets/app.js]',$taskDone('Die Dateien wurden gelesen.')];
+$pendingPrompts=[];$pendingTools=[];$pendingEvents=[];
+$pendingLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$pendingReplies,&$pendingPrompts):?string {
+    $pendingPrompts[]=$prompt;return array_shift($pendingReplies);
+  },
+  static function(array $tool) use (&$pendingTools):string {
+    $pendingTools[]=$tool;return 'Bestaetigte Datei: ' . $tool['input'];
+  },
+  static function(string $kind,string $state,string $title,array $meta) use (&$pendingEvents):void {
+    $pendingEvents[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  },static fn():bool=>false);
+loop_test(array_column($pendingTools,'tool')===['pfile_read','pfile_read']
+  && array_column($pendingTools,'input')===['assets/site.css','assets/app.js']
+  && count($pendingPrompts)===3 && $pendingLoop['steps']===2
+  && ($pendingLoop['outcome']??'')==='completed'
+  && $pendingLoop['out']==='Die Dateien wurden gelesen.'
+  && str_contains($pendingPrompts[1],'Deine letzte Ausgabe war keine gueltige Steuerentscheidung')
+  && count(array_filter($pendingEvents,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='task_decision_repaired'))===1,
+  'one generic decision repair continues project without repeating any real tool');
+
+$stillPendingCalls=0;$stillPendingTools=[];
+$stillPending=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$stillPendingCalls,$promisedText):?string {
+    $stillPendingCalls++;return $promisedText;
+  },
+  static function(array $tool) use (&$stillPendingTools):string {
+    $stillPendingTools[]=$tool;return 'Datei erfolgreich gelesen';
+  },static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test($stillPendingCalls===2 && count($stillPendingTools)===1
+  && $stillPending['steps']===1 && ($stillPending['outcome']??'')==='interrupted'
+  && str_contains((string)$stillPending['out'],'noch nicht abgeschlossen'),
+  'missing control decision after one repair interrupts, not silently completed');
+
+$completeCalls=0;
+$complete=coreui_agent_loop_run('[DATEI: style.css]',
+  ['tool'=>'pfile_read','input'=>'style.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$completeCalls,$taskDone):?string {
+    $completeCalls++;return $taskDone('Die bestehende Datei wurde geprüft.');
+  },
+  static fn(array $tool):string=>'Datei erfolgreich gelesen',
+  static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test($completeCalls===1 && $complete['steps']===1
+  && ($complete['outcome']??'')==='completed'
+  && $complete['out']==='Die bestehende Datei wurde geprüft.',
+  'explicit terminal completion requires no extra repair tokens');
+
+$unverified=coreui_agent_loop_run('[DATEI: style.css]',
+  ['tool'=>'pfile_read','input'=>'style.css'],'BASIS',$projectFileTools,0,
+  static fn(string $prompt):?string=>$taskDone('Die Datei existiert sicher.'),
+  static fn(array $tool):string=>'Das ging nicht: Datei nicht verfügbar.',
+  static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test(($unverified['outcome']??'')==='interrupted'
+  && str_contains((string)$unverified['out'],'noch nicht abgeschlossen'),
+  'a model cannot finish after an actual failed tool');
 
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');

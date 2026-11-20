@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/console_task_control.php';
+
 /*
  * 0.5.77: Maras Arbeitsschleife im privaten Chat.
  *
@@ -375,7 +377,8 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
         . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
         . "fuer eine neue Richtung verwende andere Suchbegriffe. "
         . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n")
-    . 'Antworte in deinem persoenlichen Anzeigenamen:';
+    . 'Antworte in deinem persoenlichen Anzeigenamen:'
+    . ($max === 0 ? coreui_task_protocol_prompt() : '');
 }
 
 /**
@@ -505,6 +508,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $lastSignature = '';
   $stalled = 0;
   $stopReason = '';
+  $taskOutcome = 'completed';
   $projectCompact = false;
   $blockedPath = '';
   $blockedExplanation = '';
@@ -534,7 +538,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
       }
       $record('tool', 'info', $title, ['step'=>$used + 1, 'reason'=>'agent_loop_browse']);
-      return ['out'=>null, 'browse'=>(string)$tool['input'], 'steps'=>count($steps), 'prompt'=>$prompt];
+      return ['out'=>null, 'browse'=>(string)$tool['input'], 'steps'=>count($steps), 'prompt'=>$prompt, 'outcome'=>'waiting_tool'];
     }
     $used++;
     $record('tool', 'running', $title, ['step'=>$used, 'reason'=>'agent_loop']);
@@ -634,7 +638,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       }
       return ['out'=>$final, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt, 'terminal'=>true];
     }
-    if ($cancelled()) break;
+    if ($cancelled()) { if ($projectWorkflow) $stopReason='cancelled'; break; }
     $prompt = $projectWorkflow && $projectCompact
       ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
       : coreui_agent_step_prompt($base, $steps, $used, $maxSteps, $allowed);
@@ -671,14 +675,58 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     } elseif ($out === '') {
       break;
     }
-    $tool = $projectWorkflow || $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
-    if ($tool === null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS)) {
+    if ($projectWorkflow) {
+      // A text response is no longer a terminal state by accident. Every
+      // active project task must yield a real, authorized next tool, a
+      // verifiable explicit completion, or a declared blocker. No language-
+      // specific "Ich pruefe als Naechstes" heuristics are necessary.
+      $parseDecision = static fn(string $text): array =>
+        coreui_task_decision($text, static fn(string $r): ?array => coreui_agent_next_tool($r, $allowed));
+      $decision = $parseDecision($out);
+      if ($decision['kind'] === 'invalid') {
+        if ($cancelled()) { $stopReason='cancelled'; break; }
+        $record('model','info','Arbeitsentscheidung ohne gueltigen Steuerstatus',
+          ['reason'=>'task_decision_missing','step'=>$used]);
+        $repairPrompt = coreui_task_decision_repair_prompt(
+          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed));
+        $repair = $callModel($repairPrompt);
+        $decision = is_string($repair) ? $parseDecision($repair)
+          : ['kind'=>'invalid','text'=>'','tool'=>null];
+        if ($decision['kind'] !== 'invalid') {
+          $record('model','success','Arbeitsentscheidung geklaert',
+            ['reason'=>'task_decision_repaired','step'=>$used]);
+        }
+      }
+      if ($decision['kind'] === 'action') {
+        $tool = $decision['tool'];
+        if ($tool !== null && $route !== null) $tool = $route($tool);
+        continue;
+      }
+      if ($decision['kind'] === 'done' && coreui_task_completion_evidence($steps, $fileEditFailures)) {
+        $out = (string)$decision['text'];
+        $taskOutcome = 'completed';
+        $record('run','success','Arbeitsabschluss auf gepruefte Werkzeugschritte gestuetzt',
+          ['reason'=>'task_verified_completion','step'=>$used]);
+        break;
+      }
+      $stopReason = match ($decision['kind']) {
+        'done' => 'task_completion_unverified',
+        'blocked' => 'task_blocked',
+        default => 'task_decision_invalid',
+      };
+      $record('run','error','Projektauftrag ohne bestaetigten Abschluss unterbrochen',
+        ['reason'=>$stopReason,'step'=>$used]);
+      break;
+    }
+    $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
+    if ($tool === null && $used < COREUI_AGENT_MAX_STEPS) {
       $tool = coreui_agent_recover_promised_read($out, $allowed);
     }
     if ($tool !== null && $route !== null) $tool = $route($tool);
   }
   // Never show a requested but unexecuted tool as proof of success.
   if ($projectWorkflow && $stopReason !== '') {
+    $taskOutcome = $stopReason === 'cancelled' ? 'cancelled' : 'interrupted';
     $record('run','info','Projektauftrag unterbrochen; Dateien bleiben erhalten',
       ['reason'=>$stopReason,'steps'=>$used]);
     if (str_starts_with($stopReason,'file_')) {
@@ -701,5 +749,6 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $out = $prose !== '' ? $prose : 'Ich habe alle ' . COREUI_AGENT_MAX_STEPS . ' Arbeitsschritte genutzt und noch keine '
       . 'sichere Antwort gefunden. Sag mir, worauf ich mich konzentrieren soll, dann suche ich gezielter weiter.';
   }
-  return ['out'=>$out !== '' ? $out : null, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt];
+  return ['out'=>$out !== '' ? $out : null, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt,
+    'outcome'=>$taskOutcome, 'reason'=>$stopReason];
 }

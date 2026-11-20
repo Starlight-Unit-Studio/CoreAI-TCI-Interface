@@ -1,0 +1,9 @@
+CoreAI: TCI Interface 0.8.13 - 20.11.2026
+
+- Introduces a provider-independent control protocol for active project workflows. After each confirmed tool result, the Core must select an authorized next tool, an explicit DONE marker, or a BLOCKED marker. Ordinary prose is not a terminal task state.
+- One malformed decision may be repaired in-turn using the same model and serial queue. It never replays confirmed file, command, server or version tools.
+- A claimed completion must be backed by confirmed tool evidence and no unresolved file-edit failures. An interrupted task remains interrupted in the stored agent run, even when a short explanatory assistant message was saved for the operator.
+- Existing model-empty recovery, bounded API costs, cancel semantics, per-account tool permissions and no arbitrary project-step cap remain.
+- Offline regression tests cover language-independent next actions, decision repair, verified DONE and a false completion after a failed tool.
+- Remaining architecture work: durable goal manifest, checkpoint/resume after worker death and evidence-based verification of every task requirement before declaring fully complete.
+- Next release following merge: 0.8.14.

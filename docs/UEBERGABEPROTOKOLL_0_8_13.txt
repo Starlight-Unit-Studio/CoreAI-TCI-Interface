@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE - UEBERGABEPROTOKOLL 0.8.13
+Date: 2026-11-20
+
+Operator feedback
+On 0.8.12 a multi-step website task in ordinary CORE CHANNEL ended with the Core's prose "Ich pruefe als Naechstes das eingebundene JavaScript ..." and no actual next tool marker. A previous attempt used a small phrase regex. The operator correctly rejected that as another narrow workaround.
+
+Architecture correction
+1. New pure module api/console_task_control.php defines a language-independent decision contract: allowed action, explicit DONE or explicit BLOCKED. Plain text after a tool is not proof of completion.
+2. api/console_agent_loop.php uses the same decision contract across project-tool kinds, independent of Ollama or external OpenAI-compatible models. One invalid/missing decision triggers one safe same-turn format correction with compact confirmed tool history. No previously executed file/tool step is replayed.
+3. DONE requires actual successful tool evidence and no unresolved edit failures. The Core cannot claim success after a failed tool simply by saying it is done. This is not yet a complete goal-manifest verifier.
+4. api/chat.php propagates task outcome to the outer server worker.
+5. api/console_stream.php and api/console_agent_runs.php persist a saved interruption as an interrupted run, not a completed run, with a terminal timestamp. Normal dialogue and legacy lightweight search answers are unaffected.
+6. Tests in scripts/agent-loop-selftest.php cover German/English/impersonal narration, tool choice, done, block, one repair, repeated ambiguity and failed tool evidence.
+
+Deployment and review
+- Run full Preflight and all CI checks, plus php syntax for every changed PHP file.
+- Check ordinary Core Channel AND existing project chats, local model and external API.
+- Verify that a multi-step build invokes next real tools without "Continue", and that a malformed completion does not erase saved files.
+- Confirm completed run versus interrupted run in history, including terminal timestamps.
+- Preserve the model queue, explicit permissions, checked-in project files, 128K context settings and external API limits.
+- Do not infer a file path or execute a tool from natural-language commentary alone.
+
+Known limitations
+- Work-loop control is now generic for tool-driven project tasks, but full objective-by-objective completion still needs a persistent goal checklist with artifact-level evidence.
+- Cross-process automatic restart after a failed PHP worker is not implemented by this release.
+- Plan autorun and browser/deep-research workers still have specialized orchestration flows; unify their outcomes with this protocol in a follow-up architecture PR.
+- Next version: 0.8.14.
