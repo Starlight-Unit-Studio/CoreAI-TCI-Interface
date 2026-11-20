@@ -214,7 +214,7 @@ function coreui_agent_edit_failure_reason(string $result): string {
 function coreui_agent_file_target(array $tool): string {
   if (!in_array((string)($tool['tool'] ?? ''), ['pfile_read','pfile_edit','pfile_write'],true)) return '';
   $path=trim(explode("\n",(string)($tool['input']??''),2)[0]);
-  return preg_match('~^[a-zA-Z0-9._/()+ -]{1,200}$~D',$path) === 1
+  return preg_match('~^[\p{L}\p{N}._/()+ -]{1,200}$~uD',$path) === 1
     && !str_contains($path,'..') ? $path : '';
 }
 
