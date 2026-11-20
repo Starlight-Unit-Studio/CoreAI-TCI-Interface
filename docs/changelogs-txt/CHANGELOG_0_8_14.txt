@@ -1,10 +1,11 @@
 CoreAI: TCI Interface 0.8.14 - 20.11.2026
 
-- Issue #374: durable task manifest (goal references) and owner-scoped, append-only per-step claim ledger for console runs; SQL migration 057.
-- Claim file/process/tool steps before execution; a second worker cannot replay the same step, even if a prior worker crashed after the side effect.
-- Persist verified tool-result digests, saved project file hashes and revisions without storing source, prompts, thinking or credentials.
-- Checkpoint version and last confirmed step survive SSE reconnects, server process loss and UI reload. The original chat message remains the canonical user authorization.
-- Agent-run status changes update task status, including stopped/lost workers. Run history exposes compact checkpoint metadata.
-- Both native and Docker preflight require the migration and a PHP regression fixture verifying owner scoping, duplicate protection and uncertain outcomes.
-- This is a foundation for Issue #374, not automatic worker relaunch. Full resume, goal manifest verification and plan/browse/research/media adapters remain pending.
-- Next source release after merge: 0.8.15.
+- Issue #374 architecture implementation: one persistent, owner-scoped task manifest plus idempotent tool step claims (SQL migration 057). The original user turn is the canonical goal.
+- Tool steps are claimed before executing side effects. Verified results save a monotonic checkpoint, result digest and actual stored project file revision/SHA-256. Neither model text nor a successful HTTP 200 proves task completion.
+- A safe, interrupted and response-less console run can resume automatically on authenticated chat reconnect, guarded by an atomic, single-use checkpoint fence. No replay of already claimed/uncertain file writes, commands, server requests or other tool side effects; existing account permissions and model queue are still enforced.
+- Exact user-named file deliverables are recorded from the original turn and checked against actual account-owned saved files before accepting DONE. No arbitrary task length/file count cap is introduced.
+- The ordinary CORE CHANNEL, existing project chats and the detached console fallback use the same agent-run journal and result checks.
+- Run history and assistant message details show real terminal state and verified checkpoint, including on mobile; all personal model settings, 128K context and optional API routes remain unchanged.
+- Native/Docker preflight and GitHub CI include idempotency, unknown side-effect, single-use restart, file-path extraction, account isolation and UI status checks.
+- Remaining for Issue #374: semantic requirement-by-requirement validation beyond exact file paths, and unified plan, browser/Playwright, Deep Research, media and background-worker adapters. Host deployment and actual crash/reconnect acceptance remain required.
+- Next release after merge: 0.8.15.
