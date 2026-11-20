@@ -2122,6 +2122,27 @@
       : (mode === 'continue' ? 'FORTSETZUNG' : 'NORMALE ANTWORT'));
     var timings = responseTimings(record);
     var values = [['TYP', modeLabel]];
+    var task = record && record.agent_run && record.agent_run.task;
+    if (task && typeof task === 'object') {
+      var states = {
+        queued:'Eingereiht', running:'In Bearbeitung',
+        waiting_tool:'Wartet auf Werkzeug', completed:'Abgeschlossen',
+        interrupted:'Unterbrochen', blocked:'Blockiert',
+        failed:'Fehlgeschlagen', cancelled:'Abgebrochen'
+      };
+      var taskStatus = String(task.status || '');
+      if (Object.prototype.hasOwnProperty.call(states,taskStatus)) {
+        values.push(['AUFTRAG',states[taskStatus]]);
+      }
+      var checkpoint = Number(task.checkpoint_version);
+      var verifiedStep = Number(task.last_verified_step);
+      if (Number.isSafeInteger(checkpoint) && checkpoint > 0) {
+        values.push(['CHECKPOINT','#' + String(checkpoint)]);
+      }
+      if (Number.isSafeInteger(verifiedStep) && verifiedStep > 0) {
+        values.push(['BESTAETIGTER SCHRITT','#' + String(verifiedStep)]);
+      }
+    }
     if (timings.total_ms !== null) {
       values.push([timings.total_label, formatResponseDuration(timings.total_ms)]);
     }
@@ -3598,7 +3619,9 @@
         thinking_content: thinking,
         work_events: savedWork,
         agent_run: data && /^[a-f0-9]{32}$/.test(String(data.agent_run_id || ''))
-          ? {id:String(data.agent_run_id),key:workRunKey} : null,
+          ? {id:String(data.agent_run_id),key:workRunKey,
+            task:data && data.agent_task && typeof data.agent_task === 'object'
+              ? data.agent_task : null} : null,
         elapsed_ms: data && data.elapsed_ms,
         generation: data && data.generation_mode ? {
           mode: data.generation_mode,
