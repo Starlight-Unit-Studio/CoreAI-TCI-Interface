@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/console_task_journal.php';
+
 /**
  * P05 durable console runs. Never store prompts, raw reasoning or tool output.
  * All reads/writes are scoped to user + session + run ID.
@@ -58,6 +60,20 @@ function coreui_agent_run_reap_stale(PDO $pdo, int $uid, string $sessionId,
   );
   $lost->execute([$cancel,$cancel,$uid,$sessionId,min($stale, COREUI_AGENT_RUN_CANCEL_STALE_SECONDS),$stale]);
   $ended = $lost->rowCount();
+  if ($ended > 0 && coreui_task_journal_schema_ready($pdo)) {
+    try {
+      $sync=$pdo->prepare('UPDATE stu_console_task_journal j '
+        . 'JOIN stu_console_agent_runs r ON r.run_id=j.run_id '
+        . 'SET j.status=r.status,j.last_error_code=r.error_code,'
+        . 'j.finished_at=r.finished_at,j.updated_at=NOW(3) '
+        . "WHERE r.user_id=? AND r.session_id=? "
+        . "AND r.status IN ('interrupted','cancelled') "
+        . "AND j.status IN ('running','queued')");
+      $sync->execute([$uid,$sessionId]);
+    } catch (Throwable $e) {
+      error_log('[CoreAI] task stale reconciliation: '.get_class($e));
+    }
+  }
   $never = $pdo->prepare(
     "UPDATE stu_console_agent_runs SET error_code='never_started',finished_at=NOW(3),status='cancelled',updated_at=NOW(3) "
     . "WHERE user_id=? AND session_id=? AND status='queued' AND updated_at < DATE_SUB(NOW(3), INTERVAL ? SECOND)"
@@ -192,7 +208,16 @@ function coreui_agent_run_transition(
     . "WHERE run_id=? AND user_id=? AND session_id=? AND status=?"
   );
   $stmt->execute([$to,$errorCode,$to,$to,$runId,$uid,$sessionId,$from]);
-  return $stmt->rowCount() === 1;
+  $changed=$stmt->rowCount() === 1;
+  if ($changed && coreui_task_journal_schema_ready($pdo)) {
+    try { coreui_task_journal_sync($pdo,$uid,$sessionId,$runId,$to,$errorCode); }
+    catch (Throwable $e) {
+      // The existing agent-run status is authoritative and can be
+      // reconciled; never turn a database status into fabricated work.
+      error_log('[CoreAI] task run projection: ' . get_class($e));
+    }
+  }
+  return $changed;
 }
 
 /** Only a real, owned assistant response to this turn can complete a run. */
@@ -263,7 +288,11 @@ function coreui_agent_run_request_cancel(
       WHERE run_id=? AND user_id=? AND session_id=? AND status='queued'"
   );
   $queued->execute([$runId,$uid,$sessionId]);
-  if ($queued->rowCount() === 1) return ['status'=>'cancelled','cancel_requested'=>true];
+  if ($queued->rowCount() === 1) {
+    if (coreui_task_journal_schema_ready($pdo))
+      coreui_task_journal_sync($pdo,$uid,$sessionId,$runId,'cancelled');
+    return ['status'=>'cancelled','cancel_requested'=>true];
+  }
 
   $active = $pdo->prepare(
     "UPDATE stu_console_agent_runs SET cancel_requested_at=COALESCE(cancel_requested_at,NOW(3)),
