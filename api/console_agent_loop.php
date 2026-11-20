@@ -461,6 +461,7 @@ function coreui_agent_empty_followup_retryable(array $status): bool {
   return ($status['provider'] ?? '') === 'external'
     && $code >= 200 && $code < 300
     && !empty($status['transport_ok'])
+    && !empty($status['done_seen']) && !empty($status['done'])
     && (int)($status['curl_errno'] ?? 0) === 0
     && in_array($reason, ['', 'stop', 'length'], true);
 }
