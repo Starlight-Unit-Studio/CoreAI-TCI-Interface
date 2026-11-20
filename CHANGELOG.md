@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.8.14 - 20.11.2026
+
+- **Durable task journal (Issue #374, foundation):** migration 057 introduces owner- and session-scoped task manifests and an idempotent per-step tool claim ledger linked to existing agent runs. The original user turn remains the canonical goal, so no model-paraphrased request is used as authorization.
+- **Crash-safe execution boundary:** project tools claim a unique step before execution, then atomically persist their verified result digest, file revision/hash where available, and a monotonic checkpoint. Duplicate/uncertain steps are not re-executed, preserving files after worker loss.
+- **Model-independent integration:** normal CORE CHANNEL and project chat use the same agent journal; no changes to model settings, context windows, tool permissions, serial queue or project-step quotas.
+- **Truthful run history:** cancelled/interrupted/failed/completed runs project into task status, with checkpoint metadata available to history views. Worker-stale reconciliation no longer leaves the task manifest falsely running.
+- **Preflight and regression:** both native and Docker preflight require migration 057 and the task-journal selftest for account scoping, duplicate claims, crash uncertainty and privacy-safe receipts.
+- **In progress for Issue #374:** a verified checkpoint is not yet a resumable worker; cross-process resume, goal-completion validation and adapters for plan, browser, deep research, media and external jobs must be implemented before the umbrella issue closes.
+
 ## 0.8.13 - 20.11.2026
 
 - **Shared task-control protocol:** Tool-driven project work now requires an explicit next allowed tool, a declared blocker, or a terminal completion marker instead of mistaking arbitrary prose for a finished task. This is independent of language, local/remote model and file type.
