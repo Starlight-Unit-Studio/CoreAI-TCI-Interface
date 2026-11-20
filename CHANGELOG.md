@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.8.9 - 20.11.2026
+
+- **No more endless guestbook edit retries:** The agent previously compared complete tool inputs, so a different failed patch for the same file evaded its no-progress detector. After a rejected exact-match edit Mara now re-reads the actual saved file and can try a corrected patch once. A second failed edit stops this same-file error loop.
+- **Actionable, safe errors:** Tool outcomes distinguish mismatched or ambiguous SEARCH text, malformed edit blocks, missing workspace and database/storage problems without displaying source code or private reasoning. Storage failures and unsuccessful re-reads stop instead of causing more writes.
+- **Preserved autonomy:** Verified project steps still have no arbitrary overall cap. A saved successful file write clears its own error counter. Previous file versions are never silently overwritten by an unsafe fallback.
+- **Regression and Preflight:** Added a reproduction of the guestbook.html failure with changing patch payloads, a verified read-before-retry and successful correction, nonrecoverable database failure handling, and a new mandatory Preflight contract.
+- **Validation limit:** Screenshots did not expose the original exact patch rejection cause. The observed runaway retry mechanism is fixed in source; the live host must still be tested after merge.
+
+
 ## 0.8.8 - 19.11.2026
 
 - **Full developer tools in normal chat:** Added **Entwicklung** beside existing chat controls on mobile and in the desktop information rail. It opens a responsive modal containing the *original* Project Files editor, safe web preview, development server/process controls, command runner, revisions and ZIP tools. No duplicate file editor or fake preview is created.
