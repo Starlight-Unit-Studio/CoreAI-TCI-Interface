@@ -45,7 +45,8 @@
     block_multiple:'mehrere oder vermischte Steuerblöcke',
     block_empty:'ein leerer Steuerblock',
     block_and_tool:'ein Steuerblock zusammen mit einem Werkzeugmarker',
-    marker_unknown:'ein unbekannter Steuermarker'
+    marker_unknown:'ein unbekannter Steuermarker',
+    marker_malformed:'ein Steuermarker ohne gültige eckige Klammern'
   };
 
   var IMAGE_PHASES = {

@@ -289,6 +289,12 @@ install_test(str_contains($settings, "static fn(array \$item): bool => \$onlyTie
 require_once $root . '/api/core_preload.php';
 install_test(coreui_core_unload_targets(['gemma4:e4b', 'ember-coreui:latest', 'gemma4:31b-cloud'], 'Ember-CoreUI') === ['gemma4:e4b'],
   'switching unloads the other local Cores');
+// 0.8.16: switching to an external Core unloads every local Core, inside the queue; cloud Cores stay.
+install_test(coreui_core_unload_targets(['gemma4:e4b', 'ember-coreui:latest', 'gemma4:31b-cloud'], '') === ['gemma4:e4b', 'ember-coreui:latest'],
+  'an external Core keeps no local Core loaded');
+$unloadLocal = substr((string)file_get_contents($root . '/api/core_preload.php'), (int)strpos((string)file_get_contents($root . '/api/core_preload.php'), 'function coreui_core_unload_local'));
+install_test(strpos($unloadLocal, 'ember_global_lock_acquire(120)') < strpos($unloadLocal, "coreui_core_unload_targets(coreui_ollama_loaded_names(), '')")
+  && strpos($unloadLocal, 'ember_generation_lock_release($lock)') > strpos($unloadLocal, 'coreui_core_unload($name)'), 'external switch unloads inside the queue');
 $preload = (string)file_get_contents($root . '/api/core_preload.php');
 install_test(strpos($preload, 'ember_global_lock_acquire(120)') < strpos($preload, 'coreui_core_unload($other)')
   && strpos($preload, 'coreui_core_unload($other)') < strpos($preload, "\$ch = curl_init(coreui_ollama_api_url('generate'));\n    curl_setopt_array(\$ch, [\n      CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,\n      CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>300"),

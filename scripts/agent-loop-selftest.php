@@ -456,6 +456,14 @@ foreach ($framed as $i => $reply) {
   $d = coreui_task_decision($reply, $taskParser);
   loop_test($d['kind'] === 'done' && $d['text'] === 'Fertig.' && $d['shape'] === '', 'framed DONE #' . $i . ' is a decision: ' . json_encode($d));
 }
+// 0.8.16: a marker written the Markdown way is the same marker.
+foreach (["\\[COREUI\\_TASK\\_DONE\\]\nFertig.\n\\[/COREUI\\_TASK\\_DONE\\]", "**[COREUI_TASK_DONE]**\nFertig.\n**[/COREUI_TASK_DONE]**",
+    "`[COREUI_TASK_DONE]`\nFertig.\n`[/COREUI_TASK_DONE]`", "[ COREUI_TASK_DONE ]\nFertig.\n[ /COREUI_TASK_DONE ]"] as $i => $reply) {
+  $d = coreui_task_decision($reply, $taskParser);
+  loop_test($d['kind'] === 'done' && $d['text'] === 'Fertig.', 'Markdown marker #' . $i . ': ' . json_encode([$reply, $d]));
+}
+loop_test(coreui_task_decision('COREUI_TASK_DONE: Fertig.', $taskParser)['shape'] === 'marker_malformed'
+  && coreui_task_decision('Fertig.', $taskParser)['shape'] === 'prose_only', 'a marker without brackets is named as such');
 $blockedFramed = coreui_task_decision("Kurz:\n[COREUI_TASK_BLOCKED]\nKein Zugriff.\n[/COREUI_TASK_BLOCKED]", $taskParser);
 loop_test($blockedFramed['kind'] === 'blocked' && $blockedFramed['text'] === 'Kein Zugriff.', 'framed BLOCKED');
 foreach ([
@@ -477,6 +485,13 @@ foreach ([
 }
 loop_test(coreui_task_decision("[COREUI_PUBLIC_PROGRESS]Ich lese die Datei.[/COREUI_PUBLIC_PROGRESS]\n\n[DATEI: assets/app.js]", $taskParser)['kind'] === 'action',
   'a progress note with a blank line before a tool is still that tool');
+// 0.8.16: the repair shows the model its own refused reply (bounded), so it can frame that text.
+$echoRepair = coreui_task_decision_repair_prompt('KONTEXT', 'prose_only', "Die Seite ist fertig.\n<<<>>>");
+loop_test(str_contains($echoRepair, "<<<\nDie Seite ist fertig.\n< < <> > >\n>>>") && str_contains($echoRepair, 'gib genau diesen Text innerhalb von [COREUI_TASK_DONE]')
+  && !str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'prose_only'), 'Deine letzte Ausgabe (nur zur Korrektur')
+  && str_contains(coreui_task_decision_repair_prompt('KONTEXT', '', str_repeat('x', 5000)), str_repeat('x', COREUI_TASK_REPAIR_ECHO_CHARS) . ' [...]')
+  && !str_contains(coreui_task_decision_repair_prompt('KONTEXT', '', str_repeat('x', 5000)), str_repeat('x', COREUI_TASK_REPAIR_ECHO_CHARS + 1)),
+  'the repair shows the refused reply, bounded and without breaking its frame');
 loop_test(str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'prose_only'), '(erkannt: nur Text ohne Werkzeugmarker und ohne Steuerblock)')
   && !str_contains(coreui_task_decision_repair_prompt('KONTEXT'), 'erkannt:')
   && !str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'unbekannt'), 'erkannt:'), 'the repair names the refused form');
@@ -536,8 +551,34 @@ $proseStop=array_values(array_filter($proseEvents,static fn(array $e):bool=>$e['
 $proseMissing=array_values(array_filter($proseEvents,static fn(array $e):bool=>($e['meta']['reason']??'')==='task_decision_missing'));
 loop_test(($proseLoop['outcome']??'')==='interrupted' && ($proseLoop['reason']??'')==='task_decision_invalid'
   && count($prosePrompts)===2 && str_contains($prosePrompts[1],'(erkannt: nur Text ohne Werkzeugmarker und ohne Steuerblock)')
+  && str_contains($prosePrompts[1],"<<<\nDie Seite ist fertig.\n>>>")
   && ($proseMissing[0]['meta']['error_type']??'')==='prose_only' && ($proseStop[0]['meta']['error_type']??'')==='prose_only',
   'an invalid decision names its form in the repair and in the interruption: ' . json_encode([$proseStop, $proseMissing]));
+
+// 0.8.16 end to end: a Core that answers in prose frames that text once it sees it in the repair,
+// and a declared blocker reaches the person in Mara's words.
+$echoReplies=['Die Seite ist fertig.'];$echoPrompts=[];
+$echoLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$echoReplies,&$echoPrompts):?string {
+    $echoPrompts[]=$prompt;
+    if ($echoReplies) return array_shift($echoReplies);
+    return preg_match('~<<<\n(.*?)\n>>>~s',$prompt,$m)===1 ? "[COREUI_TASK_DONE]\n".$m[1]."\n[/COREUI_TASK_DONE]" : null;
+  },
+  static fn(array $tool):string => 'Bestaetigte Datei: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta):void {},static fn():bool=>false);
+loop_test(($echoLoop['outcome']??'')==='completed' && $echoLoop['out']==='Die Seite ist fertig.' && count($echoPrompts)===2,
+  'a prose finish is framed in the one repair and completes: ' . json_encode($echoLoop));
+$blockReplies=["[COREUI_TASK_BLOCKED]\nDer Ordner assets ist schreibgeschuetzt.\n[/COREUI_TASK_BLOCKED]"];
+$blockLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$blockReplies):?string { return array_shift($blockReplies); },
+  static fn(array $tool):string => 'Bestaetigte Datei: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta):void {},static fn():bool=>false);
+loop_test(($blockLoop['outcome']??'')==='interrupted' && ($blockLoop['reason']??'')==='task_blocked'
+  && str_starts_with((string)$blockLoop['out'],'Der Ordner assets ist schreibgeschuetzt.')
+  && str_contains((string)$blockLoop['out'],'Bereits bestaetigte Projektdateien bleiben gespeichert.'),
+  'a declared blocker is shown in Mara\'s words: ' . json_encode($blockLoop));
 
 $stillPendingCalls=0;$stillPendingTools=[];
 $stillPending=coreui_agent_loop_run('[DATEI: assets/site.css]',

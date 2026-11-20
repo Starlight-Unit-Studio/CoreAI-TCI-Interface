@@ -41,6 +41,13 @@ file_put_contents(getenv('STUB_LOG'), json_encode(['uri'=>$uri, 'auth'=>$headers
 $last = '';
 foreach ((array)($body['messages'] ?? []) as $m) $last = is_string($m['content'] ?? null) ? $m['content'] : json_encode($m['content'] ?? '');
 header('Content-Type: application/json');
+// 0.8.16: the loaded local Cores (ps.json next to this file) and the unload request.
+if ($uri === '/api/ps') {
+  $ps = is_file(__DIR__ . '/ps.json') ? (array)json_decode((string)file_get_contents(__DIR__ . '/ps.json'), true) : [];
+  echo json_encode(['models'=>array_map(static fn($n) => ['name'=>$n, 'model'=>$n], $ps)]);
+  exit;
+}
+if ($uri === '/api/generate') { echo json_encode(['done'=>true]); exit; }
 if ($uri === '/api/chat') {
   echo json_encode(['message'=>['role'=>'assistant', 'content'=>'lokal ok'], 'done'=>true, 'done_reason'=>'stop',
     'eval_count'=>3, 'prompt_eval_count'=>9]);
@@ -401,10 +408,36 @@ $requests();
 // --- An account without the external API stays on local Ollama ------------------------------------------------------
 $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'local', 'external'=>null];
 ext_test(coreui_provider_active() === null, 'local account');
+// 0.8.16: before a local call the other local Cores leave the RAM (cloud Cores take none here).
+file_put_contents($tmp . '/ps.json', json_encode(['qwen3.5:35b', 'gemma4:e4b', 'gpt-oss:120b-cloud', 'ember-coreui:gen']));
 ext_test(ember_call_ollama('gemma4:e4b', '', 'Hallo', 30, ['__skills'=>'none']) === 'lokal ok', 'local answer');
 $sent = $requests();
-ext_test(count($sent) === 1 && $sent[0]['uri'] === '/api/chat' && $sent[0]['auth'] === '' && $sent[0]['body']['model'] === 'gemma4:e4b'
-  && array_key_exists('think', $sent[0]['body']) && $GLOBALS['STU_EMBER_LAST_CALL']['provider'] === 'ollama', 'local Ollama, no key: ' . json_encode($sent));
+$chatSent = array_values(array_filter($sent, static fn(array $r): bool => $r['uri'] === '/api/chat'));
+$unloaded = array_map(static fn(array $r): string => (string)$r['body']['model'] . '/' . json_encode($r['body']['keep_alive'] ?? null),
+  array_values(array_filter($sent, static fn(array $r): bool => $r['uri'] === '/api/generate')));
+ext_test(count($chatSent) === 1 && $chatSent[0]['auth'] === '' && $chatSent[0]['body']['model'] === 'gemma4:e4b'
+  && array_key_exists('think', $chatSent[0]['body']) && $GLOBALS['STU_EMBER_LAST_CALL']['provider'] === 'ollama', 'local Ollama, no key: ' . json_encode($sent));
+ext_test($unloaded === ['qwen3.5:35b/0', 'ember-coreui:gen/0'] && array_search('/api/chat', array_column($sent, 'uri')) > array_search('/api/generate', array_column($sent, 'uri')),
+  'the other local Cores are unloaded before the call, the cloud Core stays: ' . json_encode($unloaded));
+file_put_contents($tmp . '/ps.json', json_encode(['gemma4:e4b']));
+ember_call_ollama('gemma4:e4b', '', 'Hallo', 30, ['__skills'=>'none']);
+ext_test(array_values(array_filter($requests(), static fn(array $r): bool => $r['uri'] === '/api/generate')) === [], 'nothing to unload when only this Core is loaded');
+// The external API never unloads a local Core on its own (the Core switch does, see user_settings.php).
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'external', 'external'=>['label'=>'Test', 'base_url'=>$base, 'model'=>'stub-model']];
+file_put_contents($tmp . '/ps.json', json_encode(['qwen3.5:35b']));
+ember_call_ollama('gemma4:e4b', '', 'Hallo', 30, ['__skills'=>'none']);
+ext_test(array_values(array_filter($requests(), static fn(array $r): bool => in_array($r['uri'], ['/api/ps', '/api/generate'], true))) === [],
+  'an external call does not touch the local Cores');
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'local', 'external'=>null];
+@unlink($tmp . '/ps.json');
+// The rule itself (pure): only other local Cores, never the cloud, same name with or without :latest.
+$unloadedPure = [];
+ext_test(ember_ollama_single_resident('ember-coreui', static fn(): array => ['ember-coreui:latest', 'Qwen3:8B', 'x:20b-cloud', ''],
+    static function (string $n) use (&$unloadedPure): bool { $unloadedPure[] = $n; return true; }) === ['Qwen3:8B']
+  && $unloadedPure === ['Qwen3:8B']
+  && ember_ollama_single_resident('gemma4:31b-cloud', static fn(): array => ['qwen3:8b'], static fn(string $n): bool => true) === []
+  && ember_ollama_single_resident('gemma4:e4b', static fn(): array => ['qwen3:8b'], static fn(string $n): bool => false) === [],
+  'single resident Core: rule');
 // A provider in the runtime settings without the server key, or with a bad address, is never used.
 $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'external', 'external'=>['label'=>'T', 'base_url'=>'http://10.0.0.5/v1', 'model'=>'m']];
 ext_test(coreui_provider_active() === null, 'a bad address is never called');
@@ -555,6 +588,9 @@ ext_test(str_contains($chat, '$wire = coreui_provider_wire(coreui_provider_activ
   && str_contains($streamSource, '$wire = coreui_provider_wire(coreui_provider_active(), $url, $payload, $model);')
   && str_contains($streamSource, "coreui_work_record(\$workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>\$wire['model']]);")
   && substr_count($chat, 'ember_global_lock_acquire()') >= 1, 'both model calls use the line, the work view names the external Core');
+ext_test(substr_count($chat, "  if (!\$wire['external']) ember_ollama_single_resident(\$model);") === 1
+  && substr_count($streamSource, "  if (!\$wire['external']) ember_ollama_single_resident(\$model);") === 1
+  && str_contains($userSettings, 'coreui_core_unload_local();'), 'both model calls keep one local Core, the external switch unloads');
 ext_test(str_contains($chat, '  $sys = ember_turn_persona_system();') && str_contains($chat, '  $sysBase = ember_turn_persona_system();')
   && substr_count($chat, 'ember_persona_system_for(ember_model())') === 1, 'both chat turns take the persona of this turn\'s Core');
 ext_test(str_contains($settings, "\$externalChoice = coreui_provider_choice((string)\$settings['model_override']);")
@@ -571,7 +607,7 @@ ext_test(str_contains($admin, "if (\$action === 'external_api_save') {\n  if (\$
   && !str_contains($admin, "'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',"),
   'Admin Core: only the Inhaber sets the adapter up, checks the address, lists, tests; releases list the external Cores');
 ext_test(str_contains($userSettings, "stu_json(['ok'=>false, 'error'=>'external_not_available'], 409);")
-  && str_contains($userSettings, "'label'=>\$external, 'provider'=>(string)\$capability['label'], 'preload'=>'external']);")
+  && str_contains($userSettings, "'label'=>\$external, 'provider'=>(string)\$capability['label'], 'preload'=>'external',")
   && !str_contains($userSettings, 'external_not_allowed') && str_contains($models, "'external'=>\$externalCores,"),
   'the Core menu lists and chooses external Cores, nothing is loaded');
 $adminJs = (string)file_get_contents($root . '/js/admin.js');

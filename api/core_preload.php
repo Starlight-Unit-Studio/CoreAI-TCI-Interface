@@ -36,6 +36,24 @@ function coreui_core_unload(string $model): bool {
   return $status >= 200 && $status < 300;
 }
 
+/**
+ * 0.8.16: an account chose an external Core: its local Core leaves the RAM like on every other Core
+ * switch (inside the model queue, so no running answer is cut off). Returns the unloaded names.
+ */
+function coreui_core_unload_local(): array {
+  $lock = ember_global_lock_acquire(120);
+  if ($lock === false) return [];
+  try {
+    $done = [];
+    foreach (coreui_core_unload_targets(coreui_ollama_loaded_names(), '') as $name) {
+      if (coreui_core_unload($name)) $done[] = $name;
+    }
+    return $done;
+  } finally {
+    ember_generation_lock_release($lock);
+  }
+}
+
 function coreui_core_preload(PDO $pdo, int $uid, string $model): bool {
   if ($uid <= 0 || !coreui_model_name_valid($model) || ember_model_is_cloud($model)) return false;
   coreui_ai_runtime_apply($pdo, $uid);

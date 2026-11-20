@@ -522,6 +522,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $taskOutcome = 'completed';
   $projectCompact = false;
   $blockedPath = '';
+  $blockedReason = '';
   $blockedExplanation = '';
   // This is NOT a total-work limit. Only unsuccessful writes to the SAME
   // file are counted. Verified writes reset their own failure counter.
@@ -720,7 +721,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         $record('model','info','Arbeitsentscheidung ohne gueltigen Steuerstatus',
           ['reason'=>'task_decision_missing','step'=>$used,'error_type'=>(string)($decision['shape'] ?? '')]);
         $repairPrompt = coreui_task_decision_repair_prompt(
-          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed), (string)($decision['shape'] ?? ''));
+          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed), (string)($decision['shape'] ?? ''), $out);
         $repair = $callModel($repairPrompt);
         $decision = is_string($repair) ? $parseDecision($repair)
           : ['kind'=>'invalid','text'=>'','tool'=>null];
@@ -748,6 +749,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         'blocked' => 'task_blocked',
         default => 'task_decision_invalid',
       };
+      // 0.8.16: Mara's own words about the blocker reach the person (they were replaced by a
+      // generic sentence, so nobody saw why the work stopped).
+      if ($decision['kind'] === 'blocked') $blockedReason = trim((string)$decision['text']);
       $record('run','error','Projektauftrag ohne bestaetigten Abschluss unterbrochen',
         ['reason'=>$stopReason,'step'=>$used]
           + ($decision['kind'] === 'invalid' ? ['error_type'=>(string)($decision['shape'] ?? '')] : []));
@@ -769,6 +773,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . ' wurde nicht gespeichert: ' . ($blockedExplanation !== '' ? $blockedExplanation : 'Werkzeugfehler')
         . '. Ich habe die Wiederholung beendet, statt dieselbe fehlgeschlagene Änderung erneut zu versuchen. '
         . 'Bereits gespeicherte Dateien bleiben unverändert. Details stehen im Arbeitsweg.';
+    } elseif ($stopReason === 'task_blocked' && $blockedReason !== '') {
+      $out = $blockedReason . "\n\n" . 'Der Projektauftrag ist deshalb unterbrochen. Bereits bestaetigte Projektdateien bleiben gespeichert.';
     } elseif ($stopReason === 'model_empty_after_tool') {
       $out = 'Der Core hat nach einem ausgefuehrten Werkzeugschritt keine auswertbare Folgeantwort geliefert. '
         . 'Der Projektauftrag ist deshalb noch nicht abgeschlossen. Bereits gespeicherte Dateien bleiben erhalten. '

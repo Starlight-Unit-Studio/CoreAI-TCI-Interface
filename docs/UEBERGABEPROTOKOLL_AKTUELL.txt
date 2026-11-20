@@ -1,4 +1,16 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
+Version main: 0.8.15, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.16).
+ZIEL 0.8.16: Projektlaeufe schliessen ab (Reparatur zeigt dem Core seine
+eigene Antwort, Marker in Markdown-Schreibweise, Blockade in Maras Worten)
+und nur ein lokaler Core im Arbeitsspeicher (vor jedem lokalen Aufruf und
+beim Wechsel auf einen externen Core). Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_16.txt.
+Naechster Schritt: echter Lauf mit gpt-6-luna und Core Normal; RAM pruefen.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.8.17.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
 Version main: 0.8.14, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.15).
 ZIEL 0.8.15: externe Cores. Der Inhaber laedt die Liste des Anbieters und
 bietet ausgewaehlte Cores an; jedes Konto waehlt sie im Core-Menue unter

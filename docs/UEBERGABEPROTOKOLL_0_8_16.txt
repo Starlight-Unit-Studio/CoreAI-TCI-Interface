@@ -1,0 +1,60 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.16
+Datum: 20.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.15 nach PR #376
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Rueckmeldung des Betreibers nach 0.8.15 mit vier Screenshots: "Bei allen das selbe Problem und die
+normale cores sind total am lamen plus ich glaube bei einem corewechsel wird das vorige modell
+nicht zuverlaessig entladen vielleicht auch bei den img Generatoren jedenfalls waren meine
+kompletten 96gb voll". Dazu: "der Schalter in den Einstellungen sollte weg (ollama-lokal/api
+extern) der core wechsel im drop down neben eingabezeile sollte das ersetzen".
+
+BEFUND
+- gpt-6-luna im Projekt: task_decision_invalid, Fehlertyp "nur Text ohne Werkzeugmarker und ohne
+  Steuerblock" (die Diagnose aus 0.8.15 hat gegriffen). Die Reparatur zeigte dem Core seine
+  abgelehnte Antwort nicht; er wusste nicht, was er aendern soll, und schrieb denselben Text.
+- gpt-6-luna im Projekt: task_blocked. Die Begruendung des Cores wurde durch einen allgemeinen
+  Satz ersetzt; warum die Arbeit stand, war nicht zu sehen.
+- Core Normal im normalen Chat: 9 Minuten fuer 949 Tokens. Ursache sehr wahrscheinlich der volle
+  Arbeitsspeicher: CoreAI ruft Ollama mit keep_alive -1 auf, jeder einmal benutzte Core blieb
+  geladen (Bild-Prompt-Core, hoehere Stufe fuer einen Zug, Vision-Core, Core eines anderen
+  Kontos); entladen wurde nur beim Wechsel im Core-Menue auf einen lokalen Core, nicht beim
+  Wechsel auf einen externen. Der Bilddienst startet sd-cli je Bild neu und haelt nichts.
+- Der Schalter "Core-Pfad" (LOKAL // OLLAMA / EXTERNE API) ist seit 0.8.15 aus dem KI-Profil
+  entfernt; die Wahl liegt im Core-Menue. Ist er noch zu sehen, ist die Seite aus dem Cache (in den
+  Einstellungen steht unten v0.8.15 oder v0.8.16).
+
+UMSETZUNG
+- api/console_task_control.php: Reparatur zeigt dem Core seine abgelehnte Antwort (bis 4000 Zeichen,
+  Rahmen <<< >>> darin entschaerft) und verlangt genau diesen Text im DONE- oder BLOCKED-Block oder
+  den naechsten Werkzeugmarker; Marker in Markdown-Schreibweise (maskiert, fett, Code, Leerzeichen);
+  neue Form marker_malformed.
+- api/console_agent_loop.php: Reparatur mit der Antwort; bei task_blocked ist Maras Begruendung die
+  Antwort, danach der Hinweis zur Unterbrechung.
+- api/console_stream.php: fortgesetzter Lauf: Reparatur mit der Antwort; ein lokaler Core.
+- api/chat.php: ember_ollama_single_resident() vor jedem lokalen Aufruf (in der Warteschlange):
+  andere lokale Cores entladen (leere Anfrage mit keep_alive 0), Cloud-Cores bleiben.
+- api/config.php: STU_EMBER_SINGLE_RESIDENT (COREUI_EMBER_SINGLE_RESIDENT, Standard an).
+- api/core_preload.php, api/user_settings.php: Wechsel auf einen externen Core entlaedt nach der
+  Antwort die lokalen Cores, in der Warteschlange.
+- js/coreui-work-events.js: Form marker_malformed lesbar.
+- Tests, Doku (README: Core retention), Preflight-Kopfzeilen.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Datenbank (keine Migration). Abschluss nur mit
+  bestaetigten Werkzeugnachweisen und Auftragsjournal; hoechstens eine Reparatur.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Werden nach dem Lauf eingetragen.
+
+NICHT GETESTET
+- Echter Projektlauf mit gpt-6-luna und echtes Ollama mit mehreren geladenen Cores; geprueft gegen
+  nachgestellte Antworten und ein nachgebautes Ollama (/api/ps, /api/generate, /api/chat).
+
+NAECHSTER SCHRITT
+- Auf dem Server nach dem Update denselben Auftrag mit gpt-6-luna (normaler Chat und Projekt) und
+  mit Core Normal; RAM nach einem Core-Wechsel pruefen (ollama ps).
+
+Version: 0.8.16

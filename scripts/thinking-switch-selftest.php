@@ -101,9 +101,18 @@ $coreAt = strpos($endpoint, "if ((\$body['action'] ?? '') === 'core')");
 $coreBlock = $coreAt === false ? '' : substr($endpoint, $coreAt, (int)strpos($endpoint, "\n}\n", $coreAt) - $coreAt);
 $existsAt = strpos($coreBlock, 'coreui_ollama_model_exists($name)');
 $patchAt = strpos($coreBlock, "coreui_ai_settings_patch(\$pdo, \$uid, ['model_override'=>\$name])");
-$echoAt = strpos($coreBlock, 'echo json_encode(');
-$finishAt = strpos($coreBlock, 'fastcgi_finish_request()');
+// 0.8.15/0.8.16: an external Core is handled first (saved, answered, then the local Cores leave the RAM);
+// the local path below keeps its own order.
+$echoAt = $patchAt === false ? false : strpos($coreBlock, 'echo json_encode(', $patchAt);
+$finishAt = $echoAt === false ? false : strpos($coreBlock, 'fastcgi_finish_request()', $echoAt);
 $preloadAt = strpos($coreBlock, 'coreui_core_preload($pdo, $uid, $model)');
+$extPatchAt = strpos($coreBlock, "coreui_ai_settings_patch(\$pdo, \$uid, ['model_override'=>COREUI_PROVIDER_PREFIX . \$external]);");
+$extEchoAt = $extPatchAt === false ? false : strpos($coreBlock, 'echo json_encode(', $extPatchAt);
+$extFinishAt = $extEchoAt === false ? false : strpos($coreBlock, 'fastcgi_finish_request()', $extEchoAt);
+$extUnloadAt = strpos($coreBlock, 'coreui_core_unload_local();');
+think_test($extPatchAt !== false && $extEchoAt !== false && $extFinishAt !== false && $extUnloadAt !== false
+  && $extPatchAt < $extEchoAt && $extEchoAt < $extFinishAt && $extFinishAt < $extUnloadAt && $extUnloadAt < (int)$existsAt,
+  'external Core: saved, answered, then the local Cores leave the RAM, before the local path');
 think_test($coreAt !== false && $coreAt < $saveAt && $existsAt !== false && $patchAt !== false && $echoAt !== false
   && $finishAt !== false && $preloadAt !== false && $existsAt < $patchAt && $patchAt < $echoAt && $echoAt < $finishAt
   && $finishAt < $preloadAt, 'Core choice: checked, saved, answered, then loaded in the background');

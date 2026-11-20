@@ -3890,6 +3890,8 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     ];
     return null;
   }
+  // 0.8.16: only this local Core stays in the RAM (inside the model queue).
+  if (!$wire['external']) ember_ollama_single_resident($model);
   try {
     if ($previewActive) {
       $raw = '';
@@ -4151,6 +4153,52 @@ function ember_ollama_context_store(string $model, int $tokens): void {
     @file_put_contents($file, json_encode($data, JSON_UNESCAPED_SLASHES), LOCK_EX);
   }
   $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'][$model] = $tokens;
+}
+
+/**
+ * 0.8.16: one local Core in memory. CoreAI keeps a Core loaded (keep_alive -1, STU_EMBER_KEEP_ALIVE)
+ * so the next message starts without a cold start; but every Core used once stayed loaded (the
+ * image prompt Core, a higher tier for a single turn, a vision Core, a Core of another account)
+ * until the server's RAM was full. Before a local call the other local Cores leave the RAM with
+ * Ollama's documented empty request with keep_alive 0; cloud Cores take no RAM here. The caller
+ * holds the serial model queue, so no running answer is cut off. STU_EMBER_SINGLE_RESIDENT false
+ * keeps the old behaviour (for a machine with room for several Cores). $ps returns the loaded
+ * names, $unload unloads one; both are replaceable in tests. Returns the names that were unloaded.
+ */
+function ember_ollama_single_resident(string $model, ?callable $ps = null, ?callable $unload = null): array {
+  if (!ember_cfg('STU_EMBER_SINGLE_RESIDENT', true) || trim($model) === '' || ember_model_is_cloud($model)) return [];
+  $key = static function (string $name): string {
+    $name = strtolower(trim($name));
+    return ($name !== '' && !str_contains($name, ':')) ? $name . ':latest' : $name;
+  };
+  $base = (string)preg_replace('~/api/(?:chat|generate)/?$~', '', ember_url());
+  $ps = $ps ?? static function () use ($base): array {
+    $json = ember_http_get_json($base . '/api/ps', 3);
+    $names = [];
+    foreach ((is_array($json['models'] ?? null) ? $json['models'] : []) as $row) {
+      if (is_array($row)) $names[] = (string)($row['name'] ?? $row['model'] ?? '');
+    }
+    return $names;
+  };
+  $unload = $unload ?? static function (string $name) use ($base): bool {
+    $ch = curl_init($base . '/api/generate');
+    if (!$ch) return false;
+    curl_setopt_array($ch, [CURLOPT_POST=>true, CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>false,
+      CURLOPT_CONNECTTIMEOUT=>3, CURLOPT_TIMEOUT=>30, CURLOPT_HTTPHEADER=>['Content-Type: application/json'],
+      CURLOPT_POSTFIELDS=>json_encode(['model'=>$name, 'keep_alive'=>0], JSON_UNESCAPED_SLASHES)]);
+    curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    return $code >= 200 && $code < 300;
+  };
+  $done = [];
+  foreach ($ps() as $name) {
+    $name = trim((string)$name);
+    if ($name === '' || $key($name) === $key($model) || ember_model_is_cloud($name)) continue;
+    if ($unload($name)) $done[] = $name;
+  }
+  if ($done !== [] && function_exists('ember_debug_log')) ember_debug_log('ember_single_resident_unloaded', ['kept'=>$model, 'unloaded'=>$done]);
+  return $done;
 }
 
 /** Context length Ollama reports for a currently loaded model, if any. */

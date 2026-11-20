@@ -1,0 +1,47 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.16
+Datum: 20.11.2026
+
+DIE REPARATUR ZEIGT DEM CORE SEINE EIGENE ANTWORT
+- Nach 0.8.15 brach ein Lauf mit gpt-6-luna weiter mit
+  task_decision_invalid ab; der Arbeitsweg nannte jetzt die Form: nur Text,
+  zweimal. Die eine Reparatur sagte dem Core, dass seine Antwort ungueltig
+  war, zeigte sie ihm aber nicht; er schrieb denselben Text noch einmal.
+- Die Reparatur zeigt jetzt die abgelehnte Antwort (bis 4000 Zeichen, nur
+  dem Core) und verlangt genau diesen Text im DONE-Block, wenn die Arbeit
+  fertig ist, im BLOCKED-Block bei einer Blockade, sonst den naechsten
+  Werkzeugmarker. Der Abschluss braucht weiterhin die bestaetigten
+  Werkzeugnachweise und das Auftragsjournal.
+
+MARKER IN MARKDOWN-SCHREIBWEISE
+- \[COREUI\_TASK\_DONE\], **[COREUI_TASK_DONE]**, `[COREUI_TASK_DONE]` und
+  Leerzeichen in den Klammern gelten als Marker. Ein COREUI_TASK-Marker
+  ohne Klammern wird im Arbeitsweg als eigene Form genannt.
+
+EINE BLOCKADE IN MARAS WORTEN
+- Meldete der Core eine Blockade (task_blocked), wurde seine Begruendung
+  durch einen allgemeinen Satz ersetzt; niemand sah, warum die Arbeit
+  stand. Jetzt ist die Begruendung die Antwort, danach der Hinweis, dass
+  der Projektauftrag unterbrochen ist und gespeicherte Dateien bleiben.
+
+EIN LOKALER CORE IM ARBEITSSPEICHER
+- CoreAI haelt einen Core geladen (keep_alive -1); jeder einmal benutzte
+  Core blieb: der Bild-Prompt-Core, eine hoehere Stufe fuer einen einzigen
+  Zug, ein Vision-Core, der Core eines anderen Kontos. Ein Server mit
+  96 GB lief voll, jeder Core wurde sehr langsam.
+- Vor jedem lokalen Aufruf verlassen jetzt, innerhalb der seriellen
+  Modellwarteschlange, die anderen lokalen Cores den RAM (Cloud-Cores
+  belegen hier keinen). Der Wechsel auf einen externen Core im Core-Menue
+  entlaedt die lokalen Cores ebenfalls.
+- COREUI_EMBER_SINGLE_RESIDENT=0 behaelt das alte Verhalten fuer Rechner
+  mit Platz fuer mehrere Cores.
+
+TESTS
+- agent-loop-selftest.php: Markdown-Marker, Form ohne Klammern, Reparatur
+  mit der abgelehnten Antwort, Abschluss nach Reparatur, Blockade in Maras
+  Worten.
+- external-provider-selftest.php: gegen das nachgebaute Ollama werden vor
+  einem lokalen Aufruf die anderen lokalen Cores entladen, der Cloud-Core
+  bleibt, ein externer Aufruf beruehrt keinen lokalen Core; die Regel
+  selbst.
+- core-install-selftest.php, thinking-switch-selftest.php: der Wechsel auf
+  einen externen Core entlaedt nach der Antwort, in der Warteschlange.
