@@ -434,6 +434,15 @@ try {
   $taskJournalReady = coreui_task_journal_begin($pdo, (int)$uid,
     $sessionId, $agentRunId, $afterId, 'chat');
   $GLOBALS['COREUI_TASK_JOURNAL_READY'] = $taskJournalReady;
+  if ($taskJournalReady && !$resumedFromCheckpoint) {
+    // The signed-in user's ORIGINAL turn is the only source of explicit
+    // deliverables. A model-authored plan never silently expands this scope.
+    $requirements = coreui_task_journal_requirements_from_goal($message);
+    if (!coreui_task_journal_seed_requirements($pdo, (int)$uid,
+        $sessionId, $agentRunId, $requirements)) {
+      error_log('[CoreAI] Task deliverables could not be seeded');
+    }
+  }
   $GLOBALS['COREUI_WORK_PDO'] = $pdo;
   sse_send('agent_run', ['id'=>$agentRunId,'status'=>'running']);
   $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
