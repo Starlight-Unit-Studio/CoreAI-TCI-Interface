@@ -887,6 +887,23 @@ try {
     coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
       'running', 'waiting_tool');
   } else {
+    // A missing assistant message can mean an empty successful Ollama
+    // response, thinking-only output, a provider failure, or a failed tool
+    // follow-up. Do not claim a context-window overflow from this condition.
+    // Preserve bounded, server-observed diagnostics for the work timeline.
+    $lastCall = function_exists('ember_last_call_meta') ? ember_last_call_meta() : [];
+    if (!is_array($lastCall)) $lastCall = [];
+    $statusMeta = [
+      'reason'=>'empty_response',
+      'done_reason'=>(string)($lastCall['done_reason'] ?? ($acc['done_reason'] ?? '')),
+      'prompt_eval_count'=>(int)($lastCall['prompt_eval_count'] ?? ($acc['prompt_eval_count'] ?? 0)),
+      'eval_count'=>(int)($lastCall['eval_count'] ?? ($acc['eval_count'] ?? 0)),
+      'thinking_chars'=>strlen($thinkingAll),
+      'content_chars'=>strlen($contentAll),
+      'http_code'=>(int)($lastCall['code'] ?? 0),
+    ];
+    coreui_work_record($pdo, 'model', 'error', 'Keine auswertbare Core-Antwort',
+      $statusMeta);
     coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
       'running', 'failed', 'empty_response');
   }
