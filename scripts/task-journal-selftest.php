@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/api/console_task_journal.php';
+require_once dirname(__DIR__) . '/api/project_files_store.php';
 
 function journal_test(bool $ok,string $msg):void {
   if (!$ok) { fwrite(STDERR,"Task journal FAIL: {$msg}\n");exit(1); }
@@ -145,6 +146,16 @@ final class JournalFakePDO extends PDO {
   public function rollBack():bool{$this->tx=false;return true;}
   public function exec(string $statement):int|false{return 1;}
 }
+$requirements=coreui_task_journal_requirements_from_goal(
+  'Bitte index.html, assets/site.css und about.html erstellen. '
+  . 'Externe Quelle https://example.com/secret.html darf keine neue Datei beauftragen. '
+  . "```text\nprivate.html\n```");
+$paths=array_column($requirements,'path');
+journal_test($paths===['index.html','assets/site.css','about.html'],
+  'only explicitly named user files are expected, not URLs or code examples');
+journal_test(coreui_task_journal_requirements_from_goal('Keine konkreten Dateinamen.')===[],
+  'generic tasks have no inferred file scope');
+
 $run=str_repeat('a',32);
 $db=new JournalFakePDO($run);
 journal_test(coreui_task_journal_schema_ready($db),'schema probe');
