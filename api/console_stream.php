@@ -597,6 +597,49 @@ try {
       array_merge(['pfile_read','pfile_edit','pfile_write','prun',
         'pvcs_commit','pvcs_branch','pvcs_merge'],COREUI_PFTOOLS_PROC_KINDS)));
   }
+  if (!empty($GLOBALS['COREUI_TASK_RESUME_ACTIVE'])) {
+    // On a resumed run, the first model reply is still an active TASK
+    // decision. Never mistake unmarked prose for a completed interrupted
+    // project merely because the SSE stream itself ended successfully.
+    $parseTask = static fn(string $text): array => coreui_task_decision(
+      $text, static fn(string $r): ?array => coreui_agent_next_tool($r,$projectToolAllowed));
+    $decision=$parseTask($reply);
+    if ($decision['kind']==='invalid'
+        && !empty($acc['ok']) && !empty($acc['done'])
+        && empty($acc['truncated']) && isset($model,$sys,$u)
+        && !ember_agent_cancel_requested()) {
+      coreui_work_record($pdo,'model','info','Fortgesetzter Arbeitsauftrag: Entscheidung wird korrigiert',
+        ['reason'=>'task_decision_missing']);
+      $fix=console_stream_ollama($model,$sys,
+        coreui_task_decision_repair_prompt($u),false,null,false,false);
+      if (!empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated'])) {
+        $candidate=ember_sanitize_public_reply((string)($fix['content']??''),
+          (string)($fix['thinking']??''));
+        $repaired=$parseTask($candidate);
+        if ($repaired['kind']!=='invalid') {
+          $decision=$repaired;
+          $reply=$candidate;
+        }
+      }
+    }
+    if ($decision['kind']==='done') {
+      if (coreui_task_journal_can_finish($pdo,(int)$uid,$sessionId,$agentRunId)) {
+        $reply=(string)$decision['text'];
+      } else {
+        $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
+        $reply='Der gespeicherte Projektstand reicht noch nicht fuer einen bestaetigten '
+          . 'Abschluss. Bereits gepruefte Dateien sind erhalten; die Aufgabe bleibt offen.';
+      }
+    } elseif ($decision['kind']==='blocked') {
+      $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
+      $reply=(string)$decision['text'];
+    } elseif ($decision['kind']==='invalid') {
+      $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
+      $reply='Der unterbrochene Projektlauf konnte trotz bestaetigtem Checkpoint '
+        . 'keine gueltige naechste Werkzeugentscheidung liefern. Es wurde '
+        . 'keine alte Dateioperation wiederholt; der Arbeitsstand bleibt erhalten.';
+    }
+  }
   $projectToolPending = static function(string $text) use ($projectToolAllowed): bool {
     if ($projectToolAllowed === []) return false;
     return coreui_agent_next_tool($text,$projectToolAllowed) !== null
