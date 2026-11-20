@@ -22,6 +22,7 @@ require_once __DIR__ . '/guest_access.php';
 require_once __DIR__ . '/console_compaction.php';
 require_once __DIR__ . '/console_agent_loop.php';
 require_once __DIR__ . '/console_agent_runs.php';
+require_once __DIR__ . '/console_task_journal.php';
 require_once __DIR__ . '/console_web_research.php';
 require_once __DIR__ . '/console_answer_style.php';
 require_once __DIR__ . '/console_timezone.php';
@@ -6975,7 +6976,39 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed),
         static fn(string $prompt): ?string => ember_generated_image_review($pdo, $consoleUid,
           $primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel)),
-        static fn(): array => ember_agent_followup_last_call());
+        static fn(): array => ember_agent_followup_last_call(),
+        // A verified tool receipt is committed before the model proceeds.
+        // The task journal is also used by plain CORE CHANNEL workspaces.
+        static function(string $event, array $tool, int $step, ?string $result,
+            ?string $state) use ($pdo, $consoleUid, $consoleSessionId): mixed {
+          $ctx=$GLOBALS['COREUI_WORK_CONTEXT'] ?? [];
+          $runId=(string)($ctx['agent_run_id'] ?? '');
+          $sid=(string)$consoleSessionId;
+          if ($runId==='' || !coreui_task_journal_schema_ready($pdo))
+            return $event==='claim' ? ['status'=>'unavailable'] : false;
+          if ($event==='claim')
+            return coreui_task_journal_claim($pdo,$consoleUid,$sid,$runId,$step,$tool);
+          if ($event==='can_finish')
+            return coreui_task_journal_can_finish($pdo,$consoleUid,$sid,$runId);
+          if ($event!=='finish' || !is_string($result) || !is_string($state)) return false;
+          $proof=[];
+          if ($state==='success'
+              && in_array((string)($tool['tool'] ?? ''),
+                ['pfile_read','pfile_write','pfile_edit'],true)) {
+            $path=coreui_agent_file_target($tool);
+            if ($path==='') return false;
+            try {
+              $projectId=coreui_pftools_project($pdo,$consoleUid,$sid);
+              if ($projectId==='') return false;
+              $file=coreui_pfiles_row($pdo,$consoleUid,$projectId,coreui_pfiles_path($path));
+              if (!is_array($file)) return false;
+              $proof=['file_revision'=>(int)$file['revision'],
+                'file_sha256'=>(string)$file['sha256']];
+            } catch (Throwable $e) { return false; }
+          }
+          return coreui_task_journal_finish($pdo,$consoleUid,$sid,$runId,
+            $step,$tool,$state,$result,$proof);
+        });
       // Carry the tool-run outcome to the single server-owned run state.
       // A saved interruption notice must not be counted as completed work.
       $GLOBALS['COREUI_AGENT_TASK_OUTCOME'] = (string)($loop['outcome'] ?? 'completed');
