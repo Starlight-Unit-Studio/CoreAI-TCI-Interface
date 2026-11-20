@@ -3617,6 +3617,39 @@
     if (emberId > 0 && browseJobId <= 0) {
       delete state.liveWorkEventsBySession[sessionId];
     }
+    // A server-confirmed empty response is a terminal failure, not a live
+    // operation. There is no saved assistant bubble to replace the typing
+    // timeline, so freeze the verified work events and remove the ticker.
+    if (emberId <= 0 && browseJobId <= 0) {
+      delete state.liveWorkEventsBySession[sessionId];
+      if (isActiveSession(sessionId) && state.typingEl) {
+        var failedRow = state.typingEl;
+        var failedContent = failedRow.querySelector('.msg-content');
+        var liveTimeline = state.thinkingPanelEl;
+        var verifiedTimeline = window.CoreUIWorkEvents && savedWork.length
+          ? window.CoreUIWorkEvents.create({events:savedWork,expanded:true}) : null;
+        if (failedContent && liveTimeline && liveTimeline.parentNode && verifiedTimeline) {
+          liveTimeline.parentNode.replaceChild(verifiedTimeline,liveTimeline);
+        } else if (liveTimeline && liveTimeline.parentNode) {
+          liveTimeline.parentNode.removeChild(liveTimeline);
+        }
+        var failedBubble = failedRow.querySelector('.msg-bubble');
+        if (failedBubble) {
+          failedBubble.textContent = '⚠ Mara konnte keine Antwort speichern. Der Projektauftrag ist nicht abgeschlossen. Bereits gesicherte Dateien bleiben erhalten.';
+        }
+        failedRow.classList.add('is-failed');
+        state.typingEl = null;
+        state.thinkingPanelEl = null;
+        state.agentStopEl = null;
+      }
+      updateActivePendingUi();
+      if (isActiveSession(sessionId)) {
+        setStatus('error','ANTWORT FEHLGESCHLAGEN');
+        scrollToBottom();
+      }
+      drainQueuedTurn(sessionId);
+      return;
+    }
     if (emberId > Number(ses.last_message_id || 0)) ses.last_message_id = emberId;
     if (insights && isActiveSession(sessionId)) insights.refresh(sessionId);
 

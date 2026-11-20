@@ -586,7 +586,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $prompt = coreui_agent_step_prompt($base, $steps, $used, $maxSteps, $allowed);
     $next = $callModel($prompt);
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
-    if ($out === '') break;
+    if ($out === '') {
+      // A missing model follow-up after a confirmed file/tool operation must
+      // not turn the entire run into an undiagnosed empty_response. Preserve
+      // the saved files, publish an honest interruption, and stop retrying.
+      if ($projectWorkflow) {
+        $stopReason = 'model_empty_after_tool';
+        $record('model', 'error', 'Core-Folgeantwort nach Werkzeugschritt fehlt',
+          ['reason'=>'empty_followup_after_tool','step'=>$used]);
+      }
+      break;
+    }
     $tool = $projectWorkflow || $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
     if ($tool === null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS)) {
       $tool = coreui_agent_recover_promised_read($out, $allowed);
@@ -602,6 +612,10 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . ' wurde nicht gespeichert: ' . ($blockedExplanation !== '' ? $blockedExplanation : 'Werkzeugfehler')
         . '. Ich habe die Wiederholung beendet, statt dieselbe fehlgeschlagene Änderung erneut zu versuchen. '
         . 'Bereits gespeicherte Dateien bleiben unverändert. Details stehen im Arbeitsweg.';
+    } elseif ($stopReason === 'model_empty_after_tool') {
+      $out = 'Der Core hat nach einem ausgefuehrten Werkzeugschritt keine auswertbare Folgeantwort geliefert. '
+        . 'Der Projektauftrag ist deshalb noch nicht abgeschlossen. Bereits gespeicherte Dateien bleiben erhalten. '
+        . 'Die technischen Details stehen im Arbeitsweg.';
     } else {
       $out = 'Der Projektauftrag ist noch nicht abgeschlossen (Grund: ' . $stopReason
         . '). Bereits bestaetigte Projektdateien bleiben gespeichert. '

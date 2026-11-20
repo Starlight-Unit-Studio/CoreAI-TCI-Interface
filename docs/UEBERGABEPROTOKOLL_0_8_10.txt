@@ -1,0 +1,23 @@
+COREAI: TCI INTERFACE - UEBERGABEPROTOKOLL 0.8.10
+Datum: 20.11.2026
+
+Observed issue
+The 12B Core successfully created project files and then stopped returning a usable follow-up around a visible 8.4K token snapshot. The server recorded empty_response, but the visible work timer remained at "Arbeite weiter" after the Stop control had disappeared.
+
+Verified source causes
+1. api/console_agent_loop.php: a null/blank next model result ended the project tool loop without a public error response or a distinguishing work event.
+2. api/console_stream.php: no assistant message and no browse handoff produced a failed run with generic empty_response, but no terminal model diagnostic with bounded counters.
+3. js/console-app.js: the SSE done path with id=0 and empty text did not replace the live typing timeline with a completed one. A timer in js/coreui-work-events.js consequently remained visible.
+
+Changes
+- A missing follow-up after a verified project tool step is a clearly reported interruption with preserved file revisions and one model-error work event. This does not claim the project is finished.
+- A truly empty final SSE response emits bounded last-call diagnostic metadata and keeps the run failed.
+- Frontend freezes work events in a non-live card, removes running progress and shows an explicit failure status without inventing an assistant message or file success.
+- Tests added to scripts/agent-loop-selftest.php and scripts/work-events-ui-selftest.js.
+
+Constraints / acceptance
+- Do not reduce the operator's selected 131072 num_ctx or add arbitrary project step/time caps.
+- Do not merge before native/Docker Preflight and CI pass; verify both normal chat and project chat.
+- Live host: capture model name, options.num_ctx, /api/ps context_length, done_reason, prompt_eval_count, eval_count, HTTP/transport status. Only then assign the provider-specific root cause.
+- Verify success case still completes, empty-followup failure doesn't drop saved work, SSE no-reply stops its timer, and old work history remains.
+- Version follows existing scheme: 0.8.10, next 0.8.11.

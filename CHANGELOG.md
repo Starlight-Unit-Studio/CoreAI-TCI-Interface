@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.8.10 - 20.11.2026
+
+- **Empty follow-up after a verified project step:** Mara now reports the interrupted project operation rather than silently dropping the answer. Confirmed files and revisions remain intact; no speculative overwrite or unbounded retry is performed.
+- **Terminal UI on missing assistant response:** a failed SSE run freezes the work timeline, preserves confirmed events, removes the running timer and marks the response as failed instead of displaying “Arbeite weiter” indefinitely.
+- **Bounded provider diagnostics:** failed empty-response runs record Ollama token counters, stop reason, response/thinking sizes and HTTP status without exposing private reasoning or model output.
+- **Regression coverage:** an empty model follow-up after an actual file read is exercised by the agent selftest; the UI selftest checks that the empty-response branch terminates correctly.
+- **Limit:** the underlying provider cause of the observed 12B empty content is not yet established. Live-host acceptance must verify actual Ollama num_ctx, done_reason, transport outcomes and the terminal UI after deployment.
+
 ## 0.8.9 - 20.11.2026
 
 - **No more endless guestbook edit retries:** The agent previously compared complete tool inputs, so a different failed patch for the same file evaded its no-progress detector. After a rejected exact-match edit Mara now re-reads the actual saved file and can try a corrected patch once. A second failed edit stops this same-file error loop.

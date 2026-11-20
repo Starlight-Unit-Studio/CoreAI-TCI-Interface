@@ -73,6 +73,18 @@ work.add(body,{id:3,kind:'artifact',state:'info',
   title:'<script>alert(1)</script>',meta:{error_type:'output_missing'}});
 assert(timeline.textContent.includes('<script>alert(1)</script>'));
 assert.equal(body.querySelector('.work-entries').children.length,3);
+// The empty-response branch must freeze a failed live timeline instead of
+// leaving "Arbeite weiter" and its running ticker behind.
+const consoleApp = fs.readFileSync(path.join(__dirname,'../js/console-app.js'),'utf8');
+assert(consoleApp.includes("if (emberId <= 0 && browseJobId <= 0)")
+  && consoleApp.includes('CoreUIWorkEvents.create({events:savedWork,expanded:true})')
+  && consoleApp.includes("setStatus('error','ANTWORT FEHLGESCHLAGEN')"),
+  'terminal empty-response path keeps verified events without live ticker');
+const streamSource = fs.readFileSync(path.join(__dirname,'../api/console_stream.php'),'utf8');
+assert(streamSource.includes("'Keine auswertbare Core-Antwort'")
+  && streamSource.includes("'empty_response'"),
+  'backend records bounded diagnostic event before terminal failure');
+
 const live=work.create({live:true,expanded:true});
 assert(!live.textContent.includes('Arbeitsweg'),'no separate workflow heading');
 assert(live && !live.querySelector('.work-body').hidden);
