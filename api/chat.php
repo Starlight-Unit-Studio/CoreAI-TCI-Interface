@@ -5292,9 +5292,12 @@ function ember_build_chat_prompt(
   // 0.5.76: empty for Mara's own Core (Modelfile SYSTEM), her persona for other Cores.
   $sys = ember_turn_persona_system();
 
+  // 0.8.17: a turn with attached files never runs native tools (console_stream.php); offering them
+  // anyway made the Core answer with a plan block that was then refused and replaced its answer.
   $nativeProjects = $channel === 'console' && $imageUrl === null
     && empty($GLOBALS['COREUI_NATIVE_TOOL_REENTRY'])
-    && $existingProjectSourcesState === false;
+    && $existingProjectSourcesState === false
+    && trim($attachBlock) === '';
   $webHint = (ember_web_enabled() && $imageUrl === null)
     ? ($profile['compact'] ? ember_web_capability_hint_compact() : ember_web_capability_hint()) : '';
   // 0.5.77: in the private chat Mara works on her own over several steps.
@@ -7175,6 +7178,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         ['public_note'=>$progressOnly['note'],'source'=>'model_public_text']);
     }
     $out = $progressOnly['reply'];
+  }
+  // 0.8.17: without native tools in this turn a marker keeps the answer as text (console_stream.php).
+  if (!$nativeEligible && is_string($out) && coreui_native_tool_attempt($out)) {
+    $kept = coreui_native_markers_drop($out);
+    if ($channel === 'console') coreui_work_record($pdo,'tool','info','Werkzeugmarker ohne Werkzeug in diesem Zug entfernt',
+      ['reason'=>'native_tool_not_offered','response_bytes'=>strlen($out)]);
+    if ($kept !== '') $out = $kept;
   }
   if (is_string($out) && coreui_native_tool_attempt($out)
       && coreui_native_tool_parse($out) === null) {

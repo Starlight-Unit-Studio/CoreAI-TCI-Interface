@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.16: project runs finish reliably, one local Core in memory.
+# CoreAI: TCI Interface 0.8.17: cut tool blocks are repaired in smaller parts, project prompts stay within a budget.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

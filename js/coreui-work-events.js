@@ -46,7 +46,10 @@
     block_empty:'ein leerer Steuerblock',
     block_and_tool:'ein Steuerblock zusammen mit einem Werkzeugmarker',
     marker_unknown:'ein unbekannter Steuermarker',
-    marker_malformed:'ein Steuermarker ohne gültige eckige Klammern'
+    marker_malformed:'ein Steuermarker ohne gültige eckige Klammern',
+    // 0.8.17
+    tool_unclosed:'ein Werkzeugblock ohne Schlussmarker',
+    output_truncated:'eine an der Ausgabegrenze abgeschnittene Antwort'
   };
 
   var IMAGE_PHASES = {
@@ -166,6 +169,14 @@
         return 'Meine Werkzeugantwort hatte eine Form, die ich nicht sicher auswerten kann'
           + (TOOL_SHAPES[event.meta.reason] ? ' (' + TOOL_SHAPES[event.meta.reason] + ')' : '')
           + '. Daraus führe ich nichts aus.';
+      // 0.8.17: a turn with attached files has no plan or build tool; the answer stays text.
+      case 'Werkzeugmarker ohne Werkzeug in diesem Zug entfernt':
+        return 'Mit angehängten Dateien nutze ich in diesem Zug kein Plan- oder Bauwerkzeug. '
+          + 'Meine Antwort steht deshalb als Text da; gespeichert oder gebaut habe ich nichts.';
+      // 0.8.17: a read-only tool that repeated itself leaves the run; the project work goes on.
+      case 'Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis':
+        return 'Dieses Werkzeug hat dreimal dasselbe Ergebnis geliefert. Ich nutze es in diesem Auftrag '
+          + 'nicht mehr und arbeite mit dem vorhandenen Stand weiter.';
       case 'Werkzeugantwort wird einmal korrigiert':
         return 'Ich schreibe die Werkzeugantwort einmal in der vorgesehenen Form neu.';
       case 'Werkzeugantwort korrigiert':

@@ -1,0 +1,76 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.17
+Datum: 20.11.2026
+
+EIN ABGESCHNITTENER WERKZEUGBLOCK WIRD ERKANNT UND IN TEILEN NEU GESCHRIEBEN
+- Fortgesetzte Projektlaeufe (eine vorhandene Homepage erweitern) brachen
+  weiter mit task_decision_invalid und dem Fehlertyp "nur Text" ab, mit
+  gpt-6-luna bei Schritt 23 und mit lokalen Cores.
+- Ein [DATEI_NEU: ...]-Block, der eine ganze Seite neu schreibt, kann an die
+  Ausgabegrenze stossen. Die Antwort endet dann ohne [/DATEI_NEU], kein
+  Werkzeug wird erkannt, und sie galt als reiner Text. Die Reparatur
+  verlangte den naechsten Werkzeugschritt; der Core schrieb dieselbe Seite
+  noch einmal und wurde wieder abgeschnitten.
+- Ein Datei- oder Codeblock ohne Schlussmarker ist jetzt eine eigene Form
+  (tool_unclosed). Eine Antwort, die an der Laengengrenze endete, heisst
+  output_truncated (aus done_reason von Ollama oder finish_reason des
+  Anbieters). Die Reparatur sagt, dass davon nichts gespeichert wurde, und
+  verlangt einen kleineren Schritt: ein kurzes, vollstaendiges Grundgeruest
+  mit DATEI_NEU, danach je Abschnitt ein DATEI_AENDERN-Block.
+- Der Arbeitsweg zeigt Fehlertyp, Laenge der Antwort und wie der Aufruf
+  endete.
+
+PROJEKT-PROMPTS BLEIBEN IN EINEM BUDGET
+- Jeder Core-Aufruf eines Projektlaufs enthielt jedes fruehere
+  Werkzeugergebnis vollstaendig. Der Prompt wuchs mit jeder gelesenen Datei,
+  bis ein lokales Kontextfenster voll war oder fuer die Antwort kein Platz
+  blieb.
+- Von neu nach alt bleiben Ergebnisse bis 48 KB vollstaendig; aeltere
+  erfolgreiche Ergebnisse ueber 1200 Bytes gehen als Groesse und SHA-256 mit
+  dem Hinweis, die Datei bei Bedarf erneut zu lesen. Das neueste und jedes
+  fehlgeschlagene Ergebnis bleiben immer vollstaendig. Nachweise und
+  Auftragsjournal sind unveraendert. Lange Laeufe mit einem externen Core
+  werden dadurch auch guenstiger.
+
+PRUEFEN IST ARBEIT, KEINE BLOCKADE
+- Ein Lauf mit gpt-6-luna endete mit task_blocked, weil fuer eine statische
+  Homepage kein Testergebnis vorlag.
+- Das Auftragsprotokoll sagt jetzt, was "geprueft" heisst (von einem
+  Werkzeug bestaetigt: gespeicherte oder gelesene Datei, Befehl mit
+  Exitcode 0), dass eine fehlende Pruefung der naechste Werkzeugschritt ist
+  und dass eine Blockade nur fuer Arbeit gilt, die die erlaubten Werkzeuge
+  nicht leisten, etwa eine Entscheidung der Person.
+- Der Projekt-Prompt nennt eine Pruefung fuer eine statische Seite
+  (node --check, ein kurzer Python-Befehl, der die HTML-Dateien einliest),
+  verlangt grosse Dateien in Teilen, und die Zusammenfassung nach der
+  letzten Aenderung gehoert in den DONE-Block.
+
+EINE SICH WIEDERHOLENDE WEBSUCHE BEENDET DIE SUCHE, NICHT DAS PROJEKT
+- Ein lokaler Core suchte dreimal dieselben Worte ohne verwertbare Treffer,
+  und der ganze Projektlauf stoppte (repeated_identical_tool_result).
+- Ein nur lesendes Werkzeug (Websuche, Chat-Archiv, Skill), das dreimal
+  dasselbe Ergebnis liefert, verlaesst jetzt das Werkzeugmenue dieses Laufs,
+  und die Arbeit geht weiter. Ein wiederholt fehlschlagender Befehl oder
+  Schreibversuch stoppt den Lauf weiterhin.
+
+ANTWORTEN MIT DATEIANHAENGEN BLEIBEN ANTWORTEN
+- Ein Zug mit angehaengten Dateien fuehrt nie Plan- oder Bauwerkzeuge aus,
+  sie wurden dem Core aber trotzdem angeboten. Nutzte er eines, wurde seine
+  ganze Antwort durch "Werkzeugantwort nicht lesbar (tool_text_around_block)"
+  ersetzt.
+- Solche Zuege bieten die Werkzeuge nicht mehr an. Ein Marker, der trotzdem
+  erscheint (etwa aus einem angehaengten Changelog uebernommen), wird
+  entfernt, der Text bleibt die Antwort. Gespeichert oder gebaut wird
+  nichts.
+
+TESTS
+- agent-loop-selftest.php: unvollstaendige Datei- und Codebloecke,
+  abgeschnittene Antworten, die Reparatur ohne die abgeschnittene Seite, ein
+  abgeschnittener Seitenblock, der als Grundgeruest neu kommt und den Lauf
+  abschliesst, das Ergebnisbudget in einem laufenden Lauf, eine sich
+  wiederholende Websuche, die die Suche und nicht den Lauf beendet, ein
+  wiederholt fehlschlagender Befehl, der weiter stoppt, das neue Protokoll
+  und der Projekt-Prompt, Zuege mit Anhaengen.
+- work-events-ui-selftest.js: die neuen Fehlertypen und Hinweise.
+- 19 gezielt eingebaute Fehler wurden alle erkannt.
+
+Version: 0.8.17

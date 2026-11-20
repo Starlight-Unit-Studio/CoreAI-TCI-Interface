@@ -1,4 +1,16 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
+Version main: 0.8.16, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.17).
+ZIEL 0.8.17: fortgesetzte Projektlaeufe schliessen ab (ein abgeschnittener
+Werkzeugblock wird erkannt und in kleineren Teilen neu geschrieben,
+Projekt-Prompts bleiben in einem Ergebnisbudget, Pruefen ist Arbeit statt
+Blockade, eine wiederholte Websuche beendet nur die Suche) und Antworten
+mit Dateianhaengen bleiben Antworten. Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_17.txt.
+Naechster Schritt: Homepage-Ausbau mit gpt-6-luna und Core Normal fortsetzen.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.8.18.
+--- VORHERIGER STAND ---
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
 Version main: 0.8.15, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.16).
 ZIEL 0.8.16: Projektlaeufe schliessen ab (Reparatur zeigt dem Core seine
 eigene Antwort, Marker in Markdown-Schreibweise, Blockade in Maras Worten)

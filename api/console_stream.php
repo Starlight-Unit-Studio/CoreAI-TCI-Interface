@@ -832,6 +832,13 @@ try {
     $reply = $progressOnly['reply'];
   }
 
+  // 0.8.17: without native tools in this turn (attached files) a marker keeps the answer as text.
+  if ($reply !== '' && !$nativeToolHandled && !$nativeEligible && coreui_native_tool_attempt($reply)) {
+    $kept = coreui_native_markers_drop($reply);
+    coreui_work_record($pdo,'tool','info','Werkzeugmarker ohne Werkzeug in diesem Zug entfernt',
+      ['reason'=>'native_tool_not_offered','response_bytes'=>strlen($reply)]);
+    if ($kept !== '') $reply = $kept;
+  }
   if ($reply !== '' && !$nativeToolHandled
       && coreui_native_tool_attempt($reply)
       && coreui_native_tool_parse($reply) === null) {

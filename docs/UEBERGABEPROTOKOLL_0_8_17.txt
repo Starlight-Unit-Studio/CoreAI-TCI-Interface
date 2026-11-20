@@ -1,0 +1,76 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.17
+Datum: 20.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.16 nach PR #377
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Rueckmeldung des Betreibers nach 0.8.16 mit fuenf Screenshots: erster Lauf mit gpt-6-luna im
+Projekt, zweiter Lauf mit gpt-6-luna im Projekt ("wieder das uebliche"), Core Normal ausserhalb
+eines Projekts mit zwei Dateianhaengen. Danach: "Mit lokalem e4b also normal ging der erste Lauf
+ploetzlich doch durch aber stoppte dann ebenfalls beim naechsten Lauf die homepage weiter
+auszubauen und der eine chat mit Luna der funktionierte scheitert ebenfalls an der selben Stelle
+bei fortfuehrung des projekts". Dann: "Versuch es noch einmal".
+
+BEFUND
+- Bild 1 (18:06 Ortszeit, also vor dem Merge von 0.8.16 um 17:35 UTC): gpt-6-luna,
+  task_decision_invalid, Fehlertyp "nur Text"; Stand 0.8.15.
+- Bild 2 (0.8.16): gpt-6-luna meldet task_blocked mit eigener Begruendung (die 0.8.16-Anzeige
+  greift): kein bestaetigtes Testergebnis fuer eine statische Homepage. Das Protokoll verlangte
+  "erstellt UND geprueft" und sagte nicht, was geprueft heisst; der Core blockierte statt
+  [AUSFUEHREN: ...] zu nutzen.
+- Bild 3: Core Normal ausserhalb eines Projekts mit CHANGELOG.md und ROADMAP (2).md:
+  "Werkzeugantwort nicht lesbar (tool_text_around_block)", ohne Korrekturversuch. Ursache: ein Zug
+  mit Anhaengen fuehrt keine nativen Werkzeuge aus (console_stream.php, $attachmentIds), der
+  Prompt bot sie aber an (chat.php, $nativeProjects ohne Anhang-Pruefung). Der Werkzeugblock wurde
+  abgelehnt und Maras ganze Antwort durch den Fehlertext ersetzt.
+- Bild 4: lokaler Core, Projektlauf, dreimal dieselbe Websuche ohne verwertbare Treffer, Abbruch
+  mit repeated_identical_tool_result bei Schritt 5.
+- Bild 5: gpt-6-luna, fortgesetzter Homepage-Lauf, Schritt 23, task_decision_invalid, Fehlertyp
+  prose_only, auch nach der Reparatur mit Echo aus 0.8.16. Nachgestellt: ein [DATEI_NEU: ...]-Block
+  ohne [/DATEI_NEU] (an der Ausgabegrenze abgeschnitten) ergibt genau prose_only, weil kein
+  Werkzeug erkannt wird. Die Reparatur verlangte den naechsten Werkzeugschritt; der Core schrieb
+  dieselbe ganze Seite und wurde wieder abgeschnitten. Dazu enthielt jeder Core-Aufruf eines
+  Projektlaufs jedes fruehere Werkzeugergebnis vollstaendig (23 Schritte mit gelesenen Dateien),
+  was ein lokales Fenster fuellt und fuer die Antwort keinen Platz laesst. Erste Laeufe (kleine
+  Dateien, wenige Schritte) gingen durch, Fortsetzungen nicht.
+- Nicht aus dem Server belegt: den echten done_reason der Aufrufe zeigt erst 0.8.17 im Arbeitsweg.
+
+UMSETZUNG
+- api/console_task_control.php: Formen tool_unclosed (Datei- oder Codeblock ohne Schlussmarker)
+  und output_truncated (Antwort an der Laengengrenze, aus done_reason/finish_reason);
+  coreui_task_output_cut(), coreui_task_unclosed_tool_block(); Reparatur nach einem Abschnitt ohne
+  Echo der Seite, verlangt einen kleineren Schritt (Grundgeruest mit DATEI_NEU, dann DATEI_AENDERN je
+  Abschnitt); Protokoll: was geprueft heisst, fehlende Pruefung ist ein Werkzeugschritt, Blockade nur
+  fuer Arbeit ohne passendes Werkzeug, grosse Dateien in Teilen.
+- api/console_agent_loop.php: Ergebnisbudget im Projekt-Prompt (48 KB von neu nach alt, aeltere
+  erfolgreiche Ergebnisse ueber 1200 Bytes als Groesse und SHA-256, neuestes und fehlgeschlagene
+  vollstaendig); Abschnitt-Erkennung ueber den Aufrufbericht vor und nach der Reparatur; Arbeitsweg
+  mit error_type, content_chars und done_reason; ein nur lesendes Werkzeug (web, archive, skill) mit
+  dreimal gleichem Ergebnis verlaesst das Menue des Laufs statt den Lauf zu beenden.
+- api/project_file_tools.php: Projekt-Prompt: grosse Dateien in Teilen, Pruefung einer statischen
+  Seite (node --check, kurzer Python-Befehl), Zusammenfassung im DONE-Block.
+- api/chat.php: native Werkzeuge nur ohne Anhang anbieten; ohne native Werkzeuge bleibt eine Antwort
+  mit Marker Text (synchroner Weg).
+- api/console_native_tools.php: coreui_native_markers_drop() entfernt nur Markerzeilen.
+- api/console_stream.php: ohne native Werkzeuge in diesem Zug bleibt die Antwort Text.
+- js/coreui-work-events.js: neue Fehlertypen und zwei Hinweise in Maras Worten.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Datenbank (keine Migration). Abschluss nur mit
+  bestaetigten Werkzeugnachweisen und Auftragsjournal; hoechstens eine Reparatur je Entscheidung.
+  Ein wiederholt fehlschlagender Befehl oder Schreibversuch stoppt weiterhin.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Werden nach dem Lauf eingetragen.
+
+NICHT GETESTET
+- Echte Laeufe mit gpt-6-luna und lokalen Cores; geprueft gegen nachgestellte Antworten und
+  Aufrufberichte.
+
+NAECHSTER SCHRITT
+- Auf dem Server nach dem Update denselben Homepage-Ausbau mit gpt-6-luna und Core Normal
+  fortsetzen. Bricht er ab, im Detail des Arbeitswegs Fehlertyp, Antworttext (Zeichen) und
+  Core-Endgrund ablesen.
+
+Version: 0.8.17
