@@ -58,4 +58,32 @@ assert.equal(invalid.total_ms,null,'invalid/untrusted values must not become dur
 assert.equal(invalid.model_ms,null,'failed/unknown calls are not success timings');
 assert.equal(validDurationMs('Infinity'),null);
 assert.equal(validDurationMs(-4),null);
+// Task checkpoints are visible on mobile/desktop in existing message
+// details, without replacing the normal assistant transcript.
+const detailsBegin=source.indexOf('  function buildMessageDetails(record) {');
+const detailsEnd=source.indexOf('  function buildMessageActions(',detailsBegin);
+assert(detailsBegin>=0 && detailsEnd>detailsBegin,'message detail renderer is present');
+const node=(tag)=>({
+  tag,children:[],hidden:false,_text:'',
+  appendChild(x){this.children.push(x);},
+  set textContent(v){this._text=String(v);this.children=[];},
+  get textContent(){return this._text+this.children.map(x=>x.textContent).join('');}
+});
+const detailsFactory=vm.runInNewContext(
+  source.slice(detailsBegin,detailsEnd)+'\n buildMessageDetails;',
+  {document:{createElement:node,createTextNode:(s)=>({textContent:String(s)})},
+    responseTimings:()=>({total_ms:null,model_ms:null}),
+    formatResponseDuration:()=>''}
+);
+const details=detailsFactory({id:12,reply_to_id:11,
+  agent_run:{task:{status:'interrupted',checkpoint_version:3,last_verified_step:9}}});
+const detailsText=details.textContent;
+assert(detailsText.includes('Unterbrochen')
+  && detailsText.includes('CHECKPOINT: #3')
+  && detailsText.includes('BESTAETIGTER SCHRITT: #9'),
+  'only persisted task state and verified checkpoint numbers are shown');
+const noTask=detailsFactory({id:13,reply_to_id:12});
+assert(!noTask.textContent.includes('CHECKPOINT'),
+  'legacy messages without task journal stay unchanged');
+
 console.log('CoreUI persisted response timing UI selftest: OK');
