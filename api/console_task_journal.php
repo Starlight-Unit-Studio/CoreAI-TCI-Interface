@@ -191,9 +191,115 @@ function coreui_task_journal_resume_check(PDO $pdo, int $uid, string $session, s
     return ['safe'=>false,'reason'=>'already_terminal'];
   if (!in_array((string)$state['status'],['interrupted','blocked'],true))
     return ['safe'=>false,'reason'=>'run_still_active'];
+  if ((int)$state['last_verified_step']<=0 || (int)$state['checkpoint_version']<=0)
+    return ['safe'=>false,'reason'=>'no_verified_checkpoint'];
+  if ($state['resume_checkpoint_version']!==null
+      && (int)$state['resume_checkpoint_version']===(int)$state['checkpoint_version'])
+    return ['safe'=>false,'reason'=>'checkpoint_already_resumed'];
   return ['safe'=>true,'last_step'=>(int)$state['last_step'],
     'last_verified_step'=>(int)$state['last_verified_step'],
     'checkpoint_version'=>(int)$state['checkpoint_version']];
+}
+
+/**
+ * Atomic, owner-checked worker takeover. It may be triggered by an
+ * authenticated EventSource reconnect, but ONLY when an interrupted run has
+ * a new, fully verified checkpoint and no ambiguous in-flight side effect.
+ * The single-use resume checkpoint prevents endless paid model retries.
+ */
+function coreui_task_journal_resume_claim(PDO $pdo,int $uid,string $session,
+    string $run): array {
+  if (!coreui_task_journal_valid_ref($uid,$session,$run)
+      || !coreui_task_journal_schema_ready($pdo))
+    return ['ok'=>false,'reason'=>'checkpoint_unavailable'];
+  $outer=$pdo->inTransaction();
+  if ($outer) return ['ok'=>false,'reason'=>'transaction_in_progress'];
+  try {
+    $pdo->beginTransaction();
+    $q=$pdo->prepare('SELECT run_id,turn_id,run_key,status,response_message_id,'
+      . 'cancel_requested_at FROM stu_console_agent_runs WHERE run_id=? '
+      . 'AND user_id=? AND session_id=? FOR UPDATE');
+    $q->execute([$run,$uid,$session]);
+    $owner=$q->fetch(PDO::FETCH_ASSOC);
+    if (!is_array($owner) || ($owner['status']??'')!=='interrupted'
+        || ($owner['run_key']??'')!=='base'
+        || !empty($owner['response_message_id']) || !empty($owner['cancel_requested_at']))
+      throw new RuntimeException('run_not_resumable');
+    $q=$pdo->prepare('SELECT checkpoint_version,resume_checkpoint_version,'
+      . 'last_step,last_verified_step,status FROM stu_console_task_journal '
+      . 'WHERE run_id=? AND user_id=? AND session_id=? FOR UPDATE');
+    $q->execute([$run,$uid,$session]);
+    $task=$q->fetch(PDO::FETCH_ASSOC);
+    if (!is_array($task) || ($task['status']??'')!=='interrupted'
+        || (int)$task['checkpoint_version']<=0
+        || (int)$task['last_verified_step']<=0
+        || ($task['resume_checkpoint_version']!==null
+          && (int)$task['resume_checkpoint_version']===(int)$task['checkpoint_version']))
+      throw new RuntimeException('checkpoint_not_resumable');
+    $q=$pdo->prepare("SELECT 1 FROM stu_console_task_actions WHERE run_id=? "
+      . "AND user_id=? AND session_id=? AND state IN ('claimed','uncertain') LIMIT 1");
+    $q->execute([$run,$uid,$session]);
+    if ($q->fetchColumn()) throw new RuntimeException('unconfirmed_side_effect');
+    $q=$pdo->prepare("UPDATE stu_console_agent_runs SET status='running', "
+      . 'error_code=NULL,finished_at=NULL,updated_at=NOW(3) '
+      . "WHERE run_id=? AND user_id=? AND session_id=? "
+      . "AND status='interrupted' AND response_message_id IS NULL "
+      . 'AND cancel_requested_at IS NULL');
+    $q->execute([$run,$uid,$session]);
+    if ($q->rowCount()!==1) throw new RuntimeException('run_claim_conflict');
+    $q=$pdo->prepare("UPDATE stu_console_task_journal SET status='running',"
+      . "phase='execute',last_error_code=NULL,finished_at=NULL,"
+      . 'resume_checkpoint_version=checkpoint_version,updated_at=NOW(3) '
+      . "WHERE run_id=? AND user_id=? AND session_id=? AND status='interrupted' "
+      . 'AND checkpoint_version=?');
+    $q->execute([$run,$uid,$session,(int)$task['checkpoint_version']]);
+    if ($q->rowCount()!==1) throw new RuntimeException('checkpoint_claim_conflict');
+    $pdo->commit();
+    return ['ok'=>true,'last_step'=>(int)$task['last_step'],
+      'checkpoint_version'=>(int)$task['checkpoint_version'],
+      'turn_id'=>(int)$owner['turn_id']];
+  } catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    return ['ok'=>false,'reason'=>in_array($e->getMessage(),[
+      'run_not_resumable','checkpoint_not_resumable','unconfirmed_side_effect',
+      'run_claim_conflict','checkpoint_claim_conflict'],true)
+      ? $e->getMessage() : 'checkpoint_claim_failed'];
+  }
+}
+
+/**
+ * Verified receipts only. The next model has the original owned request
+ * and the current project file inventory, but cannot mistake stale raw code
+ * for a current revision. Read current files using existing scoped tools.
+ */
+function coreui_task_journal_resume_context(PDO $pdo,int $uid,string $session,
+    string $run): string {
+  if (!coreui_task_journal_valid_ref($uid,$session,$run)) return '';
+  $q=$pdo->prepare("SELECT step_no,tool_name,proof_kind,proof_json FROM "
+    . "stu_console_task_actions WHERE run_id=? AND user_id=? AND session_id=? "
+    . "AND state='verified' ORDER BY step_no DESC LIMIT 64");
+  $q->execute([$run,$uid,$session]);
+  $receipts=array_reverse($q->fetchAll(PDO::FETCH_ASSOC) ?: []);
+  $lines=[];
+  foreach ($receipts as $receipt) {
+    $meta=json_decode((string)($receipt['proof_json']??''),true);
+    if (!is_array($meta)) continue;
+    $type=(string)($receipt['tool_name']??'');
+    if (preg_match('/^[a-z][a-z0-9_]{0,31}$/D',$type)!==1) continue;
+    $line='Schritt '.(int)$receipt['step_no'].': '.$type.' bestaetigt';
+    if (isset($meta['file_revision']))$line.=', Dateirevision '.(int)$meta['file_revision'];
+    if (isset($meta['file_sha256']) && preg_match('/^[a-f0-9]{64}$/D',$meta['file_sha256']))
+      $line.=', Datei-SHA256 '.$meta['file_sha256'];
+    $lines[]=$line;
+  }
+  return "[COREAI_SERVER_CHECKPOINT]\n"
+    . 'Bereits bestaetigte Werkzeugschritte (kein Volltext, keine erneute Ausfuehrung):'
+    . "\n" . implode("\n",$lines)
+    . "\nDein urspruenglicher Nutzerauftrag gilt weiter. Arbeite nur an offenen "
+    . "Teilen weiter. Lese benoetigte aktuelle Dateien erneut, statt Schreibaktionen "
+    . "zu wiederholen. Bei blockierter Arbeit einen BLOCKED-Status liefern; "
+    . "bei gepruefter Erledigung einen DONE-Status, ansonsten exakt einen "
+    . "autorisierten Werkzeugmarker.\n[/COREAI_SERVER_CHECKPOINT]";
 }
 
 /**
