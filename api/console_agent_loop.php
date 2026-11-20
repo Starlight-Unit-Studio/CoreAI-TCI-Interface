@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/console_task_control.php';
+
 /*
  * 0.5.77: Maras Arbeitsschleife im privaten Chat.
  *
@@ -360,7 +362,7 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
     . "keine historischen Archive und keine Zitate. Ordne jede konkrete Behauptung einer "
     . "wirklich vorhandenen Quelle zu; sonst benenne die Unsicherheit.\n"
     . ($max > 0 ? 'Du hast ' . $used . ' von ' . $max . " Arbeitsschritten genutzt.\n"
-      : 'Du hast bisher ' . $used . " Arbeitsschritte genutzt. Setze den Projektauftrag ohne Nutzer-Nachricht fort, bis er wirklich verifiziert ist. Eine Ankuendigung wie Ich pruefe als Naechstes ist KEIN Abschluss; nutze den echten Werkzeugmarker fuer diese Aktion.\n")
+      : 'Du hast bisher ' . $used . " Arbeitsschritte genutzt. Setze den Projektauftrag ohne Nutzer-Nachricht fort, bis er wirklich verifiziert ist.\n")
     . ($last
       ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
         . "Sag offen, was offen geblieben ist.\n"
@@ -375,7 +377,8 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
         . "Wenn Treffer fehlen, fordere mit [WEB: WEITER] die naechste Treffergruppe an; "
         . "fuer eine neue Richtung verwende andere Suchbegriffe. "
         . "Suche nicht ohne erkennbaren Erkenntnisbedarf weiter.\n")
-    . 'Antworte in deinem persoenlichen Anzeigenamen:';
+    . 'Antworte in deinem persoenlichen Anzeigenamen:'
+    . ($max === 0 ? coreui_task_protocol_prompt() : '');
 }
 
 /**
@@ -454,47 +457,6 @@ function coreui_agent_compact_project_prompt(string $base, array $steps, int $us
   return coreui_agent_step_prompt($base, $compact, $used, 0, $allowed);
 }
 
-/**
- * A project follow-up that promises its next concrete action is not a final
- * answer. This is a conservative classification of model-authored prose,
- * NEVER authorization to execute an inferred command or fabricate a path.
- * The Core must explicitly provide a valid marker in the recovery call.
- */
-function coreui_agent_project_promises_next_action(string $reply): bool {
-  if (trim($reply) === '' || str_contains($reply, "```")) return false;
-  $tail = function_exists('mb_substr') ? mb_substr($reply, -1400, null, 'UTF-8') : substr($reply, -1400);
-  $tail = (string)preg_replace('~`[^`\r\n]{0,180}`~u', '', $tail);
-  // Only explicit first-person, imminent actions, not ordinary summaries,
-  // instructions quoted from a file, or vague offers to the operator.
-  return preg_match(
-    '~(?:\A|[.!?][ \t]+|\R)[ \t]*'
-    . '(?:Ich[ \t]+(?:'
-    . '(?:pruefe|prüfe|kontrolliere|untersuche|lese|oeffne|öffne|ergänze|erstelle|bearbeite|teste|implementiere|schreibe|baue|starte)'
-    . '[ \t]+(?:als[ \t]+n[aä]chstes|jetzt|nun|anschlie[sß]end|danach|zuerst)\b'
-    . '|(?:werde|will)[ \t]+(?:als[ \t]+n[aä]chstes[ \t]+|jetzt[ \t]+)?(?:[\p{L}\p{N}._/-]+[ \t]+){0,9}'
-    . '(?:pruefen|prüfen|kontrollieren|untersuchen|lesen|oeffnen|öffnen|ergänzen|erstellen|bearbeiten|testen|implementieren|schreiben|bauen|starten)\b'
-    . ')|(?:Als[ \t]+n[aä]chstes|Danach|Anschlie[sß]end)[ \t]+'
-    . '(?:pruefe|prüfe|lese|ergänze|erstelle|teste|schreibe)[ \t]+ich\b'
-    . '|I[ \t]+(?:will|am[ \t]+going[ \t]+to)[ \t]+'
-    . '(?:check|inspect|read|open|edit|create|implement|test|write|build|start)\b)~iu',
-    $tail
-  ) === 1;
-}
-
-/** The Core chooses the next tool. No command can be inferred from prose. */
-function coreui_agent_project_marker_repair_prompt(string $base, array $steps, int $used, array $allowed): string {
-  return coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
-    . "\n\nWICHTIG: Deine letzte Textantwort kuendigte eine weitere Projektaktion an, "
-    . "enthielt aber KEINEN ausfuehrbaren Werkzeugmarker. Der Auftrag ist NICHT "
-    . "allein wegen dieser Ankuendigung abgeschlossen. Setze ihn ohne Continue "
-    . "fort: Antworte jetzt mit genau EINEM erlaubten Werkzeugmarker fuer die "
-    . "naechste echte Aktion. Wenn du den Dateipfad noch nicht kennst, pruefe "
-    . "ihn zuerst mit einem zulaessigen Lese-/Ausfuehrungswerkzeug, statt ihn "
-    . "zu erfinden. Wiederhole bereits bestaetigte Schreibschritte nicht. "
-    . "Nur wenn die Anforderungen nachweislich erfuellt sind und du nichts "
-    . "weiter zu tun hast, gib eine ehrliche Abschlussantwort ohne Marker.";
-}
-
 /** Only a completed, blank external response is eligible for one lean retry. */
 function coreui_agent_empty_followup_retryable(array $status): bool {
   $code = (int)($status['http_code'] ?? 0);
@@ -546,6 +508,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $lastSignature = '';
   $stalled = 0;
   $stopReason = '';
+  $taskOutcome = 'completed';
   $projectCompact = false;
   $blockedPath = '';
   $blockedExplanation = '';
@@ -575,7 +538,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         $record('tool', 'info', 'Wetter in NRW: WDR-Ortssuche im Browser', ['step'=>$used + 1, 'reason'=>'weather_nrw']);
       }
       $record('tool', 'info', $title, ['step'=>$used + 1, 'reason'=>'agent_loop_browse']);
-      return ['out'=>null, 'browse'=>(string)$tool['input'], 'steps'=>count($steps), 'prompt'=>$prompt];
+      return ['out'=>null, 'browse'=>(string)$tool['input'], 'steps'=>count($steps), 'prompt'=>$prompt, 'outcome'=>'waiting_tool'];
     }
     $used++;
     $record('tool', 'running', $title, ['step'=>$used, 'reason'=>'agent_loop']);
@@ -675,7 +638,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       }
       return ['out'=>$final, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt, 'terminal'=>true];
     }
-    if ($cancelled()) break;
+    if ($cancelled()) { if ($projectWorkflow) $stopReason='cancelled'; break; }
     $prompt = $projectWorkflow && $projectCompact
       ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
       : coreui_agent_step_prompt($base, $steps, $used, $maxSteps, $allowed);
@@ -712,35 +675,58 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     } elseif ($out === '') {
       break;
     }
-    $tool = $projectWorkflow || $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
-    if ($tool === null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS)) {
-      $tool = coreui_agent_recover_promised_read($out, $allowed);
-    }
-    if ($tool === null && $projectWorkflow && coreui_agent_project_promises_next_action($out)) {
-      // The model wrote "I will inspect next ..." instead of requesting the
-      // actual next file read. Do not accept that as completion, and never
-      // guess or perform the promised action ourselves.
-      if ($cancelled()) { $stopReason = 'cancelled'; break; }
-      $record('model', 'info', 'Angekuendigte Projektaktion wird als Werkzeugauftrag angefordert',
-        ['reason'=>'pending_project_action','step'=>$used]);
-      $prompt = coreui_agent_project_marker_repair_prompt($base, $steps, $used, $allowed);
-      $repair = $callModel($prompt);
-      $out = is_string($repair) ? trim($repair) : '';
-      $tool = $out !== '' ? coreui_agent_next_tool($out, $allowed) : null;
-      if ($tool === null && $out !== '') $tool = coreui_agent_recover_promised_read($out, $allowed);
-      if ($tool === null && ($out === '' || coreui_agent_project_promises_next_action($out))) {
-        $stopReason = 'next_action_without_tool';
-        $record('model', 'error', 'Angekuendigte Projektaktion ohne Werkzeugauftrag',
-          ['reason'=>'next_action_without_tool','step'=>$used]);
+    if ($projectWorkflow) {
+      // A text response is no longer a terminal state by accident. Every
+      // active project task must yield a real, authorized next tool, a
+      // verifiable explicit completion, or a declared blocker. No language-
+      // specific "Ich pruefe als Naechstes" heuristics are necessary.
+      $parseDecision = static fn(string $text): array =>
+        coreui_task_decision($text, static fn(string $r): ?array => coreui_agent_next_tool($r, $allowed));
+      $decision = $parseDecision($out);
+      if ($decision['kind'] === 'invalid') {
+        if ($cancelled()) { $stopReason='cancelled'; break; }
+        $record('model','info','Arbeitsentscheidung ohne gueltigen Steuerstatus',
+          ['reason'=>'task_decision_missing','step'=>$used]);
+        $repairPrompt = coreui_task_decision_repair_prompt(
+          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed));
+        $repair = $callModel($repairPrompt);
+        $decision = is_string($repair) ? $parseDecision($repair)
+          : ['kind'=>'invalid','text'=>'','tool'=>null];
+        if ($decision['kind'] !== 'invalid') {
+          $record('model','success','Arbeitsentscheidung geklaert',
+            ['reason'=>'task_decision_repaired','step'=>$used]);
+        }
+      }
+      if ($decision['kind'] === 'action') {
+        $tool = $decision['tool'];
+        if ($tool !== null && $route !== null) $tool = $route($tool);
+        continue;
+      }
+      if ($decision['kind'] === 'done' && coreui_task_completion_evidence($steps, $fileEditFailures)) {
+        $out = (string)$decision['text'];
+        $taskOutcome = 'completed';
+        $record('run','success','Arbeitsabschluss auf gepruefte Werkzeugschritte gestuetzt',
+          ['reason'=>'task_verified_completion','step'=>$used]);
         break;
       }
-      if ($tool !== null) $record('model', 'success', 'Konkreter naechster Projektauftrag erhalten',
-        ['reason'=>'project_next_action_recovered','step'=>$used]);
+      $stopReason = match ($decision['kind']) {
+        'done' => 'task_completion_unverified',
+        'blocked' => 'task_blocked',
+        default => 'task_decision_invalid',
+      };
+      $record('run','error','Projektauftrag ohne bestaetigten Abschluss unterbrochen',
+        ['reason'=>$stopReason,'step'=>$used]);
+      break;
+    }
+    $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
+    if ($tool === null && $used < COREUI_AGENT_MAX_STEPS) {
+      $tool = coreui_agent_recover_promised_read($out, $allowed);
     }
     if ($tool !== null && $route !== null) $tool = $route($tool);
   }
   // Never show a requested but unexecuted tool as proof of success.
   if ($projectWorkflow && $stopReason !== '') {
+    $taskOutcome = $stopReason === 'cancelled' ? 'cancelled' : 'interrupted';
     $record('run','info','Projektauftrag unterbrochen; Dateien bleiben erhalten',
       ['reason'=>$stopReason,'steps'=>$used]);
     if (str_starts_with($stopReason,'file_')) {
@@ -752,11 +738,6 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       $out = 'Der Core hat nach einem ausgefuehrten Werkzeugschritt keine auswertbare Folgeantwort geliefert. '
         . 'Der Projektauftrag ist deshalb noch nicht abgeschlossen. Bereits gespeicherte Dateien bleiben erhalten. '
         . 'Die technischen Details stehen im Arbeitsweg.';
-    } elseif ($stopReason === 'next_action_without_tool') {
-      $out = 'Der Core hat eine weitere Projektaktion angekuendigt, aber auch nach einer gezielten '
-        . 'Korrekturanforderung keinen ausfuehrbaren Werkzeugauftrag geliefert. Die Projektarbeit '
-        . 'ist noch nicht abgeschlossen. Bereits bestaetigte Dateien bleiben unveraendert; '
-        . 'ich behaupte keine weiteren Bearbeitungen oder erfolgreichen Tests.';
     } else {
       $out = 'Der Projektauftrag ist noch nicht abgeschlossen (Grund: ' . $stopReason
         . '). Bereits bestaetigte Projektdateien bleiben gespeichert. '
@@ -768,5 +749,6 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $out = $prose !== '' ? $prose : 'Ich habe alle ' . COREUI_AGENT_MAX_STEPS . ' Arbeitsschritte genutzt und noch keine '
       . 'sichere Antwort gefunden. Sag mir, worauf ich mich konzentrieren soll, dann suche ich gezielter weiter.';
   }
-  return ['out'=>$out !== '' ? $out : null, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt];
+  return ['out'=>$out !== '' ? $out : null, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt,
+    'outcome'=>$taskOutcome, 'reason'=>$stopReason];
 }
