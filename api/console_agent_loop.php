@@ -522,7 +522,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     // Keep legacy image/research cancellation semantics, but never launch a new
     // project command after an explicit cancellation.
     if ($projectWorkflow && $cancelled()) { $stopReason = 'cancelled'; break; }
-    if ($projectWorkflow && $journal !== null) {
+    if ($projectWorkflow && $journal !== null && $tool['tool'] !== 'browse') {
       // Claim the exact step BEFORE executing any side effect. A previous
       // claim can mean the old worker died during a write; never replay it.
       $claim=$journal('claim',$tool,$used + 1,null,null);
