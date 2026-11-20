@@ -83,14 +83,46 @@ UNVERAENDERT
 - Modelfile, SYSTEM-Prompts, Installer, Ollama, Datenbankschema (keine Migration).
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Werden nach dem Lauf eingetragen.
+- php -l fuer alle geaenderten PHP-Dateien, node --check fuer die geaenderten JavaScript-Dateien,
+  bash -n fuer beide Preflights: ohne Fehler. Version-Guard (0.8.14 auf 0.8.15), Branding,
+  Cache-Fingerabdruecke, Preflight-Sync, Terminal-Sprache, TCI-Sprache, Terran-Terminologie: OK.
+- external-provider-selftest.php: OK mit SQLite und gegen MariaDB (COREUI_SELFTEST_DB=1); keine
+  Testwerte bleiben in der Datenbank oder in logs/stu_app_settings.json (beim ersten Lauf landeten
+  die SQLite-Einstellungen in dieser Ausweichdatei, weil die Helfer die Tabelle nur fuer die erste
+  Verbindung anlegen; der Test legt sie jetzt selbst an und prueft das).
+- external-provider-ui-selftest.cjs (Admin-Karte, Freigaben, Core-Menue), model-access-selftest.php,
+  agent-loop-selftest.php (neue Faelle fuer die Steuerentscheidung), work-events-ui-selftest.js,
+  work-events-selftest.php, task-journal-selftest.php: OK.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf dem finalen Stand: 202 bestanden, 18
+  fehlgeschlagen. Vergleich auf main 0.8.14 in derselben Umgebung: 203 bestanden, 17
+  fehlgeschlagen; die 17 sind auf beiden Seiten dieselben (browse-image, browse-live-ui,
+  chat-menu-ui, data-controls, image-progress-ui, insights-chat-visibility-ui, long-chat,
+  model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui,
+  settings-tabs-ui, update-ui, voice-input, voice-samples-ui). Der eine zusaetzliche Fehlschlag
+  (storage-ui-selftest.cjs) trat nur einmal unter Last der Testreihe auf; einzeln sieben Laeufe
+  hintereinander gruen, im ersten Branch-Lauf ebenfalls gruen; der Test beruehrt keinen geaenderten
+  Code.
+- Sieben Tests mit woertlichen Erwartungen an den alten Stand nachgezogen, ohne Pruefungen zu
+  schwaechen: core-tiers, vision-persona, thinking-switch, image-gen, settings-navigation-foundation,
+  settings-theme-ui, context-slider-ui (dazu settings-tabs-ui, schon auf main rot).
+- GitHub-Pruefungen: nach dem ersten Push drei rote Jobs (model-variant-choice, guest-image-quota,
+  image-service) wegen dieser woertlichen Erwartungen; nach der Korrektur alle Befehle dieser Jobs
+  lokal und auf GitHub gruen.
+- Gezielte Fehlereinbauten: externe Cores 29 von 30 erkannt (der uebersehene entfernt die doppelte
+  Gastpruefung in coreui_ai_external_cores; die Freigabepruefung lehnt Gaeste ohnehin ab, also
+  gleiches Verhalten); Steuerentscheidung 12 von 12 erkannt. Dabei gefunden: das zuerst geplante
+  Entfernen eines umschliessenden Codeblocks haette die Behandlung von Werkzeugmarkern veraendert;
+  es ist wieder entfernt (fuer DONE/BLOCKED nicht noetig).
 
 NICHT GETESTET
 - Ein echter Anbieter (kein Schluessel in dieser Umgebung); geprueft gegen einen
   OpenAI-kompatiblen Stand-in-Server.
+- Ein echter Projektlauf auf dem Server; die Steuerentscheidung ist mit nachgestellten Antworten
+  geprueft (Fortschrittsnotiz, Leerzeile, DONE).
 
 NAECHSTER SCHRITT
 - Auf dem echten Server: Cores vom Anbieter laden, anhaken, ADAPTER SPEICHERN, im Chat unter
-  EXTERNE CORES waehlen und den 12B-Fehler gegentesten.
+  EXTERNE CORES waehlen und den Auftrag "Homepage mit Gaestebuch" erneut laufen lassen (normaler
+  Chat und Projekt). Bricht er wieder ab, steht die Form der Antwort als Fehlertyp im Arbeitsweg.
 
 Version: 0.8.15
