@@ -25,6 +25,12 @@ const COREUI_TASK_BLOCKED_CLOSE = '[/COREUI_TASK_BLOCKED]';
  */
 function coreui_task_decision(string $reply, callable $parseTool): array {
   $reply = trim($reply);
+  // The protocol also allows one public progress note before the next
+  // decision. Strip only the exact bounded envelope, never arbitrary prose
+  // or a second command, so a valid DONE is not rejected on formatting.
+  $reply=(string)preg_replace(
+    '~\\A\\[COREUI_PUBLIC_PROGRESS\\][^\\r\\n]{1,480}\\[/COREUI_PUBLIC_PROGRESS\\][ \\t]*\\r?\\n~u',
+    '',$reply,1);
   foreach ([
     'done'=>[COREUI_TASK_DONE_OPEN,COREUI_TASK_DONE_CLOSE],
     'blocked'=>[COREUI_TASK_BLOCKED_OPEN,COREUI_TASK_BLOCKED_CLOSE]
