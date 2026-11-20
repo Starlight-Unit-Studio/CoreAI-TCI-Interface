@@ -412,6 +412,79 @@ loop_test(coreui_agent_empty_followup_retryable(['provider'=>'external','http_co
     'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>'']),
   'one external retry is gated by a completed successful transport');
 
+// 0.8.13: a narrative plan without a tool marker must not silently finish
+// the project, as in "Ich pruefe als Naechstes das eingebundene JavaScript".
+$promisedText = 'Die Startseite verweist auf mehrere Unterseiten. Ich prüfe als Nächstes '
+  . 'das eingebundene JavaScript, damit vorhandene Interaktionen berücksichtigt werden.';
+loop_test(coreui_agent_project_promises_next_action($promisedText)
+  && coreui_agent_project_promises_next_action('Ich werde als nächstes die Navigationslinks testen.')
+  && coreui_agent_project_promises_next_action('Next I will inspect the JavaScript.')
+  && !coreui_agent_project_promises_next_action('Die Navigation wurde geprüft und der Test endete erfolgreich.')
+  && !coreui_agent_project_promises_next_action("Geprüfte Ausgabe:\n```js\n// Ich prüfe als Nächstes etwas\n```")
+  && !coreui_agent_project_promises_next_action('Die nächsten Schritte könntest du selbst durchführen.'),
+  'only model-authored unfinished near-term actions need a real marker');
+
+$pendingReplies=[
+  $promisedText,
+  '[DATEI: assets/app.js]',
+  'Ich habe die Dateien gelesen; weitere Anpassungen sind nicht angefordert.',
+];
+$pendingPrompts=[]; $pendingTools=[]; $pendingEvents=[];
+$pendingLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$pendingReplies,&$pendingPrompts):?string {
+    $pendingPrompts[]=$prompt;return array_shift($pendingReplies);
+  },
+  static function(array $tool) use (&$pendingTools):string {
+    $pendingTools[]=$tool;return 'Bestaetigte Datei: ' . $tool['input'];
+  },
+  static function(string $kind,string $state,string $title,array $meta) use (&$pendingEvents):void {
+    $pendingEvents[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  },static fn():bool=>false);
+loop_test(array_column($pendingTools,'tool')===['pfile_read','pfile_read']
+  && array_column($pendingTools,'input')===['assets/site.css','assets/app.js']
+  && count($pendingPrompts)===3 && $pendingLoop['steps']===2
+  && str_contains((string)$pendingLoop['out'],'Dateien gelesen')
+  && str_contains($pendingPrompts[1],'KEINEN ausfuehrbaren Werkzeugmarker')
+  && count(array_filter($pendingEvents,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='pending_project_action'))===1
+  && count(array_filter($pendingEvents,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='project_next_action_recovered'))===1,
+  'a narrated next step is converted to one model-selected tool request without replaying the prior tool');
+
+// No model-provided next tool after one repair: preserve the project files
+// and report the incomplete task; never mislabel the narration as finished.
+$stillPendingCalls=0; $stillPendingTools=[];
+$stillPending=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$stillPendingCalls,$promisedText):?string {
+    $stillPendingCalls++;return $promisedText;
+  },
+  static function(array $tool) use (&$stillPendingTools):string {
+    $stillPendingTools[]=$tool;return 'Datei erfolgreich gelesen';
+  },static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test($stillPendingCalls===2 && count($stillPendingTools)===1
+  && $stillPending['steps']===1
+  && str_contains((string)$stillPending['out'],'noch nicht abgeschlossen')
+  && str_contains((string)$stillPending['out'],'keinen ausfuehrbaren Werkzeugauftrag'),
+  'repeated unexecuted plan stops honestly instead of looping or claiming success');
+
+// Proper final prose after a verified tool still terminates without a
+// second model request; no additional tokens billed for completed work.
+$completeCalls=0;
+$complete=coreui_agent_loop_run('[DATEI: style.css]',
+  ['tool'=>'pfile_read','input'=>'style.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$completeCalls):?string {
+    $completeCalls++;return 'Die bestehende CSS-Datei wurde geprüft. Keine weiteren Aktionen notwendig.';
+  },
+  static fn(array $tool):string=>'Datei erfolgreich gelesen',
+  static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test($completeCalls===1 && $complete['steps']===1
+  && str_contains((string)$complete['out'],'Keine weiteren Aktionen notwendig'),
+  'a genuinely final response stays final and does not get a paid marker retry');
+
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
 loop_test($r['browse'] === 'Ollama Bibliothek gemma4 Tags lesen' && $r['out'] === null && count($tools) === 1, 'hand over to the browser');
