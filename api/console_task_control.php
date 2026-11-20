@@ -24,8 +24,6 @@ const COREUI_TASK_BLOCKED_CLOSE = '[/COREUI_TASK_BLOCKED]';
  * @return array{kind:string,text:string,tool:?array}
  */
 function coreui_task_decision(string $reply, callable $parseTool): array {
-  $action = $parseTool($reply);
-  if (is_array($action)) return ['kind'=>'action','tool'=>$action,'text'=>''];
   $reply = trim($reply);
   foreach ([
     'done'=>[COREUI_TASK_DONE_OPEN,COREUI_TASK_DONE_CLOSE],
@@ -38,6 +36,8 @@ function coreui_task_decision(string $reply, callable $parseTool): array {
     if ($body === '' || str_contains($body, '[COREUI_TASK_')) continue;
     return ['kind'=>$kind,'text'=>$body,'tool'=>null];
   }
+  $action = $parseTool($reply);
+  if (is_array($action)) return ['kind'=>'action','tool'=>$action,'text'=>''];
   return ['kind'=>'invalid','text'=>'','tool'=>null];
 }
 
