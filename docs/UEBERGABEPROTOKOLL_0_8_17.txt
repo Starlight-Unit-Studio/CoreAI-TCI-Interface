@@ -62,7 +62,30 @@ UNVERAENDERT
   Ein wiederholt fehlschlagender Befehl oder Schreibversuch stoppt weiterhin.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Werden nach dem Lauf eingetragen.
+- php -l fuer alle geaenderten PHP-Dateien, node --check fuer js/coreui-work-events.js, bash -n fuer
+  beide Preflights: ohne Fehler. Version-Guard (0.8.16 auf 0.8.17), Branding,
+  Cache-Fingerabdruecke, Preflight-Sync, Terminal-Sprache, TCI-Sprache, Terran-Terminologie: OK.
+- agent-loop-selftest.php (unvollstaendige Datei- und Codebloecke, abgeschnittene Antworten,
+  Reparatur ohne die abgeschnittene Seite, abgeschnittener Seitenblock als Grundgeruest bis zum
+  Abschluss, Ergebnisbudget im laufenden Lauf, wiederholte Websuche beendet nur die Suche,
+  wiederholt fehlschlagender Befehl stoppt weiter, Protokoll und Projekt-Prompt, Zuege mit
+  Anhaengen), work-events-ui-selftest.js (neue Fehlertypen und Hinweise): OK.
+- native-tools-selftest.php, task-journal-selftest.php, work-events-selftest.php,
+  project-file-tools-selftest.php, external-provider-selftest.php, thinking-switch-selftest.php,
+  core-tiers-selftest.php, vision-persona-selftest.php, attachment-pipeline-selftest.php: OK.
+- Fehlereinbauten: 19 gezielte Fehler in Parser, Abschnitt-Erkennung, Reparatur, Protokoll,
+  Budget, Werkzeugsperre, Anhang-Weg und Projekt-Prompt in einer getrennten Kopie; alle 19 von den
+  Tests erkannt (ein zunaechst unerkannter Wortlaut-Fehler im Protokoll fuehrte zu einer
+  genaueren Pruefung).
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf dem finalen Stand: 202 bestanden, 18
+  fehlgeschlagen. Vergleich auf main 0.8.16 in derselben Umgebung: 202 bestanden, 18
+  fehlgeschlagen; die 18 sind auf beiden Seiten dieselben (browse-image, browse-live-ui,
+  chat-menu-ui, data-controls, image-progress-ui, insights-chat-visibility-ui, long-chat,
+  model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui, session-list-ui,
+  settings-tabs-ui, storage-ui, update-ui, voice-input, voice-samples-ui). storage-ui ist unter
+  Last der Testreihe wackelig (in frueheren Laeufen auf beiden Seiten gruen). Keine neuen
+  Fehlschlaege.
+- GitHub-Pruefungen auf dem Stand af47a138: alle 15 gruen.
 
 NICHT GETESTET
 - Echte Laeufe mit gpt-6-luna und lokalen Cores; geprueft gegen nachgestellte Antworten und
