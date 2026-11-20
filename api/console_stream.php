@@ -402,6 +402,12 @@ try {
     'run_key'=>$workRunKey
   ];
   $GLOBALS['COREUI_WORK_CONTEXT']['agent_run_id'] = $agentRunId;
+  // The canonical goal remains the already owned user turn, not a model
+  // paraphrase. A missing migration does not break ordinary Q&A, but a
+  // project action cannot be dispatched without its durable claim.
+  $taskJournalReady = coreui_task_journal_begin($pdo, (int)$uid,
+    $sessionId, $agentRunId, $afterId, 'chat');
+  $GLOBALS['COREUI_TASK_JOURNAL_READY'] = $taskJournalReady;
   $GLOBALS['COREUI_WORK_PDO'] = $pdo;
   sse_send('agent_run', ['id'=>$agentRunId,'status'=>'running']);
   $GLOBALS['COREUI_WORK_PUBLISH'] = static function (array $event): void {
