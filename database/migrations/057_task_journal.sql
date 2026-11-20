@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS stu_console_task_journal (
     'blocked','failed','cancelled') NOT NULL DEFAULT 'queued',
   phase ENUM('prepare','execute','verify','finalize') NOT NULL DEFAULT 'prepare',
   checkpoint_version INT UNSIGNED NOT NULL DEFAULT 0,
+  resume_checkpoint_version INT UNSIGNED NULL,
   last_step INT UNSIGNED NOT NULL DEFAULT 0,
   last_verified_step INT UNSIGNED NOT NULL DEFAULT 0,
   last_error_code VARCHAR(64) NULL,
