@@ -29,12 +29,12 @@ function coreui_work_page_url(string $url): ?string {
 
 function coreui_work_safe_meta(array $raw): array {
   $allowedNumbers = ['job_id','exit_code','duration_ms','file_count','attempt','http_code','elapsed_ms',
-    'source_chars','eval_count','prompt_eval_count',
+    'source_chars','eval_count','prompt_eval_count','curl_errno',
     'plan_version','step','content_chars','thinking_chars','continuation_segments',
     'response_bytes','discarded_tool_body_bytes','context_tokens','knowledge_hits','knowledge_sources',
     // 0.6.41 (P20.5): the image progress card (steps of the image, its width).
     'steps','image_px','reference_count','time_limit_s','elapsed_s','peak_rss_mb'];
-  $allowedStrings = ['model','error_type','file_name','reason','source','done_reason','image_phase','image_encoder'];
+  $allowedStrings = ['model','error_type','file_name','reason','source','done_reason','image_phase','image_encoder','provider'];
   $safe = [];
   $page = is_string($raw['page_url'] ?? null) ? coreui_work_page_url($raw['page_url']) : null;
   if ($page !== null) {
@@ -55,6 +55,7 @@ function coreui_work_safe_meta(array $raw): array {
     if ($key === 'file_name') $value = basename(str_replace('\\', '/', $value));
     if (preg_match('/^[a-zA-Z0-9._:\/-]{1,110}$/D', $value)) $safe[$key] = $value;
   }
+  if (isset($safe['provider']) && !in_array($safe['provider'], ['external','ollama','unknown'], true)) unset($safe['provider']);
   // Phase and encoder are diagnostic enums, not arbitrary image prompt or worker output.
   if (isset($safe['image_phase']) && !in_array($safe['image_phase'],
       ['load','text','sampling','decode','done'], true)) unset($safe['image_phase']);

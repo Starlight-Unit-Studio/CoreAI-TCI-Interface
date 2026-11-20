@@ -431,6 +431,57 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
 }
 
 /**
+ * Recovery-only project prompt: keep the latest verified tool output in full.
+ * Older successful results remain auditable receipts (name/state/size/digest),
+ * not repeated HTML/CSS/README bodies that grow quadratically across turns.
+ * The Core can reread a file when its exact contents are needed. Never
+ * substitute this for persisted project state or falsely claim verification.
+ */
+function coreui_agent_compact_project_prompt(string $base, array $steps, int $used, array $allowed): string {
+  $compact = [];
+  $last = count($steps) - 1;
+  foreach ($steps as $i => $step) {
+    $result = (string)($step['result'] ?? '');
+    $state = (string)($step['state'] ?? '');
+    if ($i !== $last && $state === 'success' && strlen($result) > 1200) {
+      $result = '[Bestaetigtes Werkzeugergebnis bereits verarbeitet: '
+        . strlen($result) . ' Bytes, SHA-256 ' . hash('sha256', $result)
+        . '. Volltext ist hier nicht erneut enthalten; lies die Quelle bei Bedarf erneut mit dem vorhandenen Werkzeug.]';
+    }
+    $step['result'] = $result;
+    $compact[] = $step;
+  }
+  return coreui_agent_step_prompt($base, $compact, $used, 0, $allowed);
+}
+
+/** Only a completed, blank external response is eligible for one lean retry. */
+function coreui_agent_empty_followup_retryable(array $status): bool {
+  $code = (int)($status['http_code'] ?? 0);
+  $reason = (string)($status['done_reason'] ?? '');
+  return ($status['provider'] ?? '') === 'external'
+    && $code >= 200 && $code < 300
+    && !empty($status['transport_ok'])
+    && !empty($status['done_seen']) && !empty($status['done'])
+    && (int)($status['curl_errno'] ?? 0) === 0
+    && in_array($reason, ['', 'stop', 'length'], true);
+}
+
+/** Whitelist bounded, nonsecret API metadata for public technical events. */
+function coreui_agent_empty_followup_meta(array $report, int $step): array {
+  $provider = (string)($report['provider'] ?? '');
+  $reason = (string)($report['done_reason'] ?? '');
+  return [
+    'reason'=>'empty_followup_after_tool', 'step'=>$step,
+    'provider'=>in_array($provider, ['external','ollama'], true) ? $provider : 'unknown',
+    'http_code'=>max(0, min(599, (int)($report['http_code'] ?? 0))),
+    'done_reason'=>preg_match('~^[a-zA-Z0-9_ -]{0,48}$~D', $reason) ? $reason : '',
+    'prompt_eval_count'=>max(0, (int)($report['prompt_eval_count'] ?? 0)),
+    'eval_count'=>max(0, (int)($report['eval_count'] ?? 0)),
+    'curl_errno'=>max(0, (int)($report['curl_errno'] ?? 0))
+  ];
+}
+
+/**
  * The loop itself, with the model, the tools and the work view passed in
  * (testable without a server). Starts with the tool already found in
  * $out; returns the final text, a browser goal to hand over, and the steps.
@@ -441,7 +492,7 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
     callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null,
-    ?callable $imageReview = null): array {
+    ?callable $imageReview = null, ?callable $modelReport = null): array {
   $steps = [];
   $prompt = null;
   // A project workflow must not stop after six files/commands or ten
@@ -454,6 +505,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $lastSignature = '';
   $stalled = 0;
   $stopReason = '';
+  $projectCompact = false;
   $blockedPath = '';
   $blockedExplanation = '';
   // This is NOT a total-work limit. Only unsuccessful writes to the SAME
@@ -583,18 +635,40 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       return ['out'=>$final, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt, 'terminal'=>true];
     }
     if ($cancelled()) break;
-    $prompt = coreui_agent_step_prompt($base, $steps, $used, $maxSteps, $allowed);
+    $prompt = $projectWorkflow && $projectCompact
+      ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
+      : coreui_agent_step_prompt($base, $steps, $used, $maxSteps, $allowed);
     $next = $callModel($prompt);
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
-    if ($out === '') {
-      // A missing model follow-up after a confirmed file/tool operation must
-      // not turn the entire run into an undiagnosed empty_response. Preserve
-      // the saved files, publish an honest interruption, and stop retrying.
-      if ($projectWorkflow) {
-        $stopReason = 'model_empty_after_tool';
-        $record('model', 'error', 'Core-Folgeantwort nach Werkzeugschritt fehlt',
-          ['reason'=>'empty_followup_after_tool','step'=>$used]);
+    if ($out === '' && $projectWorkflow) {
+      // Do not replay a real file/command. Only the MODEL follow-up may be
+      // retried, once, after the verified result and only for a completed,
+      // blank external API response. Rate limits, HTTP errors and transport
+      // failures stop here without extra paid calls.
+      $report = $modelReport !== null ? $modelReport() : [];
+      if (!is_array($report)) $report = [];
+      $meta = coreui_agent_empty_followup_meta($report, $used);
+      if (!$cancelled() && $state === 'success' && coreui_agent_empty_followup_retryable($report)) {
+        $projectCompact = true;
+        $record('model', 'info', 'Leere externe Folgeantwort: Projektkontext kompakt erneut gesendet',
+          ['reason'=>'empty_followup_recovery','step'=>$used]);
+        $prompt = coreui_agent_compact_project_prompt($base, $steps, $used, $allowed);
+        $next = $callModel($prompt);
+        $out = is_string($next) ? trim($next) : '';
+        if ($out !== '') {
+          $record('model', 'success', 'Projekt-Folgeantwort nach Kompaktfortsetzung erhalten',
+            ['reason'=>'recovered_empty_followup','step'=>$used]);
+        } else {
+          $retryStatus = $modelReport !== null ? $modelReport() : [];
+          if (is_array($retryStatus)) $meta = coreui_agent_empty_followup_meta($retryStatus, $used);
+        }
       }
+      if ($out === '') {
+        $stopReason = 'model_empty_after_tool';
+        $record('model', 'error', 'Core-Folgeantwort nach Werkzeugschritt fehlt', $meta);
+        break;
+      }
+    } elseif ($out === '') {
       break;
     }
     $tool = $projectWorkflow || $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;

@@ -1,5 +1,14 @@
 # CoreAI: TCI Interface
 
+## 0.8.12 - 20.11.2026
+
+- **Autonomous external API follow-up recovery:** A completed but empty OpenAI-compatible reply after a verified project tool step can now be requested once again with a compact, auditable project history. Already completed file operations are not replayed.
+- **No blind paid retries:** HTTP 400/401/429, provider failures, interrupted responses, rate limits and local Ollama empty answers remain interrupted, with honest diagnostics instead of duplicated tool actions.
+- **Lean recovery preserves source of truth:** Only older successful, large tool results become verified size-and-digest receipts. The latest result remains complete and the Core can reread exact files whenever needed; ordinary uninterrupted project prompts are unchanged.
+- **Diagnosis and privacy:** Work events retain provider category, HTTP code, cURL error number, finish reason and token counts, without API secrets, prompts, generated code or private reasoning.
+- **Regression coverage:** Unit tests cover a successful recovery, rate-limits and invalid completions without retry, compact receipts, and an end-to-end OpenAI-compatible reasoning-only response with HTTP 200 and no content.
+- **Next step:** Deployment must confirm the real API error category and successful autonomous completion in a normal and a project chat. A true provider error is not fixed by this recovery path.
+
 ## 0.8.11 - 20.11.2026
 
 - **External OpenAI-compatible adapter finished (CF-003, CF-005):** The adapter prepared since 0.3.0 now works. The owner sets it up in Admin Core > Operations > External adapter (display name, base URL with HTTPS or `http://` only to `127.0.0.1`/`localhost`, the provider's model name). The card shows what is missing and **Check connection** asks the provider for its model list with that key, without using tokens (key refused, unreachable, rate limited, model not listed).

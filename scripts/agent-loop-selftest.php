@@ -341,6 +341,77 @@ loop_test($emptyFollowCalls===1 && $emptyFollow['steps']===1
     && ($e['meta']['reason']??'')==='empty_followup_after_tool'))===1,
   'empty model reply after verified project tool is a diagnosed interruption');
 
+// 0.8.12: one transient, successfully transported but blank external API
+// follow-up may be recovered with compact receipts. No tool is replayed.
+$recoveryReplies = [null, '[DATEI: contact.html]', 'Die Kontaktseite wurde gelesen; weitere Arbeit bleibt offen.'];
+$recoveryPrompts=[]; $recoveryTools=[]; $recoveryEvents=[];
+$externalRecovery=coreui_agent_loop_run('[DATEI: style.css]',
+  ['tool'=>'pfile_read','input'=>'style.css'], 'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$recoveryReplies,&$recoveryPrompts):?string {
+    $recoveryPrompts[]=$prompt;return array_shift($recoveryReplies);
+  },
+  static function(array $tool) use (&$recoveryTools):string {
+    $recoveryTools[]=$tool;return "Datei " . $tool['input'] . " (Stand 5):\n1 | Beispiel";
+  },
+  static function(string $kind,string $state,string $title,array $meta) use (&$recoveryEvents):void {
+    $recoveryEvents[]=['kind'=>$kind,'state'=>$state,'meta'=>$meta];
+  },
+  static fn():bool=>false,null,null,
+  static fn():array=>['provider'=>'external','http_code'=>200,'transport_ok'=>true,
+    'curl_errno'=>0,'done_seen'=>true,'done'=>true,'done_reason'=>'length','eval_count'=>100,'prompt_eval_count'=>5000]);
+loop_test(count($recoveryPrompts)===3
+  && array_column($recoveryTools,'tool')===['pfile_read','pfile_read']
+  && $externalRecovery['steps']===2
+  && str_contains((string)$externalRecovery['out'],'Kontaktseite wurde gelesen')
+  && count(array_filter($recoveryEvents,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='empty_followup_recovery'))===1
+  && count(array_filter($recoveryEvents,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='recovered_empty_followup'))===1,
+  'external completed blank response is retried once without replaying files or requiring Continue');
+
+// Old verified results are receipts, the latest remains complete for accurate changes.
+$olderSource = 'PRIVATE_OLD_SOURCE_' . str_repeat('a',1500);
+$lean = coreui_agent_compact_project_prompt('BASIS', [
+  ['label'=>'Datei gelesen: style.css','state'=>'success','result'=>$olderSource],
+  ['label'=>'Datei gelesen: contact.html','state'=>'success','result'=>'LATEST_CONFIRMED_CONTENT']
+],2,$projectFileTools);
+loop_test(str_contains($lean,'Datei gelesen: style.css')
+  && str_contains($lean,hash('sha256',$olderSource))
+  && !str_contains($lean,'PRIVATE_OLD_SOURCE_')
+  && str_contains($lean,'LATEST_CONFIRMED_CONTENT')
+  && str_contains($lean,'Setze den Projektauftrag'),
+  'recovery prompt is lean, preserves latest source and audited older receipts');
+
+$blockedStatuses=[
+  ['provider'=>'external','http_code'=>429,'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>''],
+  ['provider'=>'external','http_code'=>401,'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>''],
+  ['provider'=>'external','http_code'=>400,'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>''],
+  ['provider'=>'external','http_code'=>200,'transport_ok'=>false,'curl_errno'=>28,'done_reason'=>''],
+  ['provider'=>'ollama','http_code'=>200,'transport_ok'=>true,'curl_errno'=>0,'done_reason'=>'stop'],
+  ['provider'=>'external','http_code'=>200,'transport_ok'=>true,'curl_errno'=>0,'done_reason'=>'content_filter'],
+];
+foreach ($blockedStatuses as $status) {
+  $calls=0;$events=[];
+  $blocked=coreui_agent_loop_run('[DATEI: style.css]',
+    ['tool'=>'pfile_read','input'=>'style.css'],'BASIS',$projectFileTools,0,
+    static function(string $prompt) use (&$calls):?string { $calls++;return null; },
+    static fn(array $tool):string => 'Datei style.css (Stand 1): Lesbar',
+    static function(string $kind,string $state,string $title,array $meta) use (&$events):void {
+      $events[]=['kind'=>$kind,'state'=>$state,'meta'=>$meta];
+    },static fn():bool=>false,null,null,static fn():array=>$status);
+  $failed=array_values(array_filter($events,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='empty_followup_after_tool'));
+  loop_test($calls===1 && count($failed)===1
+    && ($failed[0]['meta']['http_code']??0)===$status['http_code']
+    && str_contains((string)$blocked['out'],'noch nicht abgeschlossen'),
+    'no charge-generating blind retries on HTTP failures, throttling, local models or filters');
+}
+loop_test(coreui_agent_empty_followup_retryable(['provider'=>'external','http_code'=>200,
+  'transport_ok'=>true,'curl_errno'=>0,'done_seen'=>true,'done'=>true,'done_reason'=>'stop'])
+  && !coreui_agent_empty_followup_retryable(['provider'=>'external','http_code'=>429,
+    'transport_ok'=>false,'curl_errno'=>0,'done_reason'=>'']),
+  'one external retry is gated by a completed successful transport');
+
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
 loop_test($r['browse'] === 'Ollama Bibliothek gemma4 Tags lesen' && $r['out'] === null && count($tools) === 1, 'hand over to the browser');

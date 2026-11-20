@@ -4079,6 +4079,23 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   return null;
 }
 
+/** One model-call snapshot for the project agent, without URLs, secrets or model text. */
+function ember_agent_followup_last_call(): array {
+  $last = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
+  if (!is_array($last)) $last = [];
+  return [
+    'provider'=>(string)($last['provider'] ?? 'ollama'),
+    'http_code'=>(int)($last['code'] ?? 0),
+    'transport_ok'=>!empty($last['ok']),
+    'done_seen'=>!empty($last['done_seen']),
+    'done'=>($last['done'] ?? null) === true,
+    'curl_errno'=>(int)($last['curl_errno'] ?? 0),
+    'done_reason'=>(string)($last['done_reason'] ?? ''),
+    'prompt_eval_count'=>(int)($last['prompt_eval_count'] ?? 0),
+    'eval_count'=>(int)($last['eval_count'] ?? 0),
+  ];
+}
+
 function ember_last_call_was_truncated(): bool {
   $meta = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
   if (!is_array($meta) || empty($meta['ok'])) return false;
@@ -6957,7 +6974,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static fn(): bool => ember_agent_cancel_requested(true),
         static fn(array $tool): array => ember_weather_route_tool($tool, $loopAllowed),
         static fn(string $prompt): ?string => ember_generated_image_review($pdo, $consoleUid,
-          $primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel)));
+          $primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel)),
+        static fn(): array => ember_agent_followup_last_call());
       if ($loop['browse'] !== null) {
         $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $loop['browse'];
         return null;

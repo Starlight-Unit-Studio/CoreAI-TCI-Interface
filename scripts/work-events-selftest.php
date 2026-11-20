@@ -26,6 +26,18 @@ check_work(($counts['source_chars'] ?? 0) === 3816
   'bounded model output length diagnostics preserved');
 check_work(!isset($counts['code']) && !isset($counts['prompt']),
   'model code and private prompts are never exposed in work events');
+$providerDiag = coreui_work_safe_meta([
+  'provider'=>'external','http_code'=>429,'curl_errno'=>0,
+  'done_reason'=>'length','eval_count'=>2048,'prompt_eval_count'=>6000,
+  'api_key'=>'NEVER_PERSIST','url'=>'https://example.test/secret',
+]);
+check_work(($providerDiag['provider'] ?? '')==='external'
+  && ($providerDiag['http_code'] ?? 0)===429
+  && ($providerDiag['curl_errno'] ?? -1)===0
+  && !isset($providerDiag['api_key']) && !isset($providerDiag['url']),
+  'external provider diagnostics are bounded without credentials');
+check_work(!isset(coreui_work_safe_meta(['provider'=>'secret-token'])['provider']),
+  'provider field accepts enums only');
 $window = coreui_work_safe_meta(['reason'=>'context_window_full','context_tokens'=>4096]);
 check_work(($window['reason'] ?? '') === 'context_window_full'
   && ($window['context_tokens'] ?? 0) === 4096,

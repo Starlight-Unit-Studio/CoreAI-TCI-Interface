@@ -1,0 +1,9 @@
+CoreAI: TCI Interface 0.8.12 - 20.11.2026
+
+- Recover one completed, empty external API follow-up with a lean, verified project prompt, without replaying the prior tool.
+- The latest tool result remains complete. Older successful large outputs appear as auditable receipts (size + SHA-256), and the Core can reread exact files when necessary.
+- Never retry rate limits (HTTP 429), HTTP 400/401, malformed or incomplete provider responses, cancelled requests or local Ollama blanks.
+- Record only safe model follow-up diagnostics: provider, HTTP status, cURL errno, finish reason and input/output tokens.
+- Tests for recovery, blocked retries, incremental source edits, work-event privacy and reasoning-only API completions.
+- Requires real-host verification against the selected OpenAI-compatible provider; it is not proof of the original provider-side cause.
+- Next release following merge: 0.8.13.
