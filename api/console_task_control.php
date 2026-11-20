@@ -36,6 +36,10 @@ function coreui_task_decision(string $reply, callable $parseTool): array {
     if ($body === '' || str_contains($body, '[COREUI_TASK_')) continue;
     return ['kind'=>$kind,'text'=>$body,'tool'=>null];
   }
+  // Incomplete terminal frames must never make tool-looking text executable.
+  if (str_contains($reply, '[COREUI_TASK_')) {
+    return ['kind'=>'invalid','text'=>'','tool'=>null];
+  }
   $action = $parseTool($reply);
   if (is_array($action)) return ['kind'=>'action','tool'=>$action,'text'=>''];
   return ['kind'=>'invalid','text'=>'','tool'=>null];
