@@ -93,6 +93,17 @@ workspace_test(str_contains($blog,'Datei blog.html angelegt')
   && coreui_pfiles_list($pdo,7,$alpha['project_id'])['count']===2
   && str_contains(coreui_pfiles_get($pdo,7,$alpha['project_id'],'index.html')['content'],'Chat-App'),
   'adding blog keeps the earlier index file and both revisions');
+// A missing script is NOT a missing workspace. Tell the Core the actual
+// saved paths so it can choose an authorized next action, not the same
+// nonexistent read three times.
+$missing=coreui_pftools_run($pdo,7,'cs_free_alpha',
+  ['tool'=>'pfile_read','input'=>'assets/app.js']);
+workspace_test(str_starts_with($missing,'Das ging nicht:')
+  && str_contains($missing,'diese Datei gibt es im Projekt nicht')
+  && str_contains($missing,'index.html')
+  && str_contains($missing,'blog.html')
+  && !str_contains($missing,'assets/app.js\n'),
+  'missing file in ordinary chat yields real workspace inventory, not a false unavailable project');
 $beta=coreui_chat_workspace_ensure($pdo,7,'cs_free_beta');
 workspace_test($beta['project_id']!==$alpha['project_id']
   && coreui_pfiles_list($pdo,7,$beta['project_id'])['count']===0,
