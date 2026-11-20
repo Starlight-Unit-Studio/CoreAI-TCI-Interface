@@ -270,6 +270,35 @@ function coreui_agent_run_map_for_responses(
         : null,
     ];
   }
+  // A history reply may show a saved partial answer. Surface the
+  // persisted task status and checkpoint without issuing any model request.
+  if ($map !== [] && coreui_task_journal_schema_ready($pdo)) {
+    try {
+      $runIds=array_values(array_unique(array_column($map,'id')));
+      $ph=implode(',',array_fill(0,count($runIds),'?'));
+      $q=$pdo->prepare('SELECT run_id,status,phase,checkpoint_version,last_step,'
+        . 'last_verified_step,last_error_code FROM stu_console_task_journal '
+        . 'WHERE user_id=? AND session_id=? AND run_id IN (' . $ph . ')');
+      $q->execute(array_merge([$uid,$sessionId],$runIds));
+      $tasks=[];
+      foreach (($q->fetchAll(PDO::FETCH_ASSOC) ?: []) as $task) {
+        $tasks[(string)$task['run_id']]=[
+          'status'=>(string)$task['status'],'phase'=>(string)$task['phase'],
+          'checkpoint_version'=>(int)$task['checkpoint_version'],
+          'last_step'=>(int)$task['last_step'],
+          'last_verified_step'=>(int)$task['last_verified_step'],
+          'error_code'=>$task['last_error_code']!==null
+            ? (string)$task['last_error_code'] : null];
+      }
+      foreach ($map as &$response) {
+        $id=(string)$response['id'];
+        if (isset($tasks[$id])) $response['task']=$tasks[$id];
+      }
+      unset($response);
+    } catch (Throwable $e) {
+      error_log('[CoreAI] task history projection: '.get_class($e));
+    }
+  }
   return $map;
 }
 
