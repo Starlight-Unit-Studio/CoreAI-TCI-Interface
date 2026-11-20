@@ -126,6 +126,8 @@ loop_test(str_contains($chain,'Menschen mit gleichem Namen') && str_contains($ch
 loop_test(str_contains(coreui_agent_loop_hint(false, true), 'ohne vorher zu fragen') && str_contains(coreui_agent_loop_hint(false, true), '[ARCHIV:')
   && !str_contains(coreui_agent_loop_hint(true, false), '[ARCHIV:'), 'first prompt tells Mara to act on her own');
 
+$taskDone = static fn(string $body):string => "[COREUI_TASK_DONE]\n" . $body . "\n[/COREUI_TASK_DONE]";
+
 // Scripted runs.
 $run = static function (array $replies, string $first, ?callable $cancel = null) use ($all): array {
   $events = [];
@@ -167,7 +169,7 @@ loop_test(str_contains(coreui_agent_step_prompt('B', [], 10, 0, ['web','pfile_wr
 $projectAllowed = ['web','pfile_write','pfile_edit','prun'];
 $projectResponses = [];
 for ($i=1; $i<=8; $i++) $projectResponses[] = '[WEB: neuer-schritt-' . $i . ']';
-$projectResponses[] = 'Projektauftrag abgeschlossen mit geprueften Werkzeugen.';
+$projectResponses[] = $taskDone('Projektauftrag abgeschlossen mit geprueften Werkzeugen.');
 $projectTools = [];
 $projectEvents = [];
 $projectLoop = coreui_agent_loop_run('[WEB: projekt-start]', ['tool'=>'web','input'=>'projekt-start'],
@@ -187,7 +189,7 @@ loop_test(count($projectTools)===9 && $projectLoop['steps']===9
 // real tool; the same loop must read the file before returning a final reply.
 $readSteps = [];
 $readEvents = [];
-$readReplies = [$readPromise,'Die Datei wurde mit dem Werkzeug geprüft; weitere Änderungen sind noch offen.'];
+$readReplies = [$readPromise,'[DATEI: style.css]',$taskDone('Die Datei wurde mit dem Werkzeug geprüft; weitere Änderungen sind noch offen.')];
 $recoveredLoop = coreui_agent_loop_run('[DATEI: index.html]',
   ['tool'=>'pfile_read','input'=>'index.html'], 'BASIS', $readAllowed, 0,
   static function(string $prompt) use (&$readReplies): ?string { return array_shift($readReplies); },
@@ -199,11 +201,11 @@ $recoveredLoop = coreui_agent_loop_run('[DATEI: index.html]',
     $readEvents[]=['kind'=>$kind,'state'=>$state,'meta'=>$meta];
   }, static fn():bool=>false);
 loop_test(count($readSteps)===2
-  && $readSteps[1] === $expectedRead
+  && $readSteps[1] === ['tool'=>'pfile_read','input'=>'style.css']
   && $recoveredLoop['steps']===2
   && str_contains((string)$recoveredLoop['out'],'noch offen')
   && count(array_filter($readEvents,static fn(array $e): bool =>
-    ($e['meta']['reason']??'')==='read_intent_without_marker'))===1,
+    ($e['meta']['reason']??'')==='task_decision_repaired'))===1,
   'file-read promise results in real verified tool result and autonomous continuation');
 
 // A project run sends the model's own public note before each real tool.
@@ -211,7 +213,7 @@ $projectNotes = [];
 $publicLoop = coreui_agent_loop_run(
   $publicToolReply, coreui_agent_next_tool($publicToolReply,['web']), 'BASIS',
   ['web','pfile_write','pfile_edit','prun'], 0,
-  static fn(string $prompt): ?string => 'Ich habe die Suche abgeschlossen. Jetzt kann ich antworten.',
+  static fn(string $prompt): ?string => $taskDone('Ich habe die Suche abgeschlossen. Jetzt kann ich antworten.'),
   static fn(array $tool): string => 'Werkzeug bestaetigt: ' . $tool['input'],
   static function(string $kind,string $state,string $title,array $meta) use (&$projectNotes): void {
     $projectNotes[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
@@ -343,7 +345,7 @@ loop_test($emptyFollowCalls===1 && $emptyFollow['steps']===1
 
 // 0.8.12: one transient, successfully transported but blank external API
 // follow-up may be recovered with compact receipts. No tool is replayed.
-$recoveryReplies = [null, '[DATEI: contact.html]', 'Die Kontaktseite wurde gelesen; weitere Arbeit bleibt offen.'];
+$recoveryReplies = [null, '[DATEI: contact.html]', $taskDone('Die Kontaktseite wurde gelesen; weitere Arbeit bleibt offen.')];
 $recoveryPrompts=[]; $recoveryTools=[]; $recoveryEvents=[];
 $externalRecovery=coreui_agent_loop_run('[DATEI: style.css]',
   ['tool'=>'pfile_read','input'=>'style.css'], 'BASIS',$projectFileTools,0,
