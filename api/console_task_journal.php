@@ -69,7 +69,6 @@ function coreui_task_journal_requirements_from_goal(string $goal): array {
     $safe,$matches);
   $unique=[];
   foreach (($matches[1]??[]) as $name) {
-    if (count($unique)>=100) break; // metadata size bound, not a work limit
     $name=(string)$name;
     try {
       if (!function_exists('coreui_pfiles_path')) continue;
@@ -85,7 +84,7 @@ function coreui_task_journal_seed_requirements(PDO $pdo,int $uid,string $session
     string $run,array $requirements): bool {
   if (!coreui_task_journal_valid_ref($uid,$session,$run)) return false;
   $safe=[];
-  foreach (array_slice($requirements,0,100) as $r) {
+  foreach ($requirements as $r) {
     if (!is_array($r) || ($r['kind']??'')!=='file'
         || ($r['origin']??'')!=='user_turn') return false;
     $path=(string)($r['path']??'');
