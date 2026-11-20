@@ -1,0 +1,22 @@
+COREAI: TCI INTERFACE - UEBERGABEPROTOKOLL 0.8.9
+Date: 2026-11-20
+Branch: fix/file-edit-recovery-loop-089
+Base: 0.8.8
+
+Operator observation:
+At 08:09 on 20 Nov, CoreAI kept attempting file edits to guestbook.html and main.js. The work view showed repeated tool_result_error and failed Projektdatei ändern steps, while individual file reads and a dev server at port 8000 worked. This is not a confirmed error in the dev server.
+
+Source diagnosis:
+coreui_agent_loop_run in api/console_agent_loop.php checked repeated tool+full-input+full-result hashes. Model changes to a broken exact-match patch changed the input, resetting the progress detector even if the same file stayed unchanged. There was no file-target-specific failure breaker and no forced reread.
+
+Fix:
+A failed exact-match pfile_edit triggers one verified pfile_read of the current stored file. The next model call uses that confirmed file content. If that edited file still fails, the run ends with the file path and stable server-confirmed error category; no forced complete overwrite or hidden retry is made. Database, permission and unavailable workspace errors end without a new write. A successful file write clears that file's failure state.
+Project tasks still continue beyond six verified steps; no artificial project-wide limit is added.
+
+Tests:
+scripts/agent-loop-selftest.php exercises the screenshot scenario with two different unsuccessful patch payloads, proves exactly one reread and early stop, and verifies successful recovery when the new patch is accurate. It also checks DB failure, Unicode file paths and safe publicly visible error summaries. scripts/preflight-sync-selftest.py prevents the guard from being removed while both host Preflights continue to run agent-loop-selftest.php.
+
+Remaining work:
+The exact original first failed guestbook.html modification is not in the collapsed screenshots. Review the expanded details of one failed step or PHP logs, identify whether it was an invalid SEARCH block, missing text, ambiguous text, concurrent change or a DB issue, then add that exact fixture if needed.
+After update, run real Preflight and manually test file editing, subsequent source revision, dev-server preview and the final answer against the actual host. CI is not a live deployment.
+Next version, if another merge follows: 0.8.10.
