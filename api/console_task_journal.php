@@ -189,6 +189,8 @@ function coreui_task_journal_resume_check(PDO $pdo, int $uid, string $session, s
     'step'=>(int)$row['step_no'],'tool'=>(string)$row['tool_name']];
   if (in_array((string)$state['status'],['cancelled','completed','failed'],true))
     return ['safe'=>false,'reason'=>'already_terminal'];
+  if (!in_array((string)$state['status'],['interrupted','blocked'],true))
+    return ['safe'=>false,'reason'=>'run_still_active'];
   return ['safe'=>true,'last_step'=>(int)$state['last_step'],
     'last_verified_step'=>(int)$state['last_verified_step'],
     'checkpoint_version'=>(int)$state['checkpoint_version']];
