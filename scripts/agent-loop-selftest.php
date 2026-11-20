@@ -320,6 +320,27 @@ loop_test(count($noDbTools)===1 && $noDbModelCalls===0
   && str_contains((string)$dbLoop['out'],'Datenbankfehler'),
   'a storage failure stops immediately instead of consuming retries or changing files');
 
+// Regression: a 12B model can return an empty follow-up after a real file
+// read. Preserve saved files and explain the interruption; no empty_response.
+$emptyFollowCalls=0;
+$emptyFollowEvents=[];
+$emptyFollow=coreui_agent_loop_run('[DATEI: style.css]',
+  ['tool'=>'pfile_read','input'=>'style.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$emptyFollowCalls):?string {
+    $emptyFollowCalls++;return null;
+  },
+  static fn(array $tool):string => "Datei style.css (Stand 1):\\n1 | body {}",
+  static function(string $kind,string $state,string $title,array $meta) use (&$emptyFollowEvents):void {
+    $emptyFollowEvents[]=['kind'=>$kind,'state'=>$state,'meta'=>$meta];
+  },static fn():bool=>false);
+loop_test($emptyFollowCalls===1 && $emptyFollow['steps']===1
+  && is_string($emptyFollow['out']) && str_contains($emptyFollow['out'],'noch nicht abgeschlossen')
+  && str_contains($emptyFollow['out'],'Bereits gespeicherte Dateien')
+  && count(array_filter($emptyFollowEvents,static fn(array $e):bool =>
+    $e['kind']==='model' && $e['state']==='error'
+    && ($e['meta']['reason']??'')==='empty_followup_after_tool'))===1,
+  'empty model reply after verified project tool is a diagnosed interruption');
+
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
 loop_test($r['browse'] === 'Ollama Bibliothek gemma4 Tags lesen' && $r['out'] === null && count($tools) === 1, 'hand over to the browser');
