@@ -7,7 +7,10 @@
 - **Model-independent integration:** normal CORE CHANNEL and project chat use the same agent journal; no changes to model settings, context windows, tool permissions, serial queue or project-step quotas.
 - **Truthful run history:** cancelled/interrupted/failed/completed runs project into task status, with checkpoint metadata available to history views. Worker-stale reconciliation no longer leaves the task manifest falsely running.
 - **Preflight and regression:** both native and Docker preflight require migration 057 and the task-journal selftest for account scoping, duplicate claims, crash uncertainty and privacy-safe receipts.
-- **In progress for Issue #374:** a verified checkpoint is not yet a resumable worker; cross-process resume, goal-completion validation and adapters for plan, browser, deep research, media and external jobs must be implemented before the umbrella issue closes.
+- **Safe automatic resume:** A response-less interrupted base run may restart from one unused, owner-checked verified checkpoint on chat reconnect. Ambiguous writes/commands stop; claimed operations never replay, and each checkpoint permits only one automatic restart.
+- **Structural goal validation:** Exact filenames explicitly requested in the original user turn are checked against current saved project file hashes before task DONE is accepted. No model statement alone verifies the entire goal.
+- **Mobile and history UI:** Persisted run state, last verified step and checkpoint are visible in message details, without changing old messages.
+- **Remaining for Issue #374:** semantic requirement-by-requirement validation and shared plan/browser/Deep Research/media adapters are still pending, as are live-host crash/reconnect acceptance tests.
 
 ## 0.8.13 - 20.11.2026
 
