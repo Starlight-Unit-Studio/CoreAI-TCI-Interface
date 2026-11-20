@@ -371,7 +371,32 @@ try {
       'running', 'interrupted', 'unconfirmed_restart');
     $priorState = 'interrupted';
   }
-  if ($priorState !== 'queued') {
+  // The only automatic restart permitted after a worker loss is a
+  // server-verified checkpoint with NO unconfirmed side effects. The DB
+  // claim and one-use checkpoint fence occur before any fresh model call.
+  $resumedFromCheckpoint = false;
+  if ($priorState === 'interrupted'
+      && $generationRequest === null && $workRunKey === 'base'
+      && empty($agentRun['response_message_id'])
+      && coreui_task_journal_schema_ready($pdo)) {
+    $safe=coreui_task_journal_resume_check($pdo,(int)$uid,$sessionId,$agentRunId);
+    if (($safe['safe']??false)===true) {
+      try {
+        $receiptContext=coreui_task_journal_resume_context($pdo,(int)$uid,$sessionId,$agentRunId);
+      } catch (Throwable $e) { $receiptContext=''; }
+      if ($receiptContext!=='') {
+        $takeover=coreui_task_journal_resume_claim($pdo,(int)$uid,$sessionId,$agentRunId);
+        if (($takeover['ok']??false)===true) {
+          $resumedFromCheckpoint=true;
+          $priorState='running';
+          $GLOBALS['COREUI_TASK_RESUME_ACTIVE']=true;
+          $GLOBALS['COREUI_TASK_RESUME_STEP']=(int)$takeover['last_step'];
+          $promptMessage .= "\n\n" . $receiptContext . coreui_task_protocol_prompt();
+        }
+      }
+    }
+  }
+  if ($priorState !== 'queued' && !$resumedFromCheckpoint) {
     if ($priorState === 'cancelled') {
       sse_send('cancelled', ['agent_run_id'=>$agentRunId,'status'=>'cancelled']);
     } elseif ($priorState === 'waiting_tool') {
@@ -382,7 +407,8 @@ try {
     ember_generation_lock_release($turnLock);
     exit;
   }
-  if (!coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+  if (!$resumedFromCheckpoint
+      && !coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
       'queued', 'running')) {
     sse_send('busy', ['note'=>'agent_run_claimed']);
     ember_generation_lock_release($turnLock);
@@ -416,7 +442,10 @@ try {
   $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH'] = static function (array $preview): void {
     sse_send('source_preview',$preview);
   };
-  coreui_work_record($pdo, 'run', 'running', 'Auftrag gestartet');
+  coreui_work_record($pdo, 'run', 'running',
+    $resumedFromCheckpoint ? 'Bestaetigter Projektstand wird fortgesetzt' : 'Auftrag gestartet',
+    $resumedFromCheckpoint ? ['reason'=>'task_checkpoint_resumed',
+      'step'=>(int)($GLOBALS['COREUI_TASK_RESUME_STEP']??0)] : []);
 
   $exactCalculation = (!$isVisionTurn && $attachmentIds === [] && $generationMode !== 'continue' && $composerIntentStream === null)
     ? ember_exact_integer_calculation($promptMessage)
