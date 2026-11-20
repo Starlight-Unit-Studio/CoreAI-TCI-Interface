@@ -321,6 +321,9 @@ UI_FILES=(
   database/migrations/011_console_artifacts.sql
   database/migrations/012_console_work_events.sql
   database/migrations/013_console_agent_runs.sql
+  database/migrations/057_task_journal.sql
+  api/console_task_journal.php
+  scripts/task-journal-selftest.php
   api/console_work_events.php
   api/console_work_store.php
   api/console_agent_runs.php
@@ -485,6 +488,7 @@ UI_FILES=(
   scripts/compaction-selftest.php
   api/console_compaction.php
   scripts/agent-loop-selftest.php
+  scripts/task-journal-selftest.php
   api/console_agent_loop.php
   scripts/browse-worker-selftest.py
   scripts/browse-live-ui-selftest.cjs
@@ -2222,6 +2226,18 @@ if command -v php >/dev/null 2>&1; then
       ok 'Migration 013: persistent agent runs ready.'
     else
       fail 'Migration 013: agent-run table missing.'
+    fi
+
+    if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_task_journal.php'; exit(coreui_task_journal_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
+      ok 'Migration 057: durable task journal and claim ledger ready.'
+    else
+      fail 'Migration 057 missing: durable task journal is required for autonomous project tools.'
+    fi
+
+    if runuser -u www-data -- php "$PROJECT_ROOT/scripts/task-journal-selftest.php" >/dev/null 2>&1; then
+      ok 'Task journal: idempotent tool claims, checkpoints and owner isolation verified.'
+    else
+      fail 'Task journal: checkpoint and safe-replay regression failed.'
     fi
 
     if php -r "require '$PROJECT_ROOT/api/db.php'; require '$PROJECT_ROOT/api/console_model_queue.php'; exit(coreui_model_queue_schema_ready(stu_pdo()) ? 0 : 1);" >/dev/null 2>&1; then
