@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.8`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.9`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -43,7 +43,7 @@ An archived, separately checksum-verified historical `0.5.3-alpha` ZIP can still
 
 **Chat development (0.8.8):** The shared real Project Files UI is mounted in a responsive chat modal. Saved ordinary chats own their own account-scoped development files, preview, commands, revision history and backups; older chats gain a workspace on their next work request. Projects are optional organizational groupings, not the permission gate for tool use. New chats are still created only after the first message. Opening the developer tab in a draft without a saved session asks the user to send a first message. Server permissions, PIN lock, CSRF, sandbox and file validation still apply. The chat-to-Project file migration on a later move needs a separate conflict-aware import flow; current workspaces are not silently overwritten.
 
-**Existing-project changes:** Once a project chat contains saved source files, later requests such as adding `blog.html` use the project file read/edit/write tools. The historical completed Markdown plan is no longer re-dispatched as an automatic full-site rebuild for every new message.
+**Existing-project changes:** Once a project chat contains saved source files, later requests such as adding `blog.html` use the project file read/edit/write tools. The historical completed Markdown plan is no longer re-dispatched as an automatic full-site rebuild for every new message. **Safe edit recovery:** After a rejected exact-match patch, Mara re-reads the stored file before proposing one corrected edit. If that edit also fails, she stops the repeated failure with a concrete reason. Successful project operations remain unrestricted; saved versions and conflicts stay protected.
 
 ## What Mara can do
 
