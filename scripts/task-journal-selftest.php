@@ -144,8 +144,13 @@ journal_test(($p['file_revision']??0)===4 && ($p['file_sha256']??'')===str_repea
   && ($db->journal[$run]['checkpoint_version']??0)===1,
   'the durable journal retains only evidence, no raw tool payload');
 journal_test(coreui_task_journal_can_finish($db,7,'session_demo',$run),'verified project work can finish');
+journal_test(coreui_task_journal_resume_check($db,7,'session_demo',$run)['reason']==='run_still_active',
+  'an active worker may not be resumed concurrently');
+coreui_task_journal_sync($db,7,'session_demo',$run,'interrupted','worker_lost');
 journal_test(coreui_task_journal_resume_check($db,7,'session_demo',$run)['safe']===true,
-  'verified checkpoint is safe for model-side continuation');
+  'interrupted verified checkpoint is safe for model-side continuation');
+// Simulate an owner-checked recovery claim for the next distinct operation.
+coreui_task_journal_sync($db,7,'session_demo',$run,'running');
 $command=['tool'=>'prun','input'=>'npm test'];
 journal_test(coreui_task_journal_claim($db,7,'session_demo',$run,2,$command)['status']==='claimed',
   'a new test step can be claimed');
