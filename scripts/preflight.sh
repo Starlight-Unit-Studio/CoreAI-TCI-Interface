@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.15: external Cores from the OpenAI-compatible adapter in the Core menu, released per account.
+# CoreAI: TCI Interface 0.8.16: project runs finish reliably, one local Core in memory.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

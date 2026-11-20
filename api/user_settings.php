@@ -454,8 +454,29 @@ if (($body['action'] ?? '') === 'core') {
     } catch (RuntimeException $e) {
       stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
     }
-    stu_json(['ok'=>true, 'model_override'=>COREUI_PROVIDER_PREFIX . $external, 'model'=>COREUI_PROVIDER_PREFIX . $external,
-      'label'=>$external, 'provider'=>(string)$capability['label'], 'preload'=>'external']);
+    // 0.8.16: the local Cores leave the RAM like on every other Core switch (after the answer is out).
+    $loadedLocal = array_values(array_filter(coreui_ollama_loaded_names(),
+      static fn(string $n): bool => preg_match('~(?:^|[:._-])cloud(?:$|[:._-])~i', $n) !== 1));
+    if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['ok'=>true, 'model_override'=>COREUI_PROVIDER_PREFIX . $external, 'model'=>COREUI_PROVIDER_PREFIX . $external,
+      'label'=>$external, 'provider'=>(string)$capability['label'], 'preload'=>'external',
+      'unload'=>$loadedLocal !== [] ? 'started' : 'none'], JSON_UNESCAPED_UNICODE);
+    if ($loadedLocal === []) exit;
+    if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+    ignore_user_abort(true);
+    @set_time_limit(180);
+    if (!defined('STU_CHAT_LIB')) define('STU_CHAT_LIB', 1);
+    require_once __DIR__ . '/chat.php';
+    require_once __DIR__ . '/core_preload.php';
+    try {
+      coreui_core_unload_local();
+    } catch (Throwable $e) {
+      if (function_exists('stu__log_error')) stu__log_error(['type'=>'core_unload_failed', 'uid'=>$uid, 'message'=>$e->getMessage()]);
+    }
+    exit;
   }
   if ($name !== '') {
     // A locally installed FLUX prompt Core is not usable without the actual image engine.

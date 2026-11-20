@@ -620,7 +620,7 @@ try {
       coreui_work_record($pdo,'model','info','Fortgesetzter Arbeitsauftrag: Entscheidung wird korrigiert',
         ['reason'=>'task_decision_missing','error_type'=>(string)($decision['shape'] ?? '')]);
       $fix=console_stream_ollama($model,$sys,
-        coreui_task_decision_repair_prompt($u,(string)($decision['shape'] ?? '')),false,null,false,false);
+        coreui_task_decision_repair_prompt($u,(string)($decision['shape'] ?? ''),$reply),false,null,false,false);
       if (!empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated'])) {
         $candidate=ember_sanitize_public_reply((string)($fix['content']??''),
           (string)($fix['thinking']??''));
@@ -1291,6 +1291,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     return ['thinking'=>'','content'=>'','ok'=>false,'done'=>false,
       'truncated'=>false,'error'=>'model_queue_timeout'];
   }
+  // 0.8.16: only this local Core stays in the RAM (inside the model queue).
+  if (!$wire['external']) ember_ollama_single_resident($model);
   $modelStartedAt = microtime(true);
   try {
     if ($workDb instanceof PDO) {

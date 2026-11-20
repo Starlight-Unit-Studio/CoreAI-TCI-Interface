@@ -57,6 +57,9 @@ coreui_define('STU_EMBER_LOCK_NAMESPACE', coreui_env('COREUI_LOCK_NAMESPACE', 'e
 // The active local Core stays in Ollama RAM until explicitly switched/unloaded.
 // This is model residency, not persistent conversational context.
 coreui_define('STU_EMBER_KEEP_ALIVE', coreui_env('COREUI_EMBER_KEEP_ALIVE', '-1'));
+// 0.8.16: only the Core of the current call stays loaded; the other local Cores leave the RAM
+// before it (false keeps several Cores, for a machine with room for them).
+coreui_define('STU_EMBER_SINGLE_RESIDENT', coreui_env_bool('COREUI_EMBER_SINGLE_RESIDENT', true));
 coreui_define('STU_EMBER_NUM_THREAD', (int)coreui_env('COREUI_EMBER_NUM_THREAD', '12'));
 coreui_define('STU_EMBER_NUM_PREDICT', (int)coreui_env('COREUI_EMBER_NUM_PREDICT', '6500'));
 coreui_define('STU_EMBER_NUM_CTX', (int)coreui_env('COREUI_EMBER_NUM_CTX', '32768'));

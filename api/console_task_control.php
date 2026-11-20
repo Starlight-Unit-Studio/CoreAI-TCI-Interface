@@ -17,6 +17,8 @@ const COREUI_TASK_DONE_OPEN = '[COREUI_TASK_DONE]';
 const COREUI_TASK_DONE_CLOSE = '[/COREUI_TASK_DONE]';
 const COREUI_TASK_BLOCKED_OPEN = '[COREUI_TASK_BLOCKED]';
 const COREUI_TASK_BLOCKED_CLOSE = '[/COREUI_TASK_BLOCKED]';
+// 0.8.16: at most this much of a refused reply is shown back to the model in its one repair.
+const COREUI_TASK_REPAIR_ECHO_CHARS = 4000;
 
 /**
  * 0.8.15: the reply as the decision sees it (pure, no words are interpreted): trimmed, and the
@@ -25,6 +27,10 @@ const COREUI_TASK_BLOCKED_CLOSE = '[/COREUI_TASK_BLOCKED]';
  * found wherever it stands anyway.
  */
 function coreui_task_decision_normalise(string $reply): string {
+  // 0.8.16: a control marker written the Markdown way (\[COREUI\_TASK\_DONE\], **[COREUI_TASK_DONE]**,
+  // `[COREUI_TASK_DONE]`) is the same marker.
+  $reply = (string)preg_replace('~\\\\?\[[ \t]*(/?)[ \t]*COREUI\\\\?_TASK\\\\?_([A-Z]+)[ \t]*\\\\?\]~', '[$1COREUI_TASK_$2]', $reply);
+  $reply = (string)preg_replace('~(?:\*\*|`)(\[/?COREUI_TASK_[A-Z]+\])(?:\*\*|`)~', '$1', $reply);
   return trim((string)preg_replace(
     '~\A\[COREUI_PUBLIC_PROGRESS\][^\r\n]{1,480}\[/COREUI_PUBLIC_PROGRESS\][ \t]*(?:\r?\n[ \t]*)*~u', '', trim($reply), 1));
 }
@@ -38,6 +44,7 @@ const COREUI_TASK_SHAPES = [
   'block_empty' => 'ein leerer Steuerblock',
   'block_and_tool' => 'ein Steuerblock zusammen mit einem Werkzeugmarker',
   'marker_unknown' => 'ein unbekannter COREUI_TASK-Marker',
+  'marker_malformed' => 'COREUI_TASK ohne gueltige eckige Klammern',
 ];
 
 /**
@@ -56,7 +63,8 @@ function coreui_task_decision(string $reply, callable $parseTool): array {
   $count = (int)preg_match_all('~\[(/?)COREUI_TASK_([A-Z_]+)\]~', $reply, $hits, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
   if ($count === 0) {
     $action = $parseTool($reply);
-    return is_array($action) ? ['kind'=>'action', 'tool'=>$action, 'text'=>'', 'shape'=>''] : $invalid('prose_only');
+    if (is_array($action)) return ['kind'=>'action', 'tool'=>$action, 'text'=>'', 'shape'=>''];
+    return $invalid(stripos($reply, 'COREUI_TASK') !== false ? 'marker_malformed' : 'prose_only');
   }
   $kinds = ['DONE'=>'done', 'BLOCKED'=>'blocked'];
   foreach ($hits as $hit) {
@@ -98,10 +106,21 @@ function coreui_task_protocol_prompt(): string {
  * the already confirmed tool. Retry at most once for a malformed decision
  * to avoid unlimited calls and runaway user costs.
  */
-function coreui_task_decision_repair_prompt(string $verifiedContext, string $shape = ''): string {
-  // 0.8.15: name the structural form that was refused (never the model text itself).
+function coreui_task_decision_repair_prompt(string $verifiedContext, string $shape = '', string $previous = ''): string {
+  // 0.8.15: name the structural form that was refused (never shown to anyone but the model).
   $seen = COREUI_TASK_SHAPES[$shape] ?? '';
-  return $verifiedContext . coreui_task_protocol_prompt()
+  // 0.8.16: the model sees its own refused reply, so it can put that text into the right block
+  // instead of writing the same prose again (it had no idea what to change). Only to the model.
+  $previous = trim($previous);
+  if (function_exists('mb_strlen') && mb_strlen($previous, 'UTF-8') > COREUI_TASK_REPAIR_ECHO_CHARS) {
+    $previous = mb_substr($previous, 0, COREUI_TASK_REPAIR_ECHO_CHARS, 'UTF-8') . ' [...]';
+  }
+  $echo = $previous === '' ? '' : "\nDeine letzte Ausgabe (nur zur Korrektur, nicht erneut ausfuehren):\n<<<\n"
+    . str_replace(['<<<', '>>>'], ['< < <', '> > >'], $previous) . "\n>>>\n"
+    . "Beschreibt sie den fertigen Auftrag, gib genau diesen Text innerhalb von " . COREUI_TASK_DONE_OPEN
+    . " und " . COREUI_TASK_DONE_CLOSE . " zurueck. Beschreibt sie eine Blockade, nimm " . COREUI_TASK_BLOCKED_OPEN
+    . " und " . COREUI_TASK_BLOCKED_CLOSE . ". Ist noch Arbeit offen, antworte nur mit dem naechsten Werkzeugmarker.";
+  return $verifiedContext . coreui_task_protocol_prompt() . $echo
     . "\nDeine letzte Ausgabe war keine gueltige Steuerentscheidung"
     . ($seen !== '' ? ' (erkannt: ' . $seen . ')' : '') . ". "
     . "Beantworte mit genau einem erlaubten Werkzeugmarker oder einem "
