@@ -193,7 +193,7 @@ function coreui_task_journal_resume_check(PDO $pdo, int $uid, string $session, s
     return ['safe'=>false,'reason'=>'run_still_active'];
   if ((int)$state['last_verified_step']<=0 || (int)$state['checkpoint_version']<=0)
     return ['safe'=>false,'reason'=>'no_verified_checkpoint'];
-  if ($state['resume_checkpoint_version']!==null
+  if (($state['resume_checkpoint_version'] ?? null)!==null
       && (int)$state['resume_checkpoint_version']===(int)$state['checkpoint_version'])
     return ['safe'=>false,'reason'=>'checkpoint_already_resumed'];
   return ['safe'=>true,'last_step'=>(int)$state['last_step'],
