@@ -6962,7 +6962,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         if ($hint !== '') $uBase = str_replace($hint . "\n\n", '', $uBase);
       }
       $agentWebSession = [];
-      $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed, $pyHandled ? 1 : 0,
+      $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed,
+        max($pyHandled ? 1 : 0, (int)($GLOBALS['COREUI_TASK_RESUME_STEP'] ?? 0)),
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
         static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
           $triggerMessageId, $triggerRevision, $composerIntent, &$agentWebSession): string {
