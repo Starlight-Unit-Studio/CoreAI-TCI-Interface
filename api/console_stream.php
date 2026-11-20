@@ -1019,7 +1019,21 @@ try {
       error_log('[CoreUI] Work events not ready: ' . get_class($eWork));
     }
   }
+  $taskSnapshot = null;
+  if ($agentRunId !== '' && coreui_task_journal_schema_ready($pdo)) {
+    try {
+      $task = coreui_task_journal_get($pdo,(int)$uid,$sessionId,$agentRunId);
+      if (is_array($task)) $taskSnapshot = [
+        'status'=>(string)$task['status'],
+        'phase'=>(string)$task['phase'],
+        'checkpoint_version'=>(int)$task['checkpoint_version'],
+        'last_step'=>(int)$task['last_step'],
+        'last_verified_step'=>(int)$task['last_verified_step'],
+      ];
+    } catch (Throwable $e) { /* history remains authoritative */ }
+  }
   sse_send('done', [
+    'agent_task'   => $taskSnapshot,
     'work_events'   => $workEvents,
     'agent_run_id'  => $agentRunId,
     'text'          => $replyFinal,
