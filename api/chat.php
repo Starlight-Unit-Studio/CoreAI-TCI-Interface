@@ -10240,8 +10240,12 @@ if ($action === 'send') {
           'turn_id'=>(int)$id,'run_key'=>'base','agent_run_id'=>$backgroundRunId
         ];
         $GLOBALS['COREUI_WORK_PDO']=$pdo;
-        coreui_task_journal_begin($pdo,(int)$uid,(string)$consoleSessionId,
-          $backgroundRunId,(int)$id,'chat');
+        if (coreui_task_journal_begin($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,(int)$id,'chat')) {
+          $requirements=coreui_task_journal_requirements_from_goal($message);
+          coreui_task_journal_seed_requirements($pdo,(int)$uid,(string)$consoleSessionId,
+            $backgroundRunId,$requirements);
+        }
         register_shutdown_function(static function() use ($pdo,$uid,$consoleSessionId,$backgroundRunId):void {
           try { coreui_agent_run_transition($pdo,(int)$uid,(string)$consoleSessionId,
             $backgroundRunId,'running','interrupted','worker_exit'); }
