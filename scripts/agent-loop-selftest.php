@@ -9,6 +9,7 @@ $root = dirname(__DIR__);
 require_once $root . '/api/console_compaction.php';
 require_once $root . '/api/console_agent_loop.php';
 require_once $root . '/api/console_native_tools.php';
+require_once $root . '/api/project_file_tools.php';
 // The marker readers of chat.php, extracted like the other selftests do.
 $chatSource = (string)file_get_contents($root . '/api/chat.php');
 foreach (['ember_without_inline_code', 'ember_extract_web_marker', 'ember_extract_browse_marker', 'ember_strip_stray_tool_markers'] as $fn) {
@@ -228,6 +229,96 @@ loop_test(str_contains((string)coreui_agent_public_result_note(['tool'=>'prun','
   && str_contains((string)coreui_agent_public_result_note(['tool'=>'pfile_edit','input'=>'main.js'],'error'),'fehlgeschlagen')
   && coreui_agent_public_result_note(['tool'=>'pfile_read','input'=>'index.html'],'success')===null,
   'public completion commentary only states real tool status, not invented file content');
+
+// 0.8.9: Regression from the screenshot: guestbook.html failed ten edits
+// because each retry changed its payload and evaded full-hash stall detection.
+// A failed exact patch must be read again from saved bytes before one more
+// attempt. A second failed edit to the same file stops without another model
+// call, preserving every saved file and avoiding a false success claim.
+$fail1="[DATEI_AENDERN: guestbook.html]\n<<<<<<< SUCHEN\nmissing old text\n=======\nnew guestbook\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]";
+$fail2="[DATEI_AENDERN: guestbook.html]\n<<<<<<< SUCHEN\nstill not in the file\n=======\nnew guestbook\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]";
+$projectFileTools=['pfile_read','pfile_edit','pfile_write','prun'];
+$scriptedModel=[$fail2, 'UNEXPECTED THIRD MODEL CALL'];
+$executed=[];$replies=[];$logged=[];
+$editLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFileTools),
+  'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$scriptedModel,&$replies): ?string {
+    $replies[]=$prompt;return array_shift($scriptedModel);
+  },
+  static function(array $tool) use (&$executed): string {
+    $executed[]=$tool;
+    if ($tool['tool']==='pfile_read')
+      return "Datei guestbook.html (Stand 3):\n1 | <form>saved original</form>\n(Zeilennummern gehoeren nicht zur Datei.)";
+    return 'Die Datei guestbook.html wurde NICHT geaendert: Block 1: der SUCHEN-Text kommt nicht in der Datei vor (lies sie mit [DATEI: pfad] und kopiere die Zeilen genau, mit allen Leerzeichen).';
+  },
+  static function(string $kind,string $state,string $title,array $meta) use (&$logged):void {
+    $logged[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  },static fn():bool=>false);
+loop_test(array_column($executed,'tool')===['pfile_edit','pfile_read','pfile_edit']
+  && $executed[0]['input']!==$executed[2]['input']
+  && count($replies)===1 && $editLoop['steps']===3
+  && str_contains((string)$editLoop['out'],'guestbook.html')
+  && str_contains((string)$editLoop['out'],'wurde nicht gespeichert')
+  && str_contains((string)$editLoop['out'],'Wiederholung beendet')
+  && count(array_filter($logged,static fn(array $e):bool =>
+    ($e['meta']['reason']??'')==='same_file_edit_rejected_twice'))===1,
+  'changed patch body cannot bypass no-progress guard; one read, one retry and honest stop');
+loop_test(str_contains($replies[0], '<form>saved original</form>')
+  && str_contains($replies[0], 'Schritt 1')
+  && str_contains($replies[0], 'Schritt 2'),
+  'the repaired patch is grounded in a real reread of the saved file, not an invented replacement');
+loop_test(coreui_agent_file_target(['tool'=>'pfile_edit','input'=>"docs/Über uns.md\ncode"])==='docs/Über uns.md'
+  && coreui_agent_file_target(['tool'=>'pfile_edit','input'=>"../../secret\ncode"])==='',
+  'Unicode filenames work and untrusted paths cannot be echoed in recovery notices');
+loop_test(coreui_agent_tool_result_state(['tool'=>'pfile_edit','input'=>'a.md'],
+  'Der Datei-Arbeitsbereich dieses Chats ist noch nicht verfügbar.')==='error',
+  'missing workspace is not reported as successful edit');
+loop_test(coreui_agent_edit_failure_reason('Die Datei x wurde NICHT geaendert: Kein SUCHEN/ERSETZEN-Block gefunden.')==='Änderungsblock nicht erkannt'
+  && coreui_agent_edit_failure_reason('Die Datei x wurde NICHT geaendert: Block 1: der SUCHEN-Text kommt 3 Mal in der Datei vor')==='SUCHEN-Text ist nicht eindeutig'
+  && str_contains((string)coreui_agent_public_result_note(['tool'=>'pfile_edit','input'=>'guestbook.html'],'error',
+    'Die Datei guestbook.html wurde NICHT geaendert: Kein SUCHEN/ERSETZEN-Block gefunden.'),'Änderungsblock nicht erkannt'),
+  'public error notes identify deterministic reasons without disclosing patch bytes');
+// A transient malformed patch can be recovered without stopping successful
+// file work. Once an actual edit is saved, its failure counter is cleared.
+$fixMessages=[
+  "[DATEI_AENDERN: guestbook.html]\n<<<<<<< SUCHEN\n<form>saved original</form>\n=======\n<form>new guestbook</form>\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]",
+  'Gästebuch erfolgreich geändert, gespeicherter Stand bestätigt.',
+];
+$fixTools=[];$fixModelCalls=0;
+$fixedLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFileTools),
+  'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$fixMessages,&$fixModelCalls): ?string {
+    $fixModelCalls++;return array_shift($fixMessages);
+  },
+  static function(array $tool) use (&$fixTools): string {
+    $fixTools[]=$tool;
+    if ($tool['tool']==='pfile_read')
+      return "Datei guestbook.html (Stand 3):\n1 | <form>saved original</form>\n(Zeilennummern gehoeren nicht zur Datei.)";
+    return count(array_filter($fixTools,static fn(array $t):bool=>$t['tool']==='pfile_edit'))===1
+      ? 'Die Datei guestbook.html wurde NICHT geaendert: Block 1: der SUCHEN-Text kommt nicht in der Datei vor.'
+      : 'Datei guestbook.html geaendert (jetzt Stand 4): 1 Zeilen ersetzt durch 1.';
+  },
+  static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test(array_column($fixTools,'tool')===['pfile_edit','pfile_read','pfile_edit']
+  && $fixModelCalls===2
+  && $fixedLoop['out']==='Gästebuch erfolgreich geändert, gespeicherter Stand bestätigt.',
+  'a valid second patch completes normally after the verified reread');
+$noDbTools=[];$noDbModelCalls=0;
+$dbLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFileTools),
+  'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$noDbModelCalls):?string {
+    $noDbModelCalls++;return 'I should not retry storage errors';
+  },
+  static function(array $tool) use (&$noDbTools):string {
+    $noDbTools[]=$tool;
+    return 'Die Projektdatei konnte gerade nicht gelesen oder gespeichert werden (Datenbankfehler). Nichts geaendert.';
+  },
+  static function(string $kind,string $state,string $title,array $meta):void {},
+  static fn():bool=>false);
+loop_test(count($noDbTools)===1 && $noDbModelCalls===0
+  && str_contains((string)$dbLoop['out'],'Datenbankfehler'),
+  'a storage failure stops immediately instead of consuming retries or changing files');
 
 // Escalation to the browser worker mid-way.
 [$r, $tools] = $run(['[BROWSE: Ollama Bibliothek gemma4 Tags lesen]'], '[WEB: gemma4 tags]');
