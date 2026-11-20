@@ -92,10 +92,6 @@ function coreui_admin_setting_rows(PDO $pdo): array {
     'tool_browse_enabled' => defined('STU_EMBER_BROWSE_ENABLED') && STU_EMBER_BROWSE_ENABLED ? '1' : '0',
     'tool_python_enabled' => defined('STU_EMBER_PY_ENABLED') && STU_EMBER_PY_ENABLED ? '1' : '0',
     'tool_image_enabled' => defined('STU_IMAGE_ENABLED') && !STU_IMAGE_ENABLED ? '0' : '1',
-    'external_api_enabled' => '0',
-    'external_api_label' => 'OpenAI-kompatibel',
-    'external_api_base_url' => '',
-    'external_api_model' => '',
     // 0.7.28: storage per account in MiB for all accounts ('' = no limit); Admin Core > Betrieb.
     'storage_limit_mb' => '',
     // 0.7.82 (P11 C): days until the files Mara made are deleted (0 = never).
@@ -195,6 +191,10 @@ if ($method === 'GET') {
     } catch (RuntimeException $e) {
       $ollama = false;
     }
+    // 0.8.15: the external Cores the adapter offers, as "extern:<name>".
+    $offered = [];
+    foreach ((array)coreui_ai_external_capability($pdo)['models'] as $model) $offered[] = COREUI_PROVIDER_PREFIX . $model;
+    $external = array_merge($external, $offered);
     $grants = coreui_model_access_all($pdo);
     foreach ($grants as $names) {
       foreach ($names as $name) {
@@ -203,7 +203,7 @@ if ($method === 'GET') {
     }
     sort($external, SORT_NATURAL | SORT_FLAG_CASE);
     stu_json(['ok' => true, 'models' => $external, 'grants' => (object)$grants, 'ollama' => $ollama,
-      'ready' => coreui_model_access_ready($pdo)]);
+      'external_offered' => $offered, 'ready' => coreui_model_access_ready($pdo)]);
   }
 
   // 0.6.82: E-Mail-Versand (SMTP), Inhaber only. Never returns the password.
@@ -688,7 +688,6 @@ if ($action === 'settings_save') {
     'captcha_enabled', 'maintenance_enabled', 'maintenance_message',
     'memory_default_enabled', 'user_system_prompt_max_chars',
     'tool_web_enabled', 'tool_browse_enabled', 'tool_python_enabled', 'tool_image_enabled',
-    'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',
     'storage_limit_mb', 'artifact_retention_days',
   ];
   $incoming = $body['settings'] ?? [];
@@ -709,23 +708,53 @@ if ($action === 'settings_save') {
       if (function_exists('mb_substr')) $value = mb_substr($value, 0, 520, 'UTF-8');
       else $value = substr($value, 0, 520);
     }
-    // 0.8.11: https, or http only to this machine (a local proxy); no login or query in the address.
-    if ($key === 'external_api_base_url' && $value !== '') {
-      $value = coreui_provider_base_url($value);
-      if ($value === '') stu_json(['ok' => false, 'error' => 'external_url_requires_https'], 400);
-    }
-    if ($key === 'external_api_model' && $value !== '' && coreui_provider_model_name($value) === '') {
-      stu_json(['ok' => false, 'error' => 'external_model_invalid'], 400);
-    }
-    if (in_array($key, ['external_api_label', 'external_api_model'], true)) {
-      if (function_exists('mb_substr')) $value = mb_substr($value, 0, 160, 'UTF-8');
-      else $value = substr($value, 0, 160);
-    }
     stu_app_setting_set($pdo, $key, $value);
     $saved[$key] = $value;
   }
   coreui_admin_audit($pdo, $actorId, 'settings_save', 'app_settings', '', ['keys' => array_keys($saved)]);
   stu_json(['ok' => true, 'settings' => coreui_admin_setting_rows($pdo)]);
+}
+
+// 0.8.15: Admin Core > Externer Adapter > ADAPTER SPEICHERN: switch, name, base URL and the offered
+// external Cores, all at once (the key has its own button). https, or http only to this machine (a
+// local proxy); no login or query in the address. The single Core name of 0.8.11 is replaced.
+// Inhaber only: the address decides where his key goes, and the Cores cost his money.
+if ($action === 'external_api_save') {
+  if ($actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);
+  $enabled = in_array(strtolower(trim((string)($body['enabled'] ?? '0'))), ['1', 'true', 'yes', 'on'], true) ? '1' : '0';
+  $label = trim((string)preg_replace('~[\x00-\x1f\x7f]+~u', ' ', (string)($body['label'] ?? '')));
+  $label = function_exists('mb_substr') ? mb_substr($label, 0, 160, 'UTF-8') : substr($label, 0, 160);
+  $baseUrl = trim((string)($body['base_url'] ?? ''));
+  if ($baseUrl !== '') {
+    $baseUrl = coreui_provider_base_url($baseUrl);
+    if ($baseUrl === '') stu_json(['ok' => false, 'error' => 'external_url_requires_https'], 400);
+  }
+  $models = $body['models'] ?? [];
+  if (!is_array($models)) stu_json(['ok' => false, 'error' => 'external_model_invalid'], 400);
+  $clean = [];
+  foreach ($models as $model) {
+    $name = is_string($model) ? coreui_provider_model_name($model) : '';
+    if ($name === '') stu_json(['ok' => false, 'error' => 'external_model_invalid', 'model' => is_string($model) ? mb_substr($model, 0, 160, 'UTF-8') : ''], 400);
+    if (!in_array($name, $clean, true)) $clean[] = $name;
+  }
+  if (count($clean) > COREUI_PROVIDER_MODELS_MAX) stu_json(['ok' => false, 'error' => 'external_models_too_many', 'max' => COREUI_PROVIDER_MODELS_MAX], 400);
+  stu_app_setting_set($pdo, 'external_api_enabled', $enabled);
+  stu_app_setting_set($pdo, 'external_api_label', $label !== '' ? $label : COREUI_PROVIDER_LABEL_DEFAULT);
+  stu_app_setting_set($pdo, 'external_api_base_url', $baseUrl);
+  stu_app_setting_set($pdo, 'external_api_models', (string)json_encode($clean, JSON_UNESCAPED_SLASHES));
+  stu_app_setting_set($pdo, 'external_api_model', '');
+  coreui_admin_audit($pdo, $actorId, 'external_api_save', 'app_settings', 'external_api',
+    ['enabled' => $enabled === '1', 'base_url' => $baseUrl, 'models' => $clean]);
+  stu_json(['ok' => true, 'external' => coreui_ai_external_capability($pdo)]);
+}
+
+// 0.8.15: Admin Core > Externer Adapter > CORES VOM ANBIETER LADEN: the provider's list (GET /models
+// with the key; no model is asked anything). Works before the adapter is switched on.
+if ($action === 'external_api_models') {
+  $list = coreui_provider_list(coreui_ai_external_capability($pdo), coreui_provider_key($pdo));
+  coreui_admin_audit($pdo, $actorId, 'external_api_models', 'app_settings', 'external_api',
+    ['ok' => !empty($list['ok']), 'reason' => (string)($list['reason'] ?? ''), 'count' => count((array)($list['ids'] ?? []))]);
+  stu_json(['ok' => true, 'list' => $list, 'external' => coreui_ai_external_capability($pdo)]);
 }
 
 // 0.8.11: Admin Core > Externer Adapter > API-Schlüssel. The Inhaber pastes the key; it is kept
@@ -745,6 +774,7 @@ if ($action === 'external_api_key_save' || $action === 'external_api_key_delete'
 
 // 0.8.11: Admin Core > Externer Adapter > Verbindung prüfen. Asks the provider for its model list
 // with the server key (no model is asked anything, no tokens); the key never leaves the server.
+// 0.8.15: also while the adapter is still switched off; says which offered Cores are not listed.
 if ($action === 'external_api_test') {
   $result = coreui_provider_test(coreui_ai_external_capability($pdo), coreui_provider_key($pdo));
   coreui_admin_audit($pdo, $actorId, 'external_api_test', 'app_settings', 'external_api',

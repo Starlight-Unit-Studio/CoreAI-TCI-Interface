@@ -60,6 +60,18 @@ foreach ([['../etc/passwd'], ['bad name'], ['']] as $bad) {
   catch (InvalidArgumentException $e) { access_test($e->getMessage() === 'invalid_model_name', 'invalid name refused'); }
 }
 access_test(coreui_model_access_grants($pdo, 3) === ['llama3.2:latest'], 'a refused save changes nothing');
+// 0.8.15: external Cores ("extern:<name>") are released the same way; their names may hold @ and +.
+$saved = coreui_model_access_save($pdo, 5, ['extern:gpt-4o-mini', 'EXTERN:claude-x@2025', 'extern:gpt-4o-mini'], 1);
+access_test($saved === ['extern:claude-x@2025', 'extern:gpt-4o-mini'], 'external releases stored with one prefix: ' . implode(',', $saved));
+access_test(coreui_model_access_allowed($pdo, 5, 'extern:gpt-4o-mini') && coreui_model_access_allowed($pdo, 1, 'extern:anything')
+  && !coreui_model_access_allowed($pdo, 2, 'extern:gpt-4o-mini') && !coreui_model_access_allowed($pdo, 4, 'extern:gpt-4o-mini')
+  && !coreui_model_access_allowed($pdo, 5, 'gpt-4o-mini') && !coreui_model_is_coreai('extern:gemma4:e4b'),
+  'external Cores: Inhaber all, others by release, guests never, never counted as CoreAI');
+foreach ([['extern:'], ['extern:a b'], ['extern:' . str_repeat('m', 154)]] as $bad) {
+  try { coreui_model_access_save($pdo, 5, $bad, 1); access_test(false, 'invalid external name accepted'); }
+  catch (InvalidArgumentException $e) { access_test($e->getMessage() === 'invalid_model_name', 'invalid external name refused'); }
+}
+access_test(coreui_model_access_save($pdo, 5, [], 1) === [], 'releases withdrawn');
 access_test(coreui_model_access_all($pdo) === ['3' => ['llama3.2:latest']], 'all releases by account');
 
 // The list each account sees.
@@ -75,7 +87,10 @@ access_test($names(coreui_model_access_filter($pdo, 4, $list)) === ['ember-coreu
 $read = static fn(string $f): string => (string)file_get_contents($root . '/' . $f);
 access_test(str_contains($read('api/models.php'), '$models = coreui_model_access_filter(stu_pdo(), $uid, $models);'), 'the list is filtered');
 $settings = $read('api/user_settings.php');
-access_test(substr_count($settings, "stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);") === 2, 'chat menu and KI-Profil refuse');
+// 0.8.15: the chat menu refuses a local and an external Core without release, the KI-Profil a local one.
+access_test(substr_count($settings, "stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);") === 3
+  && str_contains($settings, "if (!coreui_ai_external_usable(\$pdo, (int)\$uid, \$external, \$capability)) stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);"),
+  'chat menu (local and external Cores) and KI-Profil refuse');
 access_test(str_contains($settings, "if (!coreui_model_access_allowed(\$pdo, \$uid, (string)\$settings['model_override'])) \$settings['model_override'] = '';"),
   'a withdrawn Core no longer shows as chosen');
 access_test(str_contains($read('api/ai_settings.php'), "if (!coreui_model_access_allowed(\$pdo, \$uid, (string)\$settings['model_override'])) \$settings['model_override'] = '';"),

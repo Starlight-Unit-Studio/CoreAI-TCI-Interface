@@ -897,6 +897,50 @@
   accent-color: var(--cx);
 }
 
+/* 0.8.15: Admin Core > Externer Adapter > EXTERNE CORES (ticked first, then the provider's list). */
+.settings-field.external-cores {
+  margin-top: 18px;
+}
+
+.external-model-list {
+  display: flex;
+  max-height: 280px;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.external-model-list:empty {
+  display: none;
+}
+
+.external-model-list .model-access-choice {
+  min-height: 38px;
+}
+
+.settings-field .external-model-list input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+.external-model-note {
+  margin-left: auto;
+  color: #a8681a;
+  font-size: 12px;
+}
+
+.external-model-add {
+  display: flex;
+  gap: 8px;
+}
+
+.external-model-add input {
+  flex: 1 1 auto;
+}
+
 /* --- Smaller screens ----------------------------------------------------- */
 
 @media (max-width: 1100px) {

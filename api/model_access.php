@@ -11,9 +11,12 @@ declare(strict_types=1);
  * releases single ones per account under Admin Core > Benutzer. The server
  * checks this on the list, on the choice and when a turn starts, so a revoked
  * release takes effect at the next message.
+ *
+ * 0.8.15: external Cores ("extern:<name>", api/model_provider.php) are released the same way.
  */
 
 require_once __DIR__ . '/model_catalog.php';
+require_once __DIR__ . '/model_provider.php';
 
 /** A Core of CoreAI (pure): a TCI tier or one of Mara's Cores. */
 function coreui_model_is_coreai(string $model): bool {
@@ -98,7 +101,9 @@ function coreui_model_access_save(PDO $pdo, int $uid, array $models, int $actorI
   $clean = [];
   foreach ($models as $name) {
     $name = trim((string)$name);
-    if (!coreui_model_name_valid($name)) throw new InvalidArgumentException('invalid_model_name');
+    $valid = coreui_provider_is_choice($name) ? coreui_provider_choice($name) !== '' : coreui_model_name_valid($name);
+    if (!$valid) throw new InvalidArgumentException('invalid_model_name');
+    if (coreui_provider_is_choice($name)) $name = COREUI_PROVIDER_PREFIX . coreui_provider_choice($name);
     if (coreui_model_is_coreai($name)) continue;
     $clean[strtolower($name)] = $name;
   }

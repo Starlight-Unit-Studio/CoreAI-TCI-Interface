@@ -1,0 +1,75 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.15
+Datum: 20.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.14 nach PR #375 (Arbeit begonnen auf 0.8.11, main 0.8.12 bis 0.8.14 eingemischt)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Nach dem ersten Test von 0.8.11 auf dem echten Server: "ich vermisse hier irgendwie modell
+auswahlliste von der api", die Auswahl "vorzugsweise mit im corechip ... unter Externe Cores", und
+"du arbeitest die ganze Zeit so als waere coreai nur fuer eine Person privat aber ist es nicht".
+Dazu die Schwaechen, die beim Test auffielen: die Verbindungspruefung lief nur mit eingeschaltetem
+Schalter und sagte das nicht ("Erst vollstaendig einrichten und speichern."), der zugehoerige
+Speichern-Knopf lag weit oben, und im Chat war nicht zu sehen, dass ein externer Core antwortet.
+
+ENTSCHEIDUNGEN
+- Mehrere externe Cores statt eines Core-Namens. Der Inhaber laedt die Liste des Anbieters und
+  hakt an, was CoreAI anbietet (hoechstens 50; die Listen der Anbieter enthalten auch Cores fuer
+  Embeddings, Sprache und Bilder). Fuer Anbieter ohne Liste: Name von Hand.
+- Die Wahl liegt im Core-Menue des Chats unter EXTERNE CORES, je Konto gespeichert als
+  "extern:<name>" im bestehenden Feld der Core-Wahl. Der Core-Pfad im KI-Profil entfaellt; ein
+  Konto mit "Externe API" aus 0.8.11 nutzt den ersten angebotenen externen Core.
+- Rechte wie bei Cores ausserhalb von CoreAI (seit 0.5.83): der Inhaber alle, alle anderen Konten,
+  auch Admins, nach seiner Freigabe unter Admin Core > Benutzer, Gaeste nie. Damit faellt die feste
+  Regel "Inhaber und Admins" aus 0.8.11 weg; Admins brauchen jetzt eine Freigabe wie bei fremden
+  lokalen Cores.
+- Den Adapter aendert nur der Inhaber: die Adresse bestimmt, wohin sein Schluessel geht. In 0.8.11
+  konnte ein Admin die Base-URL aendern und damit den Schluessel des Inhabers an eine andere Adresse
+  schicken lassen. Admins sehen den Status und duerfen pruefen.
+- Ein externer Core hat kein Modelfile und bekommt Maras SYSTEM-Text aus dem Modelfile des
+  Betreibers unveraendert (wie ein roher lokaler Core). Das Modelfile wird nicht geaendert.
+
+UMSETZUNG
+- api/model_provider.php: angebotene Cores (external_api_models als JSON-Liste, Altwert
+  external_api_model ohne Liste), Core-Namen hoechstens 153 Zeichen (mit "extern:" passend in die
+  160 Zeichen der Core-Wahl und der Freigaben), Wahl "extern:<name>", connection_ready (Base-URL und
+  Schluessel), angeboten, Zug je Konto, Liste des Anbieters (gueltige Namen, eindeutig, sortiert,
+  hoechstens 1000), Verbindungspruefung auch ausgeschaltet (connected, models_listed,
+  models_not_listed mit Namen, enabled).
+- api/ai_settings.php: Faehigkeit mit Liste, externe Cores je Konto, Nutzbarkeit je Konto, Zug:
+  externe Wahl vor den lokalen Pruefungen herausgenommen, dann nur bei Freigabe extern; alter
+  Core-Pfad wird zur Wahl des ersten angebotenen Cores; eine Core-Wahl im Menue setzt provider auf
+  local.
+- api/user_settings.php: Core-Wahl extern (409 external_not_available, 403 model_not_allowed,
+  kein Vorladen, preload external), Anzeige ohne nicht mehr nutzbare externe Wahl, Name des Cores
+  als Chip-Beschriftung; Core-Pfad-Pruefung und Feld external entfernt.
+- api/models.php: Liste external fuer das Core-Menue.
+- api/model_access.php: Freigaben fuer "extern:<name>" (auch mit @ und +).
+- api/model_catalog.php: "extern:" ist nie eine TCI-Stufe (sonst haette ein externer Core mit
+  gemma-4 im Namen als Core von CoreAI gegolten und waere fuer jedes Konto offen gewesen).
+- api/admin.php: external_api_save (nur Inhaber), external_api_models, Freigabeliste mit den
+  angebotenen externen Cores; die Adapterfelder nicht mehr in settings_save.
+- api/chat.php: ember_turn_persona_system() fuer beide Chat-Zuege.
+- admin/index.html, js/admin.js, css/settings.css: Karte mit Liste (laden, filtern, anhaken, von
+  Hand), ADAPTER SPEICHERN, Pruefen und Laden speichern vorher ungespeicherte Aenderungen,
+  Statuszeile mit dem, was fehlt, fuer Admins gesperrt; Freigaben zeigen "(extern)".
+- app.html, js/coreui-core-mode.js, css/console.css: EXTERNE CORES im Core-Menue, Chip mit
+  "· extern", nicht mehr angebotener Core ausgegraut.
+- settings.html, js/settings.js: Core-Pfad entfernt, Hinweis aktualisiert.
+- Tests, beide Preflights, Doku.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Ollama, Datenbankschema (keine Migration).
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Werden nach dem Lauf eingetragen.
+
+NICHT GETESTET
+- Ein echter Anbieter (kein Schluessel in dieser Umgebung); geprueft gegen einen
+  OpenAI-kompatiblen Stand-in-Server.
+
+NAECHSTER SCHRITT
+- Auf dem echten Server: Cores vom Anbieter laden, anhaken, ADAPTER SPEICHERN, im Chat unter
+  EXTERNE CORES waehlen und den 12B-Fehler gegentesten.
+
+Version: 0.8.15

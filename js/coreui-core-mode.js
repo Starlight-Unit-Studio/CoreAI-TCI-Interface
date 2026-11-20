@@ -18,7 +18,9 @@
    0.5.83: the Ollama list loads when the chat opens; the legend lists the
    TCI tiers only.
    0.6.34: a Core that hears audio shows a speaker, one the live conversation
-   can run on the live waves, both left of the check mark. */
+   can run on the live waves, both left of the check mark.
+   0.8.15: EXTERNE CORES below: the Cores of the external adapter this account
+   may use ("extern:<name>"); they run at the provider and are never loaded. */
 (function () {
   'use strict';
 
@@ -42,6 +44,7 @@
   function sameCore(a, b) { return !!modelKey(a) && modelKey(a) === modelKey(b); }
   function shortLabel(label) { return String(label || '').replace(/^TCI\s+/, '') || 'Core'; }
   function isGenerator(name) { return /^ember-coreui:gen$/i.test(String(name || '').trim()); }
+  function isExternal(name) { return /^extern:/i.test(String(name || '').trim()); }
 
   // Mirror of coreui_core_tier() for names the server has not labelled yet.
   var TIER_KEYS = ['schnell', 'normal', 'plus', 'pro', 'premium'];
@@ -50,6 +53,8 @@
     ['31b', 'TCI Core Premium', 'Gemma 4 31B']];
   function tierLabel(name) {
     var m = String(name || '').trim().toLowerCase();
+    // 0.8.15: an external Core keeps its own name (never a TCI tier).
+    if (/^extern:/.test(m)) return '';
     if (/^ember-core(?:ui)?:e2b$/.test(m)) return TIERS[0][1];
     if (/^ember-core(?:ui)?:e4b$/.test(m)) return TIERS[1][1];
     if (/^ember-core(?:ui)?:(?:12b|26b|31b)$/.test(m)) {
@@ -80,7 +85,9 @@
     var legend = doc.getElementById('coreLegend');
     var legendRows = doc.getElementById('coreLegendRows');
     var manageBtn = doc.getElementById('coreModeManage');
-    var state = {thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
+    var externalWrap = doc.getElementById('coreModeExternal');
+    var externalList = doc.getElementById('coreModeExternalList');
+    var state = {external: [], thinking: true, override: '', defaultModel: '', defaultLabel: '', labels: {}, csrf: '',
       loaded: false, saving: false, models: null, inMemory: [], loading: '', polls: 0, listError: false,
       missing: [], install: null, mara: {}, selectedTiers: {}, admin: false, caps: {}, generatorEngine: null,
       generatorLicensed: false};
@@ -101,6 +108,7 @@
     function render() {
       var core = shortLabel(labelOf(effective()));
       if (isUncensored(effective()) && tierLabel(effective())) core += ' · UC';
+      if (isExternal(effective())) core += ' · extern';
       chip.setAttribute('data-state', state.loading ? 'loading' : 'ready');
       chip.setAttribute('aria-label', 'Core ' + core + (state.loading ? ', wird geladen' : '') + '. Core auswählen');
       if (nameEl) nameEl.textContent = core;
@@ -282,7 +290,8 @@
       var tierLabels = TIERS.map(function (t) { return t[1]; });
       var standard = labelOf(state.defaultModel);
       var shown = {};
-      var found = state.override === '';
+      // An external Core is listed under EXTERNE CORES (renderExternal).
+      var found = state.override === '' || isExternal(state.override);
       function row(value, extra) {
         var core = value || state.defaultModel;
         shown[modelKey(core)] = true;
@@ -377,7 +386,25 @@
       if (!found && state.models !== null) list.appendChild(item(option(state.override, labelOf(state.override), 'nicht mehr installiert', true)));
       else if (!found) list.appendChild(item(option(state.override, labelOf(state.override), metaFor(state.override, ''), false)));
       if (manageBtn) manageBtn.hidden = !state.admin;
+      renderExternal();
       renderLegend();
+    }
+
+    // 0.8.15: the external Cores (provider name and "extern" below the name). One the account
+    // chose that is no longer offered shows greyed until another Core is chosen.
+    function renderExternal() {
+      if (!externalWrap || !externalList) return;
+      clear(externalList);
+      var rows = state.external || [];
+      var chosen = isExternal(state.override);
+      var listed = rows.some(function (row) { return row.name === state.override; });
+      externalWrap.hidden = !rows.length && !chosen;
+      rows.forEach(function (row) {
+        externalList.appendChild(item(option(row.name, row.label, (row.provider ? row.provider + ' · ' : '') + 'extern', false)));
+      });
+      if (chosen && !listed && state.models !== null) {
+        externalList.appendChild(item(option(state.override, labelOf(state.override), 'gerade nicht verfügbar', true)));
+      }
     }
 
     function legendRow(label, core, note) {
@@ -460,6 +487,13 @@
       return Promise.all([request(MODELS, 'GET'), request(API + '?core_status=1', 'GET').catch(function () { return {loaded: []}; })])
         .then(function (both) {
           state.models = Array.isArray(both[0].models) ? both[0].models : [];
+          state.external = (Array.isArray(both[0].external) ? both[0].external : []).filter(function (row) {
+            return row && isExternal(row.name);
+          }).map(function (row) {
+            var label = String(row.label || row.model || row.name).trim();
+            state.labels[modelKey(row.name)] = label;
+            return {name: String(row.name), label: label, provider: String(row.provider || '')};
+          });
           if (both[0].default_model) state.defaultModel = String(both[0].default_model);
           if (both[0].default_label) state.defaultLabel = String(both[0].default_label);
           state.mara = {};
@@ -486,7 +520,7 @@
           state.install = both[0].install && typeof both[0].install === 'object' ? both[0].install : null;
           state.inMemory = Array.isArray(both[1].loaded) ? both[1].loaded.map(modelKey) : [];
         })
-        .catch(function () { state.models = null; state.missing = []; state.generatorEngine = null; state.listError = true; })
+        .catch(function () { state.models = null; state.external = []; state.missing = []; state.generatorEngine = null; state.listError = true; })
         .then(function () { renderList(); render(); });
     }
 
@@ -542,12 +576,14 @@
           schedule(poll, POLL_MS);
         } else {
           state.loading = '';
-          say(data.preload === 'cloud' ? 'Cloud-Core gewählt, er muss nicht geladen werden.' : 'Der Core ist bereits geladen.');
+          say(data.preload === 'external' ? 'Externer Core gewählt. Er läuft beim Anbieter und muss nicht geladen werden.'
+            : data.preload === 'cloud' ? 'Cloud-Core gewählt, er muss nicht geladen werden.' : 'Der Core ist bereits geladen.');
         }
       }).catch(function (error) {
         say(error.code === 'generator_engine_unavailable' ? 'Quantum Gen Engine ist gerade nicht bereit.'
           : error.code === 'model_not_available' ? 'Dieser Core ist nicht mehr installiert.'
           : error.code === 'model_not_allowed' ? 'Dieser Core ist für dein Konto nicht freigegeben.'
+          : error.code === 'external_not_available' ? 'Dieser externe Core ist gerade nicht verfügbar.'
           : error.code === 'guest_core_locked' ? 'Als Gast chattest du mit dem Standard-Core.'
           : 'Nicht gespeichert. Bitte noch einmal versuchen.');
       }).then(function () {

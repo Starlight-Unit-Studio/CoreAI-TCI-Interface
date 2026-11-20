@@ -262,6 +262,14 @@ if ($method === 'GET') {
   $settings = coreui_ai_settings_load($pdo, $uid);
   // 0.5.83: a Core whose release was withdrawn no longer counts as chosen.
   if (!coreui_model_access_allowed($pdo, $uid, (string)$settings['model_override'])) $settings['model_override'] = '';
+  // 0.8.15: nor does an external Core the adapter no longer offers (the account chats with the default
+  // Core then); the stored choice comes back when the adapter offers it again.
+  $externalChoice = coreui_provider_choice((string)$settings['model_override']);
+  if (coreui_provider_is_choice((string)$settings['model_override'])
+      && !coreui_ai_external_usable($pdo, (int)$uid, $externalChoice)) {
+    $settings['model_override'] = '';
+    $externalChoice = '';
+  }
   if (coreui_core_is_generator((string)$settings['model_override']) && !coreui_generator_license_user_accepted($pdo, (int)$uid)) {
     $settings['model_override'] = '';
   }
@@ -278,7 +286,7 @@ if ($method === 'GET') {
     'settings' => $settings,
     // 0.5.76: TCI names for the chat chip.
     'default_label' => $defaultModel !== '' ? coreui_core_label($defaultModel) : '',
-    'core_label' => coreui_core_label((string)($settings['model_override'] ?: $defaultModel)),
+    'core_label' => $externalChoice !== '' ? $externalChoice : coreui_core_label((string)($settings['model_override'] ?: $defaultModel)),
     'limits' => [
       'system_prompt_chars' => coreui_ai_prompt_limit($pdo),
       'memory_limit_max' => 60,
@@ -293,7 +301,6 @@ if ($method === 'GET') {
       'language_available' => coreui_ai_language_schema_ready($pdo),
     ],
     'default_model' => $defaultModel,
-    'external' => coreui_ai_external_for_account($pdo, (int)$uid, $isGuest),
     'csrf_token' => stu_csrf_token(),
     'permission_level' => stu_get_permission_level($pdo),
     'is_guest' => $isGuest,
@@ -432,6 +439,24 @@ if (($body['action'] ?? '') === 'thinking') {
 if (($body['action'] ?? '') === 'core') {
   if ($isGuest) stu_json(['ok'=>false, 'error'=>'guest_core_locked'], 403);
   $name = trim((string)($body['model_override'] ?? ''));
+  // 0.8.15: an external Core from the Core menu (EXTERNE CORES). Nothing is loaded locally; the
+  // provider runs it. Only one the adapter offers, for the Inhaber or with his release.
+  if ($name !== '' && coreui_provider_is_choice($name)) {
+    $external = coreui_provider_choice($name);
+    if ($external === '') stu_json(['ok'=>false, 'error'=>'invalid_model_name'], 400);
+    $capability = coreui_ai_external_capability($pdo);
+    if (empty($capability['configured']) || !coreui_provider_offered($capability, $external)) {
+      stu_json(['ok'=>false, 'error'=>'external_not_available'], 409);
+    }
+    if (!coreui_ai_external_usable($pdo, (int)$uid, $external, $capability)) stu_json(['ok'=>false, 'error'=>'model_not_allowed'], 403);
+    try {
+      coreui_ai_settings_patch($pdo, $uid, ['model_override'=>COREUI_PROVIDER_PREFIX . $external]);
+    } catch (RuntimeException $e) {
+      stu_json(['ok'=>false, 'error'=>$e->getMessage()], 503);
+    }
+    stu_json(['ok'=>true, 'model_override'=>COREUI_PROVIDER_PREFIX . $external, 'model'=>COREUI_PROVIDER_PREFIX . $external,
+      'label'=>$external, 'provider'=>(string)$capability['label'], 'preload'=>'external']);
+  }
   if ($name !== '') {
     // A locally installed FLUX prompt Core is not usable without the actual image engine.
     // Enforce the same readiness condition on the server, not only in the Core menu.
@@ -775,12 +800,6 @@ if ($isGuest) {
   $body['model_override'] = '';
   $body['num_ctx'] = null;
 }
-// 0.8.11: the external API only for the Inhaber and Admins (it costs money and sends prompts to a
-// third party); for everyone else the path stays local.
-if (strtolower(trim((string)($body['provider'] ?? 'local'))) === 'external'
-    && empty(coreui_ai_external_for_account($pdo, (int)$uid, $isGuest)['allowed'])) {
-  stu_json(['ok'=>false, 'error'=>'external_not_allowed'], 403);
-}
 // 0.5.79: the Core is chosen in the chat menu only; the KI-Profil keeps the
 // stored choice (also one Ollama no longer lists, so saving never fails on it).
 $keepModel = !array_key_exists('model_override', $body);
@@ -814,7 +833,6 @@ try {
   stu_json([
     'ok' => true,
     'settings' => $settings,
-    'external' => coreui_ai_external_for_account($pdo, (int)$uid, $isGuest),
   ]);
 } catch (RuntimeException $e) {
   stu_json(['ok' => false, 'error' => $e->getMessage()], 503);

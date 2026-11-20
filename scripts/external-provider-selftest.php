@@ -1,16 +1,23 @@
 <?php
 declare(strict_types=1);
 // CoreAI 0.8.11 (CF-003, CF-005): the external OpenAI-compatible adapter.
+// 0.8.15: external Cores (several, read from the provider's list), chosen in the Core menu per
+// account ("extern:<name>"), released by the Inhaber like Cores outside CoreAI, never for guests;
+// the connection test works before the adapter is switched on; Mara's SYSTEM text for external Cores.
 //   php scripts/external-provider-selftest.php
-// Offline: addresses, model names, the operator's configuration and who may use it, the request
-// (messages, images, only OpenAI options, no think, keep_alive or num_ctx), the answer and the
-// event stream back in Ollama's shape (content, reasoning, finish reasons, usage, errors, a cut
-// stream), keys hidden in provider messages, the connection test, the Ollama line unchanged, and
-// the wiring. End to end against a small OpenAI-compatible stand-in server on 127.0.0.1: the real
-// ember_call_ollama() and console_stream_ollama() send the same prompt to the external API with the
-// key in the header only, read the answer, its reasoning and token counts, notice a cut answer,
-// stream a file preview, refuse a wrong key without logging it, and still reach local Ollama for an
-// account without the external API. Test data uses example.test only.
+// Offline: addresses, model names, the offered Cores, the operator's configuration and who may use
+// it, the request (messages, images, only OpenAI options, no think, keep_alive or num_ctx), the
+// answer and the event stream back in Ollama's shape (content, reasoning, finish reasons, usage,
+// errors, a cut stream), keys hidden in provider messages, the provider list and the connection
+// test, the Ollama line unchanged, Mara's SYSTEM text, and the wiring. Per account with an
+// in-memory SQLite: the Core menu's list, the turn (Inhaber, Admin and Nutzer with and without
+// release, guest, adapter off, Core no longer offered), the old Core-Pfad. With COREUI_SELFTEST_DB=1
+// the same against MariaDB, including the choice in the Core menu. End to end against a small
+// OpenAI-compatible stand-in server on 127.0.0.1: the real ember_call_ollama() and
+// console_stream_ollama() send the same prompt to the external API with the key in the header only,
+// read the answer, its reasoning and token counts, notice a cut answer, stream a file preview, refuse
+// a wrong key without logging it, and still reach local Ollama for an account without the external
+// API. Test data uses example.test only.
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
 $GLOBALS['ext_log'] = [];
@@ -127,22 +134,44 @@ foreach (['http://api.example.test/v1', 'ftp://api.example.test', 'https://user:
 ext_test(coreui_provider_model_name('gpt-4o-mini') === 'gpt-4o-mini' && coreui_provider_model_name('openai/gpt-4o') === 'openai/gpt-4o'
   && coreui_provider_model_name('claude-x@2025') === 'claude-x@2025' && coreui_provider_model_name('a b') === ''
   && coreui_provider_model_name('x;rm') === '' && coreui_provider_model_name('') === '', 'model names');
-$full = ['external_api_enabled'=>'1', 'external_api_label'=>'Testanbieter', 'external_api_base_url'=>$base, 'external_api_model'=>'stub-model'];
+// "extern:" plus the name fits the 160 characters of a Core choice and of a release.
+ext_test(coreui_provider_model_name(str_repeat('m', 153)) === str_repeat('m', 153) && coreui_provider_model_name(str_repeat('m', 154)) === ''
+  && strlen(COREUI_PROVIDER_PREFIX . str_repeat('m', 153)) === 160, 'at most 153 characters');
+// An account's choice of an external Core.
+ext_test(coreui_provider_is_choice('extern:gpt-4o') && coreui_provider_is_choice(' EXTERN:x') && coreui_provider_is_choice('extern:a b')
+  && !coreui_provider_is_choice('gemma4:e4b') && !coreui_provider_is_choice('') && !coreui_provider_is_choice('externo:x'), 'what is an external choice');
+ext_test(coreui_provider_choice('extern:gpt-4o') === 'gpt-4o' && coreui_provider_choice('extern:claude-x@2025') === 'claude-x@2025'
+  && coreui_provider_choice('extern:a b') === '' && coreui_provider_choice('extern:') === '' && coreui_provider_choice('gemma4:e4b') === '',
+  'the Core of a choice');
+// The offered Cores: a JSON list, valid and unique, at most 50; the single name of 0.8.11 only without a list.
+ext_test(coreui_provider_models_parse('["b-model","a-model","b-model","a b",7,"x;rm"]') === ['b-model', 'a-model']
+  && coreui_provider_models_parse('', 'alt-model') === ['alt-model'] && coreui_provider_models_parse('[]', 'alt-model') === []
+  && coreui_provider_models_parse('kaputt', 'alt-model') === ['alt-model'] && coreui_provider_models_parse('', 'a b') === []
+  && coreui_provider_models_parse(['m1', 'm2']) === ['m1', 'm2'], 'the offered Cores');
+$many = [];
+for ($i = 0; $i < 70; $i++) $many[] = 'model-' . $i;
+ext_test(count(coreui_provider_models_parse((string)json_encode($many))) === COREUI_PROVIDER_MODELS_MAX && COREUI_PROVIDER_MODELS_MAX === 50, 'at most 50 offered');
+$full = ['external_api_enabled'=>'1', 'external_api_label'=>'Testanbieter', 'external_api_base_url'=>$base,
+  'external_api_models'=>'["stub-model","other-model"]', 'external_api_model'=>'alt-model'];
 $cap = coreui_provider_capability($full, true);
-ext_test($cap['configured'] && $cap['status'] === 'ready' && $cap['missing'] === [] && $cap['base_url'] === $base
-  && $cap['model'] === 'stub-model' && $cap['label'] === 'Testanbieter', 'a complete configuration is ready: ' . json_encode($cap));
-ext_test(!coreui_provider_capability(['external_api_enabled'=>'0'] + $full, true)['configured']
-  && coreui_provider_capability(['external_api_enabled'=>'0'] + $full, true)['status'] === 'disabled', 'switched off');
-$incomplete = coreui_provider_capability(['external_api_base_url'=>'http://api.example.test/v1', 'external_api_model'=>'a b'] + $full, false);
-ext_test(!$incomplete['configured'] && $incomplete['status'] === 'incomplete'
-  && $incomplete['missing'] === ['base_url_invalid', 'model_invalid', 'key'], 'what is missing: ' . json_encode($incomplete['missing']));
-ext_test(coreui_provider_account_external($cap, 'external', 0, false) === ['label'=>'Testanbieter', 'base_url'=>$base, 'model'=>'stub-model']
-  && coreui_provider_account_external($cap, 'external', 1, false) !== null
-  && coreui_provider_account_external($cap, 'external', 4, false) === null
-  && coreui_provider_account_external($cap, 'external', 0, true) === null
-  && coreui_provider_account_external($cap, 'external', -1, false) === null
-  && coreui_provider_account_external($cap, 'local', 0, false) === null
-  && coreui_provider_account_external($incomplete, 'external', 0, false) === null, 'only the Inhaber and Admins, never guests, only when configured');
+ext_test($cap['configured'] && $cap['status'] === 'ready' && $cap['missing'] === [] && $cap['base_url'] === $base && $cap['connection_ready']
+  && $cap['models'] === ['stub-model', 'other-model'] && $cap['label'] === 'Testanbieter' && !isset($cap['model']), 'a complete configuration is ready: ' . json_encode($cap));
+$legacy = coreui_provider_capability(['external_api_models'=>''] + $full, true);
+ext_test($legacy['configured'] && $legacy['models'] === ['alt-model'], 'an adapter set up with 0.8.11 keeps its Core');
+$off = coreui_provider_capability(['external_api_enabled'=>'0'] + $full, true);
+ext_test(!$off['configured'] && $off['status'] === 'disabled' && $off['connection_ready'] && $off['missing'] === [], 'switched off, but ready to be checked');
+$incomplete = coreui_provider_capability(['external_api_base_url'=>'http://api.example.test/v1', 'external_api_models'=>'["a b"]'] + $full, false);
+ext_test(!$incomplete['configured'] && $incomplete['status'] === 'incomplete' && !$incomplete['connection_ready']
+  && $incomplete['missing'] === ['base_url_invalid', 'key', 'models'], 'what is missing: ' . json_encode($incomplete['missing']));
+$noModels = coreui_provider_capability(['external_api_models'=>'[]'] + $full, true);
+ext_test(!$noModels['configured'] && $noModels['missing'] === ['models'] && $noModels['connection_ready'], 'no Core offered: not usable, but checkable');
+ext_test(coreui_provider_offered($cap, 'stub-model') && coreui_provider_offered($cap, 'other-model') && !coreui_provider_offered($cap, 'Stub-Model')
+  && !coreui_provider_offered($cap, 'alt-model') && !coreui_provider_offered($cap, ''), 'which Cores are offered');
+ext_test(coreui_provider_account_external($cap, 'other-model', true) === ['label'=>'Testanbieter', 'base_url'=>$base, 'model'=>'other-model']
+  && coreui_provider_account_external($cap, 'other-model', false) === null
+  && coreui_provider_account_external($cap, 'gone-model', true) === null
+  && coreui_provider_account_external($off, 'stub-model', true) === null
+  && coreui_provider_account_external($incomplete, 'stub-model', true) === null, 'a turn: allowed, offered, configured');
 
 // --- The key pasted in Admin Core (sealed, never shown; the server configuration wins) ---------------------
 ext_test(coreui_provider_key_valid('  gsk_live_A1b2C3d4E5  ') === 'gsk_live_A1b2C3d4E5' && coreui_provider_key_valid('kurz') === ''
@@ -170,7 +199,8 @@ ext_test(coreui_provider_stored_key($keys) === ['key'=>'', 'unreadable'=>false] 
 $fromAdmin = coreui_provider_capability($full, true, 'admin');
 $unreadable = coreui_provider_capability($full, false, '', true);
 ext_test($fromAdmin['configured'] && $fromAdmin['key_source'] === 'admin' && !isset($fromAdmin['key'])
-  && !$unreadable['configured'] && $unreadable['missing'] === ['key_unreadable'] && $unreadable['key_source'] === '', 'where the key comes from');
+  && !$unreadable['configured'] && $unreadable['missing'] === ['key_unreadable'] && $unreadable['key_source'] === ''
+  && !$unreadable['connection_ready'], 'where the key comes from');
 unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
 
 // --- The request (pure) ----------------------------------------------------------------------------------
@@ -239,24 +269,53 @@ $t = coreui_provider_stream_translator(EXT_KEY);
 $err = ($t['feed'])('{"error":{"message":"invalid key ' . EXT_KEY . '"}}');
 ext_test(count($err) === 1 && str_contains($err[0], '"error"') && !str_contains($err[0], EXT_KEY), 'an error body in a stream, the key hidden');
 
-// --- The connection test (pure transport) ---------------------------------------------------------------------
+// --- The provider list and the connection test (pure transport) --------------------------------------------------
 $seen = [];
 $fake = static function (array $answer) use (&$seen): callable {
   return static function (string $url, array $headers) use ($answer, &$seen): array { $seen = [$url, $headers]; return $answer; };
 };
-$r = coreui_provider_test($cap, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[{"id":"stub-model"}]}', 'ms'=>12]));
-ext_test($r['ok'] && $r['reason'] === 'model_listed' && $r['models_count'] === 1 && $seen[0] === $base . '/models'
-  && in_array('Authorization: Bearer ' . EXT_KEY, $seen[1], true), 'test: model listed');
-ext_test(coreui_provider_test($cap, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[{"id":"x"}]}']))['reason'] === 'model_not_listed'
-  && coreui_provider_test($cap, EXT_KEY, $fake(['code'=>404, 'body'=>'']))['ok'] === true
+$list = coreui_provider_list($cap, EXT_KEY, $fake(['code'=>200, 'ms'=>12,
+  'body'=>'{"data":[{"id":"zeta-2"},{"id":"Alpha"},{"id":"zeta-10"},{"id":"zeta-2"},{"id":"bad name"},{"name":"named-model"},"plain-model",{"x":1}]}']));
+ext_test($list['ok'] && $list['reason'] === 'listed' && $list['ids'] === ['Alpha', 'named-model', 'plain-model', 'zeta-2', 'zeta-10']
+  && $list['elapsed_ms'] === 12 && $seen[0] === $base . '/models' && in_array('Authorization: Bearer ' . EXT_KEY, $seen[1], true),
+  'the list: valid names, unique, sorted: ' . json_encode($list));
+ext_test(coreui_provider_list($cap, EXT_KEY, $fake(['code'=>200, 'body'=>'{"models":[{"name":"m1"}]}']))['ids'] === ['m1']
+  && coreui_provider_list($cap, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[]}']))['reason'] === 'no_model_list'
+  && coreui_provider_list($cap, EXT_KEY, $fake(['code'=>405, 'body'=>'']))['reason'] === 'no_model_list'
+  && coreui_provider_list($cap, EXT_KEY, $fake(['code'=>0, 'body'=>'', 'error'=>'curl_6']))['reason'] === 'unreachable', 'the list: other shapes');
+$bigList = [];
+for ($i = 0; $i < 1200; $i++) $bigList[] = ['id'=>sprintf('m-%04d', $i)];
+ext_test(count(coreui_provider_list($cap, EXT_KEY, $fake(['code'=>200, 'body'=>json_encode(['data'=>$bigList])]))['ids']) === COREUI_PROVIDER_LIST_MAX,
+  'the list is bounded');
+$seen = [];
+$notReady = coreui_provider_list($incomplete, EXT_KEY, $fake(['code'=>200, 'body'=>'{}']));
+ext_test(!$notReady['ok'] && $notReady['reason'] === 'not_ready' && $notReady['missing'] === ['base_url_invalid', 'key'] && $seen === []
+  && coreui_provider_list($cap, '', $fake(['code'=>200, 'body'=>'{}']))['reason'] === 'not_ready' && $seen === [],
+  'without address or key nothing is sent');
+$r = coreui_provider_test($cap, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[{"id":"stub-model"},{"id":"other-model"},{"id":"x"}]}', 'ms'=>12]));
+ext_test($r['ok'] && $r['reason'] === 'models_listed' && $r['models_count'] === 3 && $r['models_not_listed'] === [] && $r['enabled']
+  && $r['models'] === ['stub-model', 'other-model'] && !isset($r['ids']), 'test: all offered Cores listed: ' . json_encode($r));
+$r = coreui_provider_test($cap, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[{"id":"stub-model"}]}']));
+ext_test($r['ok'] && $r['reason'] === 'models_not_listed' && $r['models_not_listed'] === ['other-model'], 'test: names the Core the provider does not list');
+// 0.8.15: the check works before the adapter is switched on and says so; with no Core offered it still connects.
+$r = coreui_provider_test($off, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[{"id":"stub-model"},{"id":"other-model"}]}']));
+ext_test($r['ok'] && $r['reason'] === 'models_listed' && $r['enabled'] === false, 'test while switched off: ' . json_encode($r));
+$r = coreui_provider_test($noModels, EXT_KEY, $fake(['code'=>200, 'body'=>'{"data":[{"id":"a"},{"id":"b"}]}']));
+ext_test($r['ok'] && $r['reason'] === 'connected' && $r['models_count'] === 2 && $r['models'] === [], 'test without an offered Core');
+ext_test(coreui_provider_test($cap, EXT_KEY, $fake(['code'=>404, 'body'=>'']))['ok'] === true
+  && coreui_provider_test($cap, EXT_KEY, $fake(['code'=>404, 'body'=>'']))['reason'] === 'no_model_list'
   && coreui_provider_test($cap, EXT_KEY, $fake(['code'=>0, 'body'=>'', 'error'=>'curl_6']))['reason'] === 'unreachable'
   && coreui_provider_test($cap, EXT_KEY, $fake(['code'=>429, 'body'=>'{"error":"slow"}']))['reason'] === 'rate_limited'
   && coreui_provider_test($cap, EXT_KEY, $fake(['code'=>500, 'body'=>'{}']))['reason'] === 'http_error', 'test: other answers');
 $refused = coreui_provider_test($cap, EXT_KEY, $fake(['code'=>401, 'body'=>'{"error":{"message":"bad key ' . EXT_KEY . '"}}']));
 ext_test(!$refused['ok'] && $refused['reason'] === 'key_refused' && !str_contains((string)json_encode($refused), EXT_KEY), 'test: refused key, hidden');
-ext_test(coreui_provider_test($incomplete, EXT_KEY)['reason'] === 'not_configured', 'test: not configured, nothing sent');
+$seen = [];
+$nr = coreui_provider_test($incomplete, EXT_KEY, $fake(['code'=>200, 'body'=>'{}']));
+ext_test(!$nr['ok'] && $nr['reason'] === 'not_ready' && $nr['missing'] === ['base_url_invalid', 'key'] && $seen === [], 'test: not ready, nothing sent');
 $real = coreui_provider_test($cap, EXT_KEY);
-ext_test($real['ok'] && $real['reason'] === 'model_listed' && $real['models_count'] === 2, 'test against the stand-in: ' . json_encode($real));
+ext_test($real['ok'] && $real['reason'] === 'models_listed' && $real['models_count'] === 2, 'test against the stand-in: ' . json_encode($real));
+$realList = coreui_provider_list($off, EXT_KEY);
+ext_test($realList['ok'] && $realList['ids'] === ['other-model', 'stub-model'], 'the list from the stand-in, switched off: ' . json_encode($realList));
 $requests();
 
 // --- End to end: ember_call_ollama --------------------------------------------------------------------------------
@@ -350,32 +409,181 @@ ext_test(count($sent) === 1 && $sent[0]['uri'] === '/api/chat' && $sent[0]['auth
 $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'external', 'external'=>['label'=>'T', 'base_url'=>'http://10.0.0.5/v1', 'model'=>'m']];
 ext_test(coreui_provider_active() === null, 'a bad address is never called');
 
+// --- Mara's SYSTEM text for an external Core ------------------------------------------------------------------------
+// An external Core has no Modelfile: it gets Mara's SYSTEM text from the operator Modelfile, unchanged.
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'external', 'external'=>['label'=>'Test', 'base_url'=>$base, 'model'=>'stub-model']];
+$mara = ember_mara_system_text();
+ext_test($mara !== '' && ember_turn_persona_system() === $mara, 'an external Core gets Mara\'s SYSTEM text');
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'local', 'external'=>null];
+ext_test(ember_turn_persona_system() === '' && ember_turn_persona_system() === ember_persona_system_for(ember_model()),
+  'her own local Core gets none (its Modelfile carries it)');
+
+// --- Per account (in-memory SQLite) -----------------------------------------------------------------------------------
+$db = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+$db->exec('CREATE TABLE stu_users (id INTEGER PRIMARY KEY, permission_level INTEGER, is_guest INTEGER)');
+$db->exec('INSERT INTO stu_users (id, permission_level, is_guest) VALUES (1, 0, 0), (2, 1, 0), (3, 4, 0), (4, 4, 1), (5, 4, 0)');
+$db->exec('CREATE TABLE stu_user_model_access (user_id INTEGER NOT NULL, model_name TEXT NOT NULL, granted_by INTEGER, '
+  . 'created_at TEXT DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (user_id, model_name))');
+// The app settings table of this database (helpers install it once per process, for the first one).
+$db->exec('CREATE TABLE stu_app_settings (k TEXT NOT NULL PRIMARY KEY, value TEXT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
+$db->exec('CREATE TABLE stu_user_ai_settings (user_id INTEGER PRIMARY KEY, system_prompt TEXT, memory_enabled INTEGER, thinking_enabled INTEGER, '
+  . 'memory_limit INTEGER, num_predict INTEGER, temperature REAL, provider TEXT, model_override TEXT, num_ctx INTEGER NULL, '
+  . 'main_language TEXT, updated_at TEXT)');
+foreach (['external_api_enabled'=>'1', 'external_api_label'=>'Testanbieter', 'external_api_base_url'=>$base,
+    'external_api_models'=>'["stub-model","other-model"]'] as $k => $v) {
+  stu_app_setting_set($db, $k, $v);
+}
+ext_test((int)$db->query("SELECT COUNT(*) FROM stu_app_settings WHERE k LIKE 'external_api_%'")->fetchColumn() === 4,
+  'the settings are in the test database (not in the fallback file)');
+unset($GLOBALS['COREUI_PROVIDER_STORED_KEY']);
+coreui_model_access_save($db, 3, ['extern:other-model', 'extern:claude-x@2025'], 1);
+ext_test(coreui_model_access_grants($db, 3) === ['extern:claude-x@2025', 'extern:other-model'], 'releases of external Cores (with @)');
+$refusedRelease = 0;
+foreach ([['extern:'], ['extern:a b'], ['extern:' . str_repeat('m', 154)]] as $bad) {
+  try { coreui_model_access_save($db, 5, $bad, 1); } catch (InvalidArgumentException $e) { $refusedRelease += $e->getMessage() === 'invalid_model_name' ? 1 : 0; }
+}
+ext_test($refusedRelease === 3 && coreui_model_access_grants($db, 5) === [], 'invalid external releases are refused');
+$names = static fn(array $rows): array => array_column($rows, 'name');
+ext_test($names(coreui_ai_external_cores($db, 1)) === ['extern:stub-model', 'extern:other-model'], 'the Inhaber sees every external Core');
+ext_test(coreui_ai_external_cores($db, 2) === [] && coreui_ai_external_cores($db, 5) === [], 'Admin and Nutzer without release see none');
+ext_test(coreui_ai_external_cores($db, 3) === [['name'=>'extern:other-model', 'model'=>'other-model', 'label'=>'other-model', 'provider'=>'Testanbieter']],
+  'a Nutzer sees his release (a released Core not offered stays hidden)');
+ext_test(coreui_ai_external_cores($db, 4) === [] && coreui_ai_external_cores($db, 99) === [], 'guests and unknown accounts never');
+ext_test(coreui_ai_external_usable($db, 1, 'stub-model') && coreui_ai_external_usable($db, 3, 'other-model') && !coreui_ai_external_usable($db, 3, 'stub-model')
+  && !coreui_ai_external_usable($db, 2, 'stub-model') && !coreui_ai_external_usable($db, 4, 'stub-model') && !coreui_ai_external_usable($db, 1, 'gone-model'),
+  'who may chat with which external Core');
+// An external Core named like a TCI tier is still no Core of CoreAI: it needs the release too.
+stu_app_setting_set($db, 'external_api_models', '["stub-model","other-model","google/gemma-4-e4b-it"]');
+ext_test(coreui_ai_external_cores($db, 5) === [] && !coreui_ai_external_usable($db, 5, 'google/gemma-4-e4b-it')
+  && coreui_ai_external_usable($db, 1, 'google/gemma-4-e4b-it') && coreui_core_label('extern:google/gemma-4-e4b-it') === 'extern:google/gemma-4-e4b-it',
+  'a tier-like name of an external Core gives no access');
+stu_app_setting_set($db, 'external_api_models', '["stub-model","other-model"]');
+$setChoice = static function (int $uid, string $choice, string $provider = 'local') use ($db): void {
+  $db->prepare('DELETE FROM stu_user_ai_settings WHERE user_id = ?')->execute([$uid]);
+  $db->prepare('INSERT INTO stu_user_ai_settings (user_id, system_prompt, memory_enabled, thinking_enabled, memory_limit, num_predict, temperature, '
+    . 'provider, model_override, main_language) VALUES (?, \'\', 1, 1, 16, 6500, 1.0, ?, ?, \'de\')')->execute([$uid, $provider, $choice]);
+};
+$turn = static function (int $uid) use ($db): array {
+  unset($GLOBALS['COREUI_AI_NUM_CTX_FIXED']);
+  coreui_ai_runtime_apply($db, $uid);
+  $run = coreui_ai_runtime_settings();
+  return [$run['provider'] ?? '', $run['external']['model'] ?? null, (string)($run['model_override'] ?? ''), coreui_provider_active()];
+};
+$setChoice(1, 'extern:other-model');
+[$provider, $model, $override, $active] = $turn(1);
+ext_test($provider === 'external' && $model === 'other-model' && $override === ''
+  && $active === ['label'=>'Testanbieter', 'base_url'=>$base, 'model'=>'other-model'], 'the Inhaber\'s turn goes to his external Core');
+$setChoice(3, 'extern:other-model');
+ext_test($turn(3)[1] === 'other-model', 'a Nutzer with release');
+$setChoice(3, 'extern:stub-model');
+[$provider, $model, $override, $active] = $turn(3);
+ext_test($provider === 'local' && $model === null && $override === '' && $active === null, 'a Nutzer without release chats with the default Core');
+$setChoice(2, 'extern:stub-model');
+ext_test($turn(2)[0] === 'local', 'an Admin needs a release too');
+$setChoice(4, 'extern:stub-model');
+ext_test($turn(4)[0] === 'local' && $turn(4)[3] === null, 'a guest never');
+$setChoice(1, 'extern:gone-model');
+ext_test($turn(1)[0] === 'local', 'a Core no longer offered falls back');
+$setChoice(1, 'extern:stub-model');
+stu_app_setting_set($db, 'external_api_enabled', '0');
+ext_test($turn(1)[0] === 'local', 'adapter switched off: local');
+stu_app_setting_set($db, 'external_api_enabled', '1');
+ext_test($turn(1)[1] === 'stub-model', 'switched on again: the stored choice is back');
+$setChoice(1, 'gemma4:e4b');
+[$provider, $model, $override] = $turn(1);
+ext_test($provider === 'local' && $model === null && $override === 'gemma4:e4b', 'a local Core stays local');
+// The Core-Pfad "Externe API" of 0.8.11 becomes the first offered external Core.
+$setChoice(1, 'qwen3.5:35b', 'external');
+$loaded = coreui_ai_settings_load($db, 1);
+ext_test($loaded['model_override'] === 'extern:stub-model' && $loaded['provider'] === 'local' && $turn(1)[1] === 'stub-model',
+  'the old Core-Pfad becomes a choice: ' . json_encode([$loaded['model_override'], $loaded['provider']]));
+ext_test(coreui_ai_settings_normalise($db, ['model_override'=>'extern:claude-x@2025'])['model_override'] === 'extern:claude-x@2025'
+  && coreui_ai_settings_normalise($db, ['model_override'=>'extern:a b'])['model_override'] === ''
+  && coreui_ai_settings_normalise($db, ['model_override'=>'gemma4:e4b', 'provider'=>'local'])['model_override'] === 'gemma4:e4b'
+  && coreui_ai_settings_normalise($db, ['provider'=>'external'])['provider'] === 'local', 'stored choices');
+$GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'local', 'external'=>null];
+
+// --- MariaDB (COREUI_SELFTEST_DB=1): the choice in the Core menu ends the old Core-Pfad -----------------------------------
+if (getenv('COREUI_SELFTEST_DB') === '1') {
+  $dsn = 'mysql:host=' . (getenv('COREUI_DB_HOST') ?: '127.0.0.1') . ';port=' . (getenv('COREUI_DB_PORT') ?: '3306')
+    . ';dbname=' . (getenv('COREUI_DB_NAME') ?: '') . ';charset=utf8mb4';
+  $maria = new PDO($dsn, (string)getenv('COREUI_DB_USER'), (string)getenv('COREUI_DB_PASS'), [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+  $tag = bin2hex(random_bytes(3));
+  $maria->exec("INSERT INTO stu_users (username, is_guest, permission_level, created_at) VALUES ('ext-{$tag}@example.test', 0, 0, NOW())");
+  $mUid = (int)$maria->lastInsertId();
+  $before = [];
+  foreach (['external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_models', 'external_api_model'] as $k) {
+    $before[$k] = stu_app_setting_get($maria, $k, null);
+  }
+  try {
+    foreach (['external_api_enabled'=>'1', 'external_api_label'=>'Testanbieter', 'external_api_base_url'=>$base,
+        'external_api_models'=>'["stub-model","other-model"]', 'external_api_model'=>''] as $k => $v) stu_app_setting_set($maria, $k, $v);
+    $maria->prepare("INSERT INTO stu_user_ai_settings (user_id, system_prompt, memory_enabled, thinking_enabled, memory_limit, num_predict, temperature, provider, model_override) "
+      . "VALUES (?, '', 1, 1, 16, 6500, 1.0, 'external', 'qwen3.5:35b')")->execute([$mUid]);
+    ext_test(coreui_ai_settings_load($maria, $mUid)['model_override'] === 'extern:stub-model', 'MariaDB: the old Core-Pfad becomes a choice');
+    coreui_ai_settings_patch($maria, $mUid, ['model_override'=>'gemma4:e4b']);
+    $row = $maria->query('SELECT provider, model_override FROM stu_user_ai_settings WHERE user_id = ' . $mUid)->fetch(PDO::FETCH_ASSOC);
+    ext_test($row === ['provider'=>'local', 'model_override'=>'gemma4:e4b'] && coreui_ai_settings_load($maria, $mUid)['model_override'] === 'gemma4:e4b',
+      'MariaDB: a local Core chosen in the menu stays chosen: ' . json_encode($row));
+    coreui_ai_settings_patch($maria, $mUid, ['model_override'=>'extern:claude-x@2025']);
+    ext_test(coreui_ai_settings_load($maria, $mUid)['model_override'] === 'extern:claude-x@2025', 'MariaDB: an external choice is stored as is');
+    coreui_ai_settings_patch($maria, $mUid, ['model_override'=>'extern:other-model']);
+    unset($GLOBALS['COREUI_AI_NUM_CTX_FIXED']);
+    coreui_ai_runtime_apply($maria, $mUid);
+    ext_test((coreui_ai_runtime_settings()['external']['model'] ?? '') === 'other-model', 'MariaDB: the turn of the Inhaber');
+    coreui_model_access_save($maria, $mUid, ['extern:other-model'], $mUid);
+    ext_test(coreui_model_access_grants($maria, $mUid) === ['extern:other-model'], 'MariaDB: a release of an external Core');
+  } finally {
+    $maria->prepare('DELETE FROM stu_user_model_access WHERE user_id = ?')->execute([$mUid]);
+    $maria->prepare('DELETE FROM stu_user_ai_settings WHERE user_id = ?')->execute([$mUid]);
+    $maria->prepare('DELETE FROM stu_users WHERE id = ?')->execute([$mUid]);
+    foreach ($before as $k => $v) {
+      if ($v === null) $maria->prepare('DELETE FROM stu_app_settings WHERE `k` = ?')->execute([$k]);
+      else stu_app_setting_set($maria, $k, $v);
+    }
+  }
+  $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'local', 'external'=>null];
+}
+
 // --- Wiring (static) -------------------------------------------------------------------------------------------------
 $chat = (string)file_get_contents($root . '/api/chat.php');
 $settings = (string)file_get_contents($root . '/api/ai_settings.php');
 $userSettings = (string)file_get_contents($root . '/api/user_settings.php');
 $admin = (string)file_get_contents($root . '/api/admin.php');
+$models = (string)file_get_contents($root . '/api/models.php');
 ext_test(str_contains($chat, '$wire = coreui_provider_wire(coreui_provider_active(), $url, $payload, $model);')
   && str_contains($streamSource, '$wire = coreui_provider_wire(coreui_provider_active(), $url, $payload, $model);')
   && str_contains($streamSource, "coreui_work_record(\$workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>\$wire['model']]);")
   && substr_count($chat, 'ember_global_lock_acquire()') >= 1, 'both model calls use the line, the work view names the external Core');
-ext_test(str_contains($settings, "\$settings['external'] = coreui_provider_account_external(coreui_ai_external_capability(\$pdo), 'external',")
-  && str_contains($settings, "coreui_ai_account_level(\$pdo, \$uid), coreui_ai_account_is_guest(\$pdo, \$uid));")
-  && str_contains($settings, "if (\$settings['external'] === null) \$settings['provider'] = 'local';"), 'each turn checks the account');
+ext_test(str_contains($chat, '  $sys = ember_turn_persona_system();') && str_contains($chat, '  $sysBase = ember_turn_persona_system();')
+  && substr_count($chat, 'ember_persona_system_for(ember_model())') === 1, 'both chat turns take the persona of this turn\'s Core');
+ext_test(str_contains($settings, "\$externalChoice = coreui_provider_choice((string)\$settings['model_override']);")
+  && str_contains($settings, "coreui_ai_external_usable(\$pdo, \$uid, \$externalChoice, \$capability));")
+  && str_contains($settings, "if (array_key_exists('model_override', \$patch)) \$updates .= \", provider = 'local'\";"), 'each turn checks the account');
 ext_test(str_contains($admin, "if (\$action === 'external_api_key_save' || \$action === 'external_api_key_delete') {\n  if (\$actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);")
   && str_contains($admin, "if (coreui_provider_server_key() !== '') stu_json(['ok' => false, 'error' => 'external_key_in_server_config'], 409);")
   && str_contains($admin, "coreui_admin_audit(\$pdo, \$actorId, \$action, 'app_settings', 'external_api_key');"),
   'Admin Core: only the Inhaber stores or removes the key, never over the server configuration, the audit without the key');
-ext_test(str_contains($userSettings, "stu_json(['ok'=>false, 'error'=>'external_not_allowed'], 403);")
-  && str_contains($admin, "if (\$action === 'external_api_test') {") && str_contains($admin, '$value = coreui_provider_base_url($value);'),
-  'Settings refuse it for other accounts; Admin Core tests the connection and checks the address');
+ext_test(str_contains($admin, "if (\$action === 'external_api_save') {\n  if (\$actorLevel !== 0) stu_json(['ok' => false, 'error' => 'owner_only'], 403);")
+  && str_contains($admin, '$baseUrl = coreui_provider_base_url($baseUrl);') && str_contains($admin, "if (\$action === 'external_api_models') {")
+  && str_contains($admin, "if (\$action === 'external_api_test') {")
+  && str_contains($admin, "foreach ((array)coreui_ai_external_capability(\$pdo)['models'] as \$model) \$offered[] = COREUI_PROVIDER_PREFIX . \$model;")
+  && !str_contains($admin, "'external_api_enabled', 'external_api_label', 'external_api_base_url', 'external_api_model',"),
+  'Admin Core: only the Inhaber sets the adapter up, checks the address, lists, tests; releases list the external Cores');
+ext_test(str_contains($userSettings, "stu_json(['ok'=>false, 'error'=>'external_not_available'], 409);")
+  && str_contains($userSettings, "'label'=>\$external, 'provider'=>(string)\$capability['label'], 'preload'=>'external']);")
+  && !str_contains($userSettings, 'external_not_allowed') && str_contains($models, "'external'=>\$externalCores,"),
+  'the Core menu lists and chooses external Cores, nothing is loaded');
 $adminJs = (string)file_get_contents($root . '/js/admin.js');
 $settingsJs = (string)file_get_contents($root . '/js/settings.js');
+$coreModeJs = (string)file_get_contents($root . '/js/coreui-core-mode.js');
 ext_test(str_contains($adminJs, "post('external_api_key_save', { key: value })") && str_contains($adminJs, "field.value = '';")
   && str_contains($adminJs, "field.disabled = server || !owner;"), 'the key field: sent once, emptied, locked for admins and server keys');
-ext_test(str_contains($adminJs, "post('external_api_test', {})") && str_contains($adminJs, "document.getElementById('externalTest').addEventListener('click', testExternal);")
-  && str_contains($settingsJs, 'var externalUsable = externalConfigured && external.allowed === true;'), 'the pages');
+ext_test(str_contains($adminJs, "post('external_api_test', {})") && str_contains($adminJs, "post('external_api_save', form)")
+  && str_contains($adminJs, "post('external_api_models', {})") && str_contains($adminJs, "document.getElementById('externalTest').addEventListener('click', testExternal);")
+  && !str_contains($settingsJs, 'aiProvider') && str_contains($coreModeJs, "data.preload === 'external'"), 'the pages');
 
-echo "CoreAI externer Adapter: Adressen, Namen, Einrichtung, nur Inhaber und Admins, Anfrage, Antwort, Strom, Fehler ohne Schluessel, "
-  . "Verbindungstest, Ollama unveraendert, Verdrahtung, Ende zu Ende (Antwort, Denken, Tokens, abgeschnitten, Dateivorschau, Strom, "
+echo "CoreAI externer Adapter: Adressen, Namen, angebotene externe Cores, Einrichtung, Anfrage, Antwort, Strom, Fehler ohne Schluessel, "
+  . "Liste des Anbieters, Verbindungstest auch ausgeschaltet, Ollama unveraendert, Maras SYSTEM-Text, je Konto (Inhaber, Freigaben, Gast, "
+  . "aus, nicht mehr angeboten, alter Core-Pfad), Verdrahtung, Ende zu Ende (Antwort, Denken, Tokens, abgeschnitten, Dateivorschau, Strom, "
   . "abgelehnter Schluessel, lokales Konto) OK\n";

@@ -1,0 +1,51 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.15
+Datum: 20.11.2026
+
+EXTERNE CORES IM CORE-MENUE
+- Der externe Adapter bietet jetzt mehrere Cores des Anbieters statt eines
+  festen Core-Namens. Im Admin Core > Betrieb > Externer Adapter laedt der
+  Inhaber die Liste des Anbieters ("Cores vom Anbieter laden", ohne
+  Tokens), filtert sie, hakt die Cores an, die CoreAI anbieten soll
+  (hoechstens 50), oder fuegt einen Namen von Hand hinzu.
+- Jedes Konto waehlt einen externen Core im Core-Menue des Chats unter
+  EXTERNE CORES, wie einen lokalen Core. Der Chip zeigt den Namen mit
+  "· extern"; lokal wird nichts geladen.
+- Der Core-Pfad im KI-Profil entfaellt. Ein Konto, das in 0.8.11
+  "Externe API" gewaehlt hatte, nutzt den ersten angebotenen externen Core,
+  bis es einen anderen waehlt.
+
+RECHTE BEI MEHREREN KONTEN
+- Der Inhaber nutzt alle angebotenen externen Cores. Alle anderen Konten,
+  auch Admins, nur die, die er unter Admin Core > Benutzer > FREIGABEN
+  freigibt (dieselben Freigaben wie fuer lokale Cores ausserhalb von
+  CoreAI). Gaeste nie.
+- Der Server prueft das fuer die Liste, die Wahl und jeden Zug. Ohne
+  Freigabe, bei ausgeschaltetem Adapter oder einem nicht mehr angebotenen
+  Core chattet das Konto ab der naechsten Nachricht mit dem Standard-Core.
+- Ein externer Core zaehlt nie als TCI-Stufe, auch wenn sein Name so
+  aussieht. Vorher waere ein solcher Name fuer jedes Konto offen gewesen.
+
+ADAPTER EINRICHTEN
+- Eigener Knopf "ADAPTER SPEICHERN" in der Karte; das allgemeine
+  Speichern traegt die Adapterfelder nicht mehr. Aendern kann den Adapter
+  nur der Inhaber (die Adresse bestimmt, wohin sein Schluessel geht).
+- "Verbindung pruefen" laeuft schon vor dem Einschalten, speichert
+  vorher ungespeicherte Aenderungen der Karte, sagt, dass der Adapter noch
+  aus ist, und nennt jeden angebotenen Core, den der Anbieter nicht
+  listet. Ungespeicherte Felder bleiben beim Speichern des Schluessels
+  stehen. Die Statuszeile nennt genau, was fehlt.
+
+MARAS SYSTEM-TEXT FUER EXTERNE CORES
+- Ein externer Core hat kein Modelfile. Er bekommt jetzt Maras
+  SYSTEM-Text aus dem Modelfile des Betreibers unveraendert, wie ein
+  roher lokaler Core. In 0.8.11 bis 0.8.14 bekam er keinen, solange die lokale Wahl
+  des Kontos der Standard-Core war.
+
+TESTS
+- external-provider-selftest.php: angebotene Cores, Liste des Anbieters,
+  Pruefung ausgeschaltet, Freigaben, Zug je Konto (Inhaber, Admin und
+  Nutzer mit und ohne Freigabe, Gast, Adapter aus, Core nicht mehr
+  angeboten, alter Core-Pfad) mit SQLite und gegen MariaDB, Maras
+  SYSTEM-Text.
+- external-provider-ui-selftest.cjs: Karte, Freigaben, Core-Menue.
+- model-access-selftest.php: Freigaben externer Cores.

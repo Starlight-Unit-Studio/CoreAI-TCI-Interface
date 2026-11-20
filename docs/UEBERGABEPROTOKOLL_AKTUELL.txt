@@ -1,4 +1,19 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
+Version main: 0.8.14, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.15).
+ZIEL 0.8.15: externe Cores. Der Inhaber laedt die Liste des Anbieters und
+bietet ausgewaehlte Cores an; jedes Konto waehlt sie im Core-Menue unter
+EXTERNE CORES, nach Freigabe des Inhabers (Gaeste nie). Adapter aendert
+nur der Inhaber; Pruefen geht schon vor dem Einschalten. Externe Cores
+bekommen Maras SYSTEM-Text aus dem Modelfile. Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_15.txt.
+Naechster Schritt: auf dem echten Server einrichten und die Projektfehler
+(task_decision_invalid, tool_result_error) mit einem externen Core
+gegentesten.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.8.16.
+--- VORHERIGER STAND ---
+
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
 Version main: 0.8.10, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.11).
 ZIEL 0.8.11: externer OpenAI-kompatibler Adapter fertig, damit Inhaber
 und Admins Fehler mit einem Cloud-Core nachstellen koennen (nur der

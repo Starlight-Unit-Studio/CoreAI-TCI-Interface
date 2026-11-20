@@ -114,12 +114,12 @@ function coreui_ai_settings_defaults(PDO $pdo): array {
 
 /**
  * 0.8.11: the external OpenAI-compatible adapter as the operator configured it in Admin Core
- * (api/model_provider.php). 'configured' only with switch, base URL, model and the server key.
+ * (api/model_provider.php). 0.8.15: with the list of offered external Cores.
  */
 function coreui_ai_external_capability(PDO $pdo): array {
   $settings = [];
   foreach (['external_api_enabled'=>'0', 'external_api_label'=>COREUI_PROVIDER_LABEL_DEFAULT,
-      'external_api_base_url'=>'', 'external_api_model'=>''] as $key => $default) {
+      'external_api_base_url'=>'', 'external_api_models'=>'', 'external_api_model'=>''] as $key => $default) {
     $settings[$key] = function_exists('stu_app_setting_get') ? (string)stu_app_setting_get($pdo, $key, $default) : $default;
   }
   $keyState = coreui_provider_key_state($pdo);
@@ -127,30 +127,28 @@ function coreui_ai_external_capability(PDO $pdo): array {
 }
 
 /**
- * 0.8.11: what Settings > KI-Profil learns about the adapter for this account: everything for the
- * Inhaber and Admins ('allowed'), only whether it exists for everyone else.
+ * 0.8.15: the external Cores this account may choose in the Core menu: none while the adapter is
+ * not ready and none for guests; all for the Inhaber; for everyone else the ones the Inhaber
+ * released under Admin Core > Benutzer. 'name' is the account's choice ("extern:<model>").
  */
-function coreui_ai_external_for_account(PDO $pdo, int $uid, bool $guest): array {
-  $capability = coreui_ai_external_capability($pdo);
-  $level = coreui_ai_account_level($pdo, $uid);
-  if ($guest || $level < 0 || $level > 1) {
-    return ['configured'=>!empty($capability['configured']), 'enabled'=>!empty($capability['enabled']),
-      'status'=>(string)$capability['status'], 'label'=>(string)$capability['label'], 'allowed'=>false];
+function coreui_ai_external_cores(PDO $pdo, int $uid, ?array $capability = null): array {
+  $capability = $capability ?? coreui_ai_external_capability($pdo);
+  if (empty($capability['configured']) || $uid <= 0 || coreui_ai_account_is_guest($pdo, $uid)) return [];
+  $out = [];
+  foreach ((array)$capability['models'] as $model) {
+    $name = COREUI_PROVIDER_PREFIX . $model;
+    if (!coreui_model_access_allowed($pdo, $uid, $name)) continue;
+    $out[] = ['name'=>$name, 'model'=>$model, 'label'=>$model, 'provider'=>(string)$capability['label']];
   }
-  return $capability + ['allowed'=>true];
+  return $out;
 }
 
-/** 0.8.11: the account's level (0 Inhaber, 1 Admin, 4 Nutzer), -1 when unknown. */
-function coreui_ai_account_level(PDO $pdo, int $uid): int {
-  if ($uid <= 0) return -1;
-  try {
-    $st = $pdo->prepare('SELECT permission_level FROM stu_users WHERE id = ? LIMIT 1');
-    $st->execute([$uid]);
-    $level = $st->fetchColumn();
-    return $level === false ? -1 : (int)$level;
-  } catch (Throwable $e) {
-    return -1;
-  }
+/** 0.8.15: whether this account may chat with the external Core $model right now. */
+function coreui_ai_external_usable(PDO $pdo, int $uid, string $model, ?array $capability = null): bool {
+  $capability = $capability ?? coreui_ai_external_capability($pdo);
+  return $model !== '' && !empty($capability['configured']) && coreui_provider_offered($capability, $model)
+    && $uid > 0 && !coreui_ai_account_is_guest($pdo, $uid)
+    && coreui_model_access_allowed($pdo, $uid, COREUI_PROVIDER_PREFIX . $model);
 }
 
 function coreui_ai_settings_normalise(PDO $pdo, array $input): array {
@@ -166,15 +164,22 @@ function coreui_ai_settings_normalise(PDO $pdo, array $input): array {
   // line breaks, which are useful for structured prompts.
   $prompt = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $prompt);
 
-  $provider = strtolower(trim((string)($input['provider'] ?? $defaults['provider'])));
-  if (!in_array($provider, ['local', 'external'], true)) $provider = 'local';
-  if ($provider === 'external' && empty(coreui_ai_external_capability($pdo)['configured'])) {
-    $provider = 'local';
-  }
-
   $model = trim((string)($input['model_override'] ?? $defaults['model_override']));
-  $model = preg_replace('~[^A-Za-z0-9._:/-]+~', '', $model);
-  if (strlen((string)$model) > 160) $model = substr((string)$model, 0, 160);
+  if (coreui_provider_is_choice($model)) {
+    // 0.8.15: an external Core ("extern:<name>"); its name may hold @ and +.
+    $external = coreui_provider_choice($model);
+    $model = $external !== '' ? COREUI_PROVIDER_PREFIX . $external : '';
+  } else {
+    $model = preg_replace('~[^A-Za-z0-9._:/-]+~', '', $model);
+    if (strlen((string)$model) > 160) $model = substr((string)$model, 0, 160);
+    // 0.8.15: "Externe API" as Core-Pfad (0.8.11) becomes the choice of the first offered external
+    // Core; the Core is now chosen in the Core menu like every other one.
+    if (strtolower(trim((string)($input['provider'] ?? ''))) === 'external') {
+      $first = (string)(coreui_ai_external_capability($pdo)['models'][0] ?? '');
+      if ($first !== '') $model = COREUI_PROVIDER_PREFIX . $first;
+    }
+  }
+  $provider = 'local';
 
   return [
     'system_prompt' => trim((string)$prompt),
@@ -276,6 +281,8 @@ function coreui_ai_settings_patch(PDO $pdo, int $uid, array $patch): array {
     'model_override' => array_key_exists('model_override', $patch) ? trim((string)$patch['model_override']) : '',
   ];
   $updates = implode(', ', array_map(static fn(string $c): string => "{$c} = VALUES({$c})", array_keys($patch)));
+  // 0.8.15: a Core chosen in the menu ends the "Externe API" Core-Pfad of 0.8.11 for good.
+  if (array_key_exists('model_override', $patch)) $updates .= ", provider = 'local'";
   $st = $pdo->prepare(
     'INSERT INTO stu_user_ai_settings '
     . '(user_id, system_prompt, memory_enabled, thinking_enabled, memory_limit, num_predict, temperature, provider, model_override, updated_at) '
@@ -319,6 +326,9 @@ function coreui_ai_account_is_guest(PDO $pdo, int $uid): bool {
 function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   unset($GLOBALS['COREUI_SKILLS_BLOCK']);
   $settings = coreui_ai_settings_load($pdo, $uid);
+  // 0.8.15: an external Core is decided below; the local checks see the default Core.
+  $externalChoice = coreui_provider_choice((string)$settings['model_override']);
+  if (coreui_provider_is_choice((string)$settings['model_override'])) $settings['model_override'] = '';
   $policy = coreui_user_policy_load($pdo, $uid);
   // 0.5.85: an own window above the account's limit is cut to the limit.
   $settings['num_ctx'] = coreui_user_policy_ctx_clamp($settings['num_ctx'], $policy);
@@ -358,13 +368,16 @@ function coreui_ai_runtime_apply(PDO $pdo, int $uid): array {
   } else {
     $GLOBALS['COREUI_AI_NUM_CTX_FIXED'] = ['uid'=>$uid, 'value'=>$settings['num_ctx']];
   }
-  // 0.8.11: the external API only for the Inhaber and Admins and only when it is configured;
-  // otherwise the account chats with its local Core as before.
+  // 0.8.15: an external Core chosen in the Core menu, while the adapter offers it and the account
+  // may use it (the Inhaber, or with his release; never a guest). Otherwise the account chats with
+  // the default Core. Everything local (prompt, context budget, queue) follows the default Core.
   $settings['external'] = null;
-  if (($settings['provider'] ?? 'local') === 'external') {
-    $settings['external'] = coreui_provider_account_external(coreui_ai_external_capability($pdo), 'external',
-      coreui_ai_account_level($pdo, $uid), coreui_ai_account_is_guest($pdo, $uid));
-    if ($settings['external'] === null) $settings['provider'] = 'local';
+  $settings['provider'] = 'local';
+  if ($externalChoice !== '') {
+    $capability = coreui_ai_external_capability($pdo);
+    $settings['external'] = coreui_provider_account_external($capability, $externalChoice,
+      coreui_ai_external_usable($pdo, $uid, $externalChoice, $capability));
+    if ($settings['external'] !== null) $settings['provider'] = 'external';
   }
   $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = $settings;
   // 0.5.85: tools the Inhaber or an Admin blocked for this account are off

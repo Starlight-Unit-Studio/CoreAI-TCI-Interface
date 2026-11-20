@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.14: the external OpenAI-compatible adapter for comparison runs with a cloud Core.
+# CoreAI: TCI Interface 0.8.15: external Cores from the OpenAI-compatible adapter in the Core menu, released per account.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1620,11 +1620,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     fail "Project environment self-test (exit ${project_env_test_exit}): ${project_env_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
   fi
 
-  # 0.8.14: the external OpenAI-compatible adapter (translation, permission, connection test, end to end
-  # against a stand-in server on 127.0.0.1; the key never reaches a log).
+  # 0.8.11: the external OpenAI-compatible adapter (translation, permission, connection test, end to end
+  # against a stand-in server on 127.0.0.1; the key never reaches a log). 0.8.15: external Cores offered
+  # from the provider's list, releases per account, the turn per account, Mara's SYSTEM text.
   external_provider_test=''
   if external_provider_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/external-provider-selftest.php 2>&1)"; then
-    ok 'External API adapter self-test passed.'
+    ok 'External API adapter and external Cores self-test passed.'
   else
     external_provider_test_exit=$?
     fail "External API adapter self-test (exit ${external_provider_test_exit}): ${external_provider_test:-No PHP output; inspect the PHP service logs}"
@@ -2128,10 +2129,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       warn 'Merge: UI test skipped (Playwright for Node.js is not installed).'
     fi
-    # 0.8.14: Admin Core > Operations > External adapter (key pasted once, sealed, connection test).
+    # 0.8.11: Admin Core > Operations > External adapter (key pasted once, sealed, connection test).
+    # 0.8.15: the provider's Cores, Save adapter, releases, External Cores in the chat's Core menu.
     if node -e "require('playwright')" >/dev/null 2>&1; then
       if node "$PROJECT_ROOT/scripts/external-provider-ui-selftest.cjs" >/dev/null 2>&1; then
-        ok 'External adapter: key entry, status and connection test verified in browser.'
+        ok 'External adapter: key entry, provider Cores, releases, Core menu and connection test verified in browser.'
       else
         fail 'External adapter: UI test failed.'
       fi
