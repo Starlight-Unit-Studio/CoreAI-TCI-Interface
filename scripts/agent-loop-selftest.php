@@ -687,4 +687,121 @@ foreach (['http://example.org/', 'https://user:pw@example.org/', 'https://localh
   loop_test(coreui_browse_goal_start_url('geh auf ' . $bad) === null, 'no start at ' . $bad);
 }
 
+// 0.8.17: a reply cut at the output limit (a whole page in one DATEI_NEU block, observed in a
+// continued homepage run at step 23) is named as such, not as "only text".
+$fileParse = static fn(string $r): ?array => coreui_agent_next_tool($r, $projectFileTools);
+$cutPage = "Ich erweitere die Gaestebuchseite.\n[DATEI_NEU: guestbook.html]\n<!doctype html>\n<html><body>\n<h1>Gaestebuch</h1>\n<p>Eintr";
+loop_test((coreui_task_decision($cutPage, $fileParse)['shape'] ?? '') === 'tool_unclosed'
+  && (coreui_task_decision("[DATEI_AENDERN: index.html]\n<<<<<<< SUCHEN\n<h1>Alt</h1>\n=======\n<h1>Ne", $fileParse)['shape'] ?? '') === 'tool_unclosed'
+  && (coreui_task_decision("Ich rechne nach.\n[PY]\nprint(1", $fileParse)['shape'] ?? '') === 'tool_unclosed'
+  && (coreui_task_decision('Die Seite ist fertig.', $fileParse)['shape'] ?? '') === 'prose_only'
+  && coreui_task_decision("[DATEI_NEU: guestbook.html]\n<p>x</p>\n[/DATEI_NEU]", $fileParse)['kind'] === 'action',
+  'an unclosed file or code block is its own form, a complete one stays an action');
+loop_test(coreui_task_output_cut(['done_reason'=>'length']) && coreui_task_output_cut(['done_reason'=>'max_tokens'])
+  && coreui_task_output_cut(['transport_ok'=>true,'done_seen'=>true,'done'=>false])
+  && !coreui_task_output_cut(['done_reason'=>'stop','transport_ok'=>true,'done_seen'=>true,'done'=>true])
+  && !coreui_task_output_cut(['transport_ok'=>false,'done_seen'=>true,'done'=>false]) && !coreui_task_output_cut([]),
+  'a cut answer is read from how the model call ended');
+$cutRepair = coreui_task_decision_repair_prompt('KONTEXT', 'output_truncated', $cutPage);
+loop_test(str_contains($cutRepair, 'Davon wurde NICHTS gespeichert') && str_contains($cutRepair, 'die Ausgabegrenze war erreicht')
+  && str_contains($cutRepair, 'kurzes, vollstaendiges Grundgeruest') && !str_contains($cutRepair, '<h1>Gaestebuch</h1>')
+  && !str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'tool_unclosed', $cutPage), 'Ausgabegrenze war erreicht')
+  && str_contains(coreui_task_decision_repair_prompt('KONTEXT', 'prose_only', 'Die Seite ist fertig.'), 'Die Seite ist fertig.'),
+  'the repair of a cut block asks for a smaller step and does not echo the cut page');
+$protocol = coreui_task_protocol_prompt();
+loop_test(str_contains($protocol, 'Geprueft heisst: ein Werkzeug hat es bestaetigt')
+  && str_contains($protocol, 'Fehlt nur noch eine Pruefung, fuehre sie mit einem erlaubten Werkzeug aus; das ist A, keine Blockade') && str_contains($protocol, 'Grosse Dateien schreibst du in Teilen'),
+  'checking is work, not a blocker; large files are written in parts');
+
+// End to end: the cut page is repaired into a small skeleton, the run goes on and completes.
+$cutReplies = [$cutPage, "[DATEI_NEU: guestbook.html]\n<h1>Gaestebuch</h1>\n[/DATEI_NEU]",
+  $taskDone('Das Gaestebuch hat ein Grundgeruest.')];
+$cutReports = [['done_reason'=>'length','transport_ok'=>true,'done_seen'=>true,'done'=>true],
+  ['done_reason'=>'stop','transport_ok'=>true,'done_seen'=>true,'done'=>true],
+  ['done_reason'=>'stop','transport_ok'=>true,'done_seen'=>true,'done'=>true]];
+$cutPrompts = []; $cutTools = []; $cutEvents = []; $cutReport = [];
+$cutLoop = coreui_agent_loop_run('[DATEI: guestbook.html]', ['tool'=>'pfile_read','input'=>'guestbook.html'], 'BASIS',
+  $projectFileTools, 0,
+  static function (string $p) use (&$cutReplies, &$cutReports, &$cutPrompts, &$cutReport): ?string {
+    $cutPrompts[] = $p; $cutReport = array_shift($cutReports) ?? []; return array_shift($cutReplies);
+  },
+  static function (array $t) use (&$cutTools): string { $cutTools[] = $t; return 'Bestaetigte Datei: ' . $t['input']; },
+  static function (string $k, string $s, string $t, array $m) use (&$cutEvents): void { $cutEvents[] = ['title'=>$t, 'meta'=>$m]; },
+  static fn(): bool => false, null, null, static function () use (&$cutReport): array { return $cutReport; });
+$cutMissing = array_values(array_filter($cutEvents, static fn(array $e): bool => ($e['meta']['reason'] ?? '') === 'task_decision_missing'));
+loop_test(($cutLoop['outcome'] ?? '') === 'completed' && array_column($cutTools, 'tool') === ['pfile_read', 'pfile_write']
+  && ($cutMissing[0]['meta']['error_type'] ?? '') === 'output_truncated'
+  && ($cutMissing[0]['meta']['done_reason'] ?? '') === 'length' && ($cutMissing[0]['meta']['content_chars'] ?? 0) === strlen($cutPage)
+  && str_contains($cutPrompts[1] ?? '', 'Davon wurde NICHTS gespeichert'),
+  'a cut page is repaired into a smaller step and the run completes: ' . json_encode([$cutLoop, $cutMissing]));
+
+// Earlier tool results are kept within a byte budget; the newest and every failure stay complete.
+$bigOld = 'OLD_FILE_' . str_repeat('o', 30000);
+$bigMid = 'MID_FILE_' . str_repeat('m', 30000);
+$failOld = 'FAILED_' . str_repeat('f', 5000);
+$budgeted = coreui_agent_budget_steps([
+  ['label'=>'a','state'=>'success','result'=>$bigOld],
+  ['label'=>'b','state'=>'error','result'=>$failOld],
+  ['label'=>'c','state'=>'success','result'=>'small result'],
+  ['label'=>'d','state'=>'success','result'=>$bigMid],
+  ['label'=>'e','state'=>'success','result'=>'NEWEST_' . str_repeat('n', 60000)],
+]);
+loop_test($budgeted[4]['result'] === 'NEWEST_' . str_repeat('n', 60000)
+  && str_contains($budgeted[3]['result'], hash('sha256', $bigMid)) && !str_contains($budgeted[3]['result'], 'MID_FILE_')
+  && str_contains($budgeted[0]['result'], hash('sha256', $bigOld)) && $budgeted[1]['result'] === $failOld
+  && $budgeted[2]['result'] === 'small result'
+  && coreui_agent_budget_steps([['label'=>'x','state'=>'success','result'=>$bigOld],['label'=>'y','state'=>'success','result'=>'z']])[0]['result'] === $bigOld,
+  'the project prompt keeps recent results within the budget and older large ones as size and hash');
+$growReplies = ['[DATEI: b.html]', '[DATEI: c.html]', $taskDone('Gelesen.')];
+$growPrompts = [];
+coreui_agent_loop_run('[DATEI: a.html]', ['tool'=>'pfile_read','input'=>'a.html'], 'BASIS', $projectFileTools, 0,
+  static function (string $p) use (&$growReplies, &$growPrompts): ?string { $growPrompts[] = $p; return array_shift($growReplies); },
+  static fn(array $t): string => 'INHALT_' . $t['input'] . '_' . str_repeat('x', 30000),
+  static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+loop_test(count($growPrompts) === 3 && str_contains($growPrompts[2], 'INHALT_c.html_')
+  && !str_contains($growPrompts[2], 'INHALT_a.html_') && str_contains($growPrompts[2], 'Bestaetigtes Werkzeugergebnis bereits verarbeitet'),
+  'a long project run no longer sends every earlier file in full');
+
+// A read-only tool that repeats the same result leaves the run; the project work goes on.
+$webReplies = ['[WEB: webdesign trends 2026]', '[WEB: webdesign trends 2026]', '[WEB: webdesign trends 2026]',
+  "[DATEI_NEU: index.html]\n<h1>Start</h1>\n[/DATEI_NEU]", $taskDone('Startseite angelegt.')];
+$webTools = []; $webEvents = []; $webPrompts = [];
+$webLoop = coreui_agent_loop_run('[WEB: webdesign trends 2026]', ['tool'=>'web','input'=>'webdesign trends 2026'], 'BASIS',
+  array_merge(['web'], $projectFileTools), 0,
+  static function (string $p) use (&$webReplies, &$webPrompts): ?string { $webPrompts[] = $p; return array_shift($webReplies); },
+  static function (array $t) use (&$webTools): string { $webTools[] = $t['tool']; return $t['tool'] === 'web' ? 'Keine verwertbaren Treffer.' : 'Bestaetigt.'; },
+  static function (string $k, string $s, string $t, array $m) use (&$webEvents): void { $webEvents[] = $m['reason'] ?? ''; },
+  static fn(): bool => false);
+loop_test(($webLoop['outcome'] ?? '') === 'completed' && $webTools === ['web', 'web', 'web', 'pfile_write']
+  && in_array('repeated_identical_tool_disabled', $webEvents, true) && !in_array('repeated_identical_tool_result', $webEvents, true)
+  && !str_contains(end($webPrompts), '[WEB: neue, genauere Suchbegriffe]'),
+  'three identical web results end the web search, not the project run: ' . json_encode([$webLoop, $webTools]));
+// A writing tool with the same result three times still stops the run (nothing changes).
+$sameReplies = ['[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]'];
+$sameLoop = coreui_agent_loop_run('[AUSFUEHREN: npm test]', ['tool'=>'prun','input'=>'npm test'], 'BASIS', $projectFileTools, 0,
+  static function (string $p) use (&$sameReplies): ?string { return array_shift($sameReplies); },
+  static fn(array $t): string => 'Beendet mit Exitcode 1.',
+  static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+loop_test(($sameLoop['reason'] ?? '') === 'no_progress', 'a repeated failing command still ends the run');
+
+// The project prompt asks for parts, a self-run check and the summary inside the DONE block.
+$pfSource = (string)file_get_contents($root . '/api/project_file_tools.php');
+loop_test(str_contains($pfSource, 'Eine grosse Datei legst du in Teilen an')
+  && str_contains($pfSource, 'eine fehlende Pruefung ist keine Blockade')
+  && str_contains($pfSource, 'in einem laufenden Projektauftrag steht das im COREUI_TASK_DONE-Block'),
+  'project prompt: parts, own check, summary in the DONE block');
+
+// A turn with attached files offers no native tool, and a marker there keeps the answer as text.
+$nativeSource = (string)file_get_contents($root . '/api/console_native_tools.php');
+$streamSource = (string)file_get_contents($root . '/api/console_stream.php');
+require_once $root . '/api/console_native_tools.php';
+$kept = coreui_native_markers_drop("Hier ist der Plan:\n**[COREUI_PLAN_SAVE]**\n# Roadmap\n- Punkt [1]\n[/COREUI_PLAN_SAVE]\nMehr: [Doku](https://example.test)");
+loop_test($kept === "Hier ist der Plan:\n# Roadmap\n- Punkt [1]\nMehr: [Doku](https://example.test)"
+  && !coreui_native_tool_attempt($kept)
+  && str_contains($chatSource, "&& trim(\$attachBlock) === '';")
+  && str_contains($streamSource, "!\$nativeEligible && coreui_native_tool_attempt(\$reply)")
+  && str_contains($chatSource, "!\$nativeEligible && is_string(\$out) && coreui_native_tool_attempt(\$out)")
+  && str_contains($nativeSource, 'function coreui_native_markers_drop'),
+  'attachments: no native tool offered, an answer with markers stays text');
+
 echo "CoreAI agent loop: chaining, answer, browser hand-over, six steps, cancel, work view OK\n";

@@ -45,7 +45,33 @@ const COREUI_TASK_SHAPES = [
   'block_and_tool' => 'ein Steuerblock zusammen mit einem Werkzeugmarker',
   'marker_unknown' => 'ein unbekannter COREUI_TASK-Marker',
   'marker_malformed' => 'COREUI_TASK ohne gueltige eckige Klammern',
+  // 0.8.17: a file or code block that was opened but never closed (it counted as prose_only before).
+  'tool_unclosed' => 'ein Werkzeugblock ohne Schlussmarker',
+  // 0.8.17: the provider or Ollama ended the answer at its length limit.
+  'output_truncated' => 'eine an der Ausgabegrenze abgeschnittene Antwort',
 ];
+
+/**
+ * 0.8.17: did the model call that produced a reply end at a length limit? Pure, from the report of
+ * the last call (done_reason of Ollama, or finish_reason of an external API in Ollama's words).
+ */
+function coreui_task_output_cut(array $report): bool {
+  $reason = strtolower(trim((string)($report['done_reason'] ?? '')));
+  if (in_array($reason, ['length', 'max_tokens', 'token_limit', 'model_length'], true)) return true;
+  return !empty($report['done_seen']) && empty($report['done']) && !empty($report['transport_ok']);
+}
+
+/** 0.8.17: a project block tool opened in the reply but never closed (pure, structure only). */
+function coreui_task_unclosed_tool_block(string $reply): bool {
+  if (preg_match_all('~\[\s*(DATEI_NEU|DATEI_AENDERN)\s*:[^\]\r\n]*\]~u', $reply, $open) > 0) {
+    foreach (array_unique($open[1]) as $name) {
+      $opened = preg_match_all('~\[\s*' . $name . '\s*:[^\]\r\n]*\]~u', $reply);
+      $closed = preg_match_all('~\[\s*/\s*' . $name . '\s*\]~u', $reply);
+      if ($closed < $opened) return true;
+    }
+  }
+  return preg_match_all('~\[PY\]~i', $reply) > preg_match_all('~\[/PY\]~i', $reply);
+}
 
 /**
  * Pure decision from one model reply. The tool parser is the existing
@@ -64,6 +90,7 @@ function coreui_task_decision(string $reply, callable $parseTool): array {
   if ($count === 0) {
     $action = $parseTool($reply);
     if (is_array($action)) return ['kind'=>'action', 'tool'=>$action, 'text'=>'', 'shape'=>''];
+    if (coreui_task_unclosed_tool_block($reply)) return $invalid('tool_unclosed');
     return $invalid(stripos($reply, 'COREUI_TASK') !== false ? 'marker_malformed' : 'prose_only');
   }
   $kinds = ['DONE'=>'done', 'BLOCKED'=>'blocked'];
@@ -95,9 +122,32 @@ function coreui_task_protocol_prompt(): string {
     . "C) Ist echte Weiterarbeit blockiert, antworte so:\n"
     . COREUI_TASK_BLOCKED_OPEN . "\nKurze sachliche Blockade und gesicherter Stand.\n"
     . COREUI_TASK_BLOCKED_CLOSE . "\n"
+    // 0.8.17: a run was declared blocked only because no test had been run; checking is work (A).
+    . "Geprueft heisst: ein Werkzeug hat es bestaetigt (gespeicherte oder gelesene Datei, Befehl mit "
+    . "Exitcode 0). Fehlt nur noch eine Pruefung, fuehre sie mit einem erlaubten Werkzeug aus; das ist A, "
+    . "keine Blockade. C nur, wenn du mit den erlaubten Werkzeugen nicht weiterkommst, etwa weil eine "
+    . "Entscheidung der Person fehlt.\n"
+    // 0.8.17: a whole large page in one block ran into the output limit and lost its end marker.
+    . "Grosse Dateien schreibst du in Teilen: zuerst ein kurzes, vollstaendiges Grundgeruest, danach je "
+    . "Abschnitt ein eigener Aenderungsblock. Jeder Werkzeugblock endet mit seinem Schlussmarker.\n"
     . "Eine Zwischenmeldung, ein Plan, ein blosses Versprechen oder das Ende einer "
     . "Modellausgabe ist KEIN Abschluss. Erfinde weder Werkzeuge noch Dateien, "
     . "Testresultate oder einen erfolgreichen Server. Beende NICHT bei offener Arbeit.\n";
+}
+
+/**
+ * 0.8.17: the repair after a cut-off reply. Showing the model its own cut reply and asking for the
+ * same tool again only reproduced the cut (the same whole page ran into the same limit). Nothing of a
+ * cut block was saved; the model is asked for a SMALLER next step instead.
+ */
+function coreui_task_truncation_repair_text(string $shape): string {
+  return "\nDeine letzte Ausgabe brach ab, bevor der Werkzeugblock seinen Schlussmarker hatte"
+    . ($shape === 'output_truncated' ? ' (die Ausgabegrenze war erreicht)' : '') . ". "
+    . "Davon wurde NICHTS gespeichert. Schreibe die Datei nicht noch einmal am Stueck. "
+    . "Liefere einen kleineren naechsten Schritt: fuer eine neue Datei ein kurzes, vollstaendiges "
+    . "Grundgeruest mit [DATEI_NEU: pfad] ... [/DATEI_NEU], fuer eine vorhandene Datei nur die "
+    . "betroffenen Zeilen mit [DATEI_AENDERN: pfad] ... [/DATEI_AENDERN]. Weitere Abschnitte "
+    . "folgen in eigenen Schritten. Ein Abschluss- oder Blockadetext bleibt kurz.";
 }
 
 /**
@@ -120,6 +170,8 @@ function coreui_task_decision_repair_prompt(string $verifiedContext, string $sha
     . "Beschreibt sie den fertigen Auftrag, gib genau diesen Text innerhalb von " . COREUI_TASK_DONE_OPEN
     . " und " . COREUI_TASK_DONE_CLOSE . " zurueck. Beschreibt sie eine Blockade, nimm " . COREUI_TASK_BLOCKED_OPEN
     . " und " . COREUI_TASK_BLOCKED_CLOSE . ". Ist noch Arbeit offen, antworte nur mit dem naechsten Werkzeugmarker.";
+  // 0.8.17: a cut-off block is not echoed (it would be written again and cut again).
+  if (in_array($shape, ['tool_unclosed', 'output_truncated'], true)) $echo = coreui_task_truncation_repair_text($shape);
   return $verifiedContext . coreui_task_protocol_prompt() . $echo
     . "\nDeine letzte Ausgabe war keine gueltige Steuerentscheidung"
     . ($seen !== '' ? ' (erkannt: ' . $seen . ')' : '') . ". "

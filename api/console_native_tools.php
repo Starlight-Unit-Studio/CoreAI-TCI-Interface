@@ -358,6 +358,17 @@ function coreui_native_marker_lines_normalize(string $reply): string {
     '[$1]', $reply);
 }
 
+/**
+ * 0.8.17: in a turn without native tools (attached files) a COREUI tool marker cannot run. The answer
+ * was replaced by "Werkzeugantwort nicht lesbar" and lost. Now only the marker lines go; Mara's text
+ * between them stays her answer. Nothing is executed and no plan is saved.
+ */
+function coreui_native_markers_drop(string $reply): string {
+  $text = coreui_native_marker_lines_normalize($reply);
+  $text = (string)preg_replace('~(?m)^[ \t]*\[/?COREUI[_/](?!TASK_)[A-Z_]+\][ \t]*(?:\n|\z)~', '', $text);
+  return trim((string)preg_replace("~\n{3,}~", "\n\n", $text));
+}
+
 /** A plan saved through a framed block must still look like a real plan. */
 function coreui_native_recovered_body_ok(string $type, string $body): bool {
   if ($body === '' || strlen($body) > 262144 || str_contains($body, "\0")) return false;

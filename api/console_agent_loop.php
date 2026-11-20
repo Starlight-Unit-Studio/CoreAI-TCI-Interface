@@ -452,21 +452,50 @@ function coreui_agent_loop_hint(bool $compact, bool $archive): string {
  * substitute this for persisted project state or falsely claim verification.
  */
 function coreui_agent_compact_project_prompt(string $base, array $steps, int $used, array $allowed): string {
-  $compact = [];
-  $last = count($steps) - 1;
-  foreach ($steps as $i => $step) {
-    $result = (string)($step['result'] ?? '');
-    $state = (string)($step['state'] ?? '');
-    if ($i !== $last && $state === 'success' && strlen($result) > 1200) {
-      $result = '[Bestaetigtes Werkzeugergebnis bereits verarbeitet: '
-        . strlen($result) . ' Bytes, SHA-256 ' . hash('sha256', $result)
-        . '. Volltext ist hier nicht erneut enthalten; lies die Quelle bei Bedarf erneut mit dem vorhandenen Werkzeug.]';
-    }
-    $step['result'] = $result;
-    $compact[] = $step;
-  }
-  return coreui_agent_step_prompt($base, $compact, $used, 0, $allowed);
+  return coreui_agent_step_prompt($base, coreui_agent_budget_steps($steps, 0), $used, 0, $allowed);
 }
+
+/** 0.8.17: bytes of earlier tool results a project prompt carries in full. */
+const COREUI_AGENT_PROJECT_RESULT_BUDGET = 48000;
+
+/** The placeholder for an earlier, already processed tool result (no content, size and hash only). */
+function coreui_agent_compacted_result(string $result): string {
+  return '[Bestaetigtes Werkzeugergebnis bereits verarbeitet: '
+    . strlen($result) . ' Bytes, SHA-256 ' . hash('sha256', $result)
+    . '. Volltext ist hier nicht erneut enthalten; lies die Quelle bei Bedarf erneut mit dem vorhandenen Werkzeug.]';
+}
+
+/**
+ * 0.8.17: every model call of a project run carried EVERY earlier tool result in full, so the prompt
+ * grew with each step (a continued homepage run read file after file, 23 steps) until a local window
+ * was full or the answer had no room left and was cut. Counted from the newest step, results stay
+ * complete while they fit into $budget bytes; older successful results above 1200 bytes become
+ * size and SHA-256 only. The newest result and every failed result always stay complete. The steps
+ * themselves (evidence, journal) are not touched, only what the prompt shows.
+ */
+function coreui_agent_budget_steps(array $steps, int $budget = COREUI_AGENT_PROJECT_RESULT_BUDGET): array {
+  $last = count($steps) - 1;
+  $kept = 0;
+  for ($i = $last; $i >= 0; $i--) {
+    $result = (string)($steps[$i]['result'] ?? '');
+    $size = strlen($result);
+    if ($i !== $last && ($steps[$i]['state'] ?? '') === 'success' && $size > 1200 && $kept + $size > $budget) {
+      $steps[$i]['result'] = coreui_agent_compacted_result($result);
+      continue;
+    }
+    $kept += $size;
+  }
+  return $steps;
+}
+
+/** 0.8.17: how the last model call ended, for the work view (one bounded provider word, or nothing). */
+function coreui_agent_done_reason_meta(array $report): array {
+  $reason = trim((string)($report['done_reason'] ?? ''));
+  return $reason !== '' && preg_match('~^[a-zA-Z0-9_ -]{1,48}$~D', $reason) === 1 ? ['done_reason'=>$reason] : [];
+}
+
+/** 0.8.17: tools that only read; three identical results end the TOOL, not the whole project run. */
+const COREUI_AGENT_READ_ONLY_TOOLS = ['web', 'archive', 'skill'];
 
 /** Only a completed, blank external response is eligible for one lean retry. */
 function coreui_agent_empty_followup_retryable(array $status): bool {
@@ -630,6 +659,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         ['reason'=>'edit_recovery_read_failed','step'=>$used,'file'=>$filePath]);
       break;
     }
+    // 0.8.17: a read-only tool that gave the same result three times (a web search without
+    // usable hits) leaves the menu of this run; the project work itself goes on without it.
+    if ($projectWorkflow && $stalled >= 2 && in_array((string)$tool['tool'], COREUI_AGENT_READ_ONLY_TOOLS, true)) {
+      $allowed = array_values(array_diff($allowed, [(string)$tool['tool']]));
+      $stalled = 0;
+      $lastSignature = '';
+      $steps[count($steps) - 1]['result'] .= "\n[CoreAI: Dieses Werkzeug hat dreimal dasselbe Ergebnis geliefert "
+        . "und steht in diesem Auftrag nicht mehr zur Verfuegung. Arbeite mit dem vorhandenen Stand weiter.]";
+      $record('tool','info','Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis',
+        ['reason'=>'repeated_identical_tool_disabled','step'=>$used,'source'=>(string)$tool['tool']]);
+    }
     if ($projectWorkflow && $stalled >= 2) {
       $stopReason = 'no_progress';
       $record('tool','error','Projektarbeit ohne Fortschritt beendet',
@@ -673,7 +713,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     if ($cancelled()) { if ($projectWorkflow) $stopReason='cancelled'; break; }
     $prompt = $projectWorkflow && $projectCompact
       ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
-      : coreui_agent_step_prompt($base, $steps, $used, $maxSteps, $allowed);
+      : coreui_agent_step_prompt($base, $projectWorkflow ? coreui_agent_budget_steps($steps) : $steps,
+        $used, $maxSteps, $allowed);
     $next = $callModel($prompt);
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
     if ($out === '' && $projectWorkflow) {
@@ -714,17 +755,28 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       // specific "Ich pruefe als Naechstes" heuristics are necessary.
       $parseDecision = static fn(string $text): array =>
         coreui_task_decision($text, static fn(string $r): ?array => coreui_agent_next_tool($r, $allowed));
-      $decision = $parseDecision($out);
+      // 0.8.17: a reply cut at the output limit (a whole page in one DATEI_NEU block) has no end
+      // marker; it was reported as "only text" and its repair wrote the same page and was cut again.
+      $cutShape = static function (array $decision, array $report): array {
+        if ($decision['kind'] === 'invalid' && coreui_task_output_cut($report)) $decision['shape'] = 'output_truncated';
+        return $decision;
+      };
+      $callReport = static fn(): array => $modelReport !== null && is_array($r = $modelReport()) ? $r : [];
+      $report = $callReport();
+      $decision = $cutShape($parseDecision($out), $report);
       if ($decision['kind'] === 'invalid') {
         if ($cancelled()) { $stopReason='cancelled'; break; }
         // 0.8.15: the work view names the form of the refused reply (structure, never model text).
+        // 0.8.17: with its length and how the call ended (numbers and a provider word only).
         $record('model','info','Arbeitsentscheidung ohne gueltigen Steuerstatus',
-          ['reason'=>'task_decision_missing','step'=>$used,'error_type'=>(string)($decision['shape'] ?? '')]);
+          ['reason'=>'task_decision_missing','step'=>$used,'error_type'=>(string)($decision['shape'] ?? ''),
+           'content_chars'=>strlen($out)]
+            + coreui_agent_done_reason_meta($report));
         $repairPrompt = coreui_task_decision_repair_prompt(
           coreui_agent_compact_project_prompt($base,$steps,$used,$allowed), (string)($decision['shape'] ?? ''), $out);
         $repair = $callModel($repairPrompt);
-        $decision = is_string($repair) ? $parseDecision($repair)
-          : ['kind'=>'invalid','text'=>'','tool'=>null];
+        $decision = is_string($repair) ? $cutShape($parseDecision($repair), $callReport())
+          : ['kind'=>'invalid','text'=>'','tool'=>null,'shape'=>'empty'];
         if ($decision['kind'] !== 'invalid') {
           $record('model','success','Arbeitsentscheidung geklaert',
             ['reason'=>'task_decision_repaired','step'=>$used]);
@@ -754,7 +806,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       if ($decision['kind'] === 'blocked') $blockedReason = trim((string)$decision['text']);
       $record('run','error','Projektauftrag ohne bestaetigten Abschluss unterbrochen',
         ['reason'=>$stopReason,'step'=>$used]
-          + ($decision['kind'] === 'invalid' ? ['error_type'=>(string)($decision['shape'] ?? '')] : []));
+          + ($decision['kind'] === 'invalid'
+            ? ['error_type'=>(string)($decision['shape'] ?? '')] + coreui_agent_done_reason_meta($callReport()) : []));
       break;
     }
     $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;

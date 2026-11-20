@@ -771,12 +771,20 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
     . "=======\nneue Zeilen\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]\n"
     . "  Mehrere SUCHEN/ERSETZEN-Bloecke sind erlaubt; jeder SUCHEN-Text muss genau einmal vorkommen.\n"
     . "- [DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] legt eine Datei an oder ersetzt sie ganz.\n"
+    // 0.8.17: a whole large page in one block ran into the output limit and lost its end marker.
+    . "  Eine grosse Datei legst du in Teilen an: ein kurzes, vollstaendiges Grundgeruest mit DATEI_NEU, "
+    . "danach je Abschnitt ein eigener DATEI_AENDERN-Block. Eine vorhandene Seite erweiterst du mit DATEI_AENDERN.\n"
     . ($canRun ? "- [AUSFUEHREN: befehl] fuehrt einen Befehl mit den gespeicherten Dateien im Sandbox-Container aus (Python 3.12 und "
       . "Node.js 24 mit npm), zum Beispiel [AUSFUEHREN: python -m unittest -v] oder [AUSFUEHREN: npm test]; du bekommst die echte "
       . "Ausgabe und den Exitcode. "
-      . "Nach einer Aenderung fuehrst du die Tests erneut aus. Was der Befehl an Dateien aendert, bleibt nicht erhalten.\n" : '')
+      . "Nach einer Aenderung fuehrst du die Tests erneut aus. Was der Befehl an Dateien aendert, bleibt nicht erhalten.\n"
+      // 0.8.17: a static page has no test suite; a run was declared blocked for want of a test.
+      . "  Eine statische Webseite ohne Testsuite pruefst du selbst, zum Beispiel mit [AUSFUEHREN: node --check script.js] "
+      . "oder einem kurzen Python-Befehl, der die HTML-Dateien einliest; eine fehlende Pruefung ist keine Blockade.\n" : '')
     . coreui_pftools_env_hint($pdo, $uid, $projectId, false, $canRun, $canProcs)
     . $vcs
     . "Aendere nur, was die Person moechte. Fuer kleine Aenderungen an vorhandenen Dateien nimm DATEI_AENDERN statt eines neuen Baus. "
-    . "Jeder vorige Stand bleibt im Tab Dateien wiederherstellbar. Sag danach kurz, was du geaendert hast.";
+    . "Jeder vorige Stand bleibt im Tab Dateien wiederherstellbar. Sag danach kurz, was du geaendert hast; "
+    // 0.8.17: free text after the last tool is no decision in a running project task.
+    . "in einem laufenden Projektauftrag steht das im COREUI_TASK_DONE-Block.";
 }

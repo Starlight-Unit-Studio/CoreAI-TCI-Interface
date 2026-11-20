@@ -349,6 +349,22 @@ const decisionFailure = work.create({events:[{
 assert(decisionFailure.textContent.includes('Grund: task_decision_invalid')
   && decisionFailure.textContent.includes('Fehlertyp: ein Steuerblock ohne passenden Abschluss-Marker'),
   'the form of a refused decision is readable');
+// 0.8.17: a cut answer and an unclosed tool block are named; two new notes read in Mara's words.
+const cutFailure = work.create({events:[
+  {id: 284,kind:'run',state:'error',title:'Projektauftrag ohne bestaetigten Abschluss unterbrochen',
+    meta:{reason:'task_decision_invalid',error_type:'output_truncated',done_reason:'length',step:23}},
+  {id: 285,kind:'run',state:'error',title:'Projektauftrag ohne bestaetigten Abschluss unterbrochen',
+    meta:{reason:'task_decision_invalid',error_type:'tool_unclosed',step:9}},
+  {id: 286,kind:'tool',state:'info',title:'Werkzeugmarker ohne Werkzeug in diesem Zug entfernt',
+    meta:{reason:'native_tool_not_offered'}},
+  {id: 287,kind:'tool',state:'info',title:'Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis',
+    meta:{reason:'repeated_identical_tool_disabled',source:'web'}}
+]});
+assert(cutFailure.textContent.includes('Fehlertyp: eine an der Ausgabegrenze abgeschnittene Antwort')
+  && cutFailure.textContent.includes('Fehlertyp: ein Werkzeugblock ohne Schlussmarker')
+  && cutFailure.textContent.includes('Mit angehängten Dateien nutze ich in diesem Zug kein Plan- oder Bauwerkzeug')
+  && cutFailure.textContent.includes('Ich nutze es in diesem Auftrag nicht mehr und arbeite mit dem vorhandenen Stand weiter'),
+  'cut answers, unclosed blocks and the two 0.8.17 notes are readable: ' + cutFailure.textContent);
 
 // 0.5.62: actual source-code chunks display below the same live work
 // timeline. They are never loaded into saved events or rendered as HTML.
