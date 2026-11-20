@@ -77,7 +77,39 @@ BEDIENUNG FUER DEN GEGENTEST
    Modellaufruf "extern:<modell>". Danach Core-Pfad wieder auf "Lokal".
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Laufen noch; Ergebnisse folgen in diesem Abschnitt.
+- php -l fuer api/model_provider.php, api/ai_settings.php, api/user_settings.php, api/admin.php,
+  api/chat.php, api/console_stream.php und die geaenderten Selbsttests; node --check fuer js/admin.js,
+  js/settings.js, js/console-gate.js und scripts/external-provider-ui-selftest.cjs; bash -n fuer beide
+  Preflights: ohne Fehler. Version-Guard (0.8.10 auf 0.8.11), Branding, Cache-Fingerabdruecke (nach
+  scripts/cache-bust.py), tci-language, terran-terminology, terminal-language, preflight-sync,
+  frontend-regression, ui-language: OK.
+- scripts/external-provider-selftest.php (neu): OK, fuenfmal hintereinander. Ende zu Ende gegen einen
+  OpenAI-kompatiblen Stand-in-Server auf 127.0.0.1 mit dem echten ember_call_ollama() (Antwort,
+  Denken, Tokens, abgeschnittene Antwort, kein gelerntes lokales Fenster, gestreamte Dateivorschau,
+  abgelehnter Schluessel ohne Schluessel im Protokoll, Grenze) und console_stream_ollama() (Strom,
+  abgeschnitten, ohne [DONE], abgebrochen, Fehlerereignis, abgelehnter Schluessel); ein lokales Konto
+  erreicht weiter Ollama ohne Schluessel. Versiegelter Schluessel mit SQLite (gespeichert, gelesen,
+  Vorrang der Serverkonfiguration, ungueltig, nicht mehr lesbar, entfernt).
+- scripts/external-provider-ui-selftest.cjs (neu, Playwright): OK, fuenfmal hintereinander.
+- Bestehende Tests, die die geaenderten Dateien lesen: gruen; profile-stats-selftest.php folgt der
+  neuen Zaehl-Verdrahtung (wortwoertliche Pruefung angepasst, nicht abgeschwaecht).
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*): 203 bestanden, 16 fehlgeschlagen. Alle 16
+  einzeln auf main 0.8.10 nachgeprueft: dort ebenso rot (browse-image ohne Python-Playwright,
+  browse-live-ui, chat-menu-ui, data-controls, image-progress-ui, insights-chat-visibility-ui,
+  long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui,
+  session-list-ui, settings-tabs-ui, update-ui, voice-samples-ui). Kein neuer Fehlschlag.
+- 33 gezielt eingebaute Fehler, alle erkannt: Adresse (http zu fremden Hosts, Zugangsdaten), Freigabe
+  (normale Konten, Gaeste), Anfrage (think gesendet, Bilder verloren, PNG als JPEG, kein Schluessel),
+  Antwort (Denken, Abschlussgrund, Tokens), Strom ([DONE], abgebrochener Strom komplett, Fehler
+  ignoriert, nicht uebersetzt, Ende nicht geschlossen), Schluessel (nicht ausgeblendet, nicht
+  verlangt, Leerzeichen erlaubt, unverschluesselt, gespeicherter vor Server, nicht lesbar nicht
+  gemeldet, nicht entfernbar, Admins duerfen setzen), Verbindungstest (abgelehnter Schluessel als
+  gut), Aufrufstellen (Antwort nicht uebersetzt, Vorschau nicht uebersetzt, Anbieter ignoriert,
+  lokales Fenster aus externer Antwort gelernt, falsche Adresse benutzt), Freigabe je Zug,
+  Speichern fuer alle, Admin-Adresspruefung.
+- Dabei gefunden und geschlossen: zwei Testluecken (Schluessel ohne bekanntes Praefix; ein
+  abgeschnittenes externes Ergebnis, dessen Summe wie ein lokales Fenster aussieht).
+- GitHub-Pruefungen fuer alle Commits ohne Fehler.
 
 NICHT GETESTET
 - Gegen einen echten Anbieter mit echtem Schluessel (in dieser Umgebung gibt es keinen; Schluessel
