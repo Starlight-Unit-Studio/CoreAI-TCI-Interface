@@ -180,6 +180,28 @@ function coreui_agent_run_active_snapshot(PDO $pdo, int $uid, string $sessionId)
     ORDER BY updated_at DESC, created_at DESC LIMIT 1");
   $stmt->execute([$uid,$sessionId]);
   $row = $stmt->fetch(PDO::FETCH_ASSOC);
+  if (!is_array($row) && coreui_task_journal_schema_ready($pdo)) {
+    // Reopening an ordinary or project chat can restore a crashed turn
+    // without making a NEW user message. Only a truly VERIFIED checkpoint
+    // is offered, and only once per checkpoint version. The stream must
+    // atomically claim it before issuing a paid model request.
+    $resume=$pdo->prepare("SELECT run_id,turn_id,run_key,status,cancel_requested_at "
+      . "FROM stu_console_agent_runs WHERE user_id=? AND session_id=? "
+      . "AND status='interrupted' AND response_message_id IS NULL "
+      . "AND cancel_requested_at IS NULL AND run_key='base' "
+      . "ORDER BY updated_at DESC LIMIT 3");
+    $resume->execute([$uid,$sessionId]);
+    foreach (($resume->fetchAll(PDO::FETCH_ASSOC) ?: []) as $candidate) {
+      $id=(string)$candidate['run_id'];
+      $safe=coreui_task_journal_resume_check($pdo,$uid,$sessionId,$id);
+      if (($safe['safe']??false)!==true) continue;
+      return [
+        'id'=>$id,'turn_id'=>(int)$candidate['turn_id'],
+        'run_key'=>'base','status'=>'queued','cancel_requested'=>false,
+        'resume_checkpoint'=>(int)$safe['checkpoint_version'],
+      ];
+    }
+  }
   if (!is_array($row)) return null;
   return [
     'id'=>(string)$row['run_id'],
