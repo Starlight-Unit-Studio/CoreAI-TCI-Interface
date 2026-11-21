@@ -61,8 +61,7 @@ function coreui_agent_next_tool(string $reply, array $allowed): ?array {
     $input = $find($reply);
     if ($input !== null && trim($input) !== '') return ['tool'=>$tool, 'input'=>trim($input)];
   }
-  // An old model-authored browser marker does not authorize Playwright.
-  // Without an explicit + Recherche choice, use the normal Websuche instead.
+  // A model-authored browser marker falls back to Websuche if browsing is unavailable.
   if (!in_array('browse', $allowed, true) && in_array('web', $allowed, true)) {
     $goal = $checks['browse']($reply);
     if ($goal !== null && trim($goal) !== '') return ['tool'=>'web', 'input'=>trim($goal)];
@@ -90,14 +89,14 @@ function coreui_agent_recover_promised_read(string $reply, array $allowed): ?arr
   return ['tool'=>'pfile_read','input'=>$path,'recovered_read_intent'=>true];
 }
 
-/** Only the explicit + menu selection authorizes Playwright for this turn. */
-function coreui_agent_explicit_browse(?array $intent, bool $enabled): bool {
-  return $enabled && is_array($intent) && ($intent['tool'] ?? '') === 'browse';
+/** A selected composer tool keeps precedence over model-selected browsing. */
+function coreui_agent_browse_available(?array $intent, bool $enabled): bool {
+  return $enabled && ($intent === null || ($intent['tool'] ?? '') === 'browse');
 }
 
-/** Fail closed for the browser; use Websuche instead if enabled. */
-function coreui_agent_guard_browser_reply(string $reply, bool $explicitBrowse, bool $webEnabled): string {
-  if ($explicitBrowse || !function_exists('ember_extract_browse_marker')) return $reply;
+/** Fall back to Websuche when Playwright is unavailable for this turn. */
+function coreui_agent_guard_browser_reply(string $reply, bool $browseAvailable, bool $webEnabled): string {
+  if ($browseAvailable || !function_exists('ember_extract_browse_marker')) return $reply;
   $goal = ember_extract_browse_marker($reply);
   if ($goal === null || trim($goal) === '') return $reply;
   return $webEnabled ? '[WEB: ' . trim($goal) . ']'

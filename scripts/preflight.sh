@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.22: restore the active browser view when reopening a chat.
+# CoreAI: TCI Interface 0.8.23: restore the active browser view when reopening a chat.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -1706,6 +1706,13 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     ok '+ menu: tool selection, instructions to Mara, security, permissions and archive verified.'
   else
     fail "+ menu-self-test: ${composer_intent_test:-Unknown error}"
+  fi
+
+  browser_routing_test=''
+  if browser_routing_test="$(compose exec -T php php scripts/browser-routing-selftest.php 2>&1)"; then
+    ok 'Browser research: tool routing, permissions and explicit live-view selection verified.'
+  else
+    fail "Browser routing self-test: ${browser_routing_test:-Unknown error}"
   fi
 
   compact_test=''

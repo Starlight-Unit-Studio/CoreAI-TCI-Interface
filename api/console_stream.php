@@ -124,6 +124,7 @@ if ($generationRequestId !== '') {
         'elapsed' => 0,
         'id' => 0,
         'browse_job_id' => (int)$generationRequest['browse_job_id'],
+        'browse_show_live' => coreui_agent_run_live_browser_selected($pdo,(int)$uid,$sessionId,$afterId),
         'session_id' => $sessionId,
         'reply_to_id' => $afterId,
         'generation_request' => $generationRequestId,
@@ -776,18 +777,28 @@ try {
     console_stream_progress($thinkingEnabled, 'tool');
     // v1.1.1.94: $imageUrl statt hart null -> Vision funktioniert jetzt auch in der Console.
     if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
-    $fallback = ember_generate_reply(
-      $pdo,
-      $char,
-      $promptMessage,
-      $imageUrl,
-      'console',
-      (int)$uid,
-      $sessionId,
-      $excludeReplyToId,
-      $afterId,
-      $triggerRevision
-    );
+    // Reuse an already confirmed browser decision from the first model
+    // response. The queue still validates the saved user turn and permissions.
+    $streamBrowseGoal = $streamComplete && !$isVisionTurn
+      && coreui_agent_browse_available($composerIntentStream, ember_browse_enabled())
+      ? ember_extract_browse_marker($reply) : null;
+    if ($streamBrowseGoal !== null) {
+      $GLOBALS['STU_EMBER_BROWSE_REQUEST'] = $streamBrowseGoal;
+      $fallback = null;
+    } else {
+      $fallback = ember_generate_reply(
+        $pdo,
+        $char,
+        $promptMessage,
+        $imageUrl,
+        'console',
+        (int)$uid,
+        $sessionId,
+        $excludeReplyToId,
+        $afterId,
+        $triggerRevision
+      );
+    }
     $enqueued = ember_browse_consume_request($pdo, $channel, (int)$uid, $sessionId, $afterId);
     if ($enqueued) {
       // Job-ID fuer das Live-Browser-Fenster (Phase 3b) holen.
@@ -1057,6 +1068,7 @@ try {
     // 0.6.39 (P20.5): Mara's images of this answer show at once, not only after a reload.
     'attachments'   => coreui_image_message_attachments($pdo, (int)$uid, $emberMsgId),
     'browse_job_id' => $browseJobId,
+    'browse_show_live' => $browseJobId > 0 && coreui_composer_live_browser_selected($userMsgRaw),
     'session_id'    => $sessionId,
     'reply_to_id'   => $afterId,
     'generation_request' => $generationRequestId !== '' ? $generationRequestId : null,

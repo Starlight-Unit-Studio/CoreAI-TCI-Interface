@@ -1,5 +1,9 @@
 # CoreAI: TCI Interface
 
+## 0.8.23 - 21.11.2026
+
+- Mara can start Playwright when Browser Research is enabled. The chat shows the live browser only for an explicit Research selection with live view enabled. Automatic research and research with live view off use the same text status, including after reopening the chat.
+
 ## 0.8.22 - 21.11.2026
 
 - Reopening a chat during browser research reconnects its live view to the existing browser job. It preserves the active run and does not issue another inference request.

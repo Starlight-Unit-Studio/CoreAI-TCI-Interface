@@ -246,7 +246,7 @@ vi_test(str_contains($chat, "if (\$hasAudio) \$imgReply = coreui_voice_clean_rep
 vi_test(str_contains($chat, '$voiceTool = ($voiceTools !== [] && is_string($imgReply)) ? coreui_agent_next_tool($imgReply, $voiceTools) : null;')
   && str_contains($chat, 'coreui_agent_loop_run($imgReply, $voiceTool, $voiceBase, $voiceTools, 0,')
   && str_contains($chat, '$listenOptions, null, $listenThink)') && str_contains($chat, "\$GLOBALS['STU_EMBER_BROWSE_REQUEST'] = \$voiceLoop['browse'];")
-  && str_contains($chat, "array_intersect(ember_agent_allowed_tools(\$consoleUid, (string)\$consoleSessionId,\n          coreui_agent_explicit_browse(\$composerIntent, ember_browse_enabled())), ['web', 'browse', 'archive', 'image'])")
+  && str_contains($chat, "array_intersect(ember_agent_allowed_tools(\$consoleUid, (string)\$consoleSessionId,\n          coreui_agent_browse_available(\$composerIntent, ember_browse_enabled())), ['web', 'browse', 'archive', 'image'])")
   && str_contains($chat, '$prose = trim(ember_strip_stray_tool_markers($imgReply));')
   && strpos($chat, '$voiceLoop = coreui_agent_loop_run(') < strpos($chat, 'if ($hasAudio) $imgReply = coreui_voice_clean_reply('),
   'tools after a voice message: the work loop before the reply is cleaned');

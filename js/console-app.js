@@ -1182,7 +1182,7 @@
     var activeRun = state.activeAgentRunsBySession[sessionId];
     if (!isActiveSession(sessionId) || !activeRun || activeRun.id !== String(run.id)
         || !Number.isSafeInteger(jobId) || jobId <= 0) return;
-    openBrowseWindow(jobId, sessionId);
+    openBrowseWindow(jobId, sessionId, run.browse_show_live === true);
   }
 
   // Reattach to the EXISTING server-owned job. Only an unclaimed, queued
@@ -3747,7 +3747,7 @@
       // Die FINALE Antwort kommt erst NACH dem Surfen (per Hintergrund-Poll). Bis dahin arbeitet
       // Ember weiter -> Status sichtbar "arbeitet" (amber) lassen, NICHT vorschnell auf grün.
       setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
-      openBrowseWindow(browseJobId, sessionId);
+      openBrowseWindow(browseJobId, sessionId, data.browse_show_live === true);
       if (data && data.generation_request) {
         startGenerationStatusPoll(ses, { id: data.generation_request });
       }
@@ -3783,7 +3783,7 @@
     return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + (s % 60) + ' s';
   }
 
-  function openBrowseWindow(jobId, sessionId) {
+  function openBrowseWindow(jobId, sessionId, showLive) {
     var current = state.liveBrowse;
     if (current && current.jobId === jobId && current.sessionId === sessionId
         && current.panel.isConnected) return;
@@ -3802,7 +3802,7 @@
     // Playwright is a different channel from ordinary [WEB] search.
     // Never show search-result carousel for browser frames.
     var research = null;
-    if (uiPreferences.showLiveBrowser === false) {
+    if (!showLive || uiPreferences.showLiveBrowser === false) {
       panel.classList.add('browse-live-hidden');
       panel.setAttribute('aria-label','Web wird durchsucht');
       var fallback = document.createElement('span');

@@ -34,6 +34,11 @@ function coreui_composer_intent_peek(string $message): ?array {
   };
 }
 
+/** Whether the account holder asked for the browser view for this message. */
+function coreui_composer_live_browser_selected(string $message): bool {
+  return (coreui_composer_intent_peek($message)['tool'] ?? '') === 'browse';
+}
+
 /** The message without its mark (pure). */
 function coreui_composer_intent_strip(string $message): string {
   return (string)preg_replace(COREUI_COMPOSER_INTENT_RE, '', $message, 1);

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/console_task_journal.php';
+require_once __DIR__ . '/console_composer_intent.php';
 
 /**
  * P05 durable console runs. Never store prompts, raw reasoning or tool output.
@@ -163,6 +164,16 @@ function coreui_agent_run_ensure(
   return $row;
 }
 
+/** A resumed browser job trusts only the saved user turn for UI visibility. */
+function coreui_agent_run_live_browser_selected(PDO $pdo, int $uid, string $sessionId, int $turnId): bool {
+  $stmt = $pdo->prepare("SELECT message FROM stu_chat_messages
+    WHERE id=? AND user_id=? AND session_id=? AND channel='console'
+      AND deleted_at IS NULL LIMIT 1");
+  $stmt->execute([$turnId,$uid,$sessionId]);
+  $message = $stmt->fetchColumn();
+  return is_string($message) && coreui_composer_live_browser_selected($message);
+}
+
 /**
  * One currently active job for the already authenticated session. A page
  * reload must NEVER reissue inference; it can only observe this saved run.
@@ -203,13 +214,15 @@ function coreui_agent_run_active_snapshot(PDO $pdo, int $uid, string $sessionId)
     }
   }
   if (!is_array($row)) return null;
+  $browseJobId = $row['status'] === 'waiting_tool' ? (int)($row['browse_job_id'] ?? 0) : 0;
   return [
     'id'=>(string)$row['run_id'],
     'turn_id'=>(int)$row['turn_id'],
     'run_key'=>(string)$row['run_key'],
     'status'=>(string)$row['status'],
     'cancel_requested'=>!empty($row['cancel_requested_at']),
-    'browse_job_id'=>$row['status'] === 'waiting_tool' ? (int)($row['browse_job_id'] ?? 0) : 0,
+    'browse_job_id'=>$browseJobId,
+    'browse_show_live'=>$browseJobId > 0 && coreui_agent_run_live_browser_selected($pdo,$uid,$sessionId,(int)$row['turn_id']),
   ];
 }
 
