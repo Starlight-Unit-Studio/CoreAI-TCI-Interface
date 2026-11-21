@@ -21,7 +21,9 @@ function dc_test(bool $ok, string $why): void {
 
 // --- Wiring -------------------------------------------------------------------------------------
 $api = $read('api/console_sessions.php');
-dc_test(str_contains($api, "|| in_array(\$action, ['archive_all', 'delete_all'], true)) stu_require_csrf();"), 'both actions need the CSRF token');
+// 0.8.18: the CSRF list also names 'workspace_ensure' since 0.8.8; both data control actions must stay in it.
+dc_test(preg_match('~\|\| in_array\(\$action, \[([^\]]*)\], true\)\) stu_require_csrf\(\);~', $api, $csrfList) === 1
+  && str_contains($csrfList[1], "'archive_all'") && str_contains($csrfList[1], "'delete_all'"), 'both actions need the CSRF token');
 dc_test(str_contains($api, "stu_json(['ok'=>true, 'archived_now'=>\$archived] + coreui_data_controls_summary(\$pdo, (int)\$uid));"),
   'the number archived now does not hide the archive count');
 dc_test(strpos($api, "\$action === 'data_summary'") < strpos($api, '$sessionId = coreui_console_session_normalize_id(')

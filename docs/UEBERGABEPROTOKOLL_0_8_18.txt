@@ -1,0 +1,76 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.18
+Datum: 21.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.17 nach PR #378
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Rueckmeldung des Betreibers nach 0.8.17 mit Preflight-Ausgabe und Screenshots: "Ganz ehrlich ich
+Raff das nicht? Das lief ja eigentlich mal super...na jedenfalls keine aenderung alles wie
+vorher...das muss irgendwann mit den letzten commits gekommen sein kurz bevor wir den externen
+Adapter reingemacht haben meine ich".
+
+BEFUND
+- gpt-6-luna im Projekt (Schritt 17) und bei einer Recherche im Projekt-Chat (Schritt 11):
+  task_decision_invalid, Fehlertyp prose_only, Core-Endgrund stop. Die Antwort war also
+  vollstaendig, nicht abgeschnitten; der Verdacht aus 0.8.17 (abgeschnittener Block) trifft auf
+  diese Laeufe nicht zu.
+- Ursache: PR #373 (0.8.13, 20.11. 15:17, rund drei Stunden nach dem externen Adapter in PR #371)
+  fuehrte das Auftragsprotokoll ein. Seitdem ist im Projekt-Chat jede Antwort nach einem
+  Werkzeugschritt nur gueltig als Werkzeugmarker oder COREUI_TASK_DONE/BLOCKED-Block; reiner
+  Text wurde verworfen. Vorher war er Maras Antwort (api/console_agent_loop.php vor #373). Die
+  Cores schreiben den Block auch nach der Reparatur (0.8.16 mit Echo) nicht. Das trifft jeden
+  Werkzeuglauf im Projekt-Chat, auch eine gewoehnliche Recherche.
+- Preflight auf dem Server, 3 Fehler:
+  - External API adapter: "local answer". config.local.php der Installation definiert
+    STU_EMBER_OLLAMA_URL (127.0.0.1:11434) und hat Vorrang vor der Umgebung; der lokale
+    Testaufruf ging an das echte Ollama des Servers. Seit 0.8.16 entlud er vorher die geladenen
+    Cores (keep_alive 0). Mit einer nachgebauten config.local.php hier exakt nachgestellt.
+  - Voice input: "the transcript is written after the answer is out, before the summary". Seit
+    PR #375 (0.8.14) beginnt das letzte done-Ereignis mit 'agent_task'; die woertliche Suche nach
+    'work_events' am Anfang fand nichts. Ablauf unveraendert.
+  - Data controls: "both actions need the CSRF token". Seit 4ace5dfc (0.8.8) steht
+    'workspace_ensure' mit in der CSRF-Liste; die woertliche Erwartung passte nicht mehr. Schutz
+    unveraendert.
+
+UMSETZUNG
+- api/console_agent_loop.php: bleibt eine Antwort nach der einen Reparatur reiner Text
+  (prose_only), ist sie Maras Antwort. Mit Nachweisen (coreui_task_completion_evidence und
+  Auftragsjournal can_finish) abgeschlossen (task_prose_answer); sonst mit Hinweis, Lauf bleibt
+  unterbrochen (task_prose_unverified). Die Reparatur kommt weiterhin zuerst.
+- api/console_stream.php: fortgesetzter Lauf nach Worker-Neustart: reine Textantwort bei
+  bestaetigendem Journal.
+- js/coreui-work-events.js: Satz fuer den angenommenen Abschluss.
+- scripts/external-provider-selftest.php: Ersatzserver-Adresse, Schluessel und Single-Resident
+  als Konstanten vor dem Laden der Konfiguration; Pruefung, dass ember_url() der Ersatzserver ist.
+- scripts/voice-live-selftest.php: Testserver setzt die Ersatzadresse ebenso (laeuft nur mit
+  COREUI_SELFTEST_DB=1, nicht im Preflight).
+- scripts/voice-input-selftest.php, scripts/data-controls-selftest.php: pruefen dieselben Zusagen
+  gegen den aktuellen Code.
+- scripts/agent-loop-selftest.php: die bisherigen Erwartungen "Text nach der Reparatur ist
+  task_decision_invalid" durch das neue Verhalten ersetzt, dazu Faelle ohne Nachweis, ohne
+  bestaetigendes Journal und fuer den fortgesetzten Lauf.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Datenbank (keine Migration). DONE/BLOCKED-Bloecke,
+  Werkzeugmarker, hoechstens eine Reparatur, Abschluss nur mit Nachweisen und Journal.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- Werden nach dem Lauf eingetragen.
+
+BEKANNT, NICHT TEIL DIESER VERSION
+- voice-live-selftest.php mit COREUI_SELFTEST_DB=1 scheitert hier mit "Mara Normal answers live
+  although the chat uses Plus", ebenso auf main 0.8.17 (nicht im Preflight des Servers).
+
+NICHT GETESTET
+- Echte Laeufe mit gpt-6-luna und lokalen Cores; geprueft gegen nachgestellte Antworten.
+
+HINWEIS FUER DEN BETRIEB
+- Preflight-Laeufe mit 0.8.16 und 0.8.17 konnten die geladenen Cores des Servers entladen (sie
+  laden beim naechsten Aufruf neu); mit 0.8.18 erreicht der Test das echte Ollama nicht mehr.
+
+NAECHSTER SCHRITT
+- Nach dem Update Preflight erneut ausfuehren; denselben Homepage-Ausbau und eine Recherche im
+  Projekt-Chat mit gpt-6-luna und Core Normal wiederholen.
+
+Version: 0.8.18

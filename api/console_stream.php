@@ -613,6 +613,8 @@ try {
     $parseTask = static fn(string $text): array => coreui_task_decision(
       $text, static fn(string $r): ?array => coreui_agent_next_tool($r,$projectToolAllowed));
     $decision=$parseTask($reply);
+    // 0.8.18: a plain answer stays Mara's answer when the journal confirms the saved state (console_agent_loop.php).
+    $proseReply=($decision['kind']==='invalid' && ($decision['shape'] ?? '')==='prose_only') ? trim($reply) : '';
     if ($decision['kind']==='invalid'
         && !empty($acc['ok']) && !empty($acc['done'])
         && empty($acc['truncated']) && isset($model,$sys,$u)
@@ -642,6 +644,9 @@ try {
     } elseif ($decision['kind']==='blocked') {
       $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
       $reply=(string)$decision['text'];
+    } elseif ($decision['kind']==='invalid' && $proseReply!==''
+        && coreui_task_journal_can_finish($pdo,(int)$uid,$sessionId,$agentRunId)) {
+      $reply=$proseReply;
     } elseif ($decision['kind']==='invalid') {
       $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
       $reply='Der unterbrochene Projektlauf konnte trotz bestaetigtem Checkpoint '

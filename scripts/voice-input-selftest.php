@@ -300,7 +300,8 @@ vi_test(str_contains($chat, "ember_attach_audio_cleanup(\$meta['dir'] ?? null);"
 vi_test(str_contains($chat, '"SELECT id, user_id, character_id, character_name, message FROM stu_chat_messages')
   && str_contains($chat, 'ember_attach_audio_history_notes($pdo, $consoleUid,'), 'later turns read what was said');
 $stream = $read('api/console_stream.php');
-$doneAt = strpos($stream, "  sse_send('done', [\n    'work_events'");
+// 0.8.18: since 0.8.14 the final done event starts with 'agent_task' (task status), then 'work_events'.
+$doneAt = strpos($stream, "  sse_send('done', [\n    'agent_task'   => \$taskSnapshot,\n    'work_events'");
 $transcriptAt = strpos($stream, 'ember_attach_audio_transcribe_after($pdo, (int)$uid, $attachmentIds);');
 vi_test($doneAt !== false && $transcriptAt > $doneAt && $transcriptAt < strpos($stream, 'coreui_compact_with_core($pdo, (int)$uid, $sessionId, false);'),
   'the transcript is written after the answer is out, before the summary');

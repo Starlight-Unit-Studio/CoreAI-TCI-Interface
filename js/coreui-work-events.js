@@ -173,6 +173,9 @@
       case 'Werkzeugmarker ohne Werkzeug in diesem Zug entfernt':
         return 'Mit angehängten Dateien nutze ich in diesem Zug kein Plan- oder Bauwerkzeug. '
           + 'Meine Antwort steht deshalb als Text da; gespeichert oder gebaut habe ich nichts.';
+      // 0.8.18: a plain answer after the work is Mara's answer again, on confirmed tool steps.
+      case 'Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt':
+        return 'Meine Antwort stützt sich auf bestätigte Werkzeugschritte; der Auftrag ist damit abgeschlossen.';
       // 0.8.17: a read-only tool that repeated itself leaves the run; the project work goes on.
       case 'Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis':
         return 'Dieses Werkzeug hat dreimal dasselbe Ergebnis geliefert. Ich nutze es in diesem Auftrag '
