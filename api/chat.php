@@ -2729,8 +2729,7 @@ function ember_browse_enqueue(
 ): bool {
   $goal = trim($goal);
   if ($goal === '') return false;
-  // The queue itself checks provenance, not just the model dispatcher.
-  // Deep Research has a separate queue and is not affected by this guard.
+  // Require the account’s own triggering message for both browser routes.
   if ($channel !== 'console' || !ember_browse_enabled()
       || $recipientUid === null || $recipientUid <= 0
       || $triggerMessageId === null || $triggerMessageId <= 0) return false;
@@ -2744,8 +2743,9 @@ function ember_browse_enqueue(
           AND channel='console' AND deleted_at IS NULL LIMIT 1"
     );
     $selected->execute([$triggerMessageId, $recipientUid, $sessionId]);
-    $storedIntent = coreui_composer_intent_peek((string)($selected->fetchColumn() ?: ''));
-    if (!coreui_agent_explicit_browse($storedIntent, true)) return false;
+    $triggerMessage = $selected->fetchColumn();
+    if (!is_string($triggerMessage)
+        || !coreui_agent_browse_available(coreui_composer_intent_peek($triggerMessage), true)) return false;
   } catch (Throwable $e) {
     return false; // Missing/legacy schema or scope mismatch never opens Playwright.
   }
@@ -5303,7 +5303,7 @@ function ember_build_chat_prompt(
     $webHint .= "\n" . coreui_agent_loop_hint($profile['compact'],
       in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
   }
-  $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
+  $browseHint = ($channel === 'console' && coreui_agent_browse_available($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($profile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // Python is a global CoreAI tool, including for chats with saved files.
   // Existing-project work should prefer pfile edits, but never disable
@@ -5684,10 +5684,10 @@ function ember_skill_context(int $uid, string $sessionId): array {
 }
 
 /** Tools of the work loop for this chat. */
-function ember_agent_allowed_tools(int $uid, string $sessionId, bool $explicitBrowse = false): array {
+function ember_agent_allowed_tools(int $uid, string $sessionId, bool $allowBrowse = false): array {
   $tools = [];
   if (ember_web_enabled()) $tools[] = 'web';
-  if ($explicitBrowse && ember_browse_enabled()) $tools[] = 'browse';
+  if ($allowBrowse && ember_browse_enabled()) $tools[] = 'browse';
   if (ember_py_enabled()) $tools[] = 'python';
   if ($uid > 0 && $sessionId !== '' && is_file(coreui_compact_archive_path($uid, $sessionId))) $tools[] = 'archive';
   // 0.5.80: the skill library is offered in the prompt of this turn.
@@ -5895,7 +5895,7 @@ function ember_generate_reply(
     $webHint .= "\n" . coreui_agent_loop_hint($promptProfile['compact'],
       in_array('archive', ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId), true));
   }
-  $browseHint = ($channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()) && $imageUrl === null)
+  $browseHint = ($channel === 'console' && coreui_agent_browse_available($composerIntent, ember_browse_enabled()) && $imageUrl === null)
     ? ($promptProfile['compact'] ? ember_browse_capability_hint_compact() : ember_browse_capability_hint()) : '';
   // The synchronous prompt has no separate tool block, so the Python hint
   // itself names the checked project builder for small local models.
@@ -6018,7 +6018,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     // "[WEB: Wetter ...]" stood as her answer). Without skills: their index is not in this prompt.
     $voiceTools = ($hasAudio && $channel === 'console')
       ? array_values(array_intersect(ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId,
-          coreui_agent_explicit_browse($composerIntent, ember_browse_enabled())), ['web', 'browse', 'archive', 'image']))
+          coreui_agent_browse_available($composerIntent, ember_browse_enabled())), ['web', 'browse', 'archive', 'image']))
       : [];
     // A picture sent to Mara for editing is still a vision turn. Preserve the
     // same image tool after analysis rather than ending with an empty promise.
@@ -6166,11 +6166,6 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       // without emitting a marker. Run the image tool instead of making a false claim.
       $visionDescription = is_string($imgReply) ? $imgReply : '';
       $voiceTool = ['tool'=>'image', 'input'=>coreui_image_attachment_fallback_prompt($userMsg, $visionDescription)];
-    }
-    if ($voiceTool !== null) {
-      if ($voiceTool['tool'] === 'browse' && !coreui_agent_explicit_browse($composerIntent, ember_browse_enabled())) {
-        $voiceTool = ember_web_enabled() ? ['tool'=>'web', 'input'=>(string)$voiceTool['input']] : null;
-      }
     }
     if ($voiceTool !== null) {
       // Only a recorded Stimmsequenz belongs to the user; uploaded audio does
@@ -6707,9 +6702,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   // asynchron mit dem Ergebnis. Der Aufrufer reiht den Job via ember_browse_consume_request() ein.
   if (!$fileTask && is_string($out) && $imageUrl === null) {
     $out = coreui_agent_guard_browser_reply($out,
-      $channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()), ember_web_enabled());
+      $channel === 'console' && coreui_agent_browse_available($composerIntent, ember_browse_enabled()), ember_web_enabled());
   }
-  if (!$fileTask && $channel === 'console' && coreui_agent_explicit_browse($composerIntent, ember_browse_enabled())
+  if (!$fileTask && $channel === 'console' && coreui_agent_browse_available($composerIntent, ember_browse_enabled())
       && $imageUrl === null && is_string($out)) {
     $browseGoal = ember_extract_browse_marker($out);
     if ($browseGoal !== null) {
@@ -7007,7 +7002,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $agentLoopHandled = false;
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId,
-      coreui_agent_explicit_browse($composerIntent, ember_browse_enabled()));
+      coreui_agent_browse_available($composerIntent, ember_browse_enabled()));
     $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed,
       array_merge(['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write', 'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge'],
         COREUI_PFTOOLS_PROC_KINDS))));
