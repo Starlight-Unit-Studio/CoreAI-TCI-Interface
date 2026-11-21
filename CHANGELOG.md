@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.8.19 - 21.11.2026
+
+- Compose and Native preflight query the configured SearXNG endpoint through the browser worker and require an actual result link for a passing probe. Empty results and request errors warn with the configured host and port, including for independently managed search instances.
+- Web search distinguishes a backend failure from a valid response without usable hits. Neither is counted as verified source evidence. A project stops retrying web search after three misses, even with different terms, and can continue with its available tools.
+- A multiline project command is an invalid tool decision. Its single repair asks for a supported one-line command or a saved script. Unparsed commands are neither executed nor accepted as a final answer.
+- After two consecutive identical reads of an unchanged project file, the model is told to use the file content it already has. The no-progress safeguard still applies if it repeats the read.
+
 ## 0.8.18 - 21.11.2026
 
 - **A plain answer after tool work is Mara's answer again:** Since the task-control protocol of 0.8.13 every reply after a tool step in a project chat had to be a tool marker or a `[COREUI_TASK_DONE]`/`[COREUI_TASK_BLOCKED]` block. gpt-6-luna and the local Cores answered in plain text, also after the one repair (the work timeline of 0.8.17 showed `prose_only` with `done_reason: stop`, so nothing was cut off), and the person only saw "task_decision_invalid", even for an ordinary research answer in a project chat. Before 0.8.13 such an answer was simply Mara's reply. Now a reply that is still plain text after the one repair is her answer again: on the same evidence as a DONE block (the last tool step confirmed, no unresolved file edit, the task journal confirms the run) the run is completed; without that evidence the answer is shown with the note that the task is not confirmed as finished, and the run stays interrupted. The repair still comes first, so a Core that only announced its next step can still name the tool. A resumed run after a worker restart follows the same rule with the task journal.

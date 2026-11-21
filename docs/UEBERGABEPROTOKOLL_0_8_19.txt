@@ -1,0 +1,17 @@
+COREAI: TCI INTERFACE // HANDOVER 0.8.19
+21.11.2026
+Base: main 0.8.18 (ff5685e0)
+
+- Compose and Native preflight query the configured SearXNG endpoint through the browser worker and require an actual result link for a passing probe. Empty results and request errors warn with the configured host and port, including for independently managed search instances.
+- Web search distinguishes a backend failure from a valid response without usable hits. Neither is counted as verified source evidence. A project stops retrying web search after three misses, even with different terms, and can continue with its available tools.
+- A multiline project command is an invalid tool decision. Its single repair asks for a supported one-line command or a saved script. Unparsed commands are neither executed nor accepted as a final answer.
+- After two consecutive identical reads of an unchanged project file, the model is told to use the file content it already has. The no-progress safeguard still applies if it repeats the read.
+
+Live search diagnosis requires the configured SearXNG endpoint and worker logs on the installation.
+
+Local verification: PHP syntax and agent-loop, progressive-web-search, web-search,
+deep-research and task-journal selftests. Work-events UI selftest and syntax.
+Browse-worker search probe regression and Deep Research worker, hybrid and zero-source selftests. Compose and Native
+shell syntax, preflight sync and terminal language checks. Version, branding
+and asset fingerprints verified. Full deployment preflight and live search
+are pending on the target installation.

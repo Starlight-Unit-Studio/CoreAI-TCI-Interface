@@ -5416,19 +5416,27 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
  * for the next prompt. Python only calculates here; files keep their own path.
  */
 function ember_agent_run_tool(PDO $pdo, array $tool, string $channel, int $uid, string $sessionId,
-    int $triggerId, int $triggerRevision, int $imageCount = 1, ?array &$webSession = null): string {
+    int $triggerId, int $triggerRevision, int $imageCount = 1, ?array &$webSession = null): string|array {
   if ($tool['tool'] === 'web') {
     coreui_work_record($pdo, 'tool', 'running', 'Websuche gestartet', ['source'=>'web']);
-    $block = ember_web_results_block((string)$tool['input'], static function (array $rows) use ($pdo): void {
+    $block = ember_web_results_block((string)$tool['input'], static function (array $rows) use ($pdo, &$webSession): void {
       foreach ($rows as $row) {
         coreui_work_record($pdo, 'tool', 'info', 'Webquelle gefunden',
           ['page_url'=>(string)$row['url'], 'page_title'=>(string)$row['title'], 'source'=>'search_result']);
       }
-      coreui_work_record($pdo, 'tool', 'info', 'Websuche beendet', ['knowledge_hits'=>count($rows), 'source'=>'web']);
+      coreui_work_record($pdo, 'tool', 'info', 'Websuche beendet', [
+        'knowledge_hits'=>count($rows), 'source'=>'web',
+        'reason'=>($webSession['backend_available'] ?? null) === false ? 'research_search_backend_unavailable' : '',
+      ]);
     }, $webSession);
-    return $block !== '' ? $block : ($webSession !== null
-      ? 'In dieser Suchrunde gab es keine weiteren neuen, verwertbaren Treffer. Verfeinere die Suchbegriffe oder sage offen, was ungeklärt bleibt.'
-      : 'Die Websuche brachte keine Treffer, oder der Suchdienst war gerade nicht erreichbar.');
+    if ($block !== '') return $block;
+    $unavailable = ($webSession['backend_available'] ?? null) === false;
+    return [
+      'text'=>$unavailable ? 'Der Websuchdienst war gerade nicht erreichbar.'
+        : 'In dieser Suchrunde gab es keine weiteren neuen, verwertbaren Treffer. Verfeinere die Suchbegriffe oder sage offen, was ungeklärt bleibt.',
+      'state'=>'error',
+      'reason'=>$unavailable ? 'research_search_backend_unavailable' : 'research_no_search_results',
+    ];
   }
   if ($tool['tool'] === 'archive') return coreui_compact_archive_block($uid, $sessionId, (string)$tool['input']);
   // 0.7.73 (P09 B): project files; the project comes from this chat, never from the marker.
@@ -6187,7 +6195,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $visionSys, $prompt, $visionTimeout,
           $listenOptions, null, $listenThink),
         static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
-          $triggerMessageId, $triggerRevision, $composerIntent, &$voiceWebSession): string {
+          $triggerMessageId, $triggerRevision, $composerIntent, &$voiceWebSession): string|array {
           return ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
             $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1), $voiceWebSession);
         },
@@ -7027,7 +7035,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
         max($pyHandled ? 1 : 0, (int)($GLOBALS['COREUI_TASK_RESUME_STEP'] ?? 0)),
         static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
         static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
-          $triggerMessageId, $triggerRevision, $composerIntent, &$agentWebSession): string {
+          $triggerMessageId, $triggerRevision, $composerIntent, &$agentWebSession): string|array {
           return ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
             $triggerMessageId, $triggerRevision, coreui_image_count($composerIntent['count'] ?? 1), $agentWebSession);
         },

@@ -559,6 +559,30 @@ loop_test(($proseLoop['outcome']??'')==='completed' && ($proseLoop['reason']??''
   && ($proseMissing[0]['meta']['error_type']??'')==='prose_only' && $proseStop===[] && count($proseDone)===1
   && $proseDone[0]['state']==='success',
   'a prose answer after the one repair is the answer on verified evidence: ' . json_encode([$proseLoop, $proseMissing, $proseDone]));
+$multilineCommand = "[AUSFUEHREN: python - <<'PY'\nprint(1)\nPY\nnode --check app.js]";
+$parseCommand = static fn(string $reply): ?array => coreui_agent_next_tool($reply, ['prun']);
+loop_test(coreui_task_decision($multilineCommand, $parseCommand)['shape'] === 'command_multiline'
+  && coreui_task_decision($taskDone($multilineCommand), $parseCommand)['shape'] === 'command_multiline'
+  && coreui_task_decision('[AUSFUEHREN: node --check app.js]', $parseCommand)['kind'] === 'action',
+  'a multiline command cannot be hidden inside a completion; authorized single-line commands still dispatch');
+$commandReplies = [$multilineCommand, $multilineCommand];
+$commandPrompts = [];
+$commandTools = [];
+$commandLoop = coreui_agent_loop_run('[DATEI: app.js]', ['tool'=>'pfile_read','input'=>'app.js'],
+  'BASIS', $projectFileTools, 0,
+  static function (string $prompt) use (&$commandReplies, &$commandPrompts): ?string {
+    $commandPrompts[] = $prompt;
+    return array_shift($commandReplies);
+  },
+  static function (array $tool) use (&$commandTools): string {
+    $commandTools[] = $tool['tool'];
+    return 'Bestaetigte Datei.';
+  },
+  static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+loop_test($commandTools === ['pfile_read'] && ($commandLoop['outcome'] ?? '') === 'interrupted'
+  && !str_contains((string)$commandLoop['out'], 'node --check')
+  && str_contains($commandPrompts[1], 'war mehrzeilig und wurde nicht ausgefuehrt'),
+  'a multiline project command is repaired as a tool attempt and never accepted as prose');
 // Without that evidence (the last tool step failed) the prose is shown with a note; the run is interrupted.
 $weakReplies=['Die Tests laufen.','Die Tests laufen wirklich.'];$weakEvents=[];
 $weakLoop=coreui_agent_loop_run('[AUSFUEHREN: npm test]',
@@ -810,6 +834,36 @@ loop_test(($webLoop['outcome'] ?? '') === 'completed' && $webTools === ['web', '
   && in_array('repeated_identical_tool_disabled', $webEvents, true) && !in_array('repeated_identical_tool_result', $webEvents, true)
   && !str_contains(end($webPrompts), '[WEB: neue, genauere Suchbegriffe]'),
   'three identical web results end the web search, not the project run: ' . json_encode([$webLoop, $webTools]));
+$missReplies = ['[WEB: zweiter Begriff]', '[WEB: dritter Begriff]',
+  "[DATEI_NEU: index.html]\n<h1>Start</h1>\n[/DATEI_NEU]", $taskDone('Startseite angelegt.')];
+$missEvents = [];
+$missLoop = coreui_agent_loop_run('[WEB: erster Begriff]', ['tool'=>'web','input'=>'erster Begriff'],
+  'BASIS', array_merge(['web'], $projectFileTools), 0,
+  static function (string $prompt) use (&$missReplies): ?string { return array_shift($missReplies); },
+  static fn(array $tool): string|array => $tool['tool'] === 'web'
+    ? ['text'=>'Keine Treffer.', 'state'=>'error', 'reason'=>'research_no_search_results'] : 'Bestaetigt.',
+  static function (string $k, string $s, string $t, array $m) use (&$missEvents): void {
+    if (isset($m['reason'])) $missEvents[$m['reason']][] = $s;
+  }, static fn(): bool => false);
+loop_test(($missLoop['outcome'] ?? '') === 'completed'
+  && ($missEvents['research_no_search_results'] ?? []) === ['error', 'error', 'error']
+  && ($missEvents['repeated_identical_tool_disabled'] ?? []) === ['info']
+  && ($missEvents['verified_tool_result'] ?? []) === ['success'],
+  'three misses with different queries give no verified evidence but let the project continue');
+
+$readReplies = ['[DATEI: index.html]', $taskDone('Datei gelesen.')];
+$readPrompts = [];
+$readLoop = coreui_agent_loop_run('[DATEI: index.html]', ['tool'=>'pfile_read','input'=>'index.html'],
+  'BASIS', $projectFileTools, 0,
+  static function (string $prompt) use (&$readReplies, &$readPrompts): ?string {
+    $readPrompts[] = $prompt;
+    return array_shift($readReplies);
+  },
+  static fn(array $tool): string => 'Unveraenderter Dateiinhalt.',
+  static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+loop_test(($readLoop['outcome'] ?? '') === 'completed' && $readLoop['steps'] === 2
+  && str_contains($readPrompts[1], 'zweimal im gleichen Stand gelesen'),
+  'a repeated unchanged read gives the model a chance to proceed from the known file');
 // A writing tool with the same result three times still stops the run (nothing changes).
 $sameReplies = ['[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]'];
 $sameLoop = coreui_agent_loop_run('[AUSFUEHREN: npm test]', ['tool'=>'prun','input'=>'npm test'], 'BASIS', $projectFileTools, 0,

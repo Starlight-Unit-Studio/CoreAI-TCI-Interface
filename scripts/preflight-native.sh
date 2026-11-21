@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.18: a plain answer after tool work is Mara's answer again; selftests never reach the real Ollama.
+# CoreAI: TCI Interface 0.8.19: web search outcomes and project tool decisions use verified results.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -2378,6 +2378,12 @@ if command -v php >/dev/null 2>&1; then
     if [[ "$BROWSE_ENABLED" == '1' ]]; then
       if systemctl is-active --quiet ember-coreui-browse.service; then
         ok 'Browser worker is active.'
+        if browse_search="$(runuser -u www-data -- "$PROJECT_ROOT/var/venv/bin/python" \
+            "$PROJECT_ROOT/tools/ember_browse_worker.py" --config "$CONFIG_FILE" --check-search 2>&1)"; then
+          ok 'The configured SearXNG endpoint returned usable links to the browser worker.'
+        else
+          warn "${browse_search:-The browser worker could not check its configured SearXNG endpoint.}"
+        fi
       else
         fail 'Browser worker is not active.'
       fi

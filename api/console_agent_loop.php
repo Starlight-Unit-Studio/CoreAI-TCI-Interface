@@ -529,7 +529,7 @@ function coreui_agent_empty_followup_meta(array $report, int $step): array {
  * (testable without a server). Starts with the tool already found in
  * $out; returns the final text, a browser goal to hand over, and the steps.
  *   $callModel(string $prompt): ?string
- *   $runTool(array $tool): string
+ *   $runTool(array $tool): string|array (text, state and reason for web search)
  *   $record(string $kind, string $state, string $title, array $meta): void
  *   $cancelled(): bool
  */
@@ -547,6 +547,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $maxSteps = $projectWorkflow ? 0 : COREUI_AGENT_MAX_STEPS;
   $lastSignature = '';
   $stalled = 0;
+  $webMisses = 0;
   $stopReason = '';
   $taskOutcome = 'completed';
   $projectCompact = false;
@@ -595,8 +596,12 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     }
     $used++;
     $record('tool', 'running', $title, ['step'=>$used, 'reason'=>'agent_loop']);
-    $result = $runTool($tool);
-    $state = coreui_agent_tool_result_state($tool, $result);
+    $toolResult = $runTool($tool);
+    $result = is_array($toolResult) ? $toolResult['text'] : $toolResult;
+    $state = is_array($toolResult) ? $toolResult['state'] : coreui_agent_tool_result_state($tool, $result);
+    $reason = is_array($toolResult) ? $toolResult['reason']
+      : ($state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state);
+    if ($tool['tool'] === 'web') $webMisses = $state === 'success' ? 0 : $webMisses + 1;
     if ($projectWorkflow && $journal !== null
         && $journal('finish',$tool,$used,$result,$state) !== true) {
       // The tool may have succeeded but its receipt is unconfirmed. Never
@@ -607,7 +612,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       break;
     }
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
-      'reason'=>$state === 'success' ? 'verified_tool_result' : 'tool_result_' . $state]);
+      'reason'=>$reason]);
     if ($projectWorkflow) {
       $outcomeNote = coreui_agent_public_result_note($tool, $state, $result);
       if ($outcomeNote !== null) $record('commentary','info','Mara ordnet das Werkzeugergebnis ein',
@@ -621,6 +626,11 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $stalled = $signature === $lastSignature ? $stalled + 1 : 0;
     $lastSignature = $signature;
     $filePath=coreui_agent_file_target($tool);
+    if ($projectWorkflow && $stalled === 1 && $tool['tool'] === 'pfile_read' && $state === 'success') {
+      $steps[count($steps) - 1]['result'] .= "\n[CoreAI: Diese Datei wurde zweimal im gleichen Stand gelesen. "
+        . "Nutze den vorliegenden Inhalt fuer den naechsten Schritt. "
+        . "Lies dieselbe Datei erst erneut, wenn sich ihr Stand geaendert hat.]";
+    }
     if ($filePath !== '' && $state === 'success'
         && in_array((string)$tool['tool'], ['pfile_edit','pfile_write'],true)) {
       unset($fileEditFailures[$filePath]);
@@ -660,15 +670,16 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         ['reason'=>'edit_recovery_read_failed','step'=>$used,'file'=>$filePath]);
       break;
     }
-    // 0.8.17: a read-only tool that gave the same result three times (a web search without
-    // usable hits) leaves the menu of this run; the project work itself goes on without it.
-    if ($projectWorkflow && $stalled >= 2 && in_array((string)$tool['tool'], COREUI_AGENT_READ_ONLY_TOOLS, true)) {
+    // Give up on fruitless search even when each retry uses different words.
+    // Other read-only tools leave the menu after three identical results.
+    if ($projectWorkflow && ($webMisses >= 3 && $tool['tool'] === 'web'
+        || $stalled >= 2 && in_array((string)$tool['tool'], COREUI_AGENT_READ_ONLY_TOOLS, true))) {
       $allowed = array_values(array_diff($allowed, [(string)$tool['tool']]));
       $stalled = 0;
       $lastSignature = '';
-      $steps[count($steps) - 1]['result'] .= "\n[CoreAI: Dieses Werkzeug hat dreimal dasselbe Ergebnis geliefert "
+      $steps[count($steps) - 1]['result'] .= "\n[CoreAI: Dieses Werkzeug hat dreimal keinen neuen verwertbaren Fortschritt gebracht "
         . "und steht in diesem Auftrag nicht mehr zur Verfuegung. Arbeite mit dem vorhandenen Stand weiter.]";
-      $record('tool','info','Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis',
+      $record('tool','info','Werkzeug fuer diesen Auftrag beendet: drei ergebnislose Wiederholungen',
         ['reason'=>'repeated_identical_tool_disabled','step'=>$used,'source'=>(string)$tool['tool']]);
     }
     if ($projectWorkflow && $stalled >= 2) {

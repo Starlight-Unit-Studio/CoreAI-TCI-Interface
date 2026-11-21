@@ -22,6 +22,7 @@ import threading
 import time
 import types
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKER = ROOT / "tools" / "ember_browse_worker.py"
@@ -77,6 +78,30 @@ if not LIVE:
 spec = importlib.util.spec_from_file_location("ember_browse_worker", WORKER)
 w = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(w)
+
+# Exercise the production request and cleaner without an external search engine.
+search_url = "http://operator:secret@127.0.0.1:8888/custom/token?key=private"
+search_cfg = {"STU_EMBER_WEB_URL": search_url}
+with patch.object(w.requests, "get", create=True) as search_get:
+    response = search_get.return_value
+    response.json.return_value = {"results": [{"title": "Wikipedia", "url": "https://wikipedia.org/"}]}
+    check(w.searxng_preflight(search_cfg) == (0, ""), "usable link passes")
+    check(search_get.call_args.args[0] == search_url, "probe uses configured worker endpoint")
+    check(search_get.call_args.kwargs["params"] == {
+        "q": "Wikipedia", "format": "json", "language": "de", "safesearch": "1",
+    }, "probe uses production search parameters")
+    for rows in ([], [{"title": "Missing link"}], [{"url": "javascript:bad", "title": "Bad"}]):
+        response.json.return_value = {"results": rows}
+        status, message = w.searxng_preflight(search_cfg)
+        check(status == 1 and "returned no usable links" in message, "empty or unusable search")
+        check("127.0.0.1:8888" in message and all(
+            secret not in message for secret in ("operator", "secret", "token", "private")
+        ), "configured host and port visible without credentials")
+    response.json.return_value = {"results": None}
+    check("ValueError" in w.searxng_preflight(search_cfg)[1], "malformed JSON results fail")
+    search_get.side_effect = OSError("secret transport details")
+    status, message = w.searxng_preflight(search_cfg)
+    check(status == 1 and "OSError" in message and "secret" not in message, "transport failure is redacted")
 
 # ----------------------------------------------------------------------------- Teil 1
 

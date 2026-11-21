@@ -53,6 +53,7 @@ function coreui_web_research_fit_row(array &$row, int $index, int $remaining, in
 
 function coreui_web_research_next(string $input, array &$state, int $limit, int $timeout,
     ?int $maxChars = null, ?int $snippetChars = null): array {
+  $state['backend_available'] = null;
   $query = coreui_web_research_resolve_query($input, $state);
   if ($query === '') return [];
   $state['last_query'] = $query;
@@ -112,8 +113,9 @@ function coreui_web_research_next(string $input, array &$state, int $limit, int 
       . 'q=' . rawurlencode($variant)
       . '&format=json&language=de&safesearch=1&pageno=' . $page;
     $response = ember_http_get_json($url, $timeout);
-    $raw = is_array($response) && isset($response['results']) && is_array($response['results'])
-      ? $response['results'] : [];
+    $state['backend_available'] = is_array($response['results'] ?? null);
+    if (!$state['backend_available']) break;
+    $raw = $response['results'];
     if ($raw === []) {
       if ($page === 1 && $cursor['variant'] + 1 < count($cursor['variants'])) {
         // Preserve the existing question -> keywords fallback only on page one.
@@ -125,8 +127,7 @@ function coreui_web_research_next(string $input, array &$state, int $limit, int 
           . 'q=' . rawurlencode($variant)
           . '&format=json&language=de&safesearch=1&pageno=1';
         $response = ember_http_get_json($url, $timeout);
-        $raw = is_array($response) && isset($response['results']) && is_array($response['results'])
-          ? $response['results'] : [];
+        if (is_array($response['results'] ?? null)) $raw = $response['results'];
       }
       if ($raw === []) {
         $cursor['exhausted'] = true;

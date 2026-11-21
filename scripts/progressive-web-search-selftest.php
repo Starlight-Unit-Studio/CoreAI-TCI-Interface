@@ -19,7 +19,7 @@ function ember_http_get_json(string $url, int $timeout = 6): ?array {
     'safe'=>(string)($args['safesearch'] ?? '')];
   $query = (string)($args['q'] ?? '');
   $page = (int)($args['pageno'] ?? 0);
-  return $answers[$query][$page] ?? ['results'=>[]];
+  return array_key_exists($page, $answers[$query] ?? []) ? $answers[$query][$page] : ['results'=>[]];
 }
 foreach (['ember_web_url','ember_web_limit','ember_web_timeout','ember_web_max_chars',
   'ember_web_snippet_chars','ember_web_query_variants','ember_web_url_key',
@@ -86,6 +86,19 @@ test(array_column($found,'title') === ['Quelle 99'], 'question has keywords fall
 test(count($calls) === $start + 2 && $calls[$start]['q'] === 'Wer ist Nebelfalke?'
   && $calls[$start+1]['q'] === 'Nebelfalke',
   'only first page uses the established question fallback');
+
+$outage = [];
+$answers['Wikipedia'][1] = null;
+test(coreui_web_research_next('Wikipedia', $outage, 4, 12) === []
+  && $outage['backend_available'] === false, 'an unreachable search backend is not an empty result page');
+$answers['Wikipedia'][1] = ['results'=>[]];
+test(coreui_web_research_next('Wikipedia', $outage, 4, 12) === []
+  && $outage['backend_available'] === true, 'a valid empty reply remains distinguishable after recovery');
+$answers['Wieder da'][1] = null;
+test(coreui_web_research_next('Wieder da', $outage, 4, 12) === [], 'failed request returns no sources');
+$answers['Wieder da'][1] = ['results'=>[hit(101)]];
+test(array_column(coreui_web_research_next('Wieder da', $outage, 4, 12), 'title') === ['Quelle 101'],
+  'a temporary outage does not permanently exhaust the cursor');
 
 $answers['Quellensuche'][1] = ['results'=>[
   ['title'=>'Wichtiger Treffer','url'=>'https://example.org/news?utm_source=test',
