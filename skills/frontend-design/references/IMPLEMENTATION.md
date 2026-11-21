@@ -9,7 +9,7 @@ Nutzerziel, Seitentyp, Komponentenliste, Typografie und Hierarchie entwickeln; i
 1. Ausgangsdaten, Markenrechte, Projektkontext und Zielgerät erfassen.
 2. Konkrete Komponenten, Gestaltungsregeln, Dateien und Abnahmekriterien ableiten.
 3. Mit passenden Produktionswerkzeugen implementieren; reale Artefakte erzeugen.
-4. Durch Browser, Renderer und technische Prüfungen nachweisbar testen.
+4. Mit verfügbaren Projektwerkzeugen Verweise, Syntax und Interaktionen prüfen. Die visuelle Abnahme mit Browser oder Renderer durchführen, wenn diese Werkzeuge verfügbar sind. Andernfalls die noch ausstehende Prüfung benennen.
 5. Fehler korrigieren und validierte Resultate als Dateien ausgeben.
 
 ## Werkzeugvertrag und offene Voraussetzungen

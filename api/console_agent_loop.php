@@ -476,10 +476,14 @@ function coreui_agent_compacted_result(string $result): string {
 function coreui_agent_budget_steps(array $steps, int $budget = COREUI_AGENT_PROJECT_RESULT_BUDGET): array {
   $last = count($steps) - 1;
   $kept = 0;
+  $seenReads = [];
   for ($i = $last; $i >= 0; $i--) {
     $result = (string)($steps[$i]['result'] ?? '');
     $size = strlen($result);
-    if ($i !== $last && ($steps[$i]['state'] ?? '') === 'success' && $size > 1200 && $kept + $size > $budget) {
+    $read = $steps[$i]['read_signature'] ?? '';
+    $duplicateRead = $read !== '' && isset($seenReads[$read]);
+    if ($read !== '') $seenReads[$read] = true;
+    if ($duplicateRead || ($i !== $last && ($steps[$i]['state'] ?? '') === 'success' && $size > 1200 && $kept + $size > $budget)) {
       $steps[$i]['result'] = coreui_agent_compacted_result($result);
       continue;
     }
@@ -548,6 +552,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $lastSignature = '';
   $stalled = 0;
   $webMisses = 0;
+  $fileReadSignatures = [];
+  $repeatedFileReads = 0;
   $stopReason = '';
   $taskOutcome = 'completed';
   $projectCompact = false;
@@ -626,10 +632,27 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $stalled = $signature === $lastSignature ? $stalled + 1 : 0;
     $lastSignature = $signature;
     $filePath=coreui_agent_file_target($tool);
-    if ($projectWorkflow && $stalled === 1 && $tool['tool'] === 'pfile_read' && $state === 'success') {
-      $steps[count($steps) - 1]['result'] .= "\n[CoreAI: Diese Datei wurde zweimal im gleichen Stand gelesen. "
-        . "Nutze den vorliegenden Inhalt fuer den naechsten Schritt. "
-        . "Lies dieselbe Datei erst erneut, wenn sich ihr Stand geaendert hat.]";
+    if ($projectWorkflow && $tool['tool'] === 'pfile_read' && $state === 'success'
+        && empty($tool['recovery_read']) && $filePath !== '') {
+      $readSignature = hash('sha256', $filePath . "\n" . $result);
+      $lastStep = count($steps) - 1;
+      $steps[$lastStep]['read_signature'] = $readSignature;
+      $repeatedFileReads = ($fileReadSignatures[$filePath] ?? '') === $readSignature
+        ? $repeatedFileReads + 1 : 0;
+      $fileReadSignatures[$filePath] = $readSignature;
+      if ($repeatedFileReads > 0) {
+        $steps[$lastStep]['result'] .= "\n[CoreAI: Diese Datei wurde bereits im gleichen Stand gelesen. "
+          . "Nutze die vorliegenden Dateiinhalte jetzt fuer die naechste Aenderung oder eine konkrete Pruefung. "
+          . "Wenn dir etwas fehlt, nenne die Blockade. Lies keine unveraenderte Datei erneut.]";
+      }
+      if ($repeatedFileReads >= 3) {
+        $stopReason = 'repeated_project_file_reads';
+        $record('tool','error','Projektarbeit nach unveränderten Dateilesevorgängen unterbrochen',
+          ['reason'=>$stopReason,'step'=>$used]);
+        break;
+      }
+    } else {
+      $repeatedFileReads = 0;
     }
     if ($filePath !== '' && $state === 'success'
         && in_array((string)$tool['tool'], ['pfile_edit','pfile_write'],true)) {
@@ -654,7 +677,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       if (str_starts_with($result, 'Die Datei ')) {
         $record('tool','info','Datei nach fehlgeschlagener Änderung erneut lesen',
           ['reason'=>'edit_recovery_read','step'=>$used,'file'=>$filePath]);
-        $tool=['tool'=>'pfile_read','input'=>$filePath,'recovery_read'=>true];
+        $tool=['tool'=>'pfile_read','input'=>$filePath,'recovery_read'=>true,
+          'recovery_patch'=>explode("\n", (string)$tool['input'], 2)[1] ?? ''];
         continue;
       }
       // Database, permissions and storage failures cannot be repaired by
@@ -723,10 +747,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       return ['out'=>$final, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt, 'terminal'=>true];
     }
     if ($cancelled()) { if ($projectWorkflow) $stopReason='cancelled'; break; }
-    $prompt = $projectWorkflow && $projectCompact
+    $repairingEdit = ($tool['recovery_read'] ?? false) === true;
+    $prompt = $projectWorkflow && ($projectCompact || $repairingEdit)
       ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
       : coreui_agent_step_prompt($base, $projectWorkflow ? coreui_agent_budget_steps($steps) : $steps,
         $used, $maxSteps, $allowed);
+    if ($repairingEdit) {
+      $prompt .= "\n\nDATEIÄNDERUNG KORRIGIEREN: Nutze den zuletzt gelesenen Quelltext. "
+        . "Kopiere den kleinsten eindeutigen SUCHEN-Abschnitt exakt mit allen Leerzeichen "
+        . "und ohne Überschriften oder Zeilennummern. Ändere nur den benötigten Abschnitt. "
+        . "Fehlt er im Ausschnitt, melde die Blockade, statt den alten Text zu erraten.";
+    }
     $next = $callModel($prompt);
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
     if ($out === '' && $projectWorkflow) {
@@ -857,6 +888,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . ' wurde nicht gespeichert: ' . ($blockedExplanation !== '' ? $blockedExplanation : 'Werkzeugfehler')
         . '. Ich habe die Wiederholung beendet, statt dieselbe fehlgeschlagene Änderung erneut zu versuchen. '
         . 'Bereits gespeicherte Dateien bleiben unverändert. Details stehen im Arbeitsweg.';
+    } elseif ($stopReason === 'repeated_project_file_reads') {
+      $out = 'Ich habe dieselben Projektdateien wiederholt im gleichen Stand gelesen. '
+        . 'Der Auftrag ist deshalb unterbrochen. Bereits gespeicherte Änderungen sind im Projekt verfügbar.';
     } elseif ($stopReason === 'task_prose_unverified') {
       $out = $proseUnverified . "\n\n" . 'Nicht jeder Werkzeugschritt dieses Auftrags ist bestätigt, deshalb gilt er noch nicht '
         . 'als abgeschlossen. Bereits bestätigte Projektdateien bleiben gespeichert; die Details stehen im Arbeitsweg.';

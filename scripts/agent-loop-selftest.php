@@ -32,6 +32,17 @@ loop_test(!str_contains($agentSource, 'microtime(true) + 600.0')
   'project tools must not stop after an arbitrary ten-minute deadline');
 loop_test(coreui_agent_next_tool('Ich schaue nach. [WEB: gemma4 12b ollama]', $all) === ['tool'=>'web', 'input'=>'gemma4 12b ollama'], 'web marker');
 loop_test(coreui_agent_next_tool('[BROWSE: Changelog von Ollama lesen]', $all)['tool'] === 'browse', 'browse marker');
+$repoGoal = 'Prüfe das GitHub-Repository https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface auf dokumentierte Fähigkeiten.';
+$spacedBrowse = '[ BROWSE: ' . $repoGoal . ' ]';
+loop_test(coreui_agent_next_tool($spacedBrowse, $all) === ['tool'=>'browse','input'=>$repoGoal]
+  && coreui_agent_next_tool($spacedBrowse, ['web']) === ['tool'=>'web','input'=>$repoGoal]
+  && coreui_agent_next_tool($spacedBrowse, []) === null
+  && coreui_agent_guard_browser_reply($spacedBrowse, false, true) === '[WEB: ' . $repoGoal . ']',
+  'a spaced browser marker still follows the authorized browser or web route');
+loop_test(trim(ember_strip_stray_tool_markers($spacedBrowse)) === ''
+  && coreui_agent_next_tool('Syntax: ' . chr(96) . $spacedBrowse . chr(96), $all) === null
+  && coreui_agent_next_tool('[ WEB : GitHub README ]', ['web']) === ['tool'=>'web','input'=>'GitHub README'],
+  'spaced web markers cannot leak as prose, and quoted examples stay inert');
 loop_test(coreui_agent_next_tool("[PY]print(2**10)[/PY]", $all) === ['tool'=>'python', 'input'=>'print(2**10)'], 'python marker');
 loop_test(coreui_agent_next_tool('[ARCHIV: Port]', ['web']) === null, 'only allowed tools');
 loop_test(coreui_agent_next_tool('Erklaerung: `[WEB: x]` sucht im Netz.', $all) === null, 'mentions in code are no calls');
@@ -258,6 +269,8 @@ $editLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFil
   },static fn():bool=>false);
 loop_test(array_column($executed,'tool')===['pfile_edit','pfile_read','pfile_edit']
   && $executed[0]['input']!==$executed[2]['input']
+  && ($executed[1]['recovery_read'] ?? false) === true
+  && str_contains((string)($executed[1]['recovery_patch'] ?? ''), 'missing old text')
   && count($replies)===1 && $editLoop['steps']===3
   && str_contains((string)$editLoop['out'],'guestbook.html')
   && str_contains((string)$editLoop['out'],'wurde nicht gespeichert')
@@ -266,6 +279,8 @@ loop_test(array_column($executed,'tool')===['pfile_edit','pfile_read','pfile_edi
     ($e['meta']['reason']??'')==='same_file_edit_rejected_twice'))===1,
   'changed patch body cannot bypass no-progress guard; one read, one retry and honest stop');
 loop_test(str_contains($replies[0], '<form>saved original</form>')
+  && str_contains($replies[0], 'DATEIÄNDERUNG KORRIGIEREN')
+  && str_contains($replies[0], 'ohne Überschriften oder Zeilennummern')
   && str_contains($replies[0], 'Schritt 1')
   && str_contains($replies[0], 'Schritt 2'),
   'the repaired patch is grounded in a real reread of the saved file, not an invented replacement');
@@ -862,8 +877,33 @@ $readLoop = coreui_agent_loop_run('[DATEI: index.html]', ['tool'=>'pfile_read','
   static fn(array $tool): string => 'Unveraenderter Dateiinhalt.',
   static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
 loop_test(($readLoop['outcome'] ?? '') === 'completed' && $readLoop['steps'] === 2
-  && str_contains($readPrompts[1], 'zweimal im gleichen Stand gelesen'),
+  && str_contains($readPrompts[1], 'bereits im gleichen Stand gelesen'),
   'a repeated unchanged read gives the model a chance to proceed from the known file');
+
+foreach ([false, true] as $resumeWriting) {
+  $replies = ['[DATEI: styles.css]', '[DATEI: index.html]', '[DATEI: styles.css]'];
+  $replies = array_merge($replies, $resumeWriting
+    ? ["[DATEI_NEU: blog.html]\n<h1>Blog</h1>\n[/DATEI_NEU]", '[DATEI: index.html]', $taskDone('Blog angelegt.')]
+    : ['[DATEI: index.html]', '[DATEI: styles.css]']);
+  $prompts = [];
+  $loop = coreui_agent_loop_run('[DATEI: index.html]', ['tool'=>'pfile_read','input'=>'index.html'],
+    'BASIS', $projectFileTools, 0,
+    static function (string $prompt) use (&$replies, &$prompts): ?string {
+      $prompts[] = $prompt;
+      return array_shift($replies);
+    },
+    static fn(array $tool): string => $tool['tool'] === 'pfile_read'
+      ? 'QUELLE:' . $tool['input'] . ':' . str_repeat('x', 16000) : 'Bestaetigt.',
+    static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+  loop_test(substr_count($prompts[3], 'QUELLE:index.html:') === 1
+    && substr_count($prompts[3], 'QUELLE:styles.css:') === 1,
+    'duplicate file reads consume the prompt budget only once per source');
+  loop_test($resumeWriting
+    ? ($loop['outcome'] === 'completed' && $loop['steps'] === 6)
+    : ($loop['outcome'] === 'interrupted' && $loop['steps'] === 5
+        && $loop['reason'] === 'repeated_project_file_reads' && count($replies) === 1),
+    'alternating stale reads allow productive continuation but never spin indefinitely');
+}
 // A writing tool with the same result three times still stops the run (nothing changes).
 $sameReplies = ['[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]'];
 $sameLoop = coreui_agent_loop_run('[AUSFUEHREN: npm test]', ['tool'=>'prun','input'=>'npm test'], 'BASIS', $projectFileTools, 0,

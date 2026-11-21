@@ -328,6 +328,42 @@ function coreui_pftools_apply_edits(string $content, array $pairs): array {
   return ['ok'=>true, 'content'=>$crlf ? str_replace("\n", "\r\n", $text) : $text, 'error'=>'', 'added'=>$added, 'removed'=>$removed];
 }
 
+/** Raw saved text for patch recovery, focused on a unique surviving search line. */
+function coreui_pftools_recovery_source(string $content, string $patch): string {
+  $limit = 8000;
+  $content = str_replace("\r\n", "\n", $content);
+  if (strlen($content) <= $limit) return $content;
+
+  $candidates = [];
+  foreach (coreui_pftools_parse_edits($patch) as [$search]) {
+    foreach (explode("\n", $search) as $line) {
+      $line = trim((string)preg_replace('~^\s*[0-9]+ \| ~', '', $line));
+      if (strlen($line) >= 12) $candidates[$line] = strlen($line);
+    }
+  }
+  arsort($candidates, SORT_NUMERIC);
+  $anchor = 0;
+  $anchorBytes = 0;
+  foreach (array_slice(array_keys($candidates), 0, 24) as $line) {
+    $line = (string)$line;
+    if (substr_count($content, $line) !== 1) continue;
+    $anchor = strpos($content, $line);
+    $anchorBytes = strlen($line);
+    break;
+  }
+  $start = max(0, $anchor - intdiv($limit, 3));
+  $end = $start + $limit;
+  if ($start > 0 && $content[$start - 1] !== "\n") {
+    $newline = strpos($content, "\n", $start);
+    if ($newline !== false && $newline < $anchor) $start = $newline + 1;
+  }
+  if ($end < strlen($content)) {
+    $newline = strrpos($content, "\n", $end - strlen($content) - 1);
+    if ($newline !== false && $newline >= $anchor + $anchorBytes) $end = $newline;
+  }
+  return mb_strcut($content, $start, $end - $start, 'UTF-8');
+}
+
 /** A file with line numbers for Mara (pure), shortened to $max characters. */
 function coreui_pftools_numbered(string $content, int $max = COREUI_PFTOOLS_READ_CHARS): string {
   $lines = preg_split('~\r?\n~', $content) ?: [''];
@@ -562,8 +598,13 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
       $path = coreui_pfiles_path((string)$tool['input']);
       $file = coreui_pfiles_get($pdo, $uid, $projectId, $path);
       coreui_pftools_record($pdo, 'info', 'Projektdatei gelesen', ['count'=>1]);
-      return 'Datei ' . $file['path'] . ' (Stand ' . $file['revision'] . ', ' . $file['size_bytes'] . " Bytes):\n"
-        . coreui_pftools_numbered($file['content']) . "\n(Die Zeilennummern und \" | \" gehoeren nicht zur Datei.)";
+      $header = 'Datei ' . $file['path'] . ' (Stand ' . $file['revision'] . ', ' . $file['size_bytes'] . " Bytes):\n";
+      if (($tool['recovery_read'] ?? false) === true) {
+        return $header
+          . "Gespeicherter Quelltext ohne Zeilennummern (bei langen Dateien ein Ausschnitt):\n"
+          . coreui_pftools_recovery_source($file['content'], (string)($tool['recovery_patch'] ?? ''));
+      }
+      return $header . coreui_pftools_numbered($file['content']) . "\n(Die Zeilennummern und \" | \" gehoeren nicht zur Datei.)";
     }
     [$rawPath, $body] = coreui_pftools_split((string)$tool['input']);
     $path = coreui_pfiles_path($rawPath);

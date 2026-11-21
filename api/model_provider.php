@@ -427,13 +427,19 @@ function coreui_provider_wire(?array $provider, string $ollamaUrl, array $payloa
   $key = coreui_provider_key();
   $stream = !empty($payload['stream']);
   $translator = coreui_provider_stream_translator($key);
+  $model = (string)$provider['model'];
+  $body = coreui_provider_body($payload, $model);
+  if ($model === 'gpt-6-luna' && strcasecmp((string)parse_url($provider['base_url'], PHP_URL_HOST), 'api.openai.com') === 0) {
+    // Luna rejects top_p. Use the provider's generation defaults for this model.
+    unset($body['top_p'], $body['temperature'], $body['seed'], $body['stop']);
+  }
   return [
     'external' => true,
     'url' => $provider['base_url'] . '/chat/completions',
     'headers' => ['Content-Type: application/json', 'Accept: ' . ($stream ? 'text/event-stream' : 'application/json'),
       'Authorization: Bearer ' . $key],
-    'body' => coreui_provider_body($payload, (string)$provider['model']),
-    'model' => 'extern:' . $provider['model'],
+    'body' => $body,
+    'model' => 'extern:' . $model,
     'feed' => $translator['feed'],
     'finish' => $translator['finish'],
     'decode' => static fn(string $raw): string => coreui_provider_decode($raw, $key),

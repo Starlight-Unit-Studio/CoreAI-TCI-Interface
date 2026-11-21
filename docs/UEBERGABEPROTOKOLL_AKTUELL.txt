@@ -1,4 +1,8 @@
 COREAI: TCI INTERFACE // CURRENT WORK 21.11.2026
+Base 0.8.19, branch version 0.8.20, PR #381.
+See docs/UEBERGABEPROTOKOLL_0_8_20.txt.
+--- PREVIOUS STATE ---
+COREAI: TCI INTERFACE // CURRENT WORK 21.11.2026
 Base 0.8.18, branch version 0.8.19.
 Web search outcome and project tool decision regressions.
 See docs/UEBERGABEPROTOKOLL_0_8_19.txt.

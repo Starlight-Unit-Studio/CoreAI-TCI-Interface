@@ -246,6 +246,30 @@ $looks = 0;
 $sleep = static function () use ($pdo, &$w, &$looks): void { $looks++; env_worker($pdo, $w); };
 $tool = static fn(string $sid, string $kind, string $input = ''): string => coreui_pftools_run($pdo, 7, $sid, ['tool'=>$kind, 'input'=>$input], $sleep);
 
+// A failed whole block can still contain an anchor beyond the normal read cap.
+$oldNav = '    <nav id="project-links"><a href="blog.html">Blog</a></nav>';
+$newNav = '    <nav id="project-links"><a href="guestbook.html">Gästebuch</a></nav>';
+$source = str_repeat("<!-- langer Seiteninhalt -->\r\n", 730) . $oldNav . "\r\n";
+coreui_pfiles_write($pdo, 7, $a, 'edit-recovery.html', $source, 'build');
+$patch = "<<<<<<< SUCHEN\n731 | " . trim($oldNav) . "\n=======\n$newNav\n>>>>>>> ERSETZEN";
+$before = coreui_pfiles_get($pdo, 7, $a, 'edit-recovery.html');
+$failed = $tool('cs_server', 'pfile_edit', "edit-recovery.html\n$patch");
+env_test(str_contains($failed, 'SUCHEN-Text kommt nicht') &&
+  coreui_pfiles_get($pdo, 7, $a, 'edit-recovery.html')['sha256'] === $before['sha256'],
+  'first rejected edit cannot change the saved file');
+env_test(!str_contains($tool('cs_server', 'pfile_read', 'edit-recovery.html'), $oldNav),
+  'ordinary numbered read ends before the target line');
+$recovery = coreui_pftools_run($pdo, 7, 'cs_server', [
+  'tool'=>'pfile_read', 'input'=>'edit-recovery.html', 'recovery_read'=>true, 'recovery_patch'=>$patch,
+]);
+env_test(str_contains($recovery, "\n$oldNav") && !str_contains($recovery, '731 |')
+  && strlen($recovery) < 8200, 'recovery returns exact raw source near the anchor beyond the ordinary read cap');
+$retry = str_replace('731 | ' . trim($oldNav), $oldNav, $patch);
+env_test(str_starts_with($tool('cs_server', 'pfile_edit', "edit-recovery.html\n$retry"), 'Datei edit-recovery.html geaendert') &&
+  coreui_pfiles_get($pdo, 7, $a, 'edit-recovery.html')['content'] === str_replace($oldNav, $newNav, $source),
+  'a patch grounded in the raw excerpt changes only the intended line and preserves CRLF');
+$GLOBALS['env_events'] = [];
+
 // A model's invented shell syntax must never become a claimed server start.
 $unknownTool = ember_strip_stray_tool_markers("Ich starte jetzt den Server.\n[linux-shell: npm run dev]");
 env_test(str_contains($unknownTool, 'NICHT ausgefuehrt')
