@@ -49,6 +49,7 @@
     marker_malformed:'ein Steuermarker ohne gültige eckige Klammern',
     // 0.8.17
     tool_unclosed:'ein Werkzeugblock ohne Schlussmarker',
+    command_multiline:'ein mehrzeiliger AUSFUEHREN-Aufruf',
     output_truncated:'eine an der Ausgabegrenze abgeschnittene Antwort'
   };
 
@@ -177,6 +178,8 @@
       case 'Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt':
         return 'Meine Antwort stützt sich auf bestätigte Werkzeugschritte; der Auftrag ist damit abgeschlossen.';
       // 0.8.17: a read-only tool that repeated itself leaves the run; the project work goes on.
+      case 'Werkzeug fuer diesen Auftrag beendet: drei ergebnislose Wiederholungen':
+        return 'Drei Versuche mit diesem Werkzeug haben keinen neuen Fortschritt gebracht. Ich arbeite mit dem vorhandenen Stand weiter.';
       case 'Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis':
         return 'Dieses Werkzeug hat dreimal dasselbe Ergebnis geliefert. Ich nutze es in diesem Auftrag '
           + 'nicht mehr und arbeite mit dem vorhandenen Stand weiter.';
@@ -259,6 +262,7 @@
       case 'Websuche gestartet':
         return 'Ich suche im Web nach passenden Quellen (Websuche).';
       case 'Websuche beendet':
+        if (event.meta.reason === 'research_search_backend_unavailable') return 'Der Websuchdienst ist gerade nicht erreichbar.';
         return Number(event.meta.knowledge_hits) > 0
           ? 'Ich habe Suchtreffer gefunden und prüfe ihre Angaben (Websuche).'
           : 'Die Websuche hat keine verwertbaren Treffer geliefert.';

@@ -21,6 +21,7 @@ jobs:
           python3 -m py_compile scripts/preflight-sync-selftest.py scripts/terminal-language-selftest.py
           python3 scripts/preflight-sync-selftest.py
           python3 scripts/terminal-language-selftest.py
+          COREAI_BROWSE_LIVE=0 python3 scripts/browse-worker-selftest.py
           bash -n setup.sh scripts/install.sh scripts/install-native.sh scripts/migrate.sh
       - name: PHP syntax of plan build and workflow regression contracts
         run: |

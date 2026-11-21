@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.18: a plain answer after tool work is Mara's answer again; selftests never reach the real Ollama.
+# CoreAI: TCI Interface 0.8.19: web search outcomes and project tool decisions use verified results.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -957,16 +957,12 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     check_service browse 'CoreAI: TCI Interface-Browse-Worker'
   fi
 
-  # A running search container need not produce usable search results.
-  # Probe from the same host-network worker and warn if its backend is empty.
-  if is_enabled "${COREUI_INSTALL_SEARXNG:-0}" && is_enabled "${COREUI_INSTALL_BROWSE:-0}" \
-    && service_running searxng && service_running browse; then
-    if compose exec -T browse python3 -c \
-       'import sys;sys.path.insert(0,"/var/www/coreui/tools");import ember_browse_worker as w;c=w.parse_php_config("/var/www/coreui/api/config.local.php");r=w.searxng_search(c,"Wikipedia",raise_errors=True);sys.exit(0 if r else 1)' \
-       >/dev/null 2>&1; then
-      ok 'Deep Research: SearXNG liefert im Browse-Container echte Suchtreffer.'
+  # The configured search URL may point to an independently managed instance.
+  if is_enabled "${COREUI_INSTALL_BROWSE:-0}" && service_running browse; then
+    if browse_search="$(compose exec -T browse python3 /var/www/coreui/tools/ember_browse_worker.py --check-search 2>&1)"; then
+      ok 'The configured SearXNG endpoint returned usable links to the browser worker.'
     else
-      warn 'Deep Research: SearXNG returns no search results or is unreachable. Fallback search may be used.'
+      warn "${browse_search:-The browser worker could not check its configured SearXNG endpoint.}"
     fi
   fi
 
@@ -2631,7 +2627,7 @@ fi
 if is_enabled "${COREUI_INSTALL_SEARXNG:-0}"; then
   if curl -fsS --max-time 10 \
       "http://127.0.0.1:${COREUI_SEARXNG_PORT}/search?q=ember&format=json" >/dev/null 2>&1; then
-    ok "Eigene SearXNG-JSON-Suche antwortet auf Port ${COREUI_SEARXNG_PORT}."
+    ok "The dedicated SearXNG JSON endpoint responds on port ${COREUI_SEARXNG_PORT}."
   else
     fail "Dedicated SearXNG JSON search is not responding on port ${COREUI_SEARXNG_PORT}."
   fi

@@ -1808,10 +1808,14 @@ def clean_results(items, limit):
     return out
 
 
+def searxng_url(cfg):
+    return (cfg.get("STU_EMBER_WEB_URL") or DEFAULTS["STU_EMBER_WEB_URL"]).strip()
+
+
 def searxng_search(cfg, query, log=None, raise_errors=False):
     """Lokale SearXNG-JSON-Suche (dieselbe Instanz wie chat.php, Key STU_EMBER_WEB_URL).
     Laeuft serverseitig gegen 127.0.0.1 -> kein Bot-CAPTCHA. Gibt Liste [{title,url,content}] zurueck."""
-    base = (cfg.get("STU_EMBER_WEB_URL") or "http://127.0.0.1:18889/search").strip()
+    base = searxng_url(cfg)
     try:
         limit = max(1, min(10, int(cfg.get("STU_EMBER_WEB_LIMIT") or 5)))
     except (TypeError, ValueError):
@@ -1833,14 +1837,43 @@ def searxng_search(cfg, query, log=None, raise_errors=False):
             if raise_errors:
                 raise
             return []
-        if raise_errors and not isinstance(data, dict):
-            raise ValueError("SearXNG returned invalid JSON response")
-        out = clean_results(data.get("results") if isinstance(data, dict) else [], limit)
+        results = data.get("results") if isinstance(data, dict) else None
+        if not isinstance(results, list):
+            if raise_errors:
+                raise ValueError("SearXNG returned invalid JSON results")
+            return []
+        out = clean_results(results, limit)
         if out:
             if variant != query and log:
                 log(f"  searxng: stichworte {variant!r} statt der ganzen frage")
             return out
     return []
+
+
+def searxng_preflight(cfg):
+    """Probe the same endpoint and usable results as the running browser worker."""
+    try:
+        url = urlsplit(searxng_url(cfg))
+        if url.scheme not in ("http", "https") or not url.hostname:
+            raise ValueError("Invalid endpoint")
+        host = f"[{url.hostname}]" if ":" in url.hostname else url.hostname
+        port = f":{url.port}" if url.port is not None else ""
+        # Custom paths, credentials and query parameters can contain tokens.
+        path = url.path if url.path in ("", "/", "/search") else "/<configured-path>"
+        endpoint = f"{url.scheme}://{host}{port}{path}"
+    except ValueError:
+        return 1, "The configured SearXNG URL is invalid."
+
+    try:
+        results = searxng_search(cfg, "Wikipedia", raise_errors=True)
+    except Exception as exc:
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        detail = f"HTTP {status}" if isinstance(status, int) else type(exc).__name__
+        return 1, f"SearXNG at {endpoint} failed the browser worker search ({detail})."
+    if not any(row["url"] for row in results):
+        return 1, f"SearXNG at {endpoint} returned no usable links for the browser worker search."
+    return 0, ""
+
 
 
 def render_results(results):
@@ -2784,6 +2817,7 @@ def main():
     here = os.path.dirname(os.path.abspath(__file__))
     ap.add_argument("--config", default=os.environ.get(
         "STU_CONFIG", os.path.join(here, "..", "api", "config.local.php")))
+    ap.add_argument("--check-search", action="store_true", help="check the configured SearXNG endpoint")
     ap.add_argument("--once", action="store_true", help="genau einen Job abarbeiten, dann beenden")
     ap.add_argument("--poll", type=float, default=4.0, help="Poll-Intervall in Sekunden")
     args = ap.parse_args()
@@ -2792,6 +2826,11 @@ def main():
     signal.signal(signal.SIGINT, _stop)
 
     cfg = parse_php_config(os.path.abspath(args.config))
+    if args.check_search:
+        code, diagnostic = searxng_preflight(cfg)
+        if diagnostic:
+            print(diagnostic, file=sys.stderr)
+        return code
     if not cfg.get("STU_EMBER_BROWSE_SCREENSHOT_DIR"):
         cfg["STU_EMBER_BROWSE_SCREENSHOT_DIR"] = os.path.abspath(
             os.path.join(here, "..", "uploads", "ember_browse")
@@ -2878,4 +2917,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

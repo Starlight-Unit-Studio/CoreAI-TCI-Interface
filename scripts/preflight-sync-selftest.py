@@ -45,6 +45,8 @@ def verify(root: Path) -> list[str]:
             failures.append(f"{rel}: preflight contract runner not called")
         if 'scripts/terminal-language-selftest.py' not in body or 'terminal_language_report=' not in body:
             failures.append(f"{rel}: English-language terminal diagnostic guard not called")
+        if not re.search(r"ember_browse_worker\.py[^\n]*--check-search", body):
+            failures.append(f"{rel}: configured browser search probe is not executed")
         for test in REQUIRED_TESTS:
             if not (root / test).is_file():
                 failures.append(f"{test}: missing")

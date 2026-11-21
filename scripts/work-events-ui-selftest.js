@@ -371,6 +371,13 @@ assert(cutFailure.textContent.includes('Fehlertyp: eine an der Ausgabegrenze abg
   && cutFailure.textContent.includes('Ich nutze es in diesem Auftrag nicht mehr und arbeite mit dem vorhandenen Stand weiter'),
   'cut answers, unclosed blocks and the two 0.8.17 notes are readable: ' + cutFailure.textContent);
 
+const searchOutage = work.create({events:[{
+  id:289, kind:'tool', state:'info', title:'Websuche beendet',
+  meta:{reason:'research_search_backend_unavailable',knowledge_hits:0,source:'web'}
+}]});
+assert(searchOutage.textContent.includes('Der Websuchdienst ist gerade nicht erreichbar.'),
+  'a search outage is distinguished from a valid empty result');
+
 // 0.5.62: actual source-code chunks display below the same live work
 // timeline. They are never loaded into saved events or rendered as HTML.
 const liveCode = work.create({live:true,expanded:true});

@@ -47,6 +47,7 @@ const COREUI_TASK_SHAPES = [
   'marker_malformed' => 'COREUI_TASK ohne gueltige eckige Klammern',
   // 0.8.17: a file or code block that was opened but never closed (it counted as prose_only before).
   'tool_unclosed' => 'ein Werkzeugblock ohne Schlussmarker',
+  'command_multiline' => 'ein mehrzeiliger AUSFUEHREN-Aufruf',
   // 0.8.17: the provider or Ollama ended the answer at its length limit.
   'output_truncated' => 'eine an der Ausgabegrenze abgeschnittene Antwort',
 ];
@@ -73,6 +74,11 @@ function coreui_task_unclosed_tool_block(string $reply): bool {
   return preg_match_all('~\[PY\]~i', $reply) > preg_match_all('~\[/PY\]~i', $reply);
 }
 
+/** A command spanning lines cannot pass the single-line project command parser. */
+function coreui_task_multiline_command(string $reply): bool {
+  return preg_match('~(?:\A|\R)[ \t]*\[\s*AUSF(?:UE|Ü)HREN[ \t]*:[^\]\r\n]*\R~iu', $reply) === 1;
+}
+
 /**
  * Pure decision from one model reply. The tool parser is the existing
  * allowlist-scoped parser, not a second, weaker tool protocol.
@@ -89,10 +95,13 @@ function coreui_task_decision(string $reply, callable $parseTool): array {
   $count = (int)preg_match_all('~\[(/?)COREUI_TASK_([A-Z_]+)\]~', $reply, $hits, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
   if ($count === 0) {
     $action = $parseTool($reply);
+    $fileBlock = in_array($action['tool'] ?? '', ['pfile_write', 'pfile_edit'], true);
+    if (!$fileBlock && coreui_task_multiline_command($reply)) return $invalid('command_multiline');
     if (is_array($action)) return ['kind'=>'action', 'tool'=>$action, 'text'=>'', 'shape'=>''];
     if (coreui_task_unclosed_tool_block($reply)) return $invalid('tool_unclosed');
     return $invalid(stripos($reply, 'COREUI_TASK') !== false ? 'marker_malformed' : 'prose_only');
   }
+  if (coreui_task_multiline_command($reply)) return $invalid('command_multiline');
   $kinds = ['DONE'=>'done', 'BLOCKED'=>'blocked'];
   foreach ($hits as $hit) {
     if (!isset($kinds[$hit[2][0]])) return $invalid('marker_unknown');
@@ -171,7 +180,13 @@ function coreui_task_decision_repair_prompt(string $verifiedContext, string $sha
     . " und " . COREUI_TASK_DONE_CLOSE . " zurueck. Beschreibt sie eine Blockade, nimm " . COREUI_TASK_BLOCKED_OPEN
     . " und " . COREUI_TASK_BLOCKED_CLOSE . ". Ist noch Arbeit offen, antworte nur mit dem naechsten Werkzeugmarker.";
   // 0.8.17: a cut-off block is not echoed (it would be written again and cut again).
-  if (in_array($shape, ['tool_unclosed', 'output_truncated'], true)) $echo = coreui_task_truncation_repair_text($shape);
+  if ($shape === 'command_multiline' || ($shape === 'output_truncated' && coreui_task_multiline_command($previous))) {
+    $echo = "\nDer vorige AUSFUEHREN-Aufruf war mehrzeilig und wurde nicht ausgefuehrt. "
+        . "Nutze einen einzigen vollstaendigen [AUSFUEHREN: befehl]-Marker auf einer Zeile. "
+        . "Wenn du ein laengeres Pruefskript brauchst, speichere es zuerst mit DATEI_NEU.";
+  } elseif (in_array($shape, ['tool_unclosed', 'output_truncated'], true)) {
+    $echo = coreui_task_truncation_repair_text($shape);
+  }
   return $verifiedContext . coreui_task_protocol_prompt() . $echo
     . "\nDeine letzte Ausgabe war keine gueltige Steuerentscheidung"
     . ($seen !== '' ? ' (erkannt: ' . $seen . ')' : '') . ". "
