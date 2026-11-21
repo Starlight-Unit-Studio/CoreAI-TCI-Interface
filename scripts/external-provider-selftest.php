@@ -238,6 +238,16 @@ $wire = coreui_provider_wire(['label'=>'T', 'base_url'=>$base, 'model'=>'stub-mo
 ext_test($wire['external'] && $wire['url'] === $base . '/chat/completions' && $wire['model'] === 'extern:stub-model'
   && in_array('Authorization: Bearer ' . EXT_KEY, $wire['headers'], true) && in_array('Accept: text/event-stream', $wire['headers'], true)
   && !str_contains((string)json_encode($wire['body']), EXT_KEY), 'the line to the external API, the key only in the header');
+$luna = ['label'=>'OpenAI', 'base_url'=>'https://api.openai.com/v1', 'model'=>'gpt-6-luna'];
+foreach ([false, true] as $stream) {
+  $lunaWire = coreui_provider_wire($luna, '', ['stream'=>$stream] + $payload, 'gemma4:e4b');
+  ext_test($lunaWire['body'] === ['model'=>'gpt-6-luna', 'messages'=>$body['messages'], 'stream'=>$stream],
+    'OpenAI Luna uses provider defaults in both request modes');
+}
+$otherProviderLuna = coreui_provider_wire(['base_url'=>$base] + $luna, '', $payload, 'gemma4:e4b');
+$otherOpenAIModel = coreui_provider_wire(['model'=>'gpt-4o-mini'] + $luna, '', $payload, 'gemma4:e4b');
+ext_test($otherProviderLuna['body']['top_p'] === 0.9 && $otherOpenAIModel['body']['top_p'] === 0.9,
+  'other providers and other OpenAI models retain their existing options');
 $local = coreui_provider_wire(null, 'http://127.0.0.1:11434/api/chat', $payload, 'gemma4:e4b');
 ext_test(!$local['external'] && $local['url'] === 'http://127.0.0.1:11434/api/chat' && $local['body'] === $payload
   && $local['headers'] === ['Content-Type: application/json'] && $local['model'] === 'gemma4:e4b'
