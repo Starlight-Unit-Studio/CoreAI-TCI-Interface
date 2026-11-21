@@ -1175,6 +1175,16 @@
     return !wasPending;
   }
 
+  function restoreLiveBrowse(ses, run) {
+    if (!ses || !run || run.status !== 'waiting_tool') return;
+    var sessionId = String(ses.id);
+    var jobId = Number(run.browse_job_id);
+    var activeRun = state.activeAgentRunsBySession[sessionId];
+    if (!isActiveSession(sessionId) || !activeRun || activeRun.id !== String(run.id)
+        || !Number.isSafeInteger(jobId) || jobId <= 0) return;
+    openBrowseWindow(jobId, sessionId);
+  }
+
   // Reattach to the EXISTING server-owned job. Only an unclaimed, queued
   // job needs its first SSE request; running jobs must only be observed.
   // The lock + queued->running transition on the server prevent duplicate work.
@@ -1184,6 +1194,7 @@
     if (turnId <= 0) return;
     var runKey = String(run.run_key || 'base');
     var status = String(run.status || '');
+    restoreLiveBrowse(ses, run);
     if (status === 'queued') {
       var turn = (state.messageCacheBySession[String(ses.id)] || []).find(function (row) {
         return Number(row.id) === turnId && !isEmberMsg(row);
@@ -1236,6 +1247,7 @@
     // No intermediate blank frame: the previous messages stay untouched
     // until the entire new view was built successfully.
     visibleInner.replaceChildren.apply(visibleInner,Array.prototype.slice.call(draft.childNodes));
+    if (state.liveBrowse && !state.liveBrowse.panel.isConnected) state.liveBrowse.close();
     if (chatFollow) chatFollow.refresh();
   }
 
@@ -1429,6 +1441,7 @@
         if (!prepend) scrollToBottom();
         renderSessionList();
         if (resumed) reconnectRecoveredRun(ses, d.active_run);
+        else restoreLiveBrowse(ses, d.active_run);
         scheduleBackgroundPoll();
       } catch (renderError) {
         // The HTTP request succeeded. Do not mislabel a DOM failure as a
@@ -3601,7 +3614,7 @@
       ? String(generationRequest.id) : 'base';
     var savedWork = workEventMerge(data && data.work_events,
       liveWorkForReply(sessionId,Number(userMsgId),workRunKey));
-    rememberFinishedRun(sessionId, data && data.agent_run_id);
+    if (browseJobId <= 0) rememberFinishedRun(sessionId, data && data.agent_run_id);
     if (emberId > 0 && savedWork.length) {
       state.lastCompletedWorkMessageBySession[sessionId] = emberId;
     }
@@ -3771,7 +3784,12 @@
   }
 
   function openBrowseWindow(jobId, sessionId) {
-    var panel       = buildBrowsePanel();
+    var current = state.liveBrowse;
+    if (current && current.jobId === jobId && current.sessionId === sessionId
+        && current.panel.isConnected) return;
+    if (current) current.close();
+    if (state.typingEl) removeTypingIndicator();
+    var panel = buildBrowsePanel();
     var browseStop = document.createElement('button');
     browseStop.type = 'button';
     browseStop.className = 'agent-stop-button';
@@ -3957,6 +3975,7 @@
       clearTimeout(reconnectTimer);
       stopThinking();
       try { if (es) es.close(); } catch (e) {}
+      if (state.liveBrowse && state.liveBrowse.panel === panel) state.liveBrowse = null;
       if (head) head.textContent = label;
       panel.classList.remove('running');
       panel.classList.add('complete');
@@ -4056,6 +4075,9 @@
       });
     }
 
+    state.liveBrowse = {jobId:jobId,sessionId:sessionId,panel:panel,close:function () {
+      finishB('GETRENNT');
+    }};
     connect();
   }
 

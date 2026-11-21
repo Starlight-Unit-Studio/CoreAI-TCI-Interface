@@ -7,8 +7,11 @@ Passing it is NOT a substitute for running the real preflight on each host.
 from __future__ import annotations
 
 import argparse
+import ast
+from contextlib import nullcontext
 from pathlib import Path
 import re
+from unittest.mock import Mock
 
 PREFLIGHTS = ("scripts/preflight.sh", "scripts/preflight-native.sh")
 # Safety-critical cross-mode contracts. The two plan tests caught the 0.7.94
@@ -27,8 +30,45 @@ REQUIRED_TESTS = (
 RULE_FILES = ("AGENTS.md", "CLAUDE.md", "docs/VERSIONING_POLICY.md")
 
 
+
+def verify_browser_job_recovery(root: Path) -> list[str]:
+    worker = root / "tools/ember_browse_worker.py"
+    source = ast.parse(worker.read_text(encoding="utf-8"))
+    # The worker imports Playwright and PyMySQL. The claim path can be run
+    # independently against fakes during the dependency-free preflight.
+    names = {"claim_available_browser_job", "fail_orphaned_browser_jobs"}
+    functions = [node for node in source.body
+                 if isinstance(node, ast.FunctionDef) and node.name in names]
+    if len(functions) != len(names):
+        return ["Browser job recovery functions missing"]
+    database = Mock()
+    cursor = Mock()
+    database.cursor.return_value = nullcontext(cursor)
+    cursor.rowcount = 1
+    acquire = Mock(return_value=False)
+    release = Mock()
+    claim = Mock(return_value=None)
+    namespace = {"lock_acquire": acquire, "lock_release": release, "claim_next_job": claim}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), str(worker), "exec"), namespace)
+    next_job = namespace["claim_available_browser_job"]
+
+    next_job(database, {}, Mock())
+    if database.cursor.called or claim.called or release.called:
+        return ["Browser job recovery touched a job owned by another worker"]
+    acquire.return_value = True
+    next_job(database, {}, Mock())
+    if not cursor.execute.called or "WHERE status='running'" not in cursor.execute.call_args.args[0]:
+        return ["Browser job recovery must only close previously running jobs"]
+    if claim.call_count != 1 or release.call_count != 1:
+        return ["Browser job recovery must release the model lock when the queue is empty"]
+    claim.return_value = {"id": 2}
+    if next_job(database, {}, Mock()) != {"id": 2} or release.call_count != 1:
+        return ["Browser job processing must retain the model lock after its claim"]
+    return []
+
+
 def verify(root: Path) -> list[str]:
-    failures: list[str] = []
+    failures = verify_browser_job_recovery(root)
     for rel in RULE_FILES:
         path = root / rel
         if not path.is_file() or "PREFLIGHT_SYNC_GATE" not in path.read_text(encoding="utf-8"):

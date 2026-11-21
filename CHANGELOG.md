@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.22 - 21.11.2026
+
+- Reopening a chat during browser research reconnects its live view to the existing browser job. It preserves the active run and does not issue another inference request.
+- The browser worker closes interrupted jobs after a restart so chats can recover. It leaves queued work available and never replays the interrupted browser actions.
+
 ## 0.8.21 - 21.11.2026
 
 - Browser research opens explicitly supplied companion URLs before the first Ollama navigation decision when the starting URL also came from the user. This removes the model-dependent wait between those pages.
