@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.21 - 21.11.2026
+
+- Browser research opens explicitly supplied companion URLs before the first Ollama navigation decision when the starting URL also came from the user. This removes the model-dependent wait between those pages.
+- Additional pages use the existing navigation and network checks. Successful responses contribute source URLs and short text excerpts.
+
 ## 0.8.20 - 21.11.2026
 
 - Project edit recovery rereads current source without line numbers and focuses long files on the rejected patch.

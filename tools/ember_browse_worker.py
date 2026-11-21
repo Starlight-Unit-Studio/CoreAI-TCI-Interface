@@ -1906,6 +1906,21 @@ def safe_browser_url(value):
     return candidate
 
 
+def additional_browse_sources(start_url, user_message):
+    """Explicit companion URLs for a job already starting on a user-provided page."""
+    urls = {
+        url.rstrip("/"): url
+        for match in re.finditer(r"""https?://[^\s<>"'\[\]{}]+""", user_message, re.I)
+        if (url := safe_browser_url(match.group().rstrip(".,;:!?)")))
+        and not urlsplit(url).username and not urlsplit(url).password
+    }
+    start = (start_url or "").rstrip("/")
+    if start not in urls:
+        return []
+    # The report exposes at most six source URLs, including the starting page.
+    return [url for key, url in urls.items() if key != start][:5]
+
+
 def render_search_browser_html(query, results):
     """Erzeugt die erste sichtbare Browserseite aus den lokalen SearXNG-Treffern.
     Alle fremden Inhalte werden escaped; es wird niemals Suchtreffer-HTML ausgefuehrt."""
@@ -2323,7 +2338,7 @@ def reading_path(targets, limit=24):
 # ----------------------------------------------------------------------------- browse
 
 
-def run_browse(cfg, job, log, push_frame=None, say=None):
+def run_browse(cfg, job, log, push_frame=None, say=None, user_message=""):
     """Ein Browse-Auftrag. Gibt (befund, schritte, screenshot, quellen) zurueck.
     say(text, kind) meldet menschlich lesbare Zwischenstaende an die Live-Ansicht."""
     say_out = say if callable(say) else (lambda text, kind="step": None)
@@ -2473,19 +2488,35 @@ def run_browse(cfg, job, log, push_frame=None, say=None):
             )
         except Exception as exc:
             log(f"  suchansicht konnte nicht gerendert werden: {short_error(exc)}")
-        if start_url:
-            reason = navigation_block_reason(start_url, cfg)
+        companion_urls = additional_browse_sources(start_url, user_message)
+        for target in ([start_url, *companion_urls] if start_url else []):
+            if target in sources:
+                continue
+            reason = navigation_block_reason(target, cfg)
             if reason:
                 steps.append(f"start-goto blockiert: {reason}")
-            else:
-                try:
-                    tell(f"Öffne {urlsplit(start_url).hostname}")
-                    page.goto(start_url, wait_until="domcontentloaded", timeout=30000)
-                    dismiss_consent(page, log)
+                continue
+            try:
+                tell(f"Öffne {urlsplit(target).hostname}")
+                response = page.goto(target, wait_until="domcontentloaded", timeout=30000)
+                if response is not None and not response.ok:
+                    steps.append(f"start-goto fehler: HTTP {response.status}")
+                    continue
+                dismiss_consent(page, log)
+                if page.url not in sources:
                     sources.append(page.url)
+                if companion_urls:
+                    excerpt = page_full_text(page)[:300]
+                    if excerpt:
+                        host = urlsplit(page.url).hostname
+                        notes.append({"text": excerpt, "url": page.url, "host": host, "title": page.title()[:120]})
+                        if host and host not in visited_hosts:
+                            visited_hosts.append(host)
+                    grab_frame(0, "Angegebene Quelle geöffnet")
+                else:
                     grab_burst(0, "Startseite geoeffnet")
-                except Exception as exc:
-                    steps.append(f"start-goto fehler: {short_error(exc)}")
+            except Exception as exc:
+                steps.append(f"start-goto fehler: {short_error(exc)}")
 
         def point(box, label, click):
             viewport = page.viewport_size or {"width": 1280, "height": 900}
@@ -2744,8 +2775,10 @@ def process_job(conn, cfg, job, log):
         )
 
     try:
-        summary, steps, shot, sources, notes = run_browse(job_cfg, job, log, push_frame=jframe, say=say)
         original_user_message = browse_original_user_message(conn, job)
+        summary, steps, shot, sources, notes = run_browse(
+            job_cfg, job, log, push_frame=jframe, say=say, user_message=original_user_message
+        )
         say(f"{name} formuliert die Antwort", "think")
         # Ergebnis in Maras Stimme. Kein eigener System-Text: ihr Modelfile bestimmt die Persona.
         # think=False -> kein Denkprotokoll im Output.

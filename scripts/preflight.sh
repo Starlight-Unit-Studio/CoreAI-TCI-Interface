@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.20: project file recovery, external Luna compatibility and tool guidance.
+# CoreAI: TCI Interface 0.8.21: load supplied browser sources before the first model action.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

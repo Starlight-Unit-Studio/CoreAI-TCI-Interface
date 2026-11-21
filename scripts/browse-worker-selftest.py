@@ -333,7 +333,13 @@ check(w.call_with_heartbeat(lambda: 7, lambda e: (_ for _ in ()).throw(RuntimeEr
 src = WORKER.read_text(encoding="utf-8")
 check("page.accessibility" not in src, "no removed Playwright API")
 check('"options": {"temperature"' not in src and "num_predict=" not in src, "no tuning left in the worker")
-check("run_browse(job_cfg, job, log, push_frame=jframe, say=say)" in src and "kind VARCHAR(16)" in src, "job Core and step kinds")
+check("run_browse(" in src and "job_cfg, job, log, push_frame=jframe, say=say, user_message=original_user_message" in src
+      and "kind VARCHAR(16)" in src, "job Core, triggering message and step kinds")
+check(w.additional_browse_sources("https://one.example/", "Lies https://one.example und <https://two.example/docs>. https://two.example/docs") == ["https://two.example/docs"],
+      "deduplicated companion URL supplied by the user")
+check(w.additional_browse_sources("https://other.example/", "https://one.example https://two.example") == []
+      and w.additional_browse_sources("https://one.example/", "https://one.example https://user:pass@two.example") == [],
+      "no companion loading for unrelated jobs or URLs containing credentials")
 chat = (ROOT / "api" / "chat.php").read_text(encoding="utf-8")
 check("ADD COLUMN IF NOT EXISTS model VARCHAR(160) NULL" in chat and "$numCtx = ember_profile_num_ctx($model);" in chat
       and "max_steps, model, num_ctx)" in chat, "chat stores the Core with the job")
@@ -431,7 +437,7 @@ def ref_of(prompt, label):
     fail(f"element {label!r} missing in prompt:\n{prompt[:1500]}")
 
 
-def run(script, cfg_over=None, start=None, model_delay=0.0, search=None):
+def run(script, cfg_over=None, start=None, model_delay=0.0, search=None, user_message=""):
     """Ein Lauf mit nachgebautem Core: script ist eine Liste von Funktionen prompt -> Aktion."""
     prompts, said, frames = [], [], []
 
@@ -452,9 +458,17 @@ def run(script, cfg_over=None, start=None, model_delay=0.0, search=None):
     result = w.run_browse(run_cfg, job, lambda m: None,
                           push_frame=lambda *a: frames.append({"step": a[0], "image": bool(a[1]), "cx": a[2], "cy": a[3],
                                                                "url": a[6], "label": a[7], "click": a[8]}),
-                          say=lambda text, kind="step": said.append((kind, text)))
+                          say=lambda text, kind="step": said.append((kind, text)), user_message=user_message)
     return result, prompts, said, frames
 
+
+(_, _, _, sources, notes), prompts, _, _ = run(
+    [lambda p: {"action": "done", "summary": "Quellen gelesen."}],
+    start=BASE + "/shop", user_message=f"Lies {BASE}/shop und {BASE}/kontakt."
+)
+check(sources[:2] == [BASE + "/shop", BASE + "/kontakt"]
+      and [note["url"] for note in notes[:2]] == sources[:2]
+      and len(prompts) == 1 and BASE + "/kontakt" in prompts[0], "both supplied pages reach the first model action")
 
 # Suchformular: tippen, auswaehlen, anhaken, abschicken, lesen.
 script = [
