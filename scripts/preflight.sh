@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.19: web search outcomes and project tool decisions use verified results.
+# CoreAI: TCI Interface 0.8.20: project file recovery, external Luna compatibility and tool guidance.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

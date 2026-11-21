@@ -1,5 +1,13 @@
 # CoreAI: TCI Interface
 
+## 0.8.20 - 21.11.2026
+
+- Project edit recovery rereads current source without line numbers and focuses long files on the rejected patch.
+- Project runs recognize alternating reads of unchanged files, keep each source once in the working context and stop sustained repetition.
+- Requests to OpenAI gpt-6-luna use provider generation defaults to avoid an unsupported top_p parameter.
+- Web and browser markers tolerate incidental spaces. Browser routing still requires the explicit research selection.
+- Tool and project skills use supplied evidence first and continue with available editing and verification tools after a failed lookup.
+
 ## 0.8.19 - 21.11.2026
 
 - Compose and Native preflight query the configured SearXNG endpoint through the browser worker and require an actual result link for a passing probe. Empty results and request errors warn with the configured host and port, including for independently managed search instances.
