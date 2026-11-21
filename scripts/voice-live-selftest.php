@@ -170,7 +170,11 @@ file_put_contents($base . '/app.php', <<<'PHP'
 <?php
 // Signs the test account in and runs the real endpoint.
 $root = getenv('COREAI_ROOT');
+// 0.8.18: the installation's config.local.php names its own Ollama; the stand-in must win (never the real one).
+define('STU_EMBER_OLLAMA_URL', (string)getenv('COREUI_OLLAMA_URL'));
+set_error_handler(static fn(int $no, string $msg): bool => $no === E_WARNING && str_contains($msg, 'already defined'));
 require_once $root . '/api/helpers.php';
+restore_error_handler();
 stu_start_session();
 $_SESSION['stu_uid'] = (int)getenv('LIVE_UID');
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

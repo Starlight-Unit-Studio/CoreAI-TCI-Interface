@@ -120,8 +120,17 @@ $requests = static function () use ($tmp): array {
 // The library, with local Ollama pointing at the stand-in and the key in the environment.
 putenv('COREUI_OLLAMA_URL=http://127.0.0.1:' . $port . '/api/chat');
 putenv('COREUI_EXTERNAL_API_KEY=' . EXT_KEY);
+// 0.8.18: a real installation's api/config.local.php defines the Ollama address (127.0.0.1:11434) and wins
+// over the environment, so the local test calls reached the server's own Ollama and, since 0.8.16, unloaded
+// its Cores. Constants defined here come first; the installation's later define is only a notice here.
+define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:' . $port . '/api/chat');
+define('STU_EXTERNAL_API_KEY', EXT_KEY);
+define('STU_EMBER_SINGLE_RESIDENT', true);
 define('STU_CHAT_LIB', 1);
+set_error_handler(static fn(int $no, string $msg): bool => $no === E_WARNING && str_contains($msg, 'already defined'));
 require $root . '/api/chat.php';
+restore_error_handler();
+ext_test(ember_url() === 'http://127.0.0.1:' . $port . '/api/chat', 'local Ollama is the stand-in, never the installation\'s own');
 $streamSource = (string)file_get_contents($root . '/api/console_stream.php');
 foreach (['console_stream_ollama'] as $fn) {
   if (preg_match('~^function ' . $fn . '\(.*?^}~ms', $streamSource, $m) !== 1) ext_test(false, 'missing ' . $fn);

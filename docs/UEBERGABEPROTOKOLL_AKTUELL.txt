@@ -1,3 +1,15 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 21.11.2026
+Version main: 0.8.17, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.18).
+ZIEL 0.8.18: eine Textantwort nach Werkzeugarbeit ist wieder Maras Antwort
+(seit PR #373 / 0.8.13 verworfen; Abschluss nur mit Nachweisen und Journal,
+sonst mit Hinweis), Selbsttests erreichen nie das echte Ollama (Adaptertest
+entlud im Preflight die Cores), zwei veraltete Preflight-Pruefungen folgen dem
+aktuellen Code. Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_18.txt.
+Naechster Schritt: Preflight und Homepage-Ausbau auf dem Server wiederholen.
+Keine offenen Betreiberfragen.
+Nach Merge naechste Version 0.8.19.
+--- VORHERIGER STAND ---
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 20.11.2026
 Version main: 0.8.16, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.17).
 ZIEL 0.8.17: fortgesetzte Projektlaeufe schliessen ab (ein abgeschnittener

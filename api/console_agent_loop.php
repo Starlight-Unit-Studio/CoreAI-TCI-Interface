@@ -553,6 +553,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $blockedPath = '';
   $blockedReason = '';
   $blockedExplanation = '';
+  $proseUnverified = '';
   // This is NOT a total-work limit. Only unsuccessful writes to the SAME
   // file are counted. Verified writes reset their own failure counter.
   $fileEditFailures = [];
@@ -764,6 +765,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       $callReport = static fn(): array => $modelReport !== null && is_array($r = $modelReport()) ? $r : [];
       $report = $callReport();
       $decision = $cutShape($parseDecision($out), $report);
+      // 0.8.18: Mara's plain answer, kept in case the one repair yields no decision either.
+      $proseAnswer = ($decision['kind'] === 'invalid' && ($decision['shape'] ?? '') === 'prose_only') ? trim($out) : '';
       if ($decision['kind'] === 'invalid') {
         if ($cancelled()) { $stopReason='cancelled'; break; }
         // 0.8.15: the work view names the form of the refused reply (structure, never model text).
@@ -796,10 +799,27 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
           ['reason'=>'task_verified_completion','step'=>$used]);
         break;
       }
+      // 0.8.18: until 0.8.13 a plain answer after a tool step was Mara's answer. Since then it was thrown
+      // away whenever the Core wrote no control block, also after the one repair (gpt-6-luna and local Cores
+      // did not write one), and the person only saw "task_decision_invalid", even for a plain research
+      // answer in a project chat. A plain answer the repair did not turn into a tool step or a block is her
+      // answer again. It completes the run only on the same evidence as a DONE block; otherwise it is shown
+      // with the note that the task is not confirmed as finished.
+      if ($decision['kind'] === 'invalid' && $proseAnswer !== '') {
+        if (coreui_task_completion_evidence($steps, $fileEditFailures)
+            && ($journal === null || $journal('can_finish',[], $used, null,null) === true)) {
+          $out = $proseAnswer;
+          $taskOutcome = 'completed';
+          $record('run','success','Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt',
+            ['reason'=>'task_prose_answer','step'=>$used]);
+          break;
+        }
+        $proseUnverified = $proseAnswer;
+      }
       $stopReason = match ($decision['kind']) {
         'done' => 'task_completion_unverified',
         'blocked' => 'task_blocked',
-        default => 'task_decision_invalid',
+        default => $proseUnverified !== '' ? 'task_prose_unverified' : 'task_decision_invalid',
       };
       // 0.8.16: Mara's own words about the blocker reach the person (they were replaced by a
       // generic sentence, so nobody saw why the work stopped).
@@ -826,6 +846,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . ' wurde nicht gespeichert: ' . ($blockedExplanation !== '' ? $blockedExplanation : 'Werkzeugfehler')
         . '. Ich habe die Wiederholung beendet, statt dieselbe fehlgeschlagene Änderung erneut zu versuchen. '
         . 'Bereits gespeicherte Dateien bleiben unverändert. Details stehen im Arbeitsweg.';
+    } elseif ($stopReason === 'task_prose_unverified') {
+      $out = $proseUnverified . "\n\n" . 'Nicht jeder Werkzeugschritt dieses Auftrags ist bestätigt, deshalb gilt er noch nicht '
+        . 'als abgeschlossen. Bereits bestätigte Projektdateien bleiben gespeichert; die Details stehen im Arbeitsweg.';
     } elseif ($stopReason === 'task_blocked' && $blockedReason !== '') {
       $out = $blockedReason . "\n\n" . 'Der Projektauftrag ist deshalb unterbrochen. Bereits bestaetigte Projektdateien bleiben gespeichert.';
     } elseif ($stopReason === 'model_empty_after_tool') {

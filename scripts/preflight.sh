@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.17: cut tool blocks are repaired in smaller parts, project prompts stay within a budget.
+# CoreAI: TCI Interface 0.8.18: a plain answer after tool work is Mara's answer again; selftests never reach the real Ollama.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

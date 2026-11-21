@@ -549,11 +549,42 @@ $proseLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
   },static fn():bool=>false);
 $proseStop=array_values(array_filter($proseEvents,static fn(array $e):bool=>$e['title']==='Projektauftrag ohne bestaetigten Abschluss unterbrochen'));
 $proseMissing=array_values(array_filter($proseEvents,static fn(array $e):bool=>($e['meta']['reason']??'')==='task_decision_missing'));
-loop_test(($proseLoop['outcome']??'')==='interrupted' && ($proseLoop['reason']??'')==='task_decision_invalid'
+// 0.8.18: a reply that stays prose after the one repair is Mara's answer again (as before 0.8.13), on
+// the same evidence as a DONE block; the repair still names the form and shows the reply.
+$proseDone=array_values(array_filter($proseEvents,static fn(array $e):bool=>($e['meta']['reason']??'')==='task_prose_answer'));
+loop_test(($proseLoop['outcome']??'')==='completed' && ($proseLoop['reason']??'')===''
+  && $proseLoop['out']==='Die Seite ist fertig.'
   && count($prosePrompts)===2 && str_contains($prosePrompts[1],'(erkannt: nur Text ohne Werkzeugmarker und ohne Steuerblock)')
   && str_contains($prosePrompts[1],"<<<\nDie Seite ist fertig.\n>>>")
-  && ($proseMissing[0]['meta']['error_type']??'')==='prose_only' && ($proseStop[0]['meta']['error_type']??'')==='prose_only',
-  'an invalid decision names its form in the repair and in the interruption: ' . json_encode([$proseStop, $proseMissing]));
+  && ($proseMissing[0]['meta']['error_type']??'')==='prose_only' && $proseStop===[] && count($proseDone)===1
+  && $proseDone[0]['state']==='success',
+  'a prose answer after the one repair is the answer on verified evidence: ' . json_encode([$proseLoop, $proseMissing, $proseDone]));
+// Without that evidence (the last tool step failed) the prose is shown with a note; the run is interrupted.
+$weakReplies=['Die Tests laufen.','Die Tests laufen wirklich.'];$weakEvents=[];
+$weakLoop=coreui_agent_loop_run('[AUSFUEHREN: npm test]',
+  ['tool'=>'prun','input'=>'npm test'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$weakReplies):?string { return array_shift($weakReplies); },
+  static fn(array $tool):string => 'Beendet mit Exitcode 1.',
+  static function(string $kind,string $state,string $title,array $meta) use (&$weakEvents):void {
+    $weakEvents[]=['kind'=>$kind,'state'=>$state,'title'=>$title,'meta'=>$meta];
+  },static fn():bool=>false);
+$weakStop=array_values(array_filter($weakEvents,static fn(array $e):bool=>$e['title']==='Projektauftrag ohne bestaetigten Abschluss unterbrochen'));
+loop_test(($weakLoop['outcome']??'')==='interrupted' && ($weakLoop['reason']??'')==='task_prose_unverified'
+  && str_starts_with((string)$weakLoop['out'],"Die Tests laufen.\n\nNicht jeder Werkzeugschritt dieses Auftrags ist bestätigt")
+  && ($weakStop[0]['meta']['error_type']??'')==='prose_only'
+  && !array_filter($weakEvents,static fn(array $e):bool=>($e['meta']['reason']??'')==='task_prose_answer'),
+  'prose without verified evidence is shown with a note and never completes: ' . json_encode([$weakLoop, $weakStop]));
+// A journal that does not confirm the run keeps it open too.
+$journalReplies=['Fertig.','Fertig, wirklich.'];
+$journalLoop=coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$journalReplies):?string { return array_shift($journalReplies); },
+  static fn(array $tool):string => 'Bestaetigte Datei: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta):void {},static fn():bool=>false,
+  null,null,null,
+  static fn(string $event):mixed => $event==='claim' ? ['status'=>'claimed'] : ($event==='can_finish' ? false : true));
+loop_test(($journalLoop['outcome']??'')==='interrupted' && ($journalLoop['reason']??'')==='task_prose_unverified',
+  'prose never completes a run the task journal does not confirm: ' . json_encode($journalLoop));
 
 // 0.8.16 end to end: a Core that answers in prose frames that text once it sees it in the repair,
 // and a declared blocker reaches the person in Mara's words.
@@ -590,10 +621,13 @@ $stillPending=coreui_agent_loop_run('[DATEI: assets/site.css]',
     $stillPendingTools[]=$tool;return 'Datei erfolgreich gelesen';
   },static function(string $kind,string $state,string $title,array $meta):void {},
   static fn():bool=>false);
+// 0.8.18: the one repair is the chance to name the next tool. A Core that still answers in prose ends
+// the turn with its own words (as before 0.8.13), after exactly one repair and without replaying a tool;
+// the person can ask it to go on. Completion still needs the verified evidence (see the cases above).
 loop_test($stillPendingCalls===2 && count($stillPendingTools)===1
-  && $stillPending['steps']===1 && ($stillPending['outcome']??'')==='interrupted'
-  && str_contains((string)$stillPending['out'],'noch nicht abgeschlossen'),
-  'missing control decision after one repair interrupts, not silently completed');
+  && $stillPending['steps']===1 && ($stillPending['outcome']??'')==='completed'
+  && $stillPending['out']===$promisedText,
+  'prose after the one repair ends the turn in Mara\'s words, one repair, no replay: ' . json_encode($stillPending));
 
 $completeCalls=0;
 $complete=coreui_agent_loop_run('[DATEI: style.css]',
@@ -803,5 +837,10 @@ loop_test($kept === "Hier ist der Plan:\n# Roadmap\n- Punkt [1]\nMehr: [Doku](ht
   && str_contains($chatSource, "!\$nativeEligible && is_string(\$out) && coreui_native_tool_attempt(\$out)")
   && str_contains($nativeSource, 'function coreui_native_markers_drop'),
   'attachments: no native tool offered, an answer with markers stays text');
+
+// 0.8.18: a resumed run keeps a plain answer too, only when the task journal confirms the saved state.
+loop_test(str_contains($streamSource, "\$proseReply=(\$decision['kind']==='invalid' && (\$decision['shape'] ?? '')==='prose_only') ? trim(\$reply) : '';")
+  && str_contains($streamSource, "} elseif (\$decision['kind']==='invalid' && \$proseReply!==''\n        && coreui_task_journal_can_finish(\$pdo,(int)\$uid,\$sessionId,\$agentRunId)) {\n      \$reply=\$proseReply;"),
+  'a resumed run keeps a plain answer only with a confirming journal');
 
 echo "CoreAI agent loop: chaining, answer, browser hand-over, six steps, cancel, work view OK\n";

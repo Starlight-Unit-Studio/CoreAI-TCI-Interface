@@ -1,0 +1,55 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.18
+Datum: 21.11.2026
+
+EINE TEXTANTWORT NACH WERKZEUGARBEIT IST WIEDER MARAS ANTWORT
+- Seit dem Auftragsprotokoll aus 0.8.13 musste im Projekt-Chat jede Antwort
+  nach einem Werkzeugschritt ein Werkzeugmarker oder ein
+  [COREUI_TASK_DONE]/[COREUI_TASK_BLOCKED]-Block sein. gpt-6-luna und die
+  lokalen Cores antworteten als normaler Text, auch nach der einen
+  Reparatur (der Arbeitsweg aus 0.8.17 zeigte prose_only mit done_reason
+  stop, abgeschnitten war also nichts), und die Person sah nur
+  "task_decision_invalid", selbst bei einer gewoehnlichen Recherche-Antwort
+  im Projekt-Chat. Vor 0.8.13 war eine solche Antwort einfach Maras Antwort.
+- Eine Antwort, die auch nach der einen Reparatur Text bleibt, ist jetzt
+  wieder ihre Antwort. Mit denselben Nachweisen wie ein DONE-Block (letzter
+  Werkzeugschritt bestaetigt, keine offene Dateiaenderung, das
+  Auftragsjournal bestaetigt den Lauf) ist der Lauf abgeschlossen. Ohne
+  diese Nachweise erscheint die Antwort mit dem Hinweis, dass der Auftrag
+  nicht als abgeschlossen bestaetigt ist, und der Lauf bleibt unterbrochen.
+- Die Reparatur kommt weiterhin zuerst; ein Core, der nur seinen naechsten
+  Schritt angekuendigt hat, kann dort noch das Werkzeug nennen.
+- Ein nach einem Worker-Neustart fortgesetzter Lauf folgt derselben Regel
+  mit dem Auftragsjournal.
+
+SELBSTTESTS ERREICHEN NIE DAS ECHTE OLLAMA
+- api/config.local.php einer echten Installation legt die Ollama-Adresse
+  fest (127.0.0.1:11434) und hat Vorrang vor der Umgebung. Der Selbsttest
+  des externen Adapters schickte seinen lokalen Testaufruf deshalb an das
+  Ollama des Servers, scheiterte im Preflight mit "local answer" und
+  entlud seit 0.8.16 vor diesem Aufruf die geladenen Cores.
+- Der Test legt die Adresse des Ersatzservers jetzt als Konstante fest,
+  bevor die Konfiguration gelesen wird, und prueft, dass sie gilt. Der
+  Live-Sprachtest macht dasselbe fuer seinen Testserver.
+
+ZWEI PREFLIGHT-PRUEFUNGEN FOLGEN DEM AKTUELLEN CODE
+- Der Spracheingabe-Test suchte das letzte done-Ereignis mit work_events am
+  Anfang; seit 0.8.14 beginnt es mit agent_task.
+- Der Datenkontrollen-Test erwartete die CSRF-Liste
+  ['archive_all', 'delete_all']; seit 0.8.8 steht dort auch
+  workspace_ensure.
+- Beide pruefen dieselben Zusagen (Mitschrift nach der Antwort, beide
+  Aktionen nur mit CSRF-Token) gegen den aktuellen Code.
+
+TESTS
+- agent-loop-selftest.php: eine Textantwort nach der Reparatur schliesst
+  mit Nachweisen ab, erscheint ohne sie mit Hinweis und schliesst nach einem
+  fehlgeschlagenen Schritt oder ohne bestaetigendes Journal nie ab; eine
+  Ankuendigung, die Text bleibt, beendet den Zug nach genau einer Reparatur
+  ohne Wiederholung; der fortgesetzte Lauf.
+- external-provider-selftest.php: besteht mit der config.local.php einer
+  Installation (damit war der Preflight-Fehler nachgestellt).
+- voice-input-selftest.php, data-controls-selftest.php,
+  work-events-ui-selftest.js.
+- 13 gezielt eingebaute Fehler wurden alle erkannt.
+
+Version: 0.8.18
