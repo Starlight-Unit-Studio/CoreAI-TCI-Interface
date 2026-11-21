@@ -394,7 +394,7 @@ function ember_strip_stray_tool_markers(string $out): string {
   $out = (string)preg_replace('~\[\s*(?:PROZESS_(?:AUSGABE|BEENDEN))\s*(?::[^\]\r\n]*)?\][ \t]*~u', '', $out);
   $out = (string)preg_replace('~\[\s*SERVER_ABRUF\s*:[^\]\r\n]*\][ \t]*~u', '', $out);
   return (string)preg_replace_callback(
-    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[WEB:\s*.*?\]|\[BROWSE:\s*.*?\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|\[/?PY\]~iu',
+    '~(```[\s\S]*?```|`[^`\r\n]*`)|\[[ \t]*(?:WEB|BROWSE)[ \t]*:\s*[^\]\r\n]*\]|\[ARCHIV:\s*.*?\]|\[SKILL:\s*.*?\]|\[\s*BILD(?:\s+GRO(?:SS|ß))?(?:\s+ICH)?\s*:[^\[\]]*\]|\[/?PY\]~iu',
     static fn(array $m): string => ($m[1] ?? '') !== '' ? $m[1] : '',
     $out);
 }
@@ -2436,15 +2436,14 @@ function ember_web_capability_hint_compact(): string {
  */
 function ember_without_inline_code(string $s): string {
   // A reply that is nothing but one marker in backticks is still a call.
-  if (preg_match('~\A\s*`(\[(?:WEB|BROWSE):[^`\]]+\]|\[PY\][^`]*\[/PY\])`\s*\z~iu', $s, $sole) === 1) return $sole[1];
+  if (preg_match('~\A\s*`(\[[ \t]*(?:WEB|BROWSE)[ \t]*:[^`\]]+\]|\[PY\][^`]*\[/PY\])`\s*\z~iu', $s, $sole) === 1) return $sole[1];
   return (string)preg_replace('~(?<!`)`(?!`)[^`\r\n]+`(?!`)~u', '', $s);
 }
 
 // Marker [WEB: ...] aus Embers Antwort extrahieren.
 function ember_extract_web_marker(string $s): ?string {
   $s = ember_without_inline_code((string)preg_replace('~```[\s\S]*?```~u', '', $s));
-  if (stripos($s, '[WEB:') === false) return null;
-  if (!preg_match('~\[WEB:\s*(.+?)\]~iu', $s, $m)) return null;
+  if (!preg_match('~\[[ \t]*WEB[ \t]*:\s*([^\]\r\n]+)\]~iu', $s, $m)) return null;
   $q = trim($m[1]);
   if (function_exists('mb_substr')) $q = mb_substr($q, 0, 120, 'UTF-8');
   $q = trim($q);
@@ -2657,8 +2656,7 @@ function ember_console_prompt_profile(string $channel, ?int $contextTokens): arr
 
 function ember_extract_browse_marker(string $s): ?string {
   $s = ember_without_inline_code((string)preg_replace('~```[\s\S]*?```~u', '', $s));
-  if (stripos($s, '[BROWSE:') === false) return null;
-  if (!preg_match('~\[BROWSE:\s*(.+?)\]~iu', $s, $m)) return null;
+  if (!preg_match('~\[[ \t]*BROWSE[ \t]*:\s*([^\]\r\n]+)\]~iu', $s, $m)) return null;
   $q = trim($m[1]);
   if (function_exists('mb_substr')) $q = mb_substr($q, 0, 200, 'UTF-8');
   $q = trim($q);

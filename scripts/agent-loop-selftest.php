@@ -32,6 +32,17 @@ loop_test(!str_contains($agentSource, 'microtime(true) + 600.0')
   'project tools must not stop after an arbitrary ten-minute deadline');
 loop_test(coreui_agent_next_tool('Ich schaue nach. [WEB: gemma4 12b ollama]', $all) === ['tool'=>'web', 'input'=>'gemma4 12b ollama'], 'web marker');
 loop_test(coreui_agent_next_tool('[BROWSE: Changelog von Ollama lesen]', $all)['tool'] === 'browse', 'browse marker');
+$repoGoal = 'Prüfe das GitHub-Repository https://github.com/Starlight-Unit-Studio/CoreAI-TCI-Interface auf dokumentierte Fähigkeiten.';
+$spacedBrowse = '[ BROWSE: ' . $repoGoal . ' ]';
+loop_test(coreui_agent_next_tool($spacedBrowse, $all) === ['tool'=>'browse','input'=>$repoGoal]
+  && coreui_agent_next_tool($spacedBrowse, ['web']) === ['tool'=>'web','input'=>$repoGoal]
+  && coreui_agent_next_tool($spacedBrowse, []) === null
+  && coreui_agent_guard_browser_reply($spacedBrowse, false, true) === '[WEB: ' . $repoGoal . ']',
+  'a spaced browser marker still follows the authorized browser or web route');
+loop_test(trim(ember_strip_stray_tool_markers($spacedBrowse)) === ''
+  && coreui_agent_next_tool('Syntax: ' . chr(96) . $spacedBrowse . chr(96), $all) === null
+  && coreui_agent_next_tool('[ WEB : GitHub README ]', ['web']) === ['tool'=>'web','input'=>'GitHub README'],
+  'spaced web markers cannot leak as prose, and quoted examples stay inert');
 loop_test(coreui_agent_next_tool("[PY]print(2**10)[/PY]", $all) === ['tool'=>'python', 'input'=>'print(2**10)'], 'python marker');
 loop_test(coreui_agent_next_tool('[ARCHIV: Port]', ['web']) === null, 'only allowed tools');
 loop_test(coreui_agent_next_tool('Erklaerung: `[WEB: x]` sucht im Netz.', $all) === null, 'mentions in code are no calls');
