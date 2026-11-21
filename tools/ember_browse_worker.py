@@ -461,6 +461,35 @@ def claim_next_job(conn):
         return cur.fetchone()
 
 
+def fail_orphaned_browser_jobs(conn):
+    """Called only while holding the model lock, before claiming browser work."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "UPDATE stu_ember_browse_jobs SET status='error', error=%s, "
+            "finished_at=NOW(), worker_pid=NULL WHERE status='running'",
+            ("Browser worker stopped before finishing",),
+        )
+        return cur.rowcount
+
+
+def claim_available_browser_job(conn, cfg, log):
+    """Return a job with the model lock held, or release the lock on exit."""
+    if not lock_acquire(conn, cfg):
+        return None
+    job = None
+    try:
+        # Without another lock owner, a prior running row cannot still be
+        # in use. End it without replaying any browser actions.
+        orphaned = fail_orphaned_browser_jobs(conn)
+        if orphaned:
+            log(f"Recovered {orphaned} interrupted browser job(s).")
+        job = claim_next_job(conn)
+        return job
+    finally:
+        if not job:
+            lock_release(conn, cfg)
+
+
 def finish_job(conn, job_id, status, result=None, steps=None, error=None, shot=None):
     with conn.cursor() as cur:
         cur.execute(
@@ -2892,7 +2921,7 @@ def main():
         while _RUNNING:
             job = None
             try:
-                job = claim_next_job(conn)
+                job = claim_available_browser_job(conn, cfg, log)
             except Exception as exc:
                 log(f"DB-Fehler beim Claim: {exc}")
                 try:
@@ -2924,14 +2953,6 @@ def main():
                 time.sleep(args.poll)
                 continue
 
-            # Lock holen - nur browsen wenn Ollama frei ist
-            if not lock_acquire(conn, cfg):
-                log(f"[job {job['id']}] Ollama belegt - Job zurueck in die Queue.")
-                with conn.cursor() as cur:
-                    cur.execute("UPDATE stu_ember_browse_jobs SET status='queued', started_at=NULL, "
-                                "worker_pid=NULL WHERE id=%s", (job["id"],))
-                time.sleep(args.poll)
-                continue
             try:
                 process_job(conn, cfg, job, log)
             finally:
