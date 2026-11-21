@@ -866,8 +866,33 @@ $readLoop = coreui_agent_loop_run('[DATEI: index.html]', ['tool'=>'pfile_read','
   static fn(array $tool): string => 'Unveraenderter Dateiinhalt.',
   static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
 loop_test(($readLoop['outcome'] ?? '') === 'completed' && $readLoop['steps'] === 2
-  && str_contains($readPrompts[1], 'zweimal im gleichen Stand gelesen'),
+  && str_contains($readPrompts[1], 'bereits im gleichen Stand gelesen'),
   'a repeated unchanged read gives the model a chance to proceed from the known file');
+
+foreach ([false, true] as $resumeWriting) {
+  $replies = ['[DATEI: styles.css]', '[DATEI: index.html]', '[DATEI: styles.css]'];
+  $replies = array_merge($replies, $resumeWriting
+    ? ["[DATEI_NEU: blog.html]\n<h1>Blog</h1>\n[/DATEI_NEU]", '[DATEI: index.html]', $taskDone('Blog angelegt.')]
+    : ['[DATEI: index.html]', '[DATEI: styles.css]']);
+  $prompts = [];
+  $loop = coreui_agent_loop_run('[DATEI: index.html]', ['tool'=>'pfile_read','input'=>'index.html'],
+    'BASIS', $projectFileTools, 0,
+    static function (string $prompt) use (&$replies, &$prompts): ?string {
+      $prompts[] = $prompt;
+      return array_shift($replies);
+    },
+    static fn(array $tool): string => $tool['tool'] === 'pfile_read'
+      ? 'QUELLE:' . $tool['input'] . ':' . str_repeat('x', 16000) : 'Bestaetigt.',
+    static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+  loop_test(substr_count($prompts[3], 'QUELLE:index.html:') === 1
+    && substr_count($prompts[3], 'QUELLE:styles.css:') === 1,
+    'duplicate file reads consume the prompt budget only once per source');
+  loop_test($resumeWriting
+    ? ($loop['outcome'] === 'completed' && $loop['steps'] === 6)
+    : ($loop['outcome'] === 'interrupted' && $loop['steps'] === 5
+        && $loop['reason'] === 'repeated_project_file_reads' && count($replies) === 1),
+    'alternating stale reads allow productive continuation but never spin indefinitely');
+}
 // A writing tool with the same result three times still stops the run (nothing changes).
 $sameReplies = ['[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]'];
 $sameLoop = coreui_agent_loop_run('[AUSFUEHREN: npm test]', ['tool'=>'prun','input'=>'npm test'], 'BASIS', $projectFileTools, 0,
