@@ -654,7 +654,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       if (str_starts_with($result, 'Die Datei ')) {
         $record('tool','info','Datei nach fehlgeschlagener Änderung erneut lesen',
           ['reason'=>'edit_recovery_read','step'=>$used,'file'=>$filePath]);
-        $tool=['tool'=>'pfile_read','input'=>$filePath,'recovery_read'=>true];
+        $tool=['tool'=>'pfile_read','input'=>$filePath,'recovery_read'=>true,
+          'recovery_patch'=>explode("\n", (string)$tool['input'], 2)[1] ?? ''];
         continue;
       }
       // Database, permissions and storage failures cannot be repaired by
@@ -723,10 +724,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       return ['out'=>$final, 'browse'=>null, 'steps'=>count($steps), 'prompt'=>$prompt, 'terminal'=>true];
     }
     if ($cancelled()) { if ($projectWorkflow) $stopReason='cancelled'; break; }
-    $prompt = $projectWorkflow && $projectCompact
+    $repairingEdit = ($tool['recovery_read'] ?? false) === true;
+    $prompt = $projectWorkflow && ($projectCompact || $repairingEdit)
       ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
       : coreui_agent_step_prompt($base, $projectWorkflow ? coreui_agent_budget_steps($steps) : $steps,
         $used, $maxSteps, $allowed);
+    if ($repairingEdit) {
+      $prompt .= "\n\nDATEIÄNDERUNG KORRIGIEREN: Nutze den zuletzt gelesenen Quelltext. "
+        . "Kopiere den kleinsten eindeutigen SUCHEN-Abschnitt exakt mit allen Leerzeichen "
+        . "und ohne Überschriften oder Zeilennummern. Ändere nur den benötigten Abschnitt. "
+        . "Fehlt er im Ausschnitt, melde die Blockade, statt den alten Text zu erraten.";
+    }
     $next = $callModel($prompt);
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
     if ($out === '' && $projectWorkflow) {

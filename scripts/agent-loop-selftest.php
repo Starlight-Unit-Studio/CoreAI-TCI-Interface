@@ -258,6 +258,8 @@ $editLoop=coreui_agent_loop_run($fail1,coreui_agent_next_tool($fail1,$projectFil
   },static fn():bool=>false);
 loop_test(array_column($executed,'tool')===['pfile_edit','pfile_read','pfile_edit']
   && $executed[0]['input']!==$executed[2]['input']
+  && ($executed[1]['recovery_read'] ?? false) === true
+  && str_contains((string)($executed[1]['recovery_patch'] ?? ''), 'missing old text')
   && count($replies)===1 && $editLoop['steps']===3
   && str_contains((string)$editLoop['out'],'guestbook.html')
   && str_contains((string)$editLoop['out'],'wurde nicht gespeichert')
@@ -266,6 +268,8 @@ loop_test(array_column($executed,'tool')===['pfile_edit','pfile_read','pfile_edi
     ($e['meta']['reason']??'')==='same_file_edit_rejected_twice'))===1,
   'changed patch body cannot bypass no-progress guard; one read, one retry and honest stop');
 loop_test(str_contains($replies[0], '<form>saved original</form>')
+  && str_contains($replies[0], 'DATEIÄNDERUNG KORRIGIEREN')
+  && str_contains($replies[0], 'ohne Überschriften oder Zeilennummern')
   && str_contains($replies[0], 'Schritt 1')
   && str_contains($replies[0], 'Schritt 2'),
   'the repaired patch is grounded in a real reread of the saved file, not an invented replacement');
