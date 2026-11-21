@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.21: load supplied browser sources before the first model action.
+# CoreAI: TCI Interface 0.8.22: restore the active browser view when reopening a chat.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

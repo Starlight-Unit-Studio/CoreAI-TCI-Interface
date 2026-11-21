@@ -172,7 +172,7 @@ function coreui_agent_run_active_snapshot(PDO $pdo, int $uid, string $sessionId)
       || !coreui_agent_run_schema_ready($pdo)) return null;
   // 0.6.9: a run whose worker is gone is no active run (no endless "Core denkt nach").
   coreui_agent_run_reap_stale($pdo, $uid, $sessionId);
-  $stmt = $pdo->prepare("SELECT run_id,turn_id,run_key,status,cancel_requested_at
+  $stmt = $pdo->prepare("SELECT run_id,turn_id,run_key,status,cancel_requested_at,browse_job_id
     FROM stu_console_agent_runs
     WHERE user_id=? AND session_id=?
       AND status IN ('queued','running','waiting_tool')
@@ -209,6 +209,7 @@ function coreui_agent_run_active_snapshot(PDO $pdo, int $uid, string $sessionId)
     'run_key'=>(string)$row['run_key'],
     'status'=>(string)$row['status'],
     'cancel_requested'=>!empty($row['cancel_requested_at']),
+    'browse_job_id'=>$row['status'] === 'waiting_tool' ? (int)($row['browse_job_id'] ?? 0) : 0,
   ];
 }
 

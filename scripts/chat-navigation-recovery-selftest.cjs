@@ -18,7 +18,7 @@ const state = {
   thinkingPanelEl:null
 };
 let updates = 0, added = 0, outbound = 0;
-const streamStarts = [], fastPolls = [], generationPolls = [];
+const streamStarts = [], fastPolls = [], generationPolls = [], browseStreams = [];
 const sandbox = {
   state,
   window:{CoreUIWorkEvents:{add:()=>{added++;}}},
@@ -31,6 +31,7 @@ const sandbox = {
   updateActivePendingUi:()=>{updates++},
   fetch:()=>{outbound++;throw Error('Recovery must never issue a request')},
   openStreamForReply:(...args)=>streamStarts.push(args),
+  openBrowseWindow:(...args)=>browseStreams.push(args),
   startFastPoll:(...args)=>fastPolls.push(args),
   startGenerationStatusPoll:(...args)=>generationPolls.push(args),
 };
@@ -96,6 +97,16 @@ assert.equal(streamStarts[1][2].id,queuedVariant.run_key,'the owned generation r
 delete state.pendingBySession[sessionId];
 sandbox.reconnect(ses,{...queuedVariant,status:'running'});
 assert.equal(generationPolls.length,1,'running regeneration polls its request, not an old answer');
+
+delete state.pendingBySession[sessionId];
+const delegated = {...validRun,status:'waiting_tool',browse_job_id:55};
+assert.equal(recover(ses,{active_run:delegated}),true);
+sandbox.reconnect(ses,delegated);
+assert.equal(streamStarts.length,2,'returning to a browser job must not start inference');
+assert.deepEqual(browseStreams,[[55,sessionId]],'reconnect to the existing browser job');
+sandbox.reconnect(ses,{...delegated,id:'b'.repeat(32),browse_job_id:56});
+sandbox.reconnect(ses,{...delegated,browse_job_id:0});
+assert.equal(browseStreams.length,1,'skip stale runs and missing browser IDs');
 
 const chatSource = fs.readFileSync(path.join(__dirname,'../api/chat.php'),'utf8');
 const enqueue = chatSource.indexOf("coreui_agent_run_ensure($pdo, (int)$uid, (string)$consoleSessionId, (int)$id, 'base')");

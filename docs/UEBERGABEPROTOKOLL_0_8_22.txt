@@ -1,0 +1,7 @@
+CoreAI: TCI Interface 0.8.22
+21.11.2026
+Base 0.8.21.
+
+- Reopening a chat during browser research reconnects its live view to the existing browser job. It preserves the active run and does not issue another inference request.
+
+No migration. Test reopening the chat during a live browser job.
