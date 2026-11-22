@@ -364,17 +364,28 @@ function coreui_pftools_recovery_source(string $content, string $patch): string 
   return mb_strcut($content, $start, $end - $start, 'UTF-8');
 }
 
-/** A file with line numbers for Mara (pure), shortened to $max characters. */
-function coreui_pftools_numbered(string $content, int $max = COREUI_PFTOOLS_READ_CHARS): string {
+/** In read markers only, a trailing #Lnumber selects the first line. */
+function coreui_pftools_read_target(string $input): array {
+  if (preg_match('~^(.+)#L([1-9][0-9]{0,6})$~D', $input, $m) === 1) {
+    return [$m[1], (int)$m[2]];
+  }
+  return [$input, 1];
+}
+
+/** A bounded window of source lines with their original line numbers. */
+function coreui_pftools_numbered(string $content, int $max = COREUI_PFTOOLS_READ_CHARS, int $start = 1): string {
   $lines = preg_split('~\r?\n~', $content) ?: [''];
-  // The newline at the end of the last line is no extra line.
   if (count($lines) > 1 && end($lines) === '') array_pop($lines);
-  $width = strlen((string)count($lines));
+  $count = count($lines);
+  if ($start > $count) return 'Dieser Ausschnitt beginnt hinter dem Dateiende (Zeile ' . $count . ').';
+  $width = strlen((string)$count);
   $out = '';
-  foreach ($lines as $i => $line) {
-    $row = str_pad((string)($i + 1), $width, ' ', STR_PAD_LEFT) . ' | ' . $line . "\n";
+  for ($i = $start - 1; $i < $count; $i++) {
+    $row = str_pad((string)($i + 1), $width, ' ', STR_PAD_LEFT) . ' | ' . $lines[$i] . "\n";
     if (strlen($out) + strlen($row) > $max) {
-      return $out . '... (gekuerzt nach Zeile ' . $i . ' von ' . count($lines) . ')';
+      if ($out === '') return mb_strcut($row, 0, $max, 'UTF-8')
+        . "\n(Zeile " . ($i + 1) . ' ist besonders lang und wurde gekuerzt.)';
+      return $out . '... (gekuerzt nach Zeile ' . $i . ' von ' . $count . ')';
     }
     $out .= $row;
   }
@@ -595,7 +606,8 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
       return coreui_pftools_vcs($pdo, $uid, $projectId, $kind, trim((string)$tool['input']));
     }
     if ($kind === 'pfile_read') {
-      $path = coreui_pfiles_path((string)$tool['input']);
+      [$readPath, $startLine] = coreui_pftools_read_target((string)$tool['input']);
+      $path = coreui_pfiles_path($readPath);
       $file = coreui_pfiles_get($pdo, $uid, $projectId, $path);
       coreui_pftools_record($pdo, 'info', 'Projektdatei gelesen', ['count'=>1]);
       $header = 'Datei ' . $file['path'] . ' (Stand ' . $file['revision'] . ', ' . $file['size_bytes'] . " Bytes):\n";
@@ -604,7 +616,12 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
           . "Gespeicherter Quelltext ohne Zeilennummern (bei langen Dateien ein Ausschnitt):\n"
           . coreui_pftools_recovery_source($file['content'], (string)($tool['recovery_patch'] ?? ''));
       }
-      return $header . coreui_pftools_numbered($file['content']) . "\n(Die Zeilennummern und \" | \" gehoeren nicht zur Datei.)";
+      $excerpt = coreui_pftools_numbered($file['content'], COREUI_PFTOOLS_READ_CHARS, $startLine);
+      $next = '';
+      if (preg_match('~\.\.\. \(gekuerzt nach Zeile ([0-9]+) von [0-9]+\)\z~', $excerpt, $cut) === 1) {
+        $next = "\nNaechster Quelltextabschnitt: [DATEI: " . $path . '#L' . ((int)$cut[1] + 1) . ']';
+      }
+      return $header . $excerpt . "\n(Die Zeilennummern und \" | \" gehoeren nicht zur Datei.)" . $next;
     }
     [$rawPath, $body] = coreui_pftools_split((string)$tool['input']);
     $path = coreui_pfiles_path($rawPath);
@@ -807,7 +824,7 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
   return "PROJEKTDATEIEN: " . $files . "\n"
     . "Ein neuer Seitenwunsch (z.B. blog.html) ergaenzt die bestehenden Projektdateien. Der alte, abgeschlossene Projektplan ist nur historischer Kontext: NICHT die Homepage neu aus diesem Plan erstellen. Bestehende Dateien und die aktuelle Nutzernachricht sind massgebend.\n"
     . "Du kannst die Dateien dieses Projekts selbst lesen und gezielt aendern, ein Werkzeug pro Schritt:\n"
-    . "- [DATEI: pfad] liest eine Datei mit Zeilennummern. Lies eine Datei, bevor du sie aenderst.\n"
+    . "- [DATEI: pfad] liest eine Datei mit Zeilennummern. [DATEI: pfad#L250] liest ab Zeile 250. Folge bei einem gekuerzten Auszug dem angegebenen naechsten Abschnitt.\n"
     . "- Gezielt aendern:\n[DATEI_AENDERN: pfad]\n<<<<<<< SUCHEN\nalte Zeilen, Zeichen fuer Zeichen wie in der Datei (ohne Zeilennummern)\n"
     . "=======\nneue Zeilen\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]\n"
     . "  Mehrere SUCHEN/ERSETZEN-Bloecke sind erlaubt; jeder SUCHEN-Text muss genau einmal vorkommen.\n"

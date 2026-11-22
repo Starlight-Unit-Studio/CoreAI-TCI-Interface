@@ -76,6 +76,14 @@ $unsafePublic = coreui_work_safe_meta([
 ]);
 check_work(!isset($unsafePublic['public_note']), 'Sensitive public note must fail closed');
 
+$browserStep = coreui_work_browser_step(41, 'Öffne website.example', 'step');
+if (($browserStep['id'] ?? null) !== -41
+    || ($browserStep['meta']['public_note'] ?? '') !== 'Website wird geöffnet.'
+    || coreui_work_browser_step(42, 'Tippe ein vertrauliches Feld', 'step') !== null
+    || coreui_work_browser_step(43, 'Mara überlegt noch, 15 s', 'think') !== null) {
+  fwrite(STDERR, "Browser activity must come from verified actions without raw model or form text.\n");
+  exit(1);
+}
 echo "CoreUI P06 work events selftest: OK\n";
 
 $imageDiag = coreui_work_safe_meta([

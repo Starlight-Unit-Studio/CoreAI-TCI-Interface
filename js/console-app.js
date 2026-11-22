@@ -1182,7 +1182,7 @@
     var activeRun = state.activeAgentRunsBySession[sessionId];
     if (!isActiveSession(sessionId) || !activeRun || activeRun.id !== String(run.id)
         || !Number.isSafeInteger(jobId) || jobId <= 0) return;
-    openBrowseWindow(jobId, sessionId, run.browse_show_live === true);
+    openBrowseWindow(jobId, sessionId, run.browse_show_live === true, Number(run.turn_id), String(run.run_key || 'base'));
   }
 
   // Reattach to the EXISTING server-owned job. Only an unclaimed, queued
@@ -3714,26 +3714,21 @@
       if (finalRow) showResponseTime(finalRow, sessionId);
       // 0.6.1: read the new answer aloud when the account switched that on.
       if (window.CoreAIVoiceRead) window.CoreAIVoiceRead.onAnswer({ id: emberId, session_id: sessionId });
-    } else if (state.typingEl) {
-      if (!text && browseJobId > 0) {
-        // Browse-Turn: keine leere Bubble. Live-Fenster übernimmt, Ergebnis kommt per Poll.
-        if (state.typingEl.parentNode) state.typingEl.parentNode.removeChild(state.typingEl);
-      } else {
-        var bubble = state.typingEl.querySelector('.msg-bubble');
-        if (bubble) {
-          if (text) bubble.textContent = text;
-          else if (bubble.querySelector('.typing-dots')) bubble.textContent = '\u2026';
-        }
-        var content = state.typingEl.querySelector('.msg-content');
-        if (content && !content.querySelector('.msg-time')) {
-          var timeEl = document.createElement('div');
-          timeEl.className = 'msg-time';
-          var now = new Date();
-          timeEl.textContent = now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})
-            + ', ' + now.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'2-digit'});
-          content.appendChild(timeEl);
-          showResponseTime(state.typingEl, sessionId); // Antwortzeit voranstellen
-        }
+    } else if (state.typingEl && browseJobId <= 0) {
+      var bubble = state.typingEl.querySelector('.msg-bubble');
+      if (bubble) {
+        if (text) bubble.textContent = text;
+        else if (bubble.querySelector('.typing-dots')) bubble.textContent = '\u2026';
+      }
+      var content = state.typingEl.querySelector('.msg-content');
+      if (content && !content.querySelector('.msg-time')) {
+        var timeEl = document.createElement('div');
+        timeEl.className = 'msg-time';
+        var now = new Date();
+        timeEl.textContent = now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})
+          + ', ' + now.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'2-digit'});
+        content.appendChild(timeEl);
+        showResponseTime(state.typingEl, sessionId); // Antwortzeit voranstellen
       }
       state.typingEl = null;
     }
@@ -3747,7 +3742,12 @@
       // Die FINALE Antwort kommt erst NACH dem Surfen (per Hintergrund-Poll). Bis dahin arbeitet
       // Ember weiter -> Status sichtbar "arbeitet" (amber) lassen, NICHT vorschnell auf grün.
       setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' ANTWORTET\u2026');
-      openBrowseWindow(browseJobId, sessionId, data.browse_show_live === true);
+      savedWork.forEach(function (event) {
+        rememberLiveWorkEvent(sessionId, Number(userMsgId), workRunKey, event);
+        var body = state.thinkingPanelEl && state.thinkingPanelEl.querySelector('.work-body');
+        if (body) window.CoreUIWorkEvents.add(body, event);
+      });
+      openBrowseWindow(browseJobId, sessionId, data.browse_show_live === true, Number(userMsgId), workRunKey);
       if (data && data.generation_request) {
         startGenerationStatusPoll(ses, { id: data.generation_request });
       }
@@ -3771,11 +3771,12 @@
   // einem Netzfehler an der letzten Stelle fort.
   var BROWSE_RECONNECT_MAX = 6;
 
-  function browseStreamUrl(jobId, sessionId, afterFrame, afterStep) {
+  function browseStreamUrl(jobId, sessionId, afterFrame, afterStep, visible) {
     return API_BASE + '/console_browse_stream.php?job_id=' + (jobId | 0)
       + '&session_id=' + encodeURIComponent(String(sessionId || ''))
       + '&after_frame=' + Math.max(0, Number(afterFrame) || 0)
-      + '&after_step=' + Math.max(0, Number(afterStep) || 0);
+      + '&after_step=' + Math.max(0, Number(afterStep) || 0)
+      + (visible ? '' : '&steps_only=1');
   }
 
   function browseThinkLabel(seconds) {
@@ -3783,32 +3784,18 @@
     return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + (s % 60) + ' s';
   }
 
-  function openBrowseWindow(jobId, sessionId, showLive) {
+  function openBrowseWindow(jobId, sessionId, showLive, turnId, runKey) {
     var current = state.liveBrowse;
     if (current && current.jobId === jobId && current.sessionId === sessionId
         && current.panel.isConnected) return;
     if (current) current.close();
-    if (state.typingEl) removeTypingIndicator();
-    var panel = buildBrowsePanel();
-    var browseStop = document.createElement('button');
-    browseStop.type = 'button';
-    browseStop.className = 'agent-stop-button';
-    browseStop.hidden = true;
-    browseStop.textContent = '■ Auftrag abbrechen';
-    browseStop.addEventListener('click',requestActiveRunCancel);
-    if (panel.parentNode) panel.parentNode.appendChild(browseStop);
-    state.agentStopEl = browseStop;
-    updateAgentCancelControl();
-    // Playwright is a different channel from ordinary [WEB] search.
-    // Never show search-result carousel for browser frames.
-    var research = null;
-    if (!showLive || uiPreferences.showLiveBrowser === false) {
-      panel.classList.add('browse-live-hidden');
-      panel.setAttribute('aria-label','Web wird durchsucht');
-      var fallback = document.createElement('span');
-      fallback.className = 'browse-live-fallback';
-      fallback.textContent = 'Web wird durchsucht';
-      panel.parentNode.insertBefore(fallback,panel);
+    showTypingIndicator();
+    var content = state.typingEl.querySelector('.msg-content');
+    var visible = showLive && uiPreferences.showLiveBrowser !== false;
+    var panel = visible ? buildBrowsePanel(content) : document.createElement('div');
+    if (!visible) {
+      panel.hidden = true;
+      content.appendChild(panel);
     }
     var head        = panel.querySelector('.browse-live-state');
     var urlLabel    = panel.querySelector('.browse-live-url');
@@ -3950,6 +3937,13 @@
     }
 
     function updateStep(d) {
+      if (d && d.work_event && Number(state.pendingBySession[sessionId]) === turnId) {
+        var event = rememberLiveWorkEvent(sessionId, turnId, runKey, d.work_event);
+        var body = isActiveSession(sessionId) && state.thinkingPanelEl
+          && state.thinkingPanelEl.querySelector('.work-body');
+        if (event && body) window.CoreUIWorkEvents.add(body, event);
+      }
+      if (!visible) return;
       var txt = String((d && d.text) || '');
       if (!txt) return;
       var kind = d && d.kind ? String(d.kind) : 'step';
@@ -4008,7 +4002,7 @@
     function connect() {
       if (doneB) return;
       try {
-        es = new EventSource(browseStreamUrl(jobId, sessionId, lastFrameId, lastStepId), { withCredentials: true });
+        es = new EventSource(browseStreamUrl(jobId, sessionId, lastFrameId, lastStepId, visible), { withCredentials: true });
       } catch (e) {
         if (head) head.textContent = 'OFFLINE';
         setStatusText('Live-Browser konnte nicht verbunden werden.', true);
@@ -4029,7 +4023,7 @@
         try {
           var d = JSON.parse(ev.data) || {};
           if (Number(d.id) > lastFrameId) lastFrameId = Number(d.id);
-          queueFrame(d);
+          if (visible) queueFrame(d);
         } catch (e) {}
       });
       es.addEventListener('status', function (ev) {
@@ -4057,13 +4051,30 @@
         var payload = null;
         try { payload = ev && ev.data ? JSON.parse(ev.data) : null; } catch (e) {}
         if (payload && payload.status === 'error') {
-          delete state.pendingBySession[String(sessionId || '')];
+          finishB('ABGESCHLOSSEN');
+          if (Number(state.pendingBySession[sessionId]) !== turnId) return;
+          var failure = {kind:'commentary',state:'error',title:'Browserrecherche fehlgeschlagen',
+            meta:{public_note:'Die Browserrecherche ist fehlgeschlagen.'}};
+          rememberLiveWorkEvent(sessionId, turnId, runKey, failure);
+          var events = liveWorkForReply(sessionId, turnId, runKey);
+          delete state.pendingBySession[sessionId];
+          clearAgentRun(sessionId);
+          if (state.pollTimers[sessionId]) clearTimeout(state.pollTimers[sessionId]);
+          delete state.pollTimers[sessionId];
           if (isActiveSession(sessionId)) {
+            var timeline = state.thinkingPanelEl;
+            var work = window.CoreUIWorkEvents;
+            if (timeline && timeline.parentNode && work) {
+              timeline.parentNode.replaceChild(work.create({events:events,expanded:true}), timeline);
+            }
+            var bubble = state.typingEl && state.typingEl.querySelector('.msg-bubble');
+            if (bubble) bubble.remove();
+            state.typingEl = null;
+            state.thinkingPanelEl = null;
             updateActivePendingUi();
             setStatus('error', 'RECHERCHEFEHLER');
           }
           drainQueuedTurn(sessionId);
-          finishB('ABGESCHLOSSEN');
           return;
         }
         if (payload && payload.error) {
@@ -4081,19 +4092,7 @@
     connect();
   }
 
-  function buildBrowsePanel() {
-    var row = document.createElement('div');
-    row.className = 'msg-row ember browse-row';
-
-    var avatar = document.createElement('div');
-    avatar.className = 'msg-avatar';
-    applyMessageAvatar(avatar, 'ember', state.assistantName || 'Mara');
-    row.appendChild(avatar);
-
-    var content = document.createElement('div');
-    content.className = 'msg-content';
-    content.appendChild(buildTciMessageHeading());
-
+  function buildBrowsePanel(content) {
     var panel = document.createElement('div');
     panel.className = 'browse-live running';
     panel.innerHTML = ''
@@ -4120,9 +4119,6 @@
       +   '<span class="browse-live-code">N-73 // GHOST</span></div>';
 
     content.appendChild(panel);
-    row.appendChild(content);
-
-    if (messagesInner) messagesInner.appendChild(row);
     scrollToBottom();
     return panel;
   }
@@ -4196,6 +4192,7 @@
 
     netJson(consoleMessagesUrl(ses, userMsgId), { timeoutMs: HISTORY_TIMEOUT_MS })
     .then(function(d) {
+      if (Number(state.pendingBySession[sessionId]) !== Number(userMsgId)) return;
       if (!d.ok || String(d.session_id || '') !== sessionId || !Array.isArray(d.messages)) {
         throw new Error(d.error || 'poll_failed');
       }
@@ -4233,6 +4230,7 @@
       }
     })
     .catch(function() {
+      if (Number(state.pendingBySession[sessionId]) !== Number(userMsgId)) return;
       // #112: an unreachable server is not "no answer". Offline attempts do
       // not use up the reply budget and retries back off (capped, jittered).
       var failures = (Number(state.pollFailuresBySession[sessionId]) || 0) + 1;

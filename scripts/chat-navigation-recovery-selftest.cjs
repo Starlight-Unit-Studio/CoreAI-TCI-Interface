@@ -103,11 +103,9 @@ const delegated = {...validRun,status:'waiting_tool',browse_job_id:55};
 assert.equal(recover(ses,{active_run:delegated}),true);
 sandbox.reconnect(ses,delegated);
 assert.equal(streamStarts.length,2,'returning to a browser job must not start inference');
-assert.deepEqual(browseStreams,[[55,sessionId,false]],'automatic research restores the text-only view');
+assert.deepEqual(browseStreams,[[55,sessionId,false,41,'base']],'automatic research restores the text-only view');
 sandbox.reconnect(ses,{...delegated,browse_show_live:true});
-assert.deepEqual(browseStreams[1],[55,sessionId,true],'explicit research restores the same live browser job');
-assert.match(source,/if \(!showLive \|\| uiPreferences\.showLiveBrowser === false\) \{[\s\S]*?fallback\.textContent = 'Web wird durchsucht';/,
-  'automatic research and the disabled preview preference use the same fallback');
+assert.deepEqual(browseStreams[1],[55,sessionId,true,41,'base'],'explicit research restores the same live browser job');
 sandbox.reconnect(ses,{...delegated,id:'b'.repeat(32),browse_job_id:56});
 sandbox.reconnect(ses,{...delegated,browse_job_id:0});
 assert.equal(browseStreams.length,2,'skip stale runs and missing browser IDs');

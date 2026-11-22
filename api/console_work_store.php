@@ -176,6 +176,32 @@ function coreui_work_public_event(array $row): array {
   ];
 }
 
+/** Translate recorded browser actions into public activity without exposing page text or typed values. */
+function coreui_work_browser_step(int $id, string $text, string $kind): ?array {
+  $state = 'info';
+  if ($kind === 'warn') {
+    $title = 'Browser meldet ein Hindernis';
+  } elseif ($kind === 'step') {
+    $title = match (true) {
+      str_starts_with($text, 'Öffne die Auswahl'), str_starts_with($text, 'Klicke') => 'Element auf der Website geöffnet',
+      str_starts_with($text, 'Öffne ') => 'Website wird geöffnet',
+      str_starts_with($text, 'Neue Suche:') => 'Browser sucht weitere Quellen',
+      str_starts_with($text, 'Fertig, das Ergebnis steht im Chat') => 'Browserrecherche abgeschlossen',
+      default => '',
+    };
+    if ($title === 'Browserrecherche abgeschlossen') $state = 'success';
+  } elseif ($kind === 'think' && str_ends_with($text, ' formuliert die Antwort')) {
+    $title = 'Rechercheergebnis wird aufbereitet';
+  } else {
+    // Timed thinking messages and model/page content belong outside the work log.
+    return null;
+  }
+  return $id > 0 && $title !== '' ? [
+    'id'=>-$id, 'kind'=>'commentary', 'state'=>$state, 'title'=>$title,
+    'meta'=>['source'=>'browser','public_note'=>$title . '.'], 'time'=>'',
+  ] : null;
+}
+
 /** Batch read: only messages already authorized by console_messages.php. */
 function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, array $responseIds): array {
   $ids = array_values(array_unique(array_filter(array_map('intval', $responseIds),
@@ -205,6 +231,24 @@ function coreui_work_map_for_responses(PDO $pdo, int $uid, string $sessionId, ar
     if (!isset($map[$responseId])) $map[$responseId] = [];
     if (count($map[$responseId]) >= 150) continue;
     $map[$responseId][] = coreui_work_public_event($row);
+  }
+  // Steps live in the existing browser journal. Join through the run and job
+  // so only the response to the same account, session and turn gets them.
+  try {
+    $browse = $pdo->prepare('SELECT r.response_message_id,s.id,s.text,s.kind'
+      . ' FROM stu_console_agent_runs r JOIN stu_ember_browse_jobs j ON j.id=r.browse_job_id'
+      . ' AND j.recipient_uid=r.user_id AND j.session_id=r.session_id AND j.trigger_message_id=r.turn_id'
+      . " AND j.channel='console' JOIN stu_ember_browse_steps s ON s.job_id=j.id"
+      . ' WHERE r.user_id=? AND r.session_id=? AND r.response_message_id IN (' . $placeholder . ')'
+      . ' ORDER BY s.id ASC LIMIT 2000');
+    $browse->execute(array_merge([$uid,$sessionId], $ids));
+    foreach ($browse->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+      $event = coreui_work_browser_step((int)$row['id'],(string)$row['text'],(string)$row['kind']);
+      $responseId = (int)$row['response_message_id'];
+      if ($event !== null && count($map[$responseId] ?? []) < 150) $map[$responseId][] = $event;
+    }
+  } catch (PDOException $e) {
+    // The browse worker owns these optional tables and may not have started yet.
   }
   return $map;
 }

@@ -83,8 +83,14 @@ assert(css.includes('.msg-row.user > .msg-content > .msg-bubble {')
   && css.includes('max-width: min(92%, 820px);'),
   'the user bubble may reach the chat right edge, independent of avatar width');
 
-assert.equal((app.match(/buildTciMessageHeading\(\)/g) || []).length, 4,
-  'helper, saved message, live working response and browser status use the same heading');
+const liveHeading = app.slice(app.indexOf('function showThinkingRunning('), app.indexOf('function showTypingIndicator('));
+const browseView = app.slice(app.indexOf('function openBrowseWindow('), app.indexOf('function consoleMessagesUrl('));
+assert(liveHeading.includes('content.appendChild(buildTciMessageHeading());'),
+  'the live working response uses the shared assistant heading');
+assert.match(browseView, /showTypingIndicator\(\);[\s\S]*?state\.typingEl\.querySelector\('\.msg-content'\)/,
+  'browser research keeps the live working response and its shared heading');
+assert(!browseView.includes('buildTciMessageHeading()'),
+  'browser research must not add a second assistant heading');
 assert(app.includes("role === 'ember' ? buildTciMessageHeading()"), 'only assistant messages receive TCI CORE label');
 assert(css.includes('.msg-row.ember > .msg-avatar') && css.includes('position: absolute;'),
   'assistant avatar is taken out of the body text column');

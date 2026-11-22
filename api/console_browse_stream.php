@@ -82,6 +82,7 @@ function bsse_emit_steps(PDO $pdo, int $jobId, int &$lastStepId): int {
       'id' => $lastStepId,
       'text' => (string)$row['text'],
       'kind' => bsse_step_kind($row['kind'] ?? 'step'),
+      'work_event' => coreui_work_browser_step($lastStepId, (string)$row['text'], bsse_step_kind($row['kind'] ?? 'step')),
     ]);
   }
   return count($rows);
@@ -167,13 +168,14 @@ bsse_comment('open');
 
 $lastStepId  = bsse_resume_id($_GET['after_step'] ?? '');
 $lastFrameId = bsse_resume_id($_GET['after_frame'] ?? '');
+$stepsOnly = ($_GET['steps_only'] ?? '') === '1';
 $lastStatus  = '';
 $startTs    = time();
 $MAX_SECS   = 900;   // Sicherheits-Cap passend zu Nginx und PHP-FPM
 
 while (!connection_aborted() && (time() - $startTs) < $MAX_SECS) {
   // Neue Browserbilder zuerst ausliefern. Sie ersetzen das fruehere Schrittprotokoll.
-  bsse_emit_frames($pdo, $jobId, $lastFrameId);
+  if (!$stepsOnly) bsse_emit_frames($pdo, $jobId, $lastFrameId);
 
   // Neue Schritte ausliefern.
   bsse_emit_steps($pdo, $jobId, $lastStepId);
@@ -185,7 +187,7 @@ while (!connection_aborted() && (time() - $startTs) < $MAX_SECS) {
     $status = (string)($sj->fetchColumn() ?: '');
     if ($status === 'done' || $status === 'error') {
       // Alle letzten Frames nachreichen, auch wenn der Worker schneller als der Client war.
-      for ($batch = 0; $batch < 20; $batch++) {
+      for ($batch = 0; !$stepsOnly && $batch < 20; $batch++) {
         if (bsse_emit_frames($pdo, $jobId, $lastFrameId) < 25) break;
       }
       // Letzte evtl. noch nicht gelesenen Schritte nachreichen.
