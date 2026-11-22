@@ -215,6 +215,8 @@ function coreui_agent_edit_failure_reason(string $result): string {
 function coreui_agent_file_target(array $tool): string {
   if (!in_array((string)($tool['tool'] ?? ''), ['pfile_read','pfile_edit','pfile_write'],true)) return '';
   $path=trim(explode("\n",(string)($tool['input']??''),2)[0]);
+  if ($tool['tool'] === 'pfile_read' && function_exists('coreui_pftools_read_target'))
+    [$path] = coreui_pftools_read_target($path);
   return preg_match('~^[\p{L}\p{N}._/()+ -]{1,200}$~uD',$path) === 1
     && !str_contains($path,'..') ? $path : '';
 }
@@ -290,7 +292,7 @@ function coreui_agent_tool_menu(array $allowed): string {
   if (in_array('skill', $allowed, true)) $lines[] = '[SKILL: kennung] um eine Arbeitsanleitung aus deiner Skill-Bibliothek zu laden';
   if (in_array('image', $allowed, true)) $lines[] = '[BILD: Bildbeschreibung auf Englisch] fuer normale Bilder; [BILD ICH: Bildbeschreibung auf Englisch] ausschliesslich fuer Bilder von dir selbst (auch im Rollenspiel)';
   if (in_array('pfile_read', $allowed, true)) {
-    $lines[] = '[DATEI: pfad] um eine Projektdatei mit Zeilennummern zu lesen';
+    $lines[] = '[DATEI: pfad] um eine Projektdatei mit Zeilennummern zu lesen; [DATEI: pfad#L250] liest ab Zeile 250';
     $lines[] = '[DATEI_AENDERN: pfad] mit Bloecken <<<<<<< SUCHEN / alte Zeilen genau / ======= / neue Zeilen / >>>>>>> ERSETZEN, dann [/DATEI_AENDERN], um eine Projektdatei gezielt zu aendern';
     $lines[] = '[DATEI_NEU: pfad] ganzer Inhalt [/DATEI_NEU] fuer eine neue oder ganz ersetzte Projektdatei';
   }
@@ -552,6 +554,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $stalled = 0;
   $webMisses = 0;
   $fileReadSignatures = [];
+  $fileReadContinuations = [];
+  $continuedBlockedRead = false;
   $repeatedFileReads = 0;
   $stopReason = '';
   $taskOutcome = 'completed';
@@ -636,6 +640,14 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       $readSignature = hash('sha256', $filePath . "\n" . $result);
       $lastStep = count($steps) - 1;
       $steps[$lastStep]['read_signature'] = $readSignature;
+      $readInput = (string)$tool['input'];
+      if (preg_match('~\nNaechster Quelltextabschnitt: \[DATEI: ([^\]\r\n]+)\]\z~u', $result, $nextRead) === 1
+          && coreui_agent_file_target(['tool'=>'pfile_read','input'=>$nextRead[1]]) === $filePath) {
+        $fileReadContinuations[$filePath] = $nextRead[1];
+      } elseif (($fileReadContinuations[$filePath] ?? '') === $readInput) {
+        unset($fileReadContinuations[$filePath]);
+      }
+
       $repeatedFileReads = ($fileReadSignatures[$filePath] ?? '') === $readSignature
         ? $repeatedFileReads + 1 : 0;
       $fileReadSignatures[$filePath] = $readSignature;
@@ -655,7 +667,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     }
     if ($filePath !== '' && $state === 'success'
         && in_array((string)$tool['tool'], ['pfile_edit','pfile_write'],true)) {
-      unset($fileEditFailures[$filePath]);
+      unset($fileEditFailures[$filePath], $fileReadContinuations[$filePath]);
     }
     if ($filePath !== '' && $tool['tool']==='pfile_edit' && $state === 'error') {
       $fileEditFailures[$filePath]=($fileEditFailures[$filePath] ?? 0)+1;
@@ -856,6 +868,30 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
           break;
         }
         $proseUnverified = $proseAnswer;
+      }
+      if ($decision['kind'] === 'blocked' && !$continuedBlockedRead
+          && $fileReadContinuations !== [] && !$cancelled()) {
+        // A missing excerpt is an actionable read, not a reason to ask for
+        // another turn. Only use a range returned by a verified project read.
+        $reason = (string)$decision['text'];
+        if (preg_match('~ausschnitt|abschnitt|auszug|quelltext|zeilen~iu', $reason) === 1
+            && preg_match('~fehlt|fehlend|unvollst[aä]ndig|gek[üu]rzt|weiter(?:e[nrsm]?)?~iu', $reason) === 1) {
+          $candidates = [];
+          foreach ($fileReadContinuations as $path => $next) {
+            $extension = pathinfo($path, PATHINFO_EXTENSION);
+            if (stripos($reason, basename($path)) !== false
+                || ($extension !== '' && preg_match('~\b' . preg_quote($extension,'~') . '\b~iu', $reason) === 1)) {
+              $candidates[] = $next;
+            }
+          }
+          if (count($candidates) === 1) {
+            $continuedBlockedRead = true;
+            $record('tool','info','Fehlenden Quelltextabschnitt lesen',
+              ['reason'=>'project_read_continuation','step'=>$used]);
+            $tool = ['tool'=>'pfile_read','input'=>$candidates[0]];
+            continue;
+          }
+        }
       }
       $stopReason = match ($decision['kind']) {
         'done' => 'task_completion_unverified',

@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.8.24
+22.11.2026
+Base 0.8.23.
+
+- Browser research keeps the active work timeline visible and adds verified browsing steps to it. The explicit live view opens in the same reply, and hidden-browser research streams steps only. A failed browser job ends its live timeline without clearing the recorded steps.
+- Project file reads support numbered ranges. If an incomplete source excerpt is the only reported blocker and there is one matching continuation, the run reads the next verified range in the same turn.
+
+No migration. Live checks: automatic research, explicit preview, navigation back to the active chat, browser failure, and a project read truncated before a CSS section.

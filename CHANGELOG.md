@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.24 - 22.11.2026
+
+- Browser research keeps the active work timeline visible and adds verified browsing steps to it. The explicit live view opens in the same reply, and hidden-browser research streams steps only. A failed browser job ends its live timeline without clearing the recorded steps.
+- Project file reads support numbered ranges. If an incomplete source excerpt is the only reported blocker and there is one matching continuation, the run reads the next verified range in the same turn.
+
 ## 0.8.23 - 21.11.2026
 
 - Mara can start Playwright when Browser Research is enabled. The chat shows the live browser only for an explicit Research selection with live view enabled. Automatic research and research with live view off use the same text status, including after reopening the chat.

@@ -650,6 +650,26 @@ loop_test(($blockLoop['outcome']??'')==='interrupted' && ($blockLoop['reason']??
   && str_contains((string)$blockLoop['out'],'Bereits bestaetigte Projektdateien bleiben gespeichert.'),
   'a declared blocker is shown in Mara\'s words: ' . json_encode($blockLoop));
 
+$excerptBlock = "[COREUI_TASK_BLOCKED]\nDer CSS-Ausschnitt ist unvollständig. Mir fehlt der nächste Abschnitt.\n[/COREUI_TASK_BLOCKED]";
+$excerptReplies = [$excerptBlock, "[COREUI_TASK_DONE]\nDer CSS-Abschnitt wurde geprüft.\n[/COREUI_TASK_DONE]"];
+$excerptReads = [];
+$excerptRun = coreui_agent_loop_run('[DATEI: assets/site.css]',
+  ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$excerptReplies): ?string { return array_shift($excerptReplies); },
+  static function(array $tool) use (&$excerptReads): string {
+    $excerptReads[] = $tool['input'];
+    return $tool['input'] === 'assets/site.css'
+      ? "Datei assets/site.css (Stand 1):\nbody { color: blue; }\nNaechster Quelltextabschnitt: [DATEI: assets/site.css#L250]"
+      : 'Datei assets/site.css (Stand 1): .hero { display: grid; }';
+  },
+  static function(string $kind,string $state,string $title,array $meta):void {},static fn():bool=>false);
+loop_test($excerptReads === ['assets/site.css','assets/site.css#L250'] && $excerptRun['outcome'] === 'completed',
+  'a truncated CSS read continues within the same task');
+loop_test(coreui_pftools_read_target('assets/site.css#L250') === ['assets/site.css',250]
+  && coreui_pftools_numbered("first\nsecond\nthird",200,2) === "2 | second\n3 | third"
+  && coreui_agent_file_target(['tool'=>'pfile_read','input'=>'assets/site.css#L250']) === 'assets/site.css',
+  'ranged reads keep the original file in the journal and report absolute line numbers');
+
 $stillPendingCalls=0;$stillPendingTools=[];
 $stillPending=coreui_agent_loop_run('[DATEI: assets/site.css]',
   ['tool'=>'pfile_read','input'=>'assets/site.css'],'BASIS',$projectFileTools,0,

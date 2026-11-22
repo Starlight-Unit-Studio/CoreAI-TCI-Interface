@@ -269,7 +269,7 @@
       case 'Webquelle gefunden':
         return '';
       case 'Browserauftrag eingereiht':
-        return 'Ich starte die Recherche auf Webseiten (Browser).';
+        return 'Web wird durchsucht.';
       case 'Python-Job eingereiht':
         return 'Ich habe den Auftrag an den isolierten Python-Worker übergeben. Die Ausführung ist noch nicht bestätigt.';
       case 'Python-Ausfuehrung beendet':
@@ -548,7 +548,7 @@
       source.forEach(function (raw) {
         var event = normalize(raw);
         if (!event) return;
-        var key = event.id > 0
+        var key = event.id !== 0
           ? 'id:' + event.id
           : [event.kind,event.state,event.title,event.time].join('|');
         if (seen[key]) return;

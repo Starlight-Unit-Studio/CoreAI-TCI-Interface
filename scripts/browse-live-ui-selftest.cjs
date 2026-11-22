@@ -92,6 +92,12 @@ class Element {
   get src() { return this._src; }
   get offsetWidth() { return 10; }
   querySelector(sel) { return this.parts[sel.replace(/^\./, '')] || null; }
+  replaceChild(child, old) {
+    const i = this.children.indexOf(old);
+    if (i >= 0) this.children.splice(i, 1, child);
+    child.parentNode = this;
+    old.parentNode = null;
+  }
   appendChild(child) { child.parentNode = this; this.children.push(child); return child; }
   addEventListener(type, fn) { this.handlers[type] = fn; }
   setAttribute(name, value) { (this.attrs = this.attrs || {})[name] = String(value); }
@@ -110,17 +116,29 @@ class FakeEventSource {
   }
 }
 
-function harness() {
+function harness(showLive = true, showLiveBrowser = true) {
   timers = [];
   sources.length = 0;
   const messagesInner = new Element('div');
+  const row = new Element('div');
+  const content = new Element('div');
+  const timeline = new Element('div');
+  const workBody = new Element('div');
+  timeline.parts['work-body'] = workBody;
+  row.parts['msg-content'] = content;
+  content.appendChild(timeline);
+  row.appendChild(content);
+  messagesInner.appendChild(row);
   const calls = {status: [], drained: 0, scrolled: 0, research: [], researchFinished: 0};
-  const state = {pendingBySession: {s1: {}}, assistantName: 'Mara', agentStopEl: null};
+  const state = {pendingBySession: {s1: 41}, typingEl: row, thinkingPanelEl: timeline, pollTimers: {}, assistantName: 'Mara'};
+  const work = [];
   const sandbox = {
-    API_BASE: '/api', BROWSE_IDLE_MS: 720000, uiPreferences: {liveFrameMotion: true}, state, messagesInner,
+    API_BASE: '/api', BROWSE_IDLE_MS: 720000, uiPreferences: {liveFrameMotion: true, showLiveBrowser}, state, messagesInner,
     document: {createElement: tag => new Element(tag)},
     EventSource: FakeEventSource,
     window: {CoreUIWorkEvents:{
+      create:()=>new Element('div'),
+      add:(body,event)=>{ assert.equal(body,workBody); work.push(event); },
       researchList:()=>new Element('div'),
       researchPage:(list,url,title,label)=>calls.research.push({url,label}),
       finishResearch:()=>{calls.researchFinished++;}
@@ -129,7 +147,10 @@ function harness() {
     setInterval: (fn, ms) => addTimer(fn, ms, true), clearInterval: clearTimer,
     Date: {now: () => now}, JSON, Math, Number, String, encodeURIComponent,
     scrollToBottom: () => { calls.scrolled++; },
-    applyMessageAvatar: () => {},
+    showTypingIndicator: () => {},
+    clearAgentRun: () => {},
+    liveWorkForReply: () => work,
+    rememberLiveWorkEvent: (_session, _turn, _run, event) => event,
     requestActiveRunCancel: () => {},
     updateAgentCancelControl: () => {},
     isActiveSession: () => true,
@@ -138,11 +159,11 @@ function harness() {
     drainQueuedTurn: () => { calls.drained++; },
   };
   vm.runInNewContext(source + '\nthis.openBrowseWindow = openBrowseWindow;', sandbox);
-  sandbox.openBrowseWindow(77, 's1');
-  const row = messagesInner.children[0];
-  const panel = row.children[1].children.find(el=>el.classList.contains('browse-live'));
+  sandbox.openBrowseWindow(77, 's1', showLive, 41, 'base');
+  const panel = content.children[1];
   const part = name => panel.parts[name];
-  return {sandbox, panel, part, calls, state};
+  return {sandbox, panel, part, calls, state, row, work};
+
 }
 
 const frame = (id, extra) => Object.assign({id, step: 1, b64: 'AAAA' + id, cx: 640, cy: 450, vw: 1280, vh: 900,
@@ -282,3 +303,13 @@ assert.match(css, /\.browse-live-think\[hidden\] \{\s*display: none;/, 'badge hi
 assert.match(css, /\.pref-live-static \.browse-live\.thinking \.browse-ghost-cursor,/, 'still view without motion');
 
 console.log('CoreAI browse live view: thinking with seconds, gliding cursor, queue, warnings, resume, reconnect, done OK');
+
+for (const [selected, preference] of [[false, true], [true, false]]) {
+  const hidden = harness(selected, preference);
+  assert.equal(hidden.state.typingEl, hidden.row, 'research preserves the existing typing and timeline row');
+  assert.equal(hidden.panel.hidden, true);
+  assert.match(sources[0].url, /&steps_only=1$/);
+  const workEvent = {id: -61, kind: 'commentary', state: 'info', title: 'Website wird geöffnet'};
+  sources[0].emit('step', {id: 61, work_event: workEvent});
+  assert.deepEqual(hidden.work, [workEvent], 'verified browser activity joins the existing timeline');
+}
