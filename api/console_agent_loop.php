@@ -279,6 +279,21 @@ function coreui_agent_step_label(array $tool, int $step, int $max, string $state
     : ($state === 'info' ? 'Noch nicht bestaetigt: ' . $what : $what);
 }
 
+/** Repair only a missing-tool claim contradicted by this turn's tool permissions. */
+function coreui_agent_execution_repair(array $decision, array $allowed): string {
+  if (($decision['kind'] ?? '') !== 'blocked' || !in_array('prun', $allowed, true)) return '';
+  $text = (string)($decision['text'] ?? '');
+  if (preg_match('~(?:kein(?:e[msnr]?)?|ohne)\s+(?:[\p{L}-]+\s+){0,3}'
+      . '(?:projektwerkzeug|werkzeug\s+zum\s+ausf[üu]hren|entwicklungsumgebung|ausf[üu]hrungswerkzeug)'
+      . '|(?:projektwerkzeug|ausf[üu]hrungswerkzeug|entwicklungsumgebung|execution\s+tool)'
+      . '.{0,55}(?:nicht\s+verf[üu]gbar|fehlt|unavailable)~iu', $text) !== 1) return '';
+  return "\nDas Ausfuehrungswerkzeug [AUSFUEHREN: befehl] ist fuer diesen Auftrag freigegeben. "
+    . "Ein gestarteter Prozess oder ein bestandener Test ist erst durch das Werkzeug bestaetigt. "
+    . "Wenn nur die technische Pruefung fehlt, waehle jetzt genau einen passenden erlaubten "
+    . "Werkzeugmarker fuer die Pruefung. Wiederhole keine schon bestaetigten Aenderungen. "
+    . "Falls ein echter anderer Grund die Pruefung verhindert, benenne ihn im BLOCKED-Block.";
+}
+
 /** The markers Mara may use in the loop, in words (pure). */
 function coreui_agent_tool_menu(array $allowed): string {
   $lines = [];
@@ -556,6 +571,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   $fileReadSignatures = [];
   $fileReadContinuations = [];
   $continuedBlockedRead = false;
+  $repairedExecutionClaim = false;
   $repeatedFileReads = 0;
   $stopReason = '';
   $taskOutcome = 'completed';
@@ -836,6 +852,20 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         if ($decision['kind'] !== 'invalid') {
           $record('model','success','Arbeitsentscheidung geklaert',
             ['reason'=>'task_decision_repaired','step'=>$used]);
+        }
+      }
+      $executionRepair = !$repairedExecutionClaim ? coreui_agent_execution_repair($decision, $allowed) : '';
+      if ($executionRepair !== '' && !$cancelled()) {
+        $repairedExecutionClaim = true;
+        $record('model','info','Verfuegbares Projektwerkzeug erneut angeboten',
+          ['reason'=>'project_execution_available','step'=>$used]);
+        $repair = $callModel(coreui_agent_compact_project_prompt($base,$steps,$used,$allowed) . $executionRepair);
+        if (is_string($repair) && !coreui_task_output_cut($callReport())) {
+          $candidate = $parseDecision($repair);
+          if ($candidate['kind'] === 'action'
+              || ($candidate['kind'] === 'blocked' && coreui_agent_execution_repair($candidate,$allowed) === '')) {
+            $decision = $candidate;
+          }
         }
       }
       if ($decision['kind'] === 'action') {
