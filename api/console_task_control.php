@@ -124,7 +124,9 @@ function coreui_task_decision(string $reply, callable $parseTool): array {
 function coreui_task_protocol_prompt(): string {
   return "\n\nAUFTRAGSSTEUERUNG (verbindlich, nicht Teil des sichtbaren Texts):\n"
     . "Der Auftrag ist aktiv. Nach jedem Werkzeugergebnis entscheide mit GENAU EINER Form:\n"
-    . "A) Brauchst du weitere Arbeit, liefere GENAU EINEN erlaubten Werkzeugmarker.\n"
+    . "A) Brauchst du weitere Arbeit, liefere GENAU EINEN erlaubten Werkzeugmarker als Antworttext. "
+    . "CoreAI fuehrt den Marker aus und liefert das Ergebnis. Die freigegebenen Marker sind auch "
+    . "ohne separate Funktionsaufrufe des Modellanbieters nutzbar.\n"
     . "B) Sind alle beauftragten Ergebnisse nachweisbar erstellt UND geprueft, antworte so:\n"
     . COREUI_TASK_DONE_OPEN . "\nKurze ehrliche Antwort mit nachgewiesenen Ergebnissen.\n"
     . COREUI_TASK_DONE_CLOSE . "\n"

@@ -669,10 +669,47 @@ $verificationRun = coreui_agent_loop_run('[DATEI: style.css]',
 loop_test($verificationTools === ['pfile_read','prun'] && $verificationRun['outcome'] === 'completed',
   'a false missing-runner claim is repaired and the saved project is verified in the same turn');
 
+$deniedProjectTools = 'Ich kann hier nicht auf Projektwerkzeuge zugreifen: Es werden keine tatsächlichen Datei- oder Testwerkzeuge angeboten.';
+$denial = ['kind'=>'blocked','text'=>$deniedProjectTools];
+$readOnlyRepair = coreui_agent_execution_repair($denial, ['pfile_read']);
+loop_test(str_contains($readOnlyRepair, '[DATEI: pfad#L250]') && !str_contains($readOnlyRepair, '[AUSFUEHREN:')
+  && coreui_agent_execution_repair($denial, []) === '',
+  'repair advertises only markers permitted on the current turn');
+loop_test(coreui_agent_execution_repair(
+  ['kind'=>'blocked','text'=>'Das Testwerkzeug meldet, dass die Datei nicht verfügbar ist.'], ['prun']) === '',
+  'a missing file reported by an available runner is a real blocker');
+
+$denialReply = "[COREUI_TASK_BLOCKED]\n" . $deniedProjectTools . "\n[/COREUI_TASK_BLOCKED]";
+foreach ([true, false] as $recovers) {
+  $denialReplies = $recovers
+    ? [$denialReply, '[AUSFUEHREN: node --test]', "[COREUI_TASK_DONE]\nDie technische Prüfung ist gelaufen.\n[/COREUI_TASK_DONE]"]
+    : [$denialReply, $denialReply];
+  $denialTools = [];
+  $denialPrompts = [];
+  $denialRun = coreui_agent_loop_run('[DATEI: index.html#L247]',
+    ['tool'=>'pfile_read','input'=>'index.html#L247'],'BASIS',$projectFileTools,0,
+    static function(string $prompt) use (&$denialReplies, &$denialPrompts): ?string {
+      $denialPrompts[] = $prompt;
+      return array_shift($denialReplies);
+    },
+    static function(array $tool) use (&$denialTools): string {
+      $denialTools[] = $tool['tool'];
+      return $tool['tool'] === 'prun' ? 'Projektlauf abgeschlossen, Exitcode 0' : 'Datei index.html (Stand 2)';
+    },
+    static function(string $kind,string $state,string $title,array $meta):void {},static fn():bool=>false);
+  loop_test(str_contains($denialPrompts[1] ?? '', 'Marker als Antworttext')
+    && $denialTools === ($recovers ? ['pfile_read','prun'] : ['pfile_read'])
+    && $denialRun['outcome'] === ($recovers ? 'completed' : 'interrupted')
+    && !str_contains((string)$denialRun['out'], $deniedProjectTools),
+    'a false project tool denial gets one repair, and a recurring denial is not presented as fact');
+}
+
 $streamSource = (string)file_get_contents($root . '/api/console_stream.php');
 loop_test(str_contains($streamSource, 'coreui_task_journal_resume_check($pdo,(int)$uid,$sessionId,(string)$sourceRun')
   && str_contains($streamSource, "if (!empty(\$GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || \$projectContinuation)")
-  && str_contains($streamSource, "\$projectDecision = \$decision['tool'];"),
+  && str_contains($streamSource, "\$projectDecision = \$decision['tool'];")
+  && str_contains($streamSource, 'coreui_agent_execution_repair($decision,$projectToolAllowed)')
+  && str_contains($streamSource, 'coreui_agent_blocked_text($decision,$projectToolAllowed)'),
   'explicit continuation uses an owned verified checkpoint and hands the accepted action to the shared dispatcher');
 $excerptBlock = "[COREUI_TASK_BLOCKED]\nDer CSS-Ausschnitt ist unvollständig. Mir fehlt der nächste Abschnitt.\n[/COREUI_TASK_BLOCKED]";
 $excerptReplies = [$excerptBlock, "[COREUI_TASK_DONE]\nDer CSS-Abschnitt wurde geprüft.\n[/COREUI_TASK_DONE]"];

@@ -424,3 +424,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_8_24.txt
 * CHANGELOG_0_8_25.txt
 * CHANGELOG_0_8_26.txt
+* CHANGELOG_0_8_27.txt

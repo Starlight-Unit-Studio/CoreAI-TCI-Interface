@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.27 - 23.11.2026
+
+- When a project reply claims its enabled file or test tools are unavailable, CoreAI reoffers the permitted markers once in the current run or when resuming.
+- If the reply still yields no next action, CoreAI reports the interruption without repeating the contradicted claim. Concrete tool failures and verified completion keep their existing handling.
+
 ## 0.8.26 - 23.11.2026
 
 - After switching project working states, Mara receives the active state’s file inventory. Earlier source excerpts are replaced with a note so they cannot guide edits on the new state.

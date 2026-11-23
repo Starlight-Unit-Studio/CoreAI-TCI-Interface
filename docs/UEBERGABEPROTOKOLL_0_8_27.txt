@@ -1,0 +1,8 @@
+CoreAI: TCI Interface 0.8.27
+23.11.2026
+Base 0.8.26.
+
+- When a project reply claims its enabled file or test tools are unavailable, CoreAI reoffers the permitted markers once in the current run or when resuming.
+- If the reply still yields no next action, CoreAI reports the interruption without repeating the contradicted claim. Concrete tool failures and verified completion keep their existing handling.
+
+No migration. Live check: resume an interrupted project with saved files and verify that authorized file and test steps run against the active working state.
