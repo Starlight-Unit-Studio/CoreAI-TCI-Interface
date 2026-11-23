@@ -1,0 +1,5 @@
+CoreAI: TCI Interface 0.8.26
+23.11.2026
+
+- After switching project working states, Mara receives the active state’s file inventory. Earlier source excerpts are replaced with a note so they cannot guide edits on the new state.
+- Repeated reads track individual line ranges. Before stopping a read loop, Mara gets one opportunity to choose a new section, edit or verification step.

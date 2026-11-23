@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.25: restore the active browser view when reopening a chat.
+# CoreAI: TCI Interface 0.8.26: restore the active browser view when reopening a chat.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

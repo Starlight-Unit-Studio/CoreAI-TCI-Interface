@@ -338,9 +338,13 @@ $out = $runTool('pvcs_commit', 'Neue Farbe fuer den Titel');
 $s = coreui_pvcs_state($pdo, 7, $p);
 pmg_test(str_starts_with($out, 'Version gesichert: "Neue Farbe fuer den Titel" auf dem Arbeitsstand mara/farbe') && $s['log'][0]['author'] === 'mara',
   'Mara saves a version as hers: ' . $out);
-pmg_test($runTool('pvcs_branch', 'mara/farbe') === 'Der Arbeitsstand mara/farbe ist schon aktiv.'
-  && str_starts_with($runTool('pvcs_branch', 'main'), 'Gewechselt auf den Arbeitsstand main') && $file('style.css') === null,
-  'Mara switches back; main does not have her change');
+pmg_test($runTool('pvcs_branch', 'mara/farbe') === 'Der Arbeitsstand mara/farbe ist schon aktiv.',
+  'an already active branch remains active');
+$switch = $runTool('pvcs_branch', 'main');
+pmg_test(str_starts_with($switch, 'Gewechselt auf den Arbeitsstand main') && $file('style.css') === null
+  && str_contains($switch, 'Vorhandene Dateien im gebundenen Arbeitsbereich:')
+  && !str_contains($switch, 'style.css'),
+  'the switch reports the target inventory, without carrying files from the previous state');
 $out = $runTool('pvcs_merge', 'mara/farbe');
 pmg_test(str_starts_with($out, 'Zusammengefuehrt: mara/farbe in main (1 neu, 0 geaendert, 0 geloescht)') && $file('style.css') === "h1 { color: teal; }\n"
   && coreui_pvcs_state($pdo, 7, $p)['log'][0]['author'] === 'mara', 'Mara merges without conflicts: ' . $out);
