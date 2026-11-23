@@ -646,7 +646,8 @@ try {
         && empty($acc['truncated']) && isset($model,$sys,$u)
         && !ember_agent_cancel_requested()) {
       coreui_work_record($pdo,'model','info','Fortgesetzter Arbeitsauftrag: Entscheidung wird korrigiert',
-        ['reason'=>'task_decision_missing','error_type'=>(string)($decision['shape'] ?? '')]);
+        ['reason'=>$executionRepair !== '' ? 'project_execution_available' : 'task_decision_missing',
+         'error_type'=>(string)($decision['shape'] ?? '')]);
       $fix=console_stream_ollama($model,$sys,
         $executionRepair !== '' ? $u . $executionRepair
           : coreui_task_decision_repair_prompt($u,(string)($decision['shape'] ?? ''),$reply),
@@ -675,7 +676,7 @@ try {
       }
     } elseif ($decision['kind']==='blocked') {
       $GLOBALS['COREUI_AGENT_TASK_OUTCOME']='interrupted';
-      $reply=(string)$decision['text'];
+      $reply=coreui_agent_blocked_text($decision,$projectToolAllowed);
     } elseif ($decision['kind']==='invalid' && $proseReply!==''
         && coreui_task_journal_can_finish($pdo,(int)$uid,$sessionId,$agentRunId)) {
       $reply=$proseReply;

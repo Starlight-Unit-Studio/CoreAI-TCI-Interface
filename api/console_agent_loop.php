@@ -279,19 +279,47 @@ function coreui_agent_step_label(array $tool, int $step, int $max, string $state
     : ($state === 'info' ? 'Noch nicht bestaetigt: ' . $what : $what);
 }
 
-/** Repair only a missing-tool claim contradicted by this turn's tool permissions. */
+/** Repair an absence claim only when the current turn authorizes the relevant marker. */
 function coreui_agent_execution_repair(array $decision, array $allowed): string {
-  if (($decision['kind'] ?? '') !== 'blocked' || !in_array('prun', $allowed, true)) return '';
+  if (($decision['kind'] ?? '') !== 'blocked') return '';
+  $markers = [];
+  $toolNames = [];
+  if (in_array('pfile_read', $allowed, true)) {
+    $markers[] = '[DATEI: pfad] oder [DATEI: pfad#L250] zum Lesen';
+    $toolNames[] = 'dateiwerkzeuge?|projektdateiwerkzeuge?|file tools?';
+  }
+  $canRun = in_array('prun', $allowed, true);
+  if ($canRun) {
+    $markers[] = '[AUSFUEHREN: befehl] zum Ausfuehren oder Testen';
+    $toolNames[] = 'testwerkzeuge?|ausf[üu]hrungswerkzeuge?|werkzeuge? zum ausf[üu]hren|entwicklungsumgebung|execution tools?|test tools?';
+  }
+  if ($markers === []) return '';
+  $toolNames[] = 'projektwerkzeuge?|project tools?';
+  // A compound denial ("Datei- oder Testwerkzeuge") denies both capabilities.
+  $toolNames[] = 'datei-\s+(?:oder|und)\s+testwerkzeuge?';
   $text = (string)($decision['text'] ?? '');
-  if (preg_match('~(?:kein(?:e[msnr]?)?|ohne)\s+(?:[\p{L}-]+\s+){0,3}'
-      . '(?:projektwerkzeug|werkzeug\s+zum\s+ausf[üu]hren|entwicklungsumgebung|ausf[üu]hrungswerkzeug)'
-      . '|(?:projektwerkzeug|ausf[üu]hrungswerkzeug|entwicklungsumgebung|execution\s+tool)'
-      . '.{0,55}(?:nicht\s+verf[üu]gbar|fehlt|unavailable)~iu', $text) !== 1) return '';
-  return "\nDas Ausfuehrungswerkzeug [AUSFUEHREN: befehl] ist fuer diesen Auftrag freigegeben. "
-    . "Ein gestarteter Prozess oder ein bestandener Test ist erst durch das Werkzeug bestaetigt. "
-    . "Wenn nur die technische Pruefung fehlt, waehle jetzt genau einen passenden erlaubten "
-    . "Werkzeugmarker fuer die Pruefung. Wiederhole keine schon bestaetigten Aenderungen. "
-    . "Falls ein echter anderer Grund die Pruefung verhindert, benenne ihn im BLOCKED-Block.";
+  if (!$canRun) {
+    // A reader alone does not contradict an explicitly execution-only denial.
+    $text = (string)preg_replace('~\bausf(?:ü|ue|u)hrbar\p{L}*\s+projektwerkzeuge?\b~iu', 'Runner', $text);
+  }
+  $tool = '(?:' . implode('|', $toolNames) . ')';
+  $absence = '(?:\b(?:kein(?:e[msnr]?)?|ohne|no)\s+(?:[\p{L}-]+\s+){0,3}' . $tool . '\b'
+    . '|\b(?:nicht|keinen Zugriff)\s+auf\s+(?:[\p{L}-]+\s+){0,3}' . $tool . '\b'
+    . '|\b' . $tool . '\b\s+(?:(?:ist|sind|wird|werden|hier|derzeit|aktuell|is|are)\s+){0,4}(?:nicht\s+(?:verf[üu]gbar|angeboten)|fehlt|fehlen|unavailable)\b)';
+  if (preg_match('~' . $absence . '~iu', $text) !== 1) return '';
+  return "\nFuer diesen Projektauftrag sind folgende Marker freigegeben: " . implode('; ', $markers) . ". "
+    . "Gib den naechsten Marker als Antworttext aus. Die Umgebung fuehrt ihn aus und liefert das Ergebnis. "
+    . "Wenn nur die Pruefung fehlt, waehle eine passende Pruefung am aktiven Arbeitsstand. "
+    . "Wiederhole keine schon bestaetigten Aenderungen. Falls ein konkreter Werkzeugfehler oder "
+    . "ein anderer echter Grund den naechsten Schritt verhindert, benenne ihn im BLOCKED-Block.";
+}
+
+/** Never present a contradicted capability claim as the reason the project stopped. */
+function coreui_agent_blocked_text(array $decision, array $allowed): string {
+  if (coreui_agent_execution_repair($decision, $allowed) !== '') {
+    return 'Ich habe trotz freigegebener Werkzeuge keinen ausfuehrbaren naechsten Projektschritt geliefert.';
+  }
+  return trim((string)($decision['text'] ?? ''));
 }
 
 /** The markers Mara may use in the loop, in words (pure). */
@@ -965,7 +993,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       };
       // 0.8.16: Mara's own words about the blocker reach the person (they were replaced by a
       // generic sentence, so nobody saw why the work stopped).
-      if ($decision['kind'] === 'blocked') $blockedReason = trim((string)$decision['text']);
+      if ($decision['kind'] === 'blocked') $blockedReason = coreui_agent_blocked_text($decision, $allowed);
       $record('run','error','Projektauftrag ohne bestaetigten Abschluss unterbrochen',
         ['reason'=>$stopReason,'step'=>$used]
           + ($decision['kind'] === 'invalid'
