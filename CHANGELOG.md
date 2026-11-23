@@ -1,5 +1,9 @@
 # CoreAI: TCI Interface
 
+## 0.8.25 - 22.11.2026
+
+- Continue resumes an interrupted project from its verified work while keeping the current tool permissions. If the model wrongly reports that an enabled execution tool is unavailable, CoreAI offers one correction before ending the task. Tool execution and verification still require actual results.
+
 ## 0.8.24 - 22.11.2026
 
 - Browser research keeps the active work timeline visible and adds verified browsing steps to it. The explicit live view opens in the same reply, and hidden-browser research streams steps only. A failed browser job ends its live timeline without clearing the recorded steps.

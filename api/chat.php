@@ -5722,7 +5722,8 @@ function ember_generate_reply(
   ?string $consoleSessionId = null,
   ?int $excludeReplyToId = null,
   int $triggerMessageId = 0,
-  int $triggerRevision = 0
+  int $triggerRevision = 0,
+  ?array $projectDecision = null
 ): ?string {
   unset($GLOBALS['COREUI_PENDING_ARTIFACTS']);
   // v1.1.1.07: Smalltalk-/Fast-Conversation-Routing und Tool-Fastpaths entfernt.
@@ -6260,7 +6261,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   $requestedSourceProject = $channel === 'console' && $imageUrl === null
     && ember_py_enabled() && coreui_console_download_requested($userMsg)
       ? coreui_console_multifile_source_directive($sourceProjectRequest) : null;
-  $fileTask = $channel === 'console' && $imageUrl === null && ember_py_enabled()
+  $fileTask = $projectDecision === null && $channel === 'console' && $imageUrl === null && ember_py_enabled()
     && ($nativeSourceProject || coreui_console_download_requested($userMsg))
     && ($nativeSourceProject || ember_console_file_tool_is_local($primaryModel)
       || $requestedSourceProject !== null);
@@ -6557,20 +6558,28 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     coreui_work_record($pdo, 'tool', 'info', 'Dateiwerkzeug angefordert',
       ['reason'=>'file_task']);
   }
-  coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
-  $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel),
-    [], $imageUrl, $fileToolThink);
-  // Remember whether THIS reply was cut off; later calls overwrite the meta.
-  $outTruncated = ember_last_call_was_truncated();
-  $outMeta = ember_last_call_meta();
-  $fileModelTruncated = $fileTask && $outTruncated;
-  $fileModelStatus = $fileTask
-    ? ember_console_file_model_status($out, $outMeta, $fileModelTruncated)
-    : ($outTruncated ? ember_truncation_meta($outMeta) : []);
-  coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== ''
-      ? ($outTruncated ? 'info' : 'success') : 'error',
-    is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
-    ['model'=>$primaryModel] + $fileModelStatus);
+  if ($projectDecision !== null) {
+    // The stream already checked this complete decision. All tools still
+    // go through the scoped dispatcher and durable task journal below.
+    $out = "";
+    $outTruncated = $fileModelTruncated = false;
+    $outMeta = [];
+  } else {
+    coreui_work_record($pdo, 'model', 'running', 'Modellaufruf gestartet', ['model'=>$primaryModel]);
+    $out = ember_call_ollama($primaryModel, $sys, $u, ember_timeout_for_model($primaryModel),
+      [], $imageUrl, $fileToolThink);
+    // Remember whether THIS reply was cut off; later calls overwrite the meta.
+    $outTruncated = ember_last_call_was_truncated();
+    $outMeta = ember_last_call_meta();
+    $fileModelTruncated = $fileTask && $outTruncated;
+    $fileModelStatus = $fileTask
+      ? ember_console_file_model_status($out, $outMeta, $fileModelTruncated)
+      : ($outTruncated ? ember_truncation_meta($outMeta) : []);
+    coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== ''
+        ? ($outTruncated ? 'info' : 'success') : 'error',
+      is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
+      ['model'=>$primaryModel] + $fileModelStatus);
+  }
   $finalPrompt = $u;
   // For explicitly named/inferred browser-game ZIP sources, accept only
   // complete inert source files; never run an incomplete LLM Python writer.
@@ -7003,7 +7012,12 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
   if ($channel === 'console' && $imageUrl === null && empty($fileTask) && is_string($out)) {
     $loopAllowed = ember_agent_allowed_tools($consoleUid, (string)$consoleSessionId,
       coreui_agent_browse_available($composerIntent, ember_browse_enabled()));
-    $loopTool = coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed,
+    $loopTool = $projectDecision;
+    if ($loopTool !== null && !in_array($loopTool['tool'], $loopAllowed, true)) {
+      $GLOBALS['COREUI_AGENT_TASK_OUTCOME'] = 'interrupted';
+      return 'Das gewaehlte Projektwerkzeug ist fuer diesen Auftrag nicht mehr freigegeben.';
+    }
+    $loopTool ??= coreui_agent_next_tool($out, array_values(array_intersect($loopAllowed,
       array_merge(['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write', 'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge'],
         COREUI_PFTOOLS_PROC_KINDS))));
     // A smaller Core sometimes says "Ich lese mir jetzt style.css durch"

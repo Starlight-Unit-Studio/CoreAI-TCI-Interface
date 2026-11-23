@@ -212,6 +212,7 @@ $promptMessage = $message;
 // tool path; the prompt builders take the mark out of the text themselves.
 $composerIntentStream = coreui_composer_intent_peek($promptMessage);
 $excludeReplyToId = null;
+$projectContinuation = false;
 if ($generationRequest !== null) {
   if ($generationMode === 'regenerate' || $generationMode === 'edit') {
     // Eine Alternative darf nicht die bereits gespeicherte Antwort desselben
@@ -229,9 +230,31 @@ if ($generationRequest !== null) {
         true
       );
       $sourceText = ember_sanitize_public_reply((string)($sourceResponse['message'] ?? ''), '');
-      $promptMessage .= "\n\n[INTERNE EMBER-COREUI-AKTION: Setze die folgende eigene Antwort direkt fort. "
-        . "Wiederhole den vorhandenen Text nicht und beginne ohne neue Begruessung.]\n"
-        . "BISHERIGE ANTWORT:\n" . $sourceText;
+      // A saved interrupted run with verified project steps is an open
+      // task. The visible interruption text never determines permissions.
+      if ($composerIntentStream === null
+          && coreui_pftools_has_saved_sources($pdo,(int)$uid,$sessionId) === true
+          && coreui_agent_run_schema_ready($pdo)) {
+        $sourceRun = coreui_agent_run_map_for_responses($pdo,(int)$uid,$sessionId,[$sourceResponseId])[$sourceResponseId] ?? [];
+        if (in_array($sourceRun['status'] ?? '', ['interrupted','blocked'], true)
+            && (int)($sourceRun['task']['last_verified_step'] ?? 0) > 0) {
+          $sourceCheckpoint = coreui_task_journal_resume_check($pdo,(int)$uid,$sessionId,(string)$sourceRun['id']);
+          $receipt = !empty($sourceCheckpoint['safe'])
+            ? coreui_task_journal_resume_context($pdo,(int)$uid,$sessionId,(string)$sourceRun['id']) : '';
+          if ($receipt !== '') {
+            $projectContinuation = true;
+            $excludeReplyToId = $afterId;
+            $promptMessage .= "\n\n" . $receipt . coreui_task_protocol_prompt()
+              . "\nWaehle den naechsten offenen Projektschritt aus der aktuellen Werkzeugliste. "
+              . "Ist nur die Verifikation offen, fuehre sie mit dem freigegebenen Werkzeug aus.";
+          }
+        }
+      }
+      if (!$projectContinuation) {
+        $promptMessage .= "\n\n[INTERNE EMBER-COREUI-AKTION: Setze die folgende eigene Antwort direkt fort. "
+          . "Wiederhole den vorhandenen Text nicht und beginne ohne neue Begruessung.]\n"
+          . "BISHERIGE ANTWORT:\n" . $sourceText;
+      }
     } catch (Throwable $eSource) {
       coreui_console_generation_finish(
         $pdo,
@@ -607,7 +630,8 @@ try {
       array_merge(['pfile_read','pfile_edit','pfile_write','prun',
         'pvcs_commit','pvcs_branch','pvcs_merge'],COREUI_PFTOOLS_PROC_KINDS)));
   }
-  if (!empty($GLOBALS['COREUI_TASK_RESUME_ACTIVE'])) {
+  $projectDecision = null;
+  if (!empty($GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || $projectContinuation) {
     // On a resumed run, the first model reply is still an active TASK
     // decision. Never mistake unmarked prose for a completed interrupted
     // project merely because the SSE stream itself ended successfully.
@@ -616,25 +640,32 @@ try {
     $decision=$parseTask($reply);
     // 0.8.18: a plain answer stays Mara's answer when the journal confirms the saved state (console_agent_loop.php).
     $proseReply=($decision['kind']==='invalid' && ($decision['shape'] ?? '')==='prose_only') ? trim($reply) : '';
-    if ($decision['kind']==='invalid'
+    $executionRepair = coreui_agent_execution_repair($decision,$projectToolAllowed);
+    if (($decision['kind']==='invalid' || $executionRepair!=='')
         && !empty($acc['ok']) && !empty($acc['done'])
         && empty($acc['truncated']) && isset($model,$sys,$u)
         && !ember_agent_cancel_requested()) {
       coreui_work_record($pdo,'model','info','Fortgesetzter Arbeitsauftrag: Entscheidung wird korrigiert',
         ['reason'=>'task_decision_missing','error_type'=>(string)($decision['shape'] ?? '')]);
       $fix=console_stream_ollama($model,$sys,
-        coreui_task_decision_repair_prompt($u,(string)($decision['shape'] ?? ''),$reply),false,null,false,false);
+        $executionRepair !== '' ? $u . $executionRepair
+          : coreui_task_decision_repair_prompt($u,(string)($decision['shape'] ?? ''),$reply),
+        false,null,false,false);
       if (!empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated'])) {
         $candidate=ember_sanitize_public_reply((string)($fix['content']??''),
           (string)($fix['thinking']??''));
         $repaired=$parseTask($candidate);
-        if ($repaired['kind']!=='invalid') {
+        if ($repaired['kind']!=='invalid'
+            && ($executionRepair==='' || $repaired['kind']==='action'
+              || ($repaired['kind']==='blocked' && coreui_agent_execution_repair($repaired,$projectToolAllowed)===''))) {
           $decision=$repaired;
           $reply=$candidate;
         }
       }
     }
-    if ($decision['kind']==='done') {
+    if ($decision['kind']==='action') {
+      if (!empty($acc['ok']) && !empty($acc['done']) && empty($acc['truncated'])) $projectDecision = $decision['tool'];
+    } elseif ($decision['kind']==='done') {
       if (coreui_task_journal_can_finish($pdo,(int)$uid,$sessionId,$agentRunId)) {
         $reply=(string)$decision['text'];
       } else {
@@ -664,7 +695,7 @@ try {
   // Tool-Marker ([WEB:]/[BROWSE:]/[PY]) werden weiterhin vom gemeinsamen
   // Werkzeugpfad verarbeitet. Ein reines Tokenlimit setzt dagegen gezielt am
   // vorhandenen Antworttext fort und startet nicht mehr die ganze Anfrage neu.
-  $hasMarker = (ember_extract_web_marker($reply) !== null)
+  $hasMarker = $projectDecision !== null || (ember_extract_web_marker($reply) !== null)
             || (ember_extract_browse_marker($reply) !== null)
             || (function_exists('ember_py_extract_marker') && ember_py_extract_marker($reply) !== null)
             || coreui_extract_archive_marker($reply) !== null
@@ -779,7 +810,7 @@ try {
     if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
     // Reuse an already confirmed browser decision from the first model
     // response. The queue still validates the saved user turn and permissions.
-    $streamBrowseGoal = $streamComplete && !$isVisionTurn
+    $streamBrowseGoal = $projectDecision === null && $streamComplete && !$isVisionTurn
       && coreui_agent_browse_available($composerIntentStream, ember_browse_enabled())
       ? ember_extract_browse_marker($reply) : null;
     if ($streamBrowseGoal !== null) {
@@ -796,7 +827,8 @@ try {
         $sessionId,
         $excludeReplyToId,
         $afterId,
-        $triggerRevision
+        $triggerRevision,
+        $projectDecision
       );
     }
     $enqueued = ember_browse_consume_request($pdo, $channel, (int)$uid, $sessionId, $afterId);

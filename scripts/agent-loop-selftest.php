@@ -650,6 +650,30 @@ loop_test(($blockLoop['outcome']??'')==='interrupted' && ($blockLoop['reason']??
   && str_contains((string)$blockLoop['out'],'Bereits bestaetigte Projektdateien bleiben gespeichert.'),
   'a declared blocker is shown in Mara\'s words: ' . json_encode($blockLoop));
 
+$missingExecution = "Rick, die technische Pruefung fehlt, weil in dieser Sitzung kein ausführbares Projektwerkzeug verfügbar ist.";
+$falseBlock = "[COREUI_TASK_BLOCKED]\n" . $missingExecution . "\n[/COREUI_TASK_BLOCKED]";
+loop_test(coreui_agent_execution_repair(['kind'=>'blocked','text'=>$missingExecution], ['pfile_read']) === '',
+  'a genuinely unavailable project runner must not be offered');
+loop_test(coreui_agent_execution_repair(['kind'=>'blocked','text'=>'Der Ordner ist schreibgeschuetzt.'], ['prun']) === '',
+  'a genuine blocker must not be overridden');
+$verificationReplies = [$falseBlock, "[AUSFUEHREN: node --test]", "[COREUI_TASK_DONE]\nDie technische Pruefung ist gelaufen.\n[/COREUI_TASK_DONE]"];
+$verificationTools = [];
+$verificationRun = coreui_agent_loop_run('[DATEI: style.css]',
+  ['tool'=>'pfile_read','input'=>'style.css'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$verificationReplies): ?string { return array_shift($verificationReplies); },
+  static function(array $tool) use (&$verificationTools): string {
+    $verificationTools[] = $tool['tool'];
+    return $tool['tool'] === 'prun' ? 'Projektlauf abgeschlossen, Exitcode 0' : 'Datei style.css (Stand 2)';
+  },
+  static function(string $kind,string $state,string $title,array $meta):void {},static fn():bool=>false);
+loop_test($verificationTools === ['pfile_read','prun'] && $verificationRun['outcome'] === 'completed',
+  'a false missing-runner claim is repaired and the saved project is verified in the same turn');
+
+$streamSource = (string)file_get_contents($root . '/api/console_stream.php');
+loop_test(str_contains($streamSource, 'coreui_task_journal_resume_check($pdo,(int)$uid,$sessionId,(string)$sourceRun')
+  && str_contains($streamSource, "if (!empty(\$GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || \$projectContinuation)")
+  && str_contains($streamSource, "\$projectDecision = \$decision['tool'];"),
+  'explicit continuation uses an owned verified checkpoint and hands the accepted action to the shared dispatcher');
 $excerptBlock = "[COREUI_TASK_BLOCKED]\nDer CSS-Ausschnitt ist unvollständig. Mir fehlt der nächste Abschnitt.\n[/COREUI_TASK_BLOCKED]";
 $excerptReplies = [$excerptBlock, "[COREUI_TASK_DONE]\nDer CSS-Abschnitt wurde geprüft.\n[/COREUI_TASK_DONE]"];
 $excerptReads = [];
