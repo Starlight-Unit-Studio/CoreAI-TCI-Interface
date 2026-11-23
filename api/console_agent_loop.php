@@ -643,8 +643,24 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       if ($outcomeNote !== null) $record('commentary','info','Mara ordnet das Werkzeugergebnis ein',
         ['public_note'=>$outcomeNote,'source'=>'verified_tool_result']);
     }
+    if ($projectWorkflow && $state === 'success'
+        && (($tool['tool'] === 'pvcs_branch' && !str_ends_with($result,' ist schon aktiv.'))
+          || ($tool['tool'] === 'pvcs_merge' && str_starts_with($result,'Zusammengefuehrt:')))) {
+      // The active source tree changed. Leave previous tool receipts intact
+      // but do not feed source from the old tree back as current context.
+      $fileReadSignatures = $fileReadContinuations = [];
+      $fileEditFailures = [];
+      foreach ($steps as &$step) {
+        if (($step['tool'] ?? '') === 'pfile_read') {
+          $step['result'] = '[Auszug aus einem vorherigen Arbeitsstand. Aktuelle Dateien nach Bedarf lesen.]';
+          unset($step['read_signature']);
+        }
+      }
+      unset($step);
+    }
     $steps[] = ['label'=>coreui_agent_step_label($tool, $used, $maxSteps, $state),
-      'result'=>$result,'state'=>$state];
+      'result'=>$result,'state'=>$state,'tool'=>$tool['tool']];
+    $repairingRepeatedReads = false;
     // Repeating the same unsuccessful command with the same response cannot
     // make progress. End the loop instead of wasting the model queue.
     $signature = hash('sha256', (string)$tool['tool'] . "\n" . (string)$tool['input'] . "\n" . $result);
@@ -664,26 +680,22 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         unset($fileReadContinuations[$filePath]);
       }
 
-      $repeatedFileReads = ($fileReadSignatures[$filePath] ?? '') === $readSignature
+      [, $startLine] = coreui_pftools_read_target($readInput);
+      $repeatedFileReads = ($fileReadSignatures[$filePath][$startLine] ?? '') === $readSignature
         ? $repeatedFileReads + 1 : 0;
-      $fileReadSignatures[$filePath] = $readSignature;
+      $fileReadSignatures[$filePath][$startLine] = $readSignature;
       if ($repeatedFileReads > 0) {
         $steps[$lastStep]['result'] .= "\n[CoreAI: Diese Datei wurde bereits im gleichen Stand gelesen. "
           . "Nutze die vorliegenden Dateiinhalte jetzt fuer die naechste Aenderung oder eine konkrete Pruefung. "
           . "Wenn dir etwas fehlt, nenne die Blockade. Lies keine unveraenderte Datei erneut.]";
       }
-      if ($repeatedFileReads >= 3) {
-        $stopReason = 'repeated_project_file_reads';
-        $record('tool','error','Projektarbeit nach unveränderten Dateilesevorgängen unterbrochen',
-          ['reason'=>$stopReason,'step'=>$used]);
-        break;
-      }
+      $repairingRepeatedReads = $repeatedFileReads >= 3;
     } else {
       $repeatedFileReads = 0;
     }
     if ($filePath !== '' && $state === 'success'
         && in_array((string)$tool['tool'], ['pfile_edit','pfile_write'],true)) {
-      unset($fileEditFailures[$filePath], $fileReadContinuations[$filePath]);
+      unset($fileEditFailures[$filePath], $fileReadContinuations[$filePath], $fileReadSignatures[$filePath]);
     }
     if ($filePath !== '' && $tool['tool']==='pfile_edit' && $state === 'error') {
       $fileEditFailures[$filePath]=($fileEditFailures[$filePath] ?? 0)+1;
@@ -785,8 +797,31 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . "und ohne Überschriften oder Zeilennummern. Ändere nur den benötigten Abschnitt. "
         . "Fehlt er im Ausschnitt, melde die Blockade, statt den alten Text zu erraten.";
     }
+    if ($repairingRepeatedReads) {
+      $record('model','info','Naechster Projektschritt nach wiederholtem Lesen angefordert',
+        ['reason'=>'project_read_loop_repair','step'=>$used]);
+      $prompt .= "\n\nWiederhole keinen bereits gelesenen unveraenderten Ausschnitt. "
+        . "Nutze die aktuellen Auszuege fuer eine offene Aenderung oder Pruefung. "
+        . "Falls noch Quelltext fehlt, lies einen bislang ungelesenen Abschnitt. "
+        . "Bleibe auf dem aktiven Arbeitsstand.";
+    }
     $next = $callModel($prompt);
     $out = (is_string($next) && trim($next) !== '') ? $next : '';
+    if ($repairingRepeatedReads && !$cancelled()) {
+      $readDecision = coreui_task_decision($out, static fn(string $r): ?array => coreui_agent_next_tool($r,$allowed));
+      $nextTool = $readDecision['tool'] ?? [];
+      $nextKind = $nextTool['tool'] ?? '';
+      $nextPath = coreui_agent_file_target($nextTool);
+      $nextLine = $nextKind === 'pfile_read' ? coreui_pftools_read_target((string)$nextTool['input'])[1] : 0;
+      if (in_array($nextKind, ['pvcs_branch','pvcs_merge'], true)
+          || ($nextKind === 'pfile_read' && isset($fileReadSignatures[$nextPath][$nextLine]))
+          || $readDecision['kind'] === 'invalid') {
+        $stopReason = 'repeated_project_file_reads';
+        $record('tool','error','Projektarbeit nach unveränderten Dateilesevorgängen unterbrochen',
+          ['reason'=>$stopReason,'step'=>$used]);
+        break;
+      }
+    }
     if ($out === '' && $projectWorkflow) {
       // Do not replay a real file/command. Only the MODEL follow-up may be
       // retried, once, after the verified result and only for a completed,

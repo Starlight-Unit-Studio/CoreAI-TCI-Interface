@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.26 - 23.11.2026
+
+- After switching project working states, Mara receives the active state’s file inventory. Earlier source excerpts are replaced with a note so they cannot guide edits on the new state.
+- Repeated reads track individual line ranges. Before stopping a read loop, Mara gets one opportunity to choose a new section, edit or verification step.
+
 ## 0.8.25 - 22.11.2026
 
 - Continue resumes an interrupted project from its verified work while keeping the current tool permissions. If the model wrongly reports that an enabled execution tool is unavailable, CoreAI offers one correction before ending the task. Tool execution and verification still require actual results.

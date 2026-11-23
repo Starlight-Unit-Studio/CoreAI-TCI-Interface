@@ -945,9 +945,43 @@ foreach ([false, true] as $resumeWriting) {
   loop_test($resumeWriting
     ? ($loop['outcome'] === 'completed' && $loop['steps'] === 6)
     : ($loop['outcome'] === 'interrupted' && $loop['steps'] === 5
-        && $loop['reason'] === 'repeated_project_file_reads' && count($replies) === 1),
+        && $loop['reason'] === 'repeated_project_file_reads' && count($replies) === 0),
     'alternating stale reads allow productive continuation but never spin indefinitely');
 }
+$ranges = ['[DATEI: style.css#L654]', '[DATEI: style.css#L1]', '[DATEI: style.css#L654]',
+  '[DATEI: style.css#L1]', "[AUSFUEHREN: npm test]", $taskDone('Pruefung ausgefuehrt.')];
+$rangePrompts = [];
+$rangeRun = coreui_agent_loop_run('[DATEI: style.css]', ['tool'=>'pfile_read','input'=>'style.css'],
+  'BASIS', $projectFileTools, 0,
+  static function (string $prompt) use (&$ranges,&$rangePrompts): ?string {
+    $rangePrompts[] = $prompt;
+    return array_shift($ranges);
+  },
+  static function (array $tool): string {
+    if ($tool['tool'] === 'prun') return 'Beendet mit Exitcode 0.';
+    [, $line] = coreui_pftools_read_target($tool['input']);
+    return 'Dateiauszug ab Zeile ' . $line;
+  },
+  static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+loop_test($rangeRun['outcome'] === 'completed' && $rangeRun['steps'] === 6
+    && str_contains($rangePrompts[4], 'Wiederhole keinen bereits gelesenen unveraenderten Ausschnitt'),
+  'alternating ranges on one file get one concrete chance to verify instead of re-reading');
+$branchReplies = ['[ARBEITSSTAND: mara/redesign-pass]', '[DATEI: index.html]', $taskDone('Aktueller Stand gelesen.')];
+$branchPrompts = [];
+$branchLoop = coreui_agent_loop_run('[DATEI: index.html]', ['tool'=>'pfile_read','input'=>'index.html'],
+  'BASIS', array_merge($projectFileTools, ['pvcs_branch']), 0,
+  static function (string $prompt) use (&$branchReplies,&$branchPrompts): ?string {
+    $branchPrompts[] = $prompt;
+    return array_shift($branchReplies);
+  },
+  static fn(array $tool): string => $tool['tool'] === 'pvcs_branch'
+    ? 'Gewechselt auf den Arbeitsstand mara/redesign-pass.' : 'Quelldatei: aktuelles HTML',
+  static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
+loop_test($branchLoop['outcome'] === 'completed'
+    && !str_contains($branchPrompts[1], 'Quelldatei: aktuelles HTML')
+    && str_contains($branchPrompts[1], 'Auszug aus einem vorherigen Arbeitsstand')
+    && !str_contains($branchPrompts[2], 'bereits im gleichen Stand gelesen'),
+  'switching working states invalidates previous excerpts and their duplicate-read keys');
 // A writing tool with the same result three times still stops the run (nothing changes).
 $sameReplies = ['[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]', '[AUSFUEHREN: npm test]'];
 $sameLoop = coreui_agent_loop_run('[AUSFUEHREN: npm test]', ['tool'=>'prun','input'=>'npm test'], 'BASIS', $projectFileTools, 0,

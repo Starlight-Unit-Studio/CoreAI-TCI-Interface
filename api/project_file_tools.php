@@ -227,12 +227,14 @@ function coreui_pftools_vcs(PDO $pdo, int $uid, string $projectId, string $kind,
       coreui_pvcs_switch($pdo, $uid, $projectId, (int)$target['id']);
       coreui_pftools_record($pdo, 'success', 'Arbeitsstand gewechselt', ['count'=>1]);
       return 'Gewechselt auf den Arbeitsstand ' . $name . '; die Projektdateien sind jetzt seine. Ungesicherte Aenderungen von ' . $before
-        . ' bleiben dort.';
+        . " bleiben dort.\n" . coreui_pftools_current_file_inventory($pdo,$uid,$projectId)
+        . "\nNutze fuer weitere Dateizugriffe die Liste des jetzt aktiven Arbeitsstands.";
     }
     $after = coreui_pvcs_branch_create($pdo, $uid, $projectId, $name, true);
     coreui_pftools_record($pdo, 'success', 'Arbeitsstand angelegt', ['count'=>1]);
     return 'Neuer Arbeitsstand ' . $name . ' angelegt und aktiv' . (!$after['status']['clean'] ? ', die ungesicherten Aenderungen sind mitgekommen' : '')
-      . '. ' . $before . ' bleibt bei seiner letzten Version.';
+      . '. ' . $before . " bleibt bei seiner letzten Version.\n"
+      . coreui_pftools_current_file_inventory($pdo,$uid,$projectId);
   }
   if ($kind === 'pvcs_merge') {
     $name = coreui_pvcs_branch_name($input);
@@ -560,10 +562,9 @@ function coreui_pftools_proc(PDO $pdo, int $uid, string $projectId, string $kind
 }
 
 /**
- * On a missing file, use the CURRENT owner-scoped inventory; never invent a
- * replacement path. Shared by normal-chat workspaces and named projects.
+ * Current owner-scoped file inventory, shared by workspace reads and branch changes.
  */
-function coreui_pftools_missing_file_inventory(PDO $pdo,int $uid,string $projectId): string {
+function coreui_pftools_current_file_inventory(PDO $pdo,int $uid,string $projectId): string {
   if ($projectId==='') return '';
   try {
     $inventory=coreui_pfiles_list($pdo,$uid,$projectId);
@@ -577,8 +578,7 @@ function coreui_pftools_missing_file_inventory(PDO $pdo,int $uid,string $project
         $paths[]=$path;
     }
     return "Vorhandene Dateien im gebundenen Arbeitsbereich:\n"
-      . implode("\n",$paths)
-      . "\nEinen vorhandenen Pfad waehlen oder eine beauftragte Datei erstellen. Fehlgeschlagenen Leseaufruf nicht wiederholen.";
+      . implode("\n",$paths);
   } catch(Throwable $e) {
     error_log('[CoreAI] inventory after missing read: '.get_class($e));
     return 'Dateiliste konnte nicht bestaetigt werden; keine Pfade erraten.';
@@ -697,7 +697,9 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
     ][$e->getMessage()] ?? $e->getMessage();
     if ($kind==='pfile_read' && $e->getMessage()==='file_not_found') {
       return 'Das ging nicht: ' . $why . ".\n"
-        . coreui_pftools_missing_file_inventory($pdo,$uid,$projectId);
+        . coreui_pftools_current_file_inventory($pdo,$uid,$projectId)
+        . "\nEinen vorhandenen Pfad waehlen oder eine beauftragte Datei erstellen. "
+        . "Fehlgeschlagenen Leseaufruf nicht wiederholen.";
     }
     return 'Das ging nicht: ' . $why . '.';
   }
@@ -808,7 +810,7 @@ function coreui_pftools_hint(PDO $pdo, int $uid, string $sessionId, bool $compac
         . ($canMerge ? " Zusammenfuehren: [ZUSAMMENFUEHREN: name]." : '')
       : "VERSIONEN: Aktiver Arbeitsstand ist " . $active . ".\n"
         . "- [VERSION_SICHERN: kurze Beschreibung] sichert den Stand aller Dateien als Version (wiederherstellbar).\n"
-        . "- [ARBEITSSTAND: name] wechselt auf diesen Arbeitsstand oder legt ihn neu an (Name wie mara/neue-farbe, ohne Leerzeichen); "
+        . "- [ARBEITSSTAND: name] wechselt auf diesen Arbeitsstand oder legt ihn neu an (Name wie mara/neue-farbe, ohne Leerzeichen). Ein vorhandener Arbeitsstand kann andere Dateien enthalten; pruefe dessen Dateiliste. "
         . "ungesicherte Aenderungen kommen beim Anlegen mit, der bisherige Arbeitsstand bleibt bei seiner letzten Version.\n"
         . ($canMerge ? "- [ZUSAMMENFUEHREN: name] fuehrt diesen Arbeitsstand in den aktiven zusammen, nur ohne Konflikte; Konflikte loest die Person.\n" : '')
         . "Fuer eine groessere Aenderung legst du zuerst einen eigenen Arbeitsstand an, damit der bisherige unveraendert bleibt; "
