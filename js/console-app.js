@@ -1955,7 +1955,7 @@
       source_response_missing: 'Die Quellantwort ist nicht mehr verfuegbar.',
       generation_request_expired: 'Die Nachrichtenaktion ist abgelaufen. Bitte erneut starten.',
       expired: 'Die Nachrichtenaktion ist abgelaufen. Bitte erneut starten.',
-      generation_timeout: 'Die lokale Generierung hat das Zeitlimit erreicht.',
+      generation_status_failed: 'Der Status der Nachrichtenaktion konnte nicht geprüft werden.',
       browse_failed: 'Die Browser-Recherche ist fehlgeschlagen.',
       browse_result_missing: 'Die Browser-Recherche lieferte keine Antwort.',
       session_not_found: 'Die Sitzung ist nicht mehr aktiv.',
@@ -3520,45 +3520,62 @@
     if (!ses || !request || !request.id) return;
     var sessionId = String(ses.id);
     if (state.generationPollTimers[sessionId]) clearTimeout(state.generationPollTimers[sessionId]);
-    var attempts = 0;
+    var pollTimer;
+    var statusUnavailableSince = null;
+
+    function schedule(delay) {
+      pollTimer = setTimeout(poll, delay);
+      state.generationPollTimers[sessionId] = pollTimer;
+    }
 
     function poll() {
-      attempts++;
+      if (state.generationPollTimers[sessionId] !== pollTimer) return;
+      var requestId = String(request.id);
       var url = API_BASE + '/console_actions.php?session_id=' + encodeURIComponent(sessionId)
-        + '&request_id=' + encodeURIComponent(String(request.id));
-      fetch(url, { credentials: 'include' })
-      .then(function (response) { return response.json(); })
+        + '&request_id=' + encodeURIComponent(requestId);
+      netJson(url, { timeoutMs: HISTORY_TIMEOUT_MS })
       .then(function (data) {
-        if (!data || !data.ok) throw new Error((data && data.error) || 'generation_status_failed');
+        if (state.generationPollTimers[sessionId] !== pollTimer) return;
+        if (!data || !data.ok || String(data.session_id) !== sessionId
+            || String(data.request_id) !== requestId) throw new Error('generation_status_failed');
+
         if (data.status === 'done' && Number(data.response_message_id) > 0) {
+          if (data.mode === 'regenerate' || data.mode === 'edit') {
+            variantSelectionForSession(sessionId)[String(Number(data.trigger_message_id) || 0)] =
+              Number(data.response_message_id);
+          }
           resetGenerationUi(ses, '');
           loadChatHistory(ses).then(scrollToBottom);
           return;
         }
         if (data.status === 'error' || data.status === 'expired') {
-          resetGenerationUi(ses, data.error || 'generation_failed');
+          resetGenerationUi(ses, data.error || data.status);
           return;
         }
         if (data.status === 'issued' && !request.stream_retry_started) {
           request.stream_retry_started = true;
+          delete state.generationPollTimers[sessionId];
           openStreamForReply(ses, Number(data.trigger_message_id) || 0, request);
           return;
         }
-        if (attempts > MAX_POLL_ATTEMPTS) {
-          resetGenerationUi(ses, 'generation_timeout');
-          return;
-        }
-        state.generationPollTimers[sessionId] = setTimeout(poll, POLL_FAST_MS);
+        if (data.status !== 'issued' && data.status !== 'running') throw new Error('generation_status_failed');
+        // The server expires generation requests. A reachable running request
+        // can still be working after the ordinary chat's client poll budget.
+        statusUnavailableSince = null;
+        schedule(POLL_FAST_MS);
       })
       .catch(function () {
-        if (attempts > MAX_POLL_ATTEMPTS) {
+        if (state.generationPollTimers[sessionId] !== pollTimer) return;
+        if (statusUnavailableSince === null) statusUnavailableSince = Date.now();
+        if (Date.now() - statusUnavailableSince >= MAX_POLL_ATTEMPTS * POLL_FAST_MS) {
           resetGenerationUi(ses, 'generation_status_failed');
           return;
         }
-        state.generationPollTimers[sessionId] = setTimeout(poll, POLL_FAST_MS);
+        schedule(POLL_FAST_MS);
       });
     }
-    poll();
+
+    schedule(0);
   }
 
   // An image-heavy chat must not rebuild every old image, avatar and work

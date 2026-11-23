@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.28 - 23.11.2026
+
+- After the live connection drops, chat actions follow the recorded server status even when a running request exceeds the browser’s old poll limit. A status connection failure and a server-confirmed expiry are reported separately.
+- Reconnecting selects the saved reply from the matching regeneration or edit.
+
 ## 0.8.27 - 23.11.2026
 
 - When a project reply claims its enabled file or test tools are unavailable, CoreAI reoffers the permitted markers once in the current run or when resuming.

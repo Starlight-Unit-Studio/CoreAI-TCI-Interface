@@ -83,6 +83,65 @@ const stallGuard = setTimeout(() => { console.error('WebUI resilience selftest s
   for (let i = 0; i < 80; i++) net.record({kind: 'x'});
   assert.equal(net.metrics().entries.length, 60, 'metrics ring buffer is bounded');
 
+  // A generation request can outlast the browser's failure budget. Its
+  // authenticated status, including the saved variant, is authoritative.
+  const generationSource = snippet('  function startGenerationStatusPoll(', '  // An image-heavy chat');
+  const requestId = 'a'.repeat(32);
+  const generationSession = {id: 'sessionABC1'};
+  const statuses = [];
+  const completions = [];
+  const variants = {};
+  const timers = new Map();
+  let timerId = 0;
+  let now = 0;
+  const generationContext = {
+    state: {generationPollTimers: {}},
+    Date: {now: () => now},
+    API_BASE: '/api', HISTORY_TIMEOUT_MS: 20000, MAX_POLL_ATTEMPTS: 3, POLL_FAST_MS: 1500,
+    netJson: async (url, options) => {
+      assert(url.includes('request_id=' + requestId));
+      assert.equal(options.timeoutMs, 20000);
+      const status = statuses.shift();
+      if (status instanceof Error) throw status;
+      return {ok: true, session_id: generationSession.id, request_id: requestId, ...status};
+    },
+    resetGenerationUi: (session, reason) => {
+      delete generationContext.state.generationPollTimers[session.id];
+      completions.push(reason);
+    },
+    variantSelectionForSession: () => variants,
+    loadChatHistory: async () => { completions.push('history'); },
+    scrollToBottom: () => {},
+    setTimeout: callback => { const id = ++timerId; timers.set(id, callback); return id; },
+    clearTimeout: id => timers.delete(id)
+  };
+  vm.runInNewContext(generationSource, generationContext);
+  async function feedGenerationStatus(status) {
+    statuses.push(status);
+    const next = timers.entries().next().value;
+    assert(next, 'status poll was still scheduled');
+    timers.delete(next[0]);
+    now += 1500;
+    next[1]();
+    await new Promise(resolve => setImmediate(resolve));
+  }
+
+  generationContext.startGenerationStatusPoll(generationSession, {id: requestId});
+  for (let step = 0; step < 5; step++) await feedGenerationStatus({status: 'running'});
+  assert.deepEqual(completions, [], 'a running request survives the browser failure budget');
+  await feedGenerationStatus({status: 'done', mode: 'regenerate', trigger_message_id: 20, response_message_id: 23});
+  assert.deepEqual(completions, ['', 'history']);
+  assert.equal(variants[20], 23, 'selects the returned variant after reconnecting');
+
+  generationContext.startGenerationStatusPoll(generationSession, {id: requestId});
+  await feedGenerationStatus({status: 'expired', error: 'expired'});
+  assert.equal(completions.at(-1), 'expired', 'a server-confirmed expiry ends the wait');
+  generationContext.startGenerationStatusPoll(generationSession, {id: requestId});
+  for (let step = 0; step < 3; step++) await feedGenerationStatus(new Error('network'));
+  await feedGenerationStatus({status: 'running'});
+  for (let step = 0; step < 4; step++) await feedGenerationStatus(new Error('network'));
+  assert.equal(completions.at(-1), 'generation_status_failed', 'consecutive failed checks are reported accurately');
+
   // --- console-app.js: render window of long chats -------------------------
   const sessionId = 'sessionAAAA1';
   const rows = [];
@@ -161,5 +220,5 @@ const stallGuard = setTimeout(() => { console.error('WebUI resilience selftest s
   assert(!/caches\.open|serviceWorker/.test(netSource + app), 'private chats are never put into a browser asset cache');
 
   clearTimeout(stallGuard);
-  console.log('CoreAI WebUI resilience: error kinds, backoff, reconnect, render window and caches OK');
+  console.log('CoreAI WebUI resilience: status recovery, backoff, reconnect, render window and caches OK');
 })().catch(error => { console.error(error); process.exit(1); });
