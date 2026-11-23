@@ -583,7 +583,11 @@ function coreui_agent_empty_followup_meta(array $report, int $step): array {
  */
 function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $allowed, int $used,
     callable $callModel, callable $runTool, callable $record, callable $cancelled, ?callable $route = null,
-    ?callable $imageReview = null, ?callable $modelReport = null, ?callable $journal = null): array {
+    ?callable $imageReview = null, ?callable $modelReport = null, ?callable $journal = null,
+    ?callable $publicReply = null): array {
+  $publicReply ??= function_exists('ember_sanitize_public_reply')
+    ? static fn(string $text): string => ember_sanitize_public_reply(ember_strip_stray_tool_markers($text))
+    : static fn(string $text): string => $text;
   $steps = [];
   $prompt = null;
   // A project workflow must not stop after six files/commands or ten
@@ -886,8 +890,15 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       // active project task must yield a real, authorized next tool, a
       // verifiable explicit completion, or a declared blocker. No language-
       // specific "Ich pruefe als Naechstes" heuristics are necessary.
-      $parseDecision = static fn(string $text): array =>
-        coreui_task_decision($text, static fn(string $r): ?array => coreui_agent_next_tool($r, $allowed));
+      $parseDecision = static function (string $text) use ($allowed, $publicReply): array {
+        $decision = coreui_task_decision($text,
+          static fn(string $reply): ?array => coreui_agent_next_tool($reply, $allowed));
+        if (in_array($decision['kind'], ['done','blocked'], true)) {
+          $decision['text'] = trim($publicReply($decision['text']));
+          if ($decision['text'] === '') $decision = ['kind'=>'invalid','text'=>'','tool'=>null,'shape'=>'empty'];
+        }
+        return $decision;
+      };
       // 0.8.17: a reply cut at the output limit (a whole page in one DATEI_NEU block) has no end
       // marker; it was reported as "only text" and its repair wrote the same page and was cut again.
       $cutShape = static function (array $decision, array $report): array {
@@ -898,7 +909,9 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
       $report = $callReport();
       $decision = $cutShape($parseDecision($out), $report);
       // 0.8.18: Mara's plain answer, kept in case the one repair yields no decision either.
-      $proseAnswer = ($decision['kind'] === 'invalid' && ($decision['shape'] ?? '') === 'prose_only') ? trim($out) : '';
+      $proseAnswer = $decision['shape'] === 'prose_only'
+        ? trim($publicReply($out)) : '';
+      if ($decision['shape'] === 'prose_only' && $proseAnswer === '') $decision['shape'] = 'empty';
       if ($decision['kind'] === 'invalid') {
         if ($cancelled()) { $stopReason='cancelled'; break; }
         // 0.8.15: the work view names the form of the refused reply (structure, never model text).
@@ -908,7 +921,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
            'content_chars'=>strlen($out)]
             + coreui_agent_done_reason_meta($report));
         $repairPrompt = coreui_task_decision_repair_prompt(
-          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed), (string)($decision['shape'] ?? ''), $out);
+          coreui_agent_compact_project_prompt($base,$steps,$used,$allowed), $decision['shape'],
+          match ($decision['shape']) { 'prose_only' => $proseAnswer, 'empty' => '', default => $out });
         $repair = $callModel($repairPrompt);
         $decision = is_string($repair) ? $cutShape($parseDecision($repair), $callReport())
           : ['kind'=>'invalid','text'=>'','tool'=>null,'shape'=>'empty'];
@@ -941,7 +955,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
           && ($journal === null || $journal('can_finish',[], $used, null,null) === true)) {
         $out = (string)$decision['text'];
         $taskOutcome = 'completed';
-        $record('run','success','Arbeitsabschluss auf gepruefte Werkzeugschritte gestuetzt',
+        $record('model','info','Arbeitsabschluss auf gepruefte Werkzeugschritte gestuetzt',
           ['reason'=>'task_verified_completion','step'=>$used]);
         break;
       }
@@ -956,7 +970,7 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
             && ($journal === null || $journal('can_finish',[], $used, null,null) === true)) {
           $out = $proseAnswer;
           $taskOutcome = 'completed';
-          $record('run','success','Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt',
+          $record('model','info','Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt',
             ['reason'=>'task_prose_answer','step'=>$used]);
           break;
         }
