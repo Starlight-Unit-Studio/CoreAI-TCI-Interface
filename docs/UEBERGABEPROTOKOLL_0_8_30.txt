@@ -42,7 +42,15 @@ TESTS (in dieser Sitzung ausgefuehrt)
   external-provider-selftest.php, TCI-Sprache, Terran-Terminologie: OK.
 - Fehlereinbauten: 8 gezielte Fehler; 7 erkannt, der achte entfernte die Markerzaehlung, die die
   Formpruefung davor bereits sicherstellt (kein Verhaltensunterschied).
-- Gesamte Testreihe: wird nach dem Lauf eingetragen.
+- preflight-sync-gate war nach dem ersten Push rot: model-project-intent-selftest.php verlangt genau
+  einen Ausfuehrungsaufruf fuer die erste Antwort und einen fuer die Korrektur; ein bestaetigter
+  Block hatte einen dritten. Jetzt laeuft er ueber denselben Aufruf der Korrektur (4afaa0d3); alle
+  Selbsttests der GitHub-Jobs lokal und auf GitHub gruen (15 von 15).
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf 4afaa0d3: 206 bestanden, 14
+  fehlgeschlagen. main 0.8.29 in derselben Umgebung: 206 bestanden, 14 fehlgeschlagen, auf beiden
+  Seiten dieselben (browse-image, chat-menu-ui, image-progress-ui, insights-chat-visibility-ui,
+  long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui,
+  session-list-ui, settings-tabs-ui, update-ui, voice-samples-ui). Keine neuen Fehlschlaege.
 
 NICHT GETESTET
 - Ein echter Lauf mit Core Normal; geprueft gegen nachgestellte Antworten.
