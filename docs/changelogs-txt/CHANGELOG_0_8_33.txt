@@ -1,0 +1,36 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.33
+Datum: 24.11.2026
+
+EIN LAUF, DER EINE DATEI IMMER WIEDER UMBAUT
+- Nach dem Update auf 0.8.32 ging das Gaestebuch weiter, aber "fahren wir mit
+  dem blog weiter" mit Core Normal lief nach 44 Minuten noch: Mara las und
+  aenderte blog.html immer wieder (Suchen, ein Skill, abgelehnte und
+  gespeicherte Aenderungen im Wechsel) und meldete den Auftrag nie als
+  erledigt. Projektlaeufe haben absichtlich keine Grenze fuer Schritte oder
+  Zeit.
+- Nach der Wahl des Betreibers zaehlt CoreAI je Lauf die gespeicherten
+  Aenderungen derselben Datei. Nach sechs wird Mara einmal gebeten zu
+  pruefen, ob der Auftrag erfuellt ist, und mit dem Abschlussblock
+  abzuschliessen oder in einem Satz zu nennen, was noch fehlt, und nur das
+  zu aendern. Nach zehn pausiert der Lauf: Maras Antwort ist ein
+  Zwischenstand mit jeder in diesem Lauf geaenderten Datei und der Zahl
+  ihrer Aenderungen, dem Hinweis, dass jede Aenderung im Tab Dateien
+  zuruecknehmbar ist, und "weiter" oder ↻, um auf dem gespeicherten Stand
+  fortzufahren. Der Lauf gilt als unterbrochen; die Antwort zeigt den
+  Erneut-versuchen-Hinweis aus 0.8.31.
+- Viele verschiedene Dateien, abgelehnte Aenderungen und andere Werkzeuge
+  zaehlen nicht; eine Zeitgrenze gibt es weiterhin nicht.
+
+ARBEITSWEG
+- Die Aufforderung zum Abschluss und die Pause stehen in Maras Worten da.
+
+NEBENBEI GEFUNDEN, UNVERAENDERT
+- Das Arbeitsweg-Ereignis "Projektauftrag unterbrochen; Dateien bleiben
+  erhalten" enthaelt ein Semikolon, das der Arbeitsweg-Speicher nicht
+  annimmt; es wurde nie gespeichert. Im Uebergabeprotokoll vermerkt.
+
+TESTS
+- file-change-pause-selftest.php (neu, in beiden Preflights registriert),
+  work-events-ui-selftest.js.
+
+Version: 0.8.33

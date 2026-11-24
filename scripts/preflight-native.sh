@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.32: file changes with copied line numbers or other whitespace are matched exactly once.
+# CoreAI: TCI Interface 0.8.33: a project run that changes one file again and again is asked to finish, then pauses.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -228,6 +228,7 @@ UI_FILES=(
   api/project_file_tools.php
   scripts/project-file-tools-selftest.php
   scripts/edit-tolerance-selftest.php
+  scripts/file-change-pause-selftest.php
   database/migrations/056_chat_workspaces.sql
   js/coreui-chat-dev.js
   css/coreui-chat-dev.css
@@ -1350,6 +1351,15 @@ if command -v php >/dev/null 2>&1; then
   else
     edit_tolerance_test_exit=$?
     fail "File change tolerance self-test (exit ${edit_tolerance_test_exit}): ${edit_tolerance_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.33: one file changed again and again: a check after six changes, a pause with an interim report after ten.
+  file_change_pause_test=''
+  if file_change_pause_test="$(runuser -u www-data -- php -d display_errors=stderr -d log_errors=1 "$PROJECT_ROOT/scripts/file-change-pause-selftest.php" 2>&1)"; then
+    ok 'Project runs: a check after six changes of one file, a pause after ten.'
+  else
+    file_change_pause_test_exit=$?
+    fail "File change pause self-test (exit ${file_change_pause_test_exit}): ${file_change_pause_test:-No PHP output; inspect the PHP service logs}"
   fi
 
   # 0.8.8: every saved chat owns its real, private file/run/preview workspace.

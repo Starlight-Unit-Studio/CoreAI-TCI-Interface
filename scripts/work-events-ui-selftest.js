@@ -412,6 +412,15 @@ assert(otherErrors.includes('Der Schritt „Schritt 4: Projektdatei lesen“ ist
 assert(otherErrors.includes('Meine Änderung an dieser Datei passte zweimal nicht zum gespeicherten Stand. Ich höre hier auf, statt weiter zu raten; der gespeicherte Stand bleibt erhalten.'),
   'the stop after two rejected changes is told in Mara\'s words: ' + otherErrors);
 
+// 0.8.33: the check after six changes of one file and the pause after ten, in Mara's words.
+const churn = shownLines(work.create({events:[
+  {id:2921,kind:'model',state:'info',title:'Abschluss nach sechs Aenderungen derselben Datei angefordert',meta:{reason:'same_file_change_check',step:6}},
+  {id:2922,kind:'tool',state:'info',title:'Lauf nach zehn Aenderungen derselben Datei pausiert',meta:{reason:'same_file_changed_repeatedly',step:10}},
+]})).join('\n');
+assert(churn.includes('Ich habe dieselbe Datei jetzt sechsmal geändert. Ich prüfe, ob der Auftrag erfüllt ist, statt sie weiter umzubauen.')
+  && churn.includes('Ich habe dieselbe Datei zehnmal geändert, ohne fertig zu werden. Ich pausiere hier mit einem Zwischenstand; alle Änderungen bleiben gespeichert.'),
+  'the check and the pause are told, not folded away: ' + churn);
+
 const searchOutage = work.create({events:[{
   id:289, kind:'tool', state:'info', title:'Websuche beendet',
   meta:{reason:'research_search_backend_unavailable',knowledge_hits:0,source:'web'}

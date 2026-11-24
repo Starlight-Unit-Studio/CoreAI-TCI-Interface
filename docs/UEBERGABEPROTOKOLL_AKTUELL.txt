@@ -1,4 +1,13 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
+Version main: 0.8.32, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.33).
+ZIEL 0.8.33: ein Projektlauf, der dieselbe Datei immer wieder aendert, wird nach
+sechs Aenderungen zum Abschluss aufgefordert und pausiert nach zehn mit einem
+Zwischenstand; sonst weiterhin keine Schritt- oder Zeitgrenze. Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_33.txt.
+Naechster Schritt: Blog mit Core Normal erneut beauftragen.
+Nach Merge naechste Version 0.8.34.
+--- VORHERIGER STAND ---
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
 Version main: 0.8.31, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.32).
 ZIEL 0.8.32: Dateiaenderungen mit kopierten Zeilennummern, Codeblock, anderen
 Leerzeichen oder anderer Einrueckung werden genau einmal zugeordnet; eine

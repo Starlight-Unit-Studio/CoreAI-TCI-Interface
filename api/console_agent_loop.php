@@ -30,6 +30,9 @@ require_once __DIR__ . '/console_task_control.php';
  */
 
 const COREUI_AGENT_MAX_STEPS = 6;
+/** 0.8.33: changes of ONE file in one project run: ask for a check and a finish, then pause. */
+const COREUI_AGENT_FILE_CHANGE_CHECK = 6;
+const COREUI_AGENT_FILE_CHANGE_PAUSE = 10;
 
 /** The tool Mara asks for next (pure), or null when she answers. */
 function coreui_agent_next_tool(string $reply, array $allowed): ?array {
@@ -219,6 +222,21 @@ function coreui_agent_file_target(array $tool): string {
     [$path] = coreui_pftools_read_target($path);
   return preg_match('~^[\p{L}\p{N}._/()+ -]{1,200}$~uD',$path) === 1
     && !str_contains($path,'..') ? $path : '';
+}
+
+/**
+ * 0.8.33: the interim report when a run pauses after ten saved changes of one file (pure). It names
+ * only files whose changes were saved in this run, and how to go on.
+ */
+function coreui_agent_change_pause_report(string $path, array $counts): string {
+  $saved = [];
+  foreach ($counts as $file => $n) {
+    $saved[] = $file . ' (' . (int)$n . ($n === 1 ? ' Änderung' : ' Änderungen') . ')';
+  }
+  return 'Ich habe ' . $path . ' in diesem Auftrag ' . (int)($counts[$path] ?? 0) . '-mal geändert, ohne ihn abzuschließen. '
+    . 'Damit ich die Datei nicht weiter im Kreis umbaue, pausiere ich hier.' . "\n\n"
+    . 'Zwischenstand, gespeichert: ' . implode(', ', $saved) . '. Jede Änderung lässt sich im Tab Dateien zurücknehmen.' . "\n\n"
+    . 'Sag mir, was noch fehlt, oder schreib „weiter“; mit ↻ starte ich den Auftrag auf dem gespeicherten Stand neu.';
 }
 
 /**
@@ -617,6 +635,11 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
   // This is NOT a total-work limit. Only unsuccessful writes to the SAME
   // file are counted. Verified writes reset their own failure counter.
   $fileEditFailures = [];
+  // 0.8.33: NOT a total-work limit either. Only saved changes of the SAME file are counted: a small
+  // Core that rewrites one file again and again without finishing is asked to check and finish
+  // after six, and the run pauses with an honest interim report after ten. Many files stay unlimited.
+  $fileChangeCounts = [];
+  $fileChangeCheck = '';
   // 0.6.22: $route(array $tool): array may send a step another way (a weather question about
   // a place in NRW goes to the WDR place search in the browser, api/weather_live.php).
   if ($tool !== null && $route !== null) $tool = $route($tool);
@@ -733,6 +756,17 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     if ($filePath !== '' && $state === 'success'
         && in_array((string)$tool['tool'], ['pfile_edit','pfile_write'],true)) {
       unset($fileEditFailures[$filePath], $fileReadContinuations[$filePath], $fileReadSignatures[$filePath]);
+      if ($projectWorkflow) {
+        $fileChangeCounts[$filePath] = ($fileChangeCounts[$filePath] ?? 0) + 1;
+        if ($fileChangeCounts[$filePath] >= COREUI_AGENT_FILE_CHANGE_PAUSE) {
+          $stopReason = 'same_file_changed_repeatedly';
+          $blockedPath = $filePath;
+          $record('tool','info','Lauf nach zehn Aenderungen derselben Datei pausiert',
+            ['reason'=>$stopReason,'step'=>$used,'file'=>$filePath,'count'=>$fileChangeCounts[$filePath]]);
+          break;
+        }
+        if ($fileChangeCounts[$filePath] === COREUI_AGENT_FILE_CHANGE_CHECK) $fileChangeCheck = $filePath;
+      }
     }
     if ($filePath !== '' && $tool['tool']==='pfile_edit' && $state === 'error') {
       $fileEditFailures[$filePath]=($fileEditFailures[$filePath] ?? 0)+1;
@@ -833,6 +867,15 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . "Kopiere den kleinsten eindeutigen SUCHEN-Abschnitt exakt mit allen Leerzeichen "
         . "und ohne Überschriften oder Zeilennummern. Ändere nur den benötigten Abschnitt. "
         . "Fehlt er im Ausschnitt, melde die Blockade, statt den alten Text zu erraten.";
+    }
+    if ($fileChangeCheck !== '') {
+      $record('model','info','Abschluss nach sechs Aenderungen derselben Datei angefordert',
+        ['reason'=>'same_file_change_check','step'=>$used,'file'=>$fileChangeCheck]);
+      $prompt .= "\n\nABSCHLUSS PRUEFEN: Du hast " . $fileChangeCheck . ' in diesem Auftrag schon '
+        . COREUI_AGENT_FILE_CHANGE_CHECK . '-mal geaendert. Baue die Datei nicht weiter um. Pruefe, ob der Auftrag erfuellt ist, '
+        . 'und schliesse dann mit ' . COREUI_TASK_DONE_OPEN . ' und einer kurzen Zusammenfassung ab. Fehlt noch etwas Konkretes, '
+        . 'nenne es in einem Satz und aendere nur genau das.';
+      $fileChangeCheck = '';
     }
     if ($repairingRepeatedReads) {
       $record('model','info','Naechster Projektschritt nach wiederholtem Lesen angefordert',
@@ -1035,6 +1078,8 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
         . ' wurde nicht gespeichert: ' . ($blockedExplanation !== '' ? $blockedExplanation : 'Werkzeugfehler')
         . '. Ich habe die Wiederholung beendet, statt dieselbe fehlgeschlagene Änderung erneut zu versuchen. '
         . 'Bereits gespeicherte Dateien bleiben unverändert. Details stehen im Arbeitsweg.';
+    } elseif ($stopReason === 'same_file_changed_repeatedly') {
+      $out = coreui_agent_change_pause_report($blockedPath, $fileChangeCounts);
     } elseif ($stopReason === 'repeated_project_file_reads') {
       $out = 'Ich habe dieselben Projektdateien wiederholt im gleichen Stand gelesen. '
         . 'Der Auftrag ist deshalb unterbrochen. Bereits gespeicherte Änderungen sind im Projekt verfügbar.';
