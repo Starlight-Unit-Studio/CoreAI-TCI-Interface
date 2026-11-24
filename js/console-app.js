@@ -268,7 +268,14 @@
     return state.sessions.find(function(s) { return String(s.id) === id; }) || null;
   }
 
+  // 0.8.31: the note above the input names the assistant the person has set.
+  function refreshComposerAiNote() {
+    var note = document.getElementById('composerAiNote');
+    if (note) note.textContent = (state.assistantName || 'Mara') + ' kann Fehler machen. Bricht ein Lauf ab, tippe unter der Antwort auf ↻.';
+  }
+
   function refreshComposerPlaceholder() {
+    refreshComposerAiNote();
     if (!inputEl) return;
     var ses = activeSession();
     // Cosmetic only. The authenticated server session, not this label, owns
@@ -1733,6 +1740,9 @@
       content.appendChild(queuedLabel);
     }
 
+    // 0.8.31: a run that broke off gets a visible way to try it again, right at this answer.
+    var retryHint = role === 'ember' ? buildRetryHint(record || null) : null;
+    if (retryHint) content.appendChild(retryHint);
     var actions = buildMessageActions(role, text, record || null);
     if (actions) content.appendChild(actions);
 
@@ -2177,6 +2187,37 @@
     return details;
   }
 
+  // 0.8.31: did this answer's run end without a confirmed finish? Run and task status from the
+  // server, or a run error in its saved work timeline (also a tool reply that stayed unreadable).
+  var RETRY_STATES = ['interrupted', 'failed'];
+  function runNeedsRetry(record) {
+    var run = record && record.agent_run;
+    if (run && (RETRY_STATES.indexOf(String(run.status || '')) >= 0
+        || (run.task && RETRY_STATES.indexOf(String(run.task.status || '')) >= 0))) return true;
+    var events = record && Array.isArray(record.work_events) ? record.work_events : [];
+    return events.some(function (event) {
+      return !!event && ((event.kind === 'run' && event.state === 'error')
+        || event.title === 'Korrektur nicht lesbar');
+    });
+  }
+
+  function buildRetryHint(record) {
+    if (!record || Number(record.id) <= 0 || Number(record.reply_to_id) <= 0 || !runNeedsRetry(record)) return null;
+    var hint = document.createElement('div');
+    hint.className = 'msg-retry-hint';
+    var note = document.createElement('span');
+    note.textContent = 'Dieser Lauf ist nicht abgeschlossen.';
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'msg-retry-btn';
+    button.textContent = '↻ Erneut versuchen';
+    button.setAttribute('aria-label', 'Lauf erneut versuchen');
+    button.addEventListener('click', function () { startGenerationAction(record, 'regenerate', button); });
+    hint.appendChild(note);
+    hint.appendChild(button);
+    return hint;
+  }
+
   function buildMessageActions(role, text, record) {
     if (role !== 'user' && role !== 'ember') return null;
     var actions = document.createElement('div');
@@ -2227,6 +2268,7 @@
     actions.appendChild(down);
 
     var regenerate = createActionButton('retry', 'Alternative Antwort erzeugen');
+    if (runNeedsRetry(record)) regenerate.classList.add('is-retry-suggested');
     regenerate.addEventListener('click', function () { startGenerationAction(record, 'regenerate', regenerate); });
     actions.appendChild(regenerate);
 

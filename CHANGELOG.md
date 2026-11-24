@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.8.31 - 24.11.2026
+
+- **A note above the input:** One quiet line above the input, on every screen including phones, says that Mara can make mistakes and that a run which broke off can be repeated with ↻ under the answer. It uses the assistant name the person has set.
+- **Try again at a run that broke off:** An answer whose run or task ended as interrupted or failed, or whose saved work timeline holds a run error or an unreadable tool reply, shows "Dieser Lauf ist nicht abgeschlossen." with a button "↻ Erneut versuchen". It generates a new answer for the same message, like ↻ in the action bar, which is highlighted for such an answer. Completed, cancelled and unsaved answers show no hint.
+- **Tests:** `retry-hint-ui-selftest.cjs` (the note, its place above the input, no rule hides it on phones, the set name; five cases that offer a retry and six that do not; the button starts a new answer; the hint stands before the action bar), registered in both preflights.
+
 ## 0.8.30 - 24.11.2026
 
 - **A tool block confirmed by the correction runs:** A homepage request with Core Normal ended with "Ich konnte meine Werkzeugantwort auch nach einem Korrekturversuch nicht sicher auswerten (tool_text_around_block)": the Core wrote its plan block with explanations, links or bracketed words around it, the one correction asked for only the block or a normal answer, and the Core wrote the same block with text around it again. Nothing was planned or built. The first reply with text around a block is still never executed (it may quote or describe a tool). When the correction again contains exactly one complete block of the same tool, that tool was chosen twice: the block runs and the text around it is dropped, neither executed nor shown. Mixed, fenced, unclosed, too short or example blocks and a different tool than in the first reply stay refused. The work timeline says that the block was confirmed.

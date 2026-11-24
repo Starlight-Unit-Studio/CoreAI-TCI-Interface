@@ -10097,3 +10097,45 @@ a.insight-file-name:hover { text-decoration: underline; }
 }
 .core-install-pgen-license-guard small { font-size: 12px; line-height: 1.4; color: var(--muted); }
 .core-install-pgen-license-guard .core-install-btn { min-height: 38px; }
+
+/* 0.8.31: one quiet line above the input (also on phones), and a visible retry at a run that broke off. */
+.composer-ai-note {
+  width: min(1120px, 100%);
+  align-self: center;
+  margin: 0 0 4px;
+  padding: 0 4px;
+  color: #6f7d92;
+  font-size: 11.5px;
+  line-height: 1.35;
+  text-align: center;
+}
+.msg-retry-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 8px 4px 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(212, 140, 40, 0.42);
+  background: rgba(255, 246, 232, 0.9);
+  color: #6b4a14;
+  font-size: 13px;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+.msg-retry-btn {
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid rgba(212, 140, 40, 0.7);
+  border-radius: 4px;
+  background: #fff;
+  color: #8a5a12;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.msg-retry-btn:hover, .msg-retry-btn:focus-visible { background: #fdebd0; }
+.msg-retry-btn:disabled { opacity: .6; cursor: wait; }
+.msg-action.is-retry-suggested { color: #b0721a; border-color: rgba(212, 140, 40, 0.55); }
+:root[data-coreui-theme="dark"] .composer-ai-note { color: #9aa7bb; }
+:root[data-coreui-theme="dark"] .msg-retry-hint { background: rgba(80, 56, 20, 0.55); color: #f1d6a8; border-color: rgba(230, 170, 80, 0.5); }
+:root[data-coreui-theme="dark"] .msg-retry-btn { background: rgba(30, 24, 14, 0.9); color: #f3c278; }
