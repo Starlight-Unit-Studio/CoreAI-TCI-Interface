@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.8.32 - 24.11.2026
+
+- **File changes with copied line numbers or other whitespace:** In a guestbook project with Core Normal, Mara's changes to `main.js` and `guestbook.html` were rejected again and again ("SUCHEN-Text stimmt nicht mit dem gespeicherten Dateiinhalt überein", "Änderungsblock nicht erkannt"); the run went on for half an hour reading and retrying. Small Cores copy the numbered read view with its `12 | ` prefixes, wrap the lines in a code fence, change the indentation or add trailing spaces. When the exact text is not in the file, CoreAI now looks for the same whole lines without line numbers or fence, then with trailing spaces ignored, then with indentation ignored. A match is used only when those lines occur exactly once; the new lines take over the file's indentation, and Mara learns how her text was matched. Ambiguous, misspelled or partial passages still change nothing, and every change stays all-or-nothing.
+- **Change markers:** Indented markers, a colon after the marker word and the English words `SEARCH`/`REPLACE` are read like `SUCHEN`/`ERSETZEN`.
+- **One line per rejected change:** A rejected change used to show three lines, two of them red with "Der Abschluss ist nicht bestätigt", although the run continued. Mara's own note now tells it once and says that she rereads the file, only when she really does; the raw step errors fold into the technical steps ("1 fehlgeschlagen"). Every other failed step stays visible, and the stop after a second rejected change of the same file is told in Mara's words.
+- **Tests:** `edit-tolerance-selftest.php` (new, registered in both preflights), `work-events-ui-selftest.js`. `project-env-selftest.php` expected a numbered search line without indentation to be rejected; it now checks that this line is changed directly with the file's indentation and CRLF, and the rejection and reread are tested with a search that holds a line missing from the file.
+
 ## 0.8.31 - 24.11.2026
 
 - **A note above the input:** One quiet line above the input, on every screen including phones, says that Mara can make mistakes and that a run which broke off can be repeated with ↻ under the answer. It uses the assistant name the person has set.

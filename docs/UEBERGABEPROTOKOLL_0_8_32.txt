@@ -1,0 +1,76 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.32
+Datum: 24.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.31 nach PR #393
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber mit sechs Screenshots (Gaestebuch-Projekt, Core Normal): "ich weiss jetzt nicht ob es an
+gemma liegt aber irgendwas klappt hier nicht".
+
+BEFUND (aus den Screenshots, ohne Serverprotokoll)
+- Der Lauf arbeitete nach 29 Minuten noch (Schritt 18 und mehr): main.js und guestbook.html lesen,
+  aendern, Ablehnung "SUCHEN-Text stimmt nicht mit dem gespeicherten Dateiinhalt ueberein" oder
+  "Aenderungsblock nicht erkannt", erneut lesen, erneut aendern. Einige Aenderungen gelangen
+  dazwischen; dadurch setzte der Zaehler "zweimal dieselbe Datei abgelehnt" immer wieder zurueck.
+- coreui_pftools_apply_edits verlangte den SUCHEN-Text Zeichen fuer Zeichen. Kleine Cores kopieren
+  die nummerierte Leseansicht ("12 | "), setzen Codebloecke, aendern die Einrueckung oder haengen
+  Leerzeichen an; das ist die naheliegende Ursache der Ablehnungen. Der Wortlaut von Gemmas Bloecken
+  liegt nicht vor.
+- Jede Ablehnung erschien dreimal: "Projektdatei nicht geaendert" (rot), "Schritt N: Projektdatei
+  aendern ... (Grund: tool_result_error). Der Abschluss ist nicht bestaetigt" (rot) und Maras Notiz.
+  Das wirkte wie ein Abbruch, obwohl der Lauf weiterging.
+
+UMSETZUNG
+- api/project_file_tools.php: coreui_pftools_loose_match() greift nur, wenn der genaue Text nicht
+  vorkommt. Reihenfolge: ohne Zeilennummern (nur wenn jede Zeile eine hat; im ERSETZEN-Teil werden
+  vorhandene Nummern ebenfalls entfernt), ohne umschliessenden Codeblock, dann zeilenweise ohne
+  Leerzeichen am Zeilenende, dann ohne Einrueckung. Nur ganze Zeilen, nur ein einziger Treffer;
+  bei mehreren Treffern "kommt N Mal vor". coreui_pftools_reindent() uebernimmt die Einrueckung der
+  Datei je Zeile; ist der neue Text schon in der Einrueckung der Datei geschrieben, bleibt er so.
+  Das Ergebnis nennt Mara, wie ihr Text zugeordnet wurde.
+- coreui_pftools_parse_edits(): eingerueckte Marker, Doppelpunkt, SEARCH/REPLACE.
+- api/console_agent_loop.php: Maras Notiz nennt das erneute Lesen nur, wenn es wirklich folgt
+  (erste Ablehnung dieser Datei); bei der zweiten folgt der Stopp wie bisher.
+- js/coreui-work-events.js: "Projektdatei nicht geaendert" und der Schrittfehler "Schritt N:
+  Projektdatei aendern" stehen eingeklappt in den technischen Schritten ("1 fehlgeschlagen");
+  alle anderen Fehler bleiben sichtbar. Der Stopp nach zwei Ablehnungen steht in Maras Worten da.
+
+UNVERAENDERT
+- Ganz oder gar nicht je Aenderung; hoechstens ein erneutes Lesen und ein zweiter Versuch je Datei.
+  Modelfile, SYSTEM-Prompts, Installer, Datenbank (keine Migration).
+
+TESTANPASSUNG (bestehender Test)
+- scripts/project-env-selftest.php erwartete, dass "731 | <nav ...>" (nummeriert, ohne Einrueckung)
+  abgelehnt wird. Das ist das Verhalten, das 0.8.32 absichtlich aendert: die Zeile wird jetzt direkt
+  geaendert, Einrueckung und CRLF bleiben; das prueft der Test nun. Ablehnung (Datei unveraendert),
+  rohes Wiederlesen um die Ankerzeile und der gezielte zweite Versuch werden weiter geprueft, mit
+  einem SUCHEN-Teil, der zusaetzlich eine Zeile enthaelt, die nicht in der Datei steht.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer api/project_file_tools.php, api/console_agent_loop.php,
+  scripts/edit-tolerance-selftest.php, scripts/project-env-selftest.php; node --check fuer
+  js/coreui-work-events.js; bash -n fuer beide Preflights: ohne Fehler.
+- edit-tolerance-selftest.php (neu), project-file-tools-selftest.php, agent-loop-selftest.php,
+  project-env-selftest.php, work-events-ui-selftest.js, retry-hint-ui-selftest.cjs, TCI-Sprache,
+  Terran-Terminologie, preflight-sync, terminal-language, branding, cache-bust --verify: OK.
+- Alle Selbsttests der GitHub-Jobs lokal: gruen.
+- Fehlereinbauten: 15 gezielte Fehler in Zuordnung, Einrueckung, Markern, Notiz und Arbeitsweg, alle
+  erkannt; ein weiterer (Zustandspruefung beim Einklappen) ist gleichwertig, weil Schritt-Ereignisse
+  ohne Fehler ohnehin nicht als Text erscheinen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf 0454aa48: 208 bestanden, 14
+  fehlgeschlagen. main 0.8.31 in derselben Umgebung: 207 bestanden, 14 fehlgeschlagen, auf beiden
+  Seiten dieselben (browse-image, chat-menu-ui, image-progress-ui, insights-chat-visibility-ui,
+  long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui,
+  session-list-ui, settings-tabs-ui, update-ui, voice-samples-ui). Der zusaetzliche bestandene
+  Test ist edit-tolerance. Keine neuen Fehlschlaege.
+- GitHub-Jobs auf 0454aa48: 15 von 15 gruen.
+
+NICHT GETESTET
+- Ein echter Lauf mit Core Normal; Gemmas tatsaechliche Bloecke liegen nicht vor.
+
+NAECHSTER SCHRITT
+- Nach dem Update das Gaestebuch erneut beauftragen. Erscheint wieder "Aenderungsblock nicht
+  erkannt", den Inhalt unter "Details anzeigen" des Schritts schicken.
+
+Version: 0.8.32

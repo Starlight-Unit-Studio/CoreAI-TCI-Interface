@@ -429,3 +429,4 @@ Jede Version liegt als eigenstaendige UTF-8-TXT-Datei vor.
 * CHANGELOG_0_8_29.txt
 * CHANGELOG_0_8_30.txt
 * CHANGELOG_0_8_31.txt
+* CHANGELOG_0_8_32.txt

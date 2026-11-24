@@ -304,6 +304,8 @@
         return 'Meine Antwortübertragung war unvollständig. Ich prüfe den Werkzeug- oder Ersatzweg, ohne den Abbruch zu verschweigen.';
       case 'Antwort gespeichert':
         return 'Die Antwort ist im privaten Verlauf gesichert. Die einzelnen Schritte bleiben im Verlauf verfügbar.';
+      case 'Wiederholte Dateiänderung ohne Speicherung gestoppt':
+        return 'Meine Änderung an dieser Datei passte zweimal nicht zum gespeicherten Stand. Ich höre hier auf, statt weiter zu raten; der gespeicherte Stand bleibt erhalten.';
       case 'Auftrag auf Wunsch abgebrochen':
         return 'Der Auftrag wurde auf Wunsch abgebrochen. Ich starte keine weitere Ausführung.';
       // 0.6.39 (P20.5): Mara's images.
@@ -631,7 +633,14 @@
     'Antwort blieb nach Fortsetzung unvollstaendig':1,'Auftrag auf Wunsch abgebrochen':1,
     'Bild erzeugt':1
   };
+  // 0.8.32: a rejected file change is told once, by Mara's own note after it; the raw tool
+  // and step errors fold into the technical steps ("1 fehlgeschlagen") instead of two red lines.
+  function isFoldedEditFailure(event) {
+    return event.state === 'error' && (event.title === 'Projektdatei nicht geaendert'
+      || /^Schritt [0-9]+(?: von [0-9]+)?: Projektdatei aendern$/.test(event.title));
+  }
   function isNarration(event) {
+    if (event && isFoldedEditFailure(event)) return false;
     return !!event && (event.kind === 'commentary' || event.state === 'error'
       || NARRATED[event.title] === 1 || !!event.meta.page_url
       || (event.kind === 'tool' && event.state === 'running'

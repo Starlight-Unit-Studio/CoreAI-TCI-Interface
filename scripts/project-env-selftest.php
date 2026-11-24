@@ -251,7 +251,15 @@ $oldNav = '    <nav id="project-links"><a href="blog.html">Blog</a></nav>';
 $newNav = '    <nav id="project-links"><a href="guestbook.html">Gästebuch</a></nav>';
 $source = str_repeat("<!-- langer Seiteninhalt -->\r\n", 730) . $oldNav . "\r\n";
 coreui_pfiles_write($pdo, 7, $a, 'edit-recovery.html', $source, 'build');
-$patch = "<<<<<<< SUCHEN\n731 | " . trim($oldNav) . "\n=======\n$newNav\n>>>>>>> ERSETZEN";
+// 0.8.32: a copied line number without the file's indentation is matched as that one whole line.
+coreui_pfiles_write($pdo, 7, $a, 'edit-direct.html', $source, 'build');
+$direct = $tool('cs_server', 'pfile_edit', "edit-direct.html\n<<<<<<< SUCHEN\n731 | " . trim($oldNav) . "\n=======\n$newNav\n>>>>>>> ERSETZEN");
+env_test(str_starts_with($direct, 'Datei edit-direct.html geaendert')
+  && str_contains($direct, 'SUCHEN-Text zugeordnet: ohne Zeilennummern, abweichende Einrueckung')
+  && coreui_pfiles_get($pdo, 7, $a, 'edit-direct.html')['content'] === str_replace($oldNav, $newNav, $source),
+  'a numbered, unindented search line changes only that line, keeps its indentation and CRLF: ' . $direct);
+// A search with a line that is not in the file is still rejected as a whole.
+$patch = "<<<<<<< SUCHEN\n731 | " . trim($oldNav) . "\n732 | </body>\n=======\n$newNav\n>>>>>>> ERSETZEN";
 $before = coreui_pfiles_get($pdo, 7, $a, 'edit-recovery.html');
 $failed = $tool('cs_server', 'pfile_edit', "edit-recovery.html\n$patch");
 env_test(str_contains($failed, 'SUCHEN-Text kommt nicht') &&
@@ -264,7 +272,7 @@ $recovery = coreui_pftools_run($pdo, 7, 'cs_server', [
 ]);
 env_test(str_contains($recovery, "\n$oldNav") && !str_contains($recovery, '731 |')
   && strlen($recovery) < 8200, 'recovery returns exact raw source near the anchor beyond the ordinary read cap');
-$retry = str_replace('731 | ' . trim($oldNav), $oldNav, $patch);
+$retry = str_replace('731 | ' . trim($oldNav) . "\n732 | </body>", $oldNav, $patch);
 env_test(str_starts_with($tool('cs_server', 'pfile_edit', "edit-recovery.html\n$retry"), 'Datei edit-recovery.html geaendert') &&
   coreui_pfiles_get($pdo, 7, $a, 'edit-recovery.html')['content'] === str_replace($oldNav, $newNav, $source),
   'a patch grounded in the raw excerpt changes only the intended line and preserves CRLF');

@@ -1,0 +1,38 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.32
+Datum: 24.11.2026
+
+DATEIAENDERUNGEN MIT KOPIERTEN ZEILENNUMMERN ODER ANDEREN LEERZEICHEN
+- In einem Gaestebuch-Projekt mit Core Normal wurden Maras Aenderungen an
+  main.js und guestbook.html immer wieder abgelehnt ("SUCHEN-Text stimmt
+  nicht mit dem gespeicherten Dateiinhalt ueberein", "Aenderungsblock nicht
+  erkannt"); der Lauf las und versuchte eine halbe Stunde lang weiter.
+- Kleine Cores kopieren die nummerierte Leseansicht mit "12 | ", setzen die
+  Zeilen in einen Codeblock, aendern die Einrueckung oder haengen
+  Leerzeichen an. Steht der genaue Text nicht in der Datei, sucht CoreAI
+  dieselben ganzen Zeilen ohne Zeilennummern oder Codeblock, dann ohne
+  Leerzeichen am Zeilenende, dann ohne Einrueckung. Genutzt wird das nur,
+  wenn diese Zeilen genau einmal vorkommen; die neuen Zeilen uebernehmen
+  die Einrueckung der Datei, und Mara erfaehrt, wie ihr Text zugeordnet
+  wurde. Mehrdeutige, falsch geschriebene oder halbe Stellen aendern
+  weiterhin nichts; jede Aenderung gilt ganz oder gar nicht.
+- Eingerueckte Marker, ein Doppelpunkt nach dem Markerwort und die
+  englischen Woerter SEARCH/REPLACE werden wie SUCHEN/ERSETZEN gelesen.
+
+EINE ZEILE JE ABGELEHNTER AENDERUNG
+- Eine abgelehnte Aenderung zeigte drei Zeilen, zwei davon rot mit "Der
+  Abschluss ist nicht bestaetigt", obwohl der Lauf weiterging. Jetzt sagt
+  Maras eigene Notiz es einmal und nennt das erneute Lesen der Datei, nur
+  wenn es wirklich folgt; die rohen Schrittfehler stehen eingeklappt in den
+  technischen Schritten ("1 fehlgeschlagen"). Jeder andere fehlgeschlagene
+  Schritt bleibt sichtbar; der Stopp nach der zweiten abgelehnten Aenderung
+  derselben Datei steht in Maras Worten da.
+
+TESTS
+- edit-tolerance-selftest.php (neu, in beiden Preflights registriert),
+  work-events-ui-selftest.js.
+- project-env-selftest.php erwartete, dass eine nummerierte SUCHEN-Zeile
+  ohne Einrueckung abgelehnt wird. Jetzt prueft er, dass genau diese Zeile
+  direkt geaendert wird (Einrueckung und CRLF bleiben); Ablehnung und
+  erneutes Lesen prueft er mit einer SUCHEN-Zeile, die nicht in der Datei steht.
+
+Version: 0.8.32
