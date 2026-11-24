@@ -1,0 +1,37 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.30
+Datum: 24.11.2026
+
+EIN VON DER KORREKTUR BESTAETIGTER WERKZEUGBLOCK WIRD AUSGEFUEHRT
+- Eine Homepage-Anfrage mit Core Normal endete mit "Ich konnte meine
+  Werkzeugantwort auch nach einem Korrekturversuch nicht sicher auswerten
+  (tool_text_around_block)". Der Core schrieb seinen Planblock mit
+  Erklaerungen, Links oder Woertern in eckigen Klammern drumherum; die eine
+  Korrektur verlangte nur den Block oder eine normale Antwort, und der Core
+  schrieb denselben Block wieder mit Text drumherum. Nichts wurde geplant oder
+  gebaut.
+- Die erste Antwort mit Text um einen Block wird weiterhin nie ausgefuehrt
+  (sie kann ein Werkzeug zitieren oder beschreiben). Enthaelt die Korrektur
+  wieder genau einen vollstaendigen Block desselben Werkzeugs, wurde es
+  zweimal gewaehlt: der Block laeuft, der Text darum faellt weg, er wird
+  weder ausgefuehrt noch angezeigt.
+- Gemischte, eingerahmte, unvollstaendige, zu kurze oder als Beispiel
+  eingeleitete Bloecke und ein anderes Werkzeug als in der ersten Antwort
+  bleiben abgelehnt. Der Arbeitsweg sagt, dass der Block bestaetigt wurde.
+
+TESTERGEBNIS 0.8.18 NACHGETRAGEN
+- Die gesamte Testreihe von 0.8.18 endete nach dem Merge: 204 bestanden,
+  16 fehlgeschlagen; main 0.8.17 in derselben Umgebung: 203 bestanden, 17
+  fehlgeschlagen. Datenkontrollen und Spracheingabe bestehen jetzt; der eine
+  zusaetzliche Fehlschlag (storage-ui) trat nur unter der Last der
+  Testreihe auf und bestand einzeln dreimal.
+
+TESTS
+- native-tools-selftest.php: ein von der Korrektur bestaetigter Block laeuft
+  ohne den Text darum; ein anderes Werkzeug, zwei Bloecke, ein eingerahmter
+  Block, ein Beispiel, ein zu kurzer oder unvollstaendiger Block und eine
+  erste Antwort ohne Werkzeug bleiben abgelehnt; beide Korrekturwege.
+- work-events-ui-selftest.js: der Hinweis im Arbeitsweg.
+- 7 gezielt eingebaute Fehler erkannt; der achte entfernte eine Pruefung, die
+  die Formpruefung davor schon sicherstellt.
+
+Version: 0.8.30

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.29: verify project reply and work timeline handling.
+# CoreAI: TCI Interface 0.8.30: a tool block confirmed by the correction runs without the text around it.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

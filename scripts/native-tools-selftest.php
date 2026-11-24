@@ -558,4 +558,38 @@ if (in_array('sqlite',PDO::getAvailableDrivers(),true)) {
 } else {
   echo "Plan persistence SQLite fixture: SKIP (pdo_sqlite unavailable)\n";
 }
+// 0.8.30: a Core that writes the same single tool block again in its correction has chosen that tool
+// twice; the text around it is dropped. The first reply with text around a block still never runs.
+$aroundFirst = "Sehr gern! Hier ist mein Plan fuer deine Homepage:\n\n[COREUI_PLAN_AND_BUILD]\n" . $cloudPlan
+  . "\n[/COREUI_PLAN_AND_BUILD]\n\nMehr Infos: [CoreAI](https://example.test/coreai) und `index.html`.";
+$aroundFix = "Gut, ich setze das so um. Die Seiten sind [index], [blog] und [gaestebuch].\n\n**[COREUI_PLAN_AND_BUILD]**\n"
+  . $cloudPlan . "\n**[/COREUI_PLAN_AND_BUILD]**\n\nDanach kannst du die Vorschau oeffnen: [Vorschau](https://example.test/p).";
+$confirmed = coreui_native_confirmed_block($aroundFix, $aroundFirst);
+native_assert(coreui_native_tool_parse($aroundFirst) === null && coreui_native_tool_parse($aroundFix) === null
+  && coreui_native_tool_reply_shape($aroundFix) === 'tool_text_around_block'
+  && $confirmed === "[COREUI_PLAN_AND_BUILD]\n" . trim($cloudPlan) . "\n[/COREUI_PLAN_AND_BUILD]"
+  && (coreui_native_tool_parse((string)$confirmed)['type'] ?? '') === 'PLAN_AND_BUILD'
+  && !str_contains((string)$confirmed, 'Vorschau') && !str_contains((string)$confirmed, 'Sehr gern'),
+  'the same tool block in the correction runs without the text around it');
+foreach ([
+  'another tool than the first reply' => [str_replace('PLAN_AND_BUILD', 'PLAN_SAVE', $aroundFix), $aroundFirst],
+  'two blocks' => [$aroundFix . "\n[COREUI_PROJECT_BUILD]\nUmsetzen\n[/COREUI_PROJECT_BUILD]", $aroundFirst],
+  'fenced block' => ["Hier:\n" . str_repeat(chr(96), 3) . "\n[COREUI_PLAN_AND_BUILD]\n" . $cloudPlan
+    . "\n[/COREUI_PLAN_AND_BUILD]\n" . str_repeat(chr(96), 3), $aroundFirst],
+  'example introduction' => ["Beispiel:\n[COREUI_PLAN_AND_BUILD]\n" . $cloudPlan . "\n[/COREUI_PLAN_AND_BUILD]\nMehr: [x](y)", $aroundFirst],
+  'tiny plan' => ["Text [x]\n[COREUI_PLAN_AND_BUILD]\n# Evil\n[/COREUI_PLAN_AND_BUILD]", $aroundFirst],
+  'unclosed block' => ["Text [x]\n[COREUI_PLAN_AND_BUILD]\n" . $cloudPlan, $aroundFirst],
+  'first reply without a tool' => [$aroundFix, 'Ich erklaere dir gern, wie eine Homepage aufgebaut ist.'],
+] as $case => [$fix, $first]) {
+  native_assert(coreui_native_confirmed_block($fix, $first) === null, 'not confirmed: ' . $case);
+}
+$streamWire = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
+$syncWire = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');
+native_assert(str_contains($streamWire, '($confirmedBlock = coreui_native_confirmed_block($fixText, $reply)) !== null')
+  && str_contains($streamWire, '$corrected = $applyNativeTool($confirmedBlock, false);')
+  && str_contains($syncWire, '($confirmedBlock = coreui_native_confirmed_block($fixText, $out)) !== null')
+  && str_contains($syncWire, '$corrected = $applyNative($confirmedBlock, false);')
+  && strpos($streamWire, 'coreui_native_confirmed_block($fixText') > strpos($streamWire, 'if ($fixComplete && coreui_native_tool_parse($fixText) !== null)'),
+  'both correction paths run a block confirmed by the correction');
+
 echo "Native tools: model call parsing, durable Markdown versions, guarded downloads, chat routing OK\n";

@@ -370,6 +370,13 @@ assert(cutFailure.textContent.includes('Fehlertyp: eine an der Ausgabegrenze abg
   && cutFailure.textContent.includes('Mit angehängten Dateien nutze ich in diesem Zug kein Plan- oder Bauwerkzeug')
   && cutFailure.textContent.includes('Ich nutze es in diesem Auftrag nicht mehr und arbeite mit dem vorhandenen Stand weiter'),
   'cut answers, unclosed blocks and the two 0.8.17 notes are readable: ' + cutFailure.textContent);
+// 0.8.30: a tool block chosen in the reply and again in its correction runs without the text around it.
+const confirmedBlock = work.create({events:[{
+  id: 2881,kind:'tool',state:'info',title:'Werkzeugblock nach Korrektur bestaetigt',
+  meta:{reason:'tool_block_confirmed'}
+}]});
+assert(confirmedBlock.textContent.includes('Ich habe zweimal dasselbe Werkzeug gewählt. Ich führe den Werkzeugblock aus; der Text darum gehört nicht dazu.'),
+  'a confirmed tool block is narrated in Mara\'s words: ' + confirmedBlock.textContent);
 
 const searchOutage = work.create({events:[{
   id:289, kind:'tool', state:'info', title:'Websuche beendet',

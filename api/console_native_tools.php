@@ -425,6 +425,31 @@ function coreui_native_single_block_recover(string $reply): ?array {
 }
 
 /**
+ * 0.8.30: the tool block of a CORRECTION reply that again had text around it. A first reply with text
+ * around a block is never executed (it may quote or describe a tool). After the one explicit correction
+ * ("only the block or a normal answer") a Core that writes the same single, complete tool block again has
+ * chosen that tool twice. Core Normal kept explaining around the block both times, so nothing happened
+ * at all. The text around it is dropped: it is neither executed nor shown. Mixed, fenced, unknown,
+ * unclosed, too short or example blocks stay refused, and the first reply must have tried the same tool.
+ * @return string|null the bare block, readable by coreui_native_tool_parse()
+ */
+function coreui_native_confirmed_block(string $correction, string $first): ?string {
+  if (strlen($correction) > 300000 || preg_match('//u', $correction) !== 1
+      || str_contains($correction, "\0")) return null;
+  if (coreui_native_tool_reply_shape($correction) !== 'tool_text_around_block') return null;
+  $text = coreui_native_marker_lines_normalize(coreui_native_public_progress_strip($correction)['reply']);
+  if (preg_match_all('~\[/?COREUI[_/][A-Z_]+\]~i', $text) !== 2) return null;
+  if (preg_match('~\A(?<intro>[\s\S]*?)^[ \t]*\[COREUI_(?<type>PLAN_SAVE|PLAN_APPEND|PLAN_AND_BUILD|PROJECT_BUILD)\][ \t]*\n'
+      . '(?<body>[\s\S]*?)\n[ \t]*\[/COREUI_\k<type>\][ \t]*$~mu', $text, $m) !== 1) return null;
+  if (preg_match('~\b(?:Beispiel|Syntax|Format|Codeblock|Code-Block|Zitat|Vorlage|Example)\s*:\s*(?:\x60[^\r\n]+\x60)?\s*\z~iu',
+      trim($m['intro']))) return null;
+  $body = trim($m['body']);
+  if (!coreui_native_recovered_body_ok($m['type'], $body)) return null;
+  if (!str_contains(coreui_native_marker_lines_normalize($first), '[COREUI_' . $m['type'] . ']')) return null;
+  return '[COREUI_' . $m['type'] . "]\n" . $body . "\n[/COREUI_" . $m['type'] . ']';
+}
+
+/**
  * Bounded, text-free description of WHY a tool reply was unreadable. It is
  * stored in the work history and steers the single correction request.
  */

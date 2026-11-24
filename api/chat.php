@@ -7228,6 +7228,11 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $corrected = null;
       if ($fixComplete && coreui_native_tool_parse($fixText) !== null) {
         $corrected = $applyNative($fixText, false);
+      } elseif ($fixComplete && ($confirmedBlock = coreui_native_confirmed_block($fixText, $out)) !== null) {
+        // 0.8.30: the same single tool block chosen twice; the text around it is dropped (console_stream.php).
+        coreui_work_record($pdo,'tool','info','Werkzeugblock nach Korrektur bestaetigt',
+          ['reason'=>'tool_block_confirmed','response_bytes'=>strlen($fixText)]);
+        $corrected = $applyNative($confirmedBlock, false);
       } elseif ($fixComplete && trim($fixText) !== '' && !coreui_native_tool_attempt($fixText)) {
         $out = $fixText; // a normal answer continues through the usual cleanup
         $corrected = false;
