@@ -916,14 +916,13 @@ try {
       $fixText = ember_sanitize_public_reply((string)($fix['content'] ?? ''),
         (string)($fix['thinking'] ?? ''));
       $fixComplete = !empty($fix['ok']) && !empty($fix['done']) && empty($fix['truncated']);
-      if ($fixComplete && coreui_native_tool_parse($fixText) !== null) {
-        $corrected = $applyNativeTool($fixText, false);
-        if (is_string($corrected)) $nativeToolHandled = true;
-      } elseif ($fixComplete && ($confirmedBlock = coreui_native_confirmed_block($fixText, $reply)) !== null) {
-        // 0.8.30: the same single tool block chosen twice; the text around it is dropped.
-        coreui_work_record($pdo,'tool','info','Werkzeugblock nach Korrektur bestaetigt',
+      // 0.8.30: the same single tool block chosen twice runs without the text around it.
+      $fixTool = !$fixComplete ? null : (coreui_native_tool_parse($fixText) !== null ? $fixText
+        : coreui_native_confirmed_block($fixText, $reply));
+      if ($fixTool !== null) {
+        if ($fixTool !== $fixText) coreui_work_record($pdo,'tool','info','Werkzeugblock nach Korrektur bestaetigt',
           ['reason'=>'tool_block_confirmed','response_bytes'=>strlen($fixText)]);
-        $corrected = $applyNativeTool($confirmedBlock, false);
+        $corrected = $applyNativeTool($fixTool, false);
         if (is_string($corrected)) $nativeToolHandled = true;
       } elseif ($fixComplete && trim($fixText) !== '' && !coreui_native_tool_attempt($fixText)) {
         // She decided to answer normally instead of using a tool.

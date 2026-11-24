@@ -585,11 +585,10 @@ foreach ([
 }
 $streamWire = (string)file_get_contents(dirname(__DIR__) . '/api/console_stream.php');
 $syncWire = (string)file_get_contents(dirname(__DIR__) . '/api/chat.php');
-native_assert(str_contains($streamWire, '($confirmedBlock = coreui_native_confirmed_block($fixText, $reply)) !== null')
-  && str_contains($streamWire, '$corrected = $applyNativeTool($confirmedBlock, false);')
-  && str_contains($syncWire, '($confirmedBlock = coreui_native_confirmed_block($fixText, $out)) !== null')
-  && str_contains($syncWire, '$corrected = $applyNative($confirmedBlock, false);')
-  && strpos($streamWire, 'coreui_native_confirmed_block($fixText') > strpos($streamWire, 'if ($fixComplete && coreui_native_tool_parse($fixText) !== null)'),
+native_assert(str_contains($streamWire, "\$fixTool = !\$fixComplete ? null : (coreui_native_tool_parse(\$fixText) !== null ? \$fixText\n        : coreui_native_confirmed_block(\$fixText, \$reply));")
+  && str_contains($streamWire, '$corrected = $applyNativeTool($fixTool, false);')
+  && str_contains($syncWire, "\$fixTool = !\$fixComplete ? null : (coreui_native_tool_parse(\$fixText) !== null ? \$fixText\n        : coreui_native_confirmed_block(\$fixText, \$out));")
+  && str_contains($syncWire, '$corrected = $applyNative($fixTool, false);'),
   'both correction paths run a block confirmed by the correction');
 
 echo "Native tools: model call parsing, durable Markdown versions, guarded downloads, chat routing OK\n";
