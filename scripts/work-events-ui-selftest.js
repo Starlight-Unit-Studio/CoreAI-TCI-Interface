@@ -359,12 +359,12 @@ const cutFailure = work.create({events:[
     meta:{reason:'native_tool_not_offered'}},
   {id: 287,kind:'tool',state:'info',title:'Werkzeug fuer diesen Auftrag beendet: dreimal dasselbe Ergebnis',
     meta:{reason:'repeated_identical_tool_disabled',source:'web'}},
-  {id: 288,kind:'run',state:'success',title:'Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt',
+  {id: 288,kind:'model',state:'info',title:'Antwort ohne Steuerblock auf gepruefte Werkzeugschritte gestuetzt',
     meta:{reason:'task_prose_answer',step:11}}
 ]});
 // 0.8.18: a plain answer accepted on confirmed tool steps reads in Mara's words.
-assert(cutFailure.textContent.includes('Meine Antwort stützt sich auf bestätigte Werkzeugschritte; der Auftrag ist damit abgeschlossen.'),
-  'an accepted plain answer is narrated: ' + cutFailure.textContent);
+assert(cutFailure.textContent.includes('Ob die Antwort gespeichert wurde, steht im folgenden Schritt.'),
+  'a draft is narrated without asserting completion: ' + cutFailure.textContent);
 assert(cutFailure.textContent.includes('Fehlertyp: eine an der Ausgabegrenze abgeschnittene Antwort')
   && cutFailure.textContent.includes('Fehlertyp: ein Werkzeugblock ohne Schlussmarker')
   && cutFailure.textContent.includes('Mit angehängten Dateien nutze ich in diesem Zug kein Plan- oder Bauwerkzeug')

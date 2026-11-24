@@ -572,8 +572,24 @@ loop_test(($proseLoop['outcome']??'')==='completed' && ($proseLoop['reason']??''
   && count($prosePrompts)===2 && str_contains($prosePrompts[1],'(erkannt: nur Text ohne Werkzeugmarker und ohne Steuerblock)')
   && str_contains($prosePrompts[1],"<<<\nDie Seite ist fertig.\n>>>")
   && ($proseMissing[0]['meta']['error_type']??'')==='prose_only' && $proseStop===[] && count($proseDone)===1
-  && $proseDone[0]['state']==='success',
+  && $proseDone[0]['state']==='info',
   'a prose answer after the one repair is the answer on verified evidence: ' . json_encode([$proseLoop, $proseMissing, $proseDone]));
+$privateReplies = ['internal-only text', 'internal-only text'];
+$privatePrompts = [];
+$privateRun = coreui_agent_loop_run('[DATEI: main.js]',
+  ['tool'=>'pfile_read','input'=>'main.js'],'BASIS',$projectFileTools,0,
+  static function(string $prompt) use (&$privateReplies,&$privatePrompts): ?string {
+    $privatePrompts[] = $prompt;
+    return array_shift($privateReplies);
+  },
+  static fn(array $tool): string => 'Bestaetigte Datei: ' . $tool['input'],
+  static function(string $kind,string $state,string $title,array $meta): void {},
+  static fn(): bool => false,
+  publicReply: static fn(string $text): string => $text === 'internal-only text' ? '' : $text);
+loop_test($privateRun['outcome'] === 'interrupted' && $privateRun['steps'] === 1
+  && count($privatePrompts) === 2 && !str_contains($privatePrompts[1], 'internal-only text')
+  && !str_contains((string)$privateRun['out'], 'internal-only text'),
+  'filtered prose receives one repair and leaves the task open without replaying the tool');
 $multilineCommand = "[AUSFUEHREN: python - <<'PY'\nprint(1)\nPY\nnode --check app.js]";
 $parseCommand = static fn(string $reply): ?array => coreui_agent_next_tool($reply, ['prun']);
 loop_test(coreui_task_decision($multilineCommand, $parseCommand)['shape'] === 'command_multiline'

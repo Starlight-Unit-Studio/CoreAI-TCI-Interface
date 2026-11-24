@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.28: verify generation status recovery in the WebUI.
+# CoreAI: TCI Interface 0.8.29: verify project reply and work timeline handling.
 set -Eeuo pipefail
 IFS=$'\n\t'
 

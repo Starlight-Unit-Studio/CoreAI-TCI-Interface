@@ -1,5 +1,10 @@
 # CoreAI: TCI Interface
 
+## 0.8.29 - 23.11.2026
+
+- Project replies are checked for public text before a draft can be accepted. If only filtered content remains, Mara gets one chance to choose the next action or provide a visible answer without repeating a verified file operation.
+- The work timeline shows a draft as provisional. The saved-answer event confirms that the reply reached chat history.
+
 ## 0.8.28 - 23.11.2026
 
 - After the live connection drops, chat actions follow the recorded server status even when a running request exceeds the browser’s old poll limit. A status connection failure and a server-confirmed expiry are reported separately.
