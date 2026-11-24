@@ -1,0 +1,27 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.31
+Datum: 24.11.2026
+
+HINWEIS UEBER DEM EINGABEFELD
+- Eine ruhige Zeile ueber dem Eingabefeld, auf jedem Bildschirm, auch am
+  Handy: "Mara kann Fehler machen. Bricht ein Lauf ab, tippe unter der
+  Antwort auf ↻." Sie nutzt den Namen, den die Person fuer die Assistenz
+  eingestellt hat.
+
+ERNEUT VERSUCHEN AN EINEM ABGEBROCHENEN LAUF
+- Eine Antwort, deren Lauf oder Auftrag unterbrochen oder fehlgeschlagen
+  ist, oder deren gespeicherter Arbeitsweg einen Lauffehler oder eine
+  unlesbare Werkzeugantwort enthaelt, zeigt "Dieser Lauf ist nicht
+  abgeschlossen." mit dem Knopf "↻ Erneut versuchen". Er erzeugt eine neue
+  Antwort auf dieselbe Nachricht, wie ↻ in der Aktionsleiste, das bei einer
+  solchen Antwort hervorgehoben ist.
+- Abgeschlossene, von der Person abgebrochene und noch nicht gespeicherte
+  Antworten zeigen keinen Hinweis.
+
+TESTS
+- retry-hint-ui-selftest.cjs: der Hinweis, sein Platz ueber dem
+  Eingabefeld, keine Regel blendet ihn am Handy aus, der eingestellte Name;
+  fuenf Faelle mit und sechs ohne Erneut-versuchen; der Knopf startet eine
+  neue Antwort; der Hinweis steht vor der Aktionsleiste. In beiden
+  Preflights registriert.
+
+Version: 0.8.31

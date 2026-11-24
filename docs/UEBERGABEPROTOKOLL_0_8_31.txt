@@ -1,0 +1,53 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.31
+Datum: 24.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.30 nach PR #392
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber: "sollen wir im chat ganz unten ueber der eingabezeile auch so nen text wie bei
+google machen also mit ki koennen fehler machen plus dazu schreiben das wenn ein run mal
+fehlschlaegt einfach wiederholen mit "repeat icon"?" (mit Screenshot der Vorlage), dann
+"ja mach beides als 0.8.31".
+
+UMSETZUNG
+- app.html: erste Zeile im Eingabebereich (footer.composer), vor den Anhaengen:
+  p#composerAiNote "Mara kann Fehler machen. Bricht ein Lauf ab, tippe unter der Antwort auf ↻."
+  Eigenes Element, weil der Hinweis zur Tastenbelegung am Handy (bis 640 px) ausgeblendet wird.
+- js/console-app.js: refreshComposerAiNote() setzt den eingestellten Assistenznamen ein; laeuft
+  bei jeder Aktualisierung des Platzhalters (Anmeldung, Profil, Chatwechsel).
+- js/console-app.js: runNeedsRetry(record) erkennt einen abgebrochenen Lauf an agent_run.status
+  oder agent_run.task.status "interrupted"/"failed" oder an einem gespeicherten Arbeitsweg-Ereignis
+  run/error oder "Korrektur nicht lesbar". buildRetryHint(record) zeigt dann an der gespeicherten
+  Antwort (id und reply_to_id vorhanden) "Dieser Lauf ist nicht abgeschlossen." mit dem Knopf
+  "↻ Erneut versuchen" (aria-label "Lauf erneut versuchen"); er ruft denselben Weg wie ↻ in der
+  Aktionsleiste auf (startGenerationAction(record, 'regenerate')). ↻ in der Aktionsleiste erhaelt
+  bei solchen Antworten is-retry-suggested.
+- css/console.css: Stile fuer Hinweis, Kasten und Knopf, hell und dunkel
+  (:root[data-coreui-theme="dark"]); keine Regel blendet den Hinweis am Handy aus.
+- scripts/retry-hint-ui-selftest.cjs neu, in beiden Preflights registriert.
+
+UNVERAENDERT
+- Server, Agentenschleife, Werkzeuge, Datenbank (keine Migration), Modelfile, SYSTEM-Prompts,
+  Installer. Abgeschlossene, von der Person abgebrochene (cancelled) und noch nicht gespeicherte
+  Antworten zeigen keinen Kasten; ↻ in der Aktionsleiste bleibt wie bisher.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- node --check js/console-app.js, bash -n fuer beide Preflights: ohne Fehler.
+- retry-hint-ui-selftest.cjs, work-events-ui-selftest.js, TCI-Sprache, Terran-Terminologie,
+  preflight-sync-selftest.py, terminal-language-selftest.py, branding-license-selftest.py,
+  cache-bust --verify: OK.
+- Fehlereinbauten: 13 gezielte Fehler in Hinweis, Erkennung, Knopf, Verdrahtung und Namen;
+  alle 13 erkannt.
+- Darstellung mit Playwright in Handybreite (390 px) geprueft: Hinweis ueber dem Eingabefeld,
+  Kasten mit Knopf unter einer abgebrochenen Antwort.
+- Gesamte Testreihe: Ergebnis folgt.
+
+NICHT GETESTET
+- Ein echter abgebrochener Lauf auf dem Server; geprueft mit nachgestellten Antwortdaten.
+
+NAECHSTER SCHRITT
+- Nach dem Update einen Lauf abbrechen lassen (oder einen alten abgebrochenen Chat oeffnen) und
+  "↻ Erneut versuchen" antippen.
+
+Version: 0.8.31

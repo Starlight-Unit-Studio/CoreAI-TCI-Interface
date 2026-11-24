@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.30`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.31`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -64,6 +64,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Replace a finished reply without rebuilding already loaded images and work cards, reducing mobile flicker.
 - Stop supported in-progress responses and work. Model inferences are serialized across the system; one Ollama model call runs at a time.
 - Copy, edit, regenerate and read aloud messages; rate answers with persistent 👍/👎 feedback.
+- A quiet line above the input on every screen says that the assistant can make mistakes and that a run which broke off can be repeated with ↻. An answer whose run was interrupted or failed shows "This run is not finished" with a **Try again** button that generates a new answer for the same message; the ↻ in its action bar is highlighted.
 - React once in Mara's own words to a recorded rating or confirmed image generation, without a fabricated spoken request or an endless reaction loop.
 - Keep the assistant's configured name, portrait and TCI identity across the standard chat experience.
 

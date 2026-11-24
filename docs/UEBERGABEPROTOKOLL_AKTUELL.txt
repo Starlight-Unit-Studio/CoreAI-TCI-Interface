@@ -1,4 +1,13 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
+Version main: 0.8.30, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.31).
+ZIEL 0.8.31: Hinweis ueber dem Eingabefeld (Mara kann Fehler machen, abgebrochenen
+Lauf mit ↻ wiederholen) und "↻ Erneut versuchen" an Antworten, deren Lauf
+unterbrochen oder fehlgeschlagen ist. Keine Migration, kein Serverteil.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_31.txt.
+Naechster Schritt: einen abgebrochenen Lauf auf dem Server erneut versuchen.
+Nach Merge naechste Version 0.8.32.
+--- VORHERIGER STAND ---
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
 Version main: 0.8.29, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.30).
 ZIEL 0.8.30: ein von der einen Korrektur bestaetigter Werkzeugblock (dasselbe
 Werkzeug zweimal, Text drumherum) wird ausgefuehrt, der Text darum faellt weg;

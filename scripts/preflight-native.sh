@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.30: a tool block confirmed by the correction runs without the text around it.
+# CoreAI: TCI Interface 0.8.31: a note above the input and a retry at a run that broke off.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -285,6 +285,7 @@ UI_FILES=(
   css/coreui-chat-tci-layout.css
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
+  scripts/retry-hint-ui-selftest.cjs
   scripts/text-selection-ui-selftest.cjs
   scripts/tci-chat-layout-ui-selftest.cjs
   setup.sh
@@ -1584,6 +1585,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Web search: source row follows actual events, without rotating fake webpages.'
     else
       fail 'Web search: source carousel shows an incorrect sequence or is broken.'
+    fi
+    if node "$PROJECT_ROOT/scripts/retry-hint-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: a note above the input and a retry button at a run that broke off.'
+    else
+      fail 'Chat: the note above the input or the retry at a broken-off run is missing.'
     fi
     if php "$PROJECT_ROOT/scripts/general-controls-selftest.php" >/dev/null 2>&1; then
       ok 'General: Core routing, stored settings and real reasoning levels verified.'
