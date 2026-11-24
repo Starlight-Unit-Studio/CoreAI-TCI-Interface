@@ -58,7 +58,13 @@ TESTS (in dieser Sitzung ausgefuehrt)
 - Fehlereinbauten: 15 gezielte Fehler in Zuordnung, Einrueckung, Markern, Notiz und Arbeitsweg, alle
   erkannt; ein weiterer (Zustandspruefung beim Einklappen) ist gleichwertig, weil Schritt-Ereignisse
   ohne Fehler ohnehin nicht als Text erscheinen.
-- Gesamte Testreihe: Ergebnis folgt.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf 0454aa48: 208 bestanden, 14
+  fehlgeschlagen. main 0.8.31 in derselben Umgebung: 207 bestanden, 14 fehlgeschlagen, auf beiden
+  Seiten dieselben (browse-image, chat-menu-ui, image-progress-ui, insights-chat-visibility-ui,
+  long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui,
+  session-list-ui, settings-tabs-ui, update-ui, voice-samples-ui). Der zusaetzliche bestandene
+  Test ist edit-tolerance. Keine neuen Fehlschlaege.
+- GitHub-Jobs auf 0454aa48: 15 von 15 gruen.
 
 NICHT GETESTET
 - Ein echter Lauf mit Core Normal; Gemmas tatsaechliche Bloecke liegen nicht vor.
