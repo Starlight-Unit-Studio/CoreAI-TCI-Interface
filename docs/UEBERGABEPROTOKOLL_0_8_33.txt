@@ -51,7 +51,13 @@ TESTS (in dieser Sitzung ausgefuehrt)
   cache-bust --verify: OK.
 - Alle Selbsttests der GitHub-Jobs lokal: gruen.
 - Fehlereinbauten: 11 gezielte Fehler, alle erkannt (drei erst nach geschaerften Tests).
-- Gesamte Testreihe: Ergebnis folgt.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf f10e9ee5: 209 bestanden, 14
+  fehlgeschlagen. main 0.8.32 in derselben Umgebung: 208 bestanden, 14 fehlgeschlagen, auf beiden
+  Seiten dieselben (browse-image, chat-menu-ui, image-progress-ui, insights-chat-visibility-ui,
+  long-chat, model-library-ui, pets-ui, profile-stats-ui, progress-browser, security-ui,
+  session-list-ui, settings-tabs-ui, update-ui, voice-samples-ui). Der zusaetzliche bestandene
+  Test ist file-change-pause. Keine neuen Fehlschlaege.
+- GitHub-Jobs auf f10e9ee5: 15 von 15 gruen.
 
 NICHT GETESTET
 - Ein echter Lauf mit Core Normal.
