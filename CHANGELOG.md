@@ -1,5 +1,12 @@
 # CoreAI: TCI Interface
 
+## 0.8.33 - 24.11.2026
+
+- **A run that rewrites one file again and again:** After the 0.8.32 update the guestbook went on, but "fahren wir mit dem blog weiter" with Core Normal was still working after 44 minutes: Mara read and changed `blog.html` again and again (searches, a skill, rejected and saved changes in turn) and never reported the task as done. Project runs deliberately have no limit on their total steps or time. Following the operator's choice, saved changes of the same file are now counted per run: after six, Mara is asked once to check whether the task is done and to finish with the control block, or to name in one sentence what is still missing and change only that; after ten, the run pauses. Her answer then is an interim report that names every file changed in the run with its number of changes, says that each change can be undone in the Files tab, and offers "weiter" or ↻ to go on from the saved state. The run counts as interrupted, so the answer shows the retry hint from 0.8.31. Many different files, rejected changes and other tools are not counted; there is still no wall-clock limit.
+- **Work timeline:** The check and the pause are told in Mara's words.
+- **Found on the way, unchanged:** The work event "Projektauftrag unterbrochen; Dateien bleiben erhalten" contains a semicolon, which the work store does not accept, so it was never saved. The handover notes it.
+- **Tests:** `file-change-pause-selftest.php` (new, registered in both preflights), `work-events-ui-selftest.js`.
+
 ## 0.8.32 - 24.11.2026
 
 - **File changes with copied line numbers or other whitespace:** In a guestbook project with Core Normal, Mara's changes to `main.js` and `guestbook.html` were rejected again and again ("SUCHEN-Text stimmt nicht mit dem gespeicherten Dateiinhalt überein", "Änderungsblock nicht erkannt"); the run went on for half an hour reading and retrying. Small Cores copy the numbered read view with its `12 | ` prefixes, wrap the lines in a code fence, change the indentation or add trailing spaces. When the exact text is not in the file, CoreAI now looks for the same whole lines without line numbers or fence, then with trailing spaces ignored, then with indentation ignored. A match is used only when those lines occur exactly once; the new lines take over the file's indentation, and Mara learns how her text was matched. Ambiguous, misspelled or partial passages still change nothing, and every change stays all-or-nothing.

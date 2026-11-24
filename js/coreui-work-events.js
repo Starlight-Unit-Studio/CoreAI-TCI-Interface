@@ -304,6 +304,10 @@
         return 'Meine Antwortübertragung war unvollständig. Ich prüfe den Werkzeug- oder Ersatzweg, ohne den Abbruch zu verschweigen.';
       case 'Antwort gespeichert':
         return 'Die Antwort ist im privaten Verlauf gesichert. Die einzelnen Schritte bleiben im Verlauf verfügbar.';
+      case 'Abschluss nach sechs Aenderungen derselben Datei angefordert':
+        return 'Ich habe dieselbe Datei jetzt sechsmal geändert. Ich prüfe, ob der Auftrag erfüllt ist, statt sie weiter umzubauen.';
+      case 'Lauf nach zehn Aenderungen derselben Datei pausiert':
+        return 'Ich habe dieselbe Datei zehnmal geändert, ohne fertig zu werden. Ich pausiere hier mit einem Zwischenstand; alle Änderungen bleiben gespeichert.';
       case 'Wiederholte Dateiänderung ohne Speicherung gestoppt':
         return 'Meine Änderung an dieser Datei passte zweimal nicht zum gespeicherten Stand. Ich höre hier auf, statt weiter zu raten; der gespeicherte Stand bleibt erhalten.';
       case 'Auftrag auf Wunsch abgebrochen':
@@ -631,7 +635,10 @@
     'Werkzeugantwort wird einmal korrigiert':1,'Werkzeugantwort korrigiert':1,
     'Korrekturversuch vorbereitet':1,'Unvollstaendiger Python-Code nicht ausgefuehrt':1,
     'Antwort blieb nach Fortsetzung unvollstaendig':1,'Auftrag auf Wunsch abgebrochen':1,
-    'Bild erzeugt':1
+    'Bild erzeugt':1,
+    // 0.8.33: the same file changed again and again in one run.
+    'Abschluss nach sechs Aenderungen derselben Datei angefordert':1,
+    'Lauf nach zehn Aenderungen derselben Datei pausiert':1
   };
   // 0.8.32: a rejected file change is told once, by Mara's own note after it; the raw tool
   // and step errors fold into the technical steps ("1 fehlgeschlagen") instead of two red lines.

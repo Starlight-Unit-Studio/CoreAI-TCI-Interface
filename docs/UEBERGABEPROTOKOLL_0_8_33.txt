@@ -1,0 +1,63 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.33
+Datum: 24.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.32 nach PR #394
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber mit vier Screenshots (Blog im Projekt, Core Normal, 44 Minuten): "gaestebuch ging weiter
+aber jetzt haengst hier bis jetzt und die zeit ist krass". Auf die Frage, wie solche Laeufe
+begrenzt werden sollen, gewaehlt: "Schleifen an einer Datei" (nach 6 Aenderungen derselben Datei
+pruefen und abschliessen, nach 10 pausieren mit Zwischenstand; lange Builds ueber viele Dateien
+ohne Grenze).
+
+BEFUND
+- Der Lauf hing nicht: Websuche, RAG, Skill html-semantics und vor allem blog.html lesen und
+  aendern im Wechsel; die meisten Aenderungen wurden gespeichert (0.8.32 wirkt), Mara schrieb aber
+  nie einen Abschluss. Projektlaeufe haben seit 18./19.11. absichtlich keine Schritt- und keine
+  Zeitgrenze (Commit 13550108, Test aecd7f79 "require unbounded verified project work").
+- Die bestehenden Bremsen greifen nicht: gespeicherte Aenderungen setzen den Zaehler fuer
+  abgelehnte Aenderungen und die Lesesignaturen dieser Datei zurueck.
+
+UMSETZUNG
+- api/console_agent_loop.php: COREUI_AGENT_FILE_CHANGE_CHECK = 6, COREUI_AGENT_FILE_CHANGE_PAUSE =
+  10. Je Lauf zaehlt $fileChangeCounts gespeicherte Aenderungen (pfile_edit, pfile_write) je Datei.
+  Bei 6: einmal "ABSCHLUSS PRUEFEN" an den naechsten Prompt (Datei, Anzahl, [COREUI_TASK_DONE],
+  sonst in einem Satz nennen, was fehlt, und nur das aendern), Ereignis "Abschluss nach sechs
+  Aenderungen derselben Datei angefordert". Bei 10: Stopp ohne weiteren Core-Aufruf, Grund
+  same_file_changed_repeatedly (bewusst nicht file_..., sonst kaeme die Meldung "nicht
+  gespeichert"), Ereignis "Lauf nach zehn Aenderungen derselben Datei pausiert", Antwort aus
+  coreui_agent_change_pause_report(): jede geaenderte Datei mit Anzahl, zuruecknehmbar im Tab
+  Dateien, "weiter" oder ↻. Ergebnis interrupted, damit zeigt die Antwort den Hinweis aus 0.8.31.
+- js/coreui-work-events.js: beide Ereignisse in Maras Worten.
+
+UNVERAENDERT
+- Keine Grenze fuer Schritte insgesamt und keine Zeitgrenze (der Test, der die 10-Minuten-Grenze
+  verbietet, bleibt). Modelfile, SYSTEM-Prompts, Installer, Datenbank (keine Migration).
+
+NEBENBEI GEFUNDEN (nicht geaendert)
+- Das Ereignis "Projektauftrag unterbrochen; Dateien bleiben erhalten" (console_agent_loop.php,
+  nach der Schleife) enthaelt ein Semikolon; coreui_work_record lehnt Titel ausserhalb
+  [a-zA-Z0-9 -.,:()/] ab, das Ereignis wurde also nie gespeichert. Korrektur: Semikolon durch
+  Komma ersetzen, betroffene Tests pruefen.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer api/console_agent_loop.php und scripts/file-change-pause-selftest.php, node --check
+  fuer js/coreui-work-events.js, bash -n fuer beide Preflights: ohne Fehler.
+- file-change-pause-selftest.php (neu: zehn Aenderungen einer Datei, Abschluss nach der Pruefung,
+  vierzehn verschiedene Dateien, zwei Dateien je fuenfmal, zwoelf Versuche mit drei Ablehnungen,
+  Zwischenstand), edit-tolerance, agent-loop, project-file-tools, project-env, work-events-ui,
+  retry-hint-ui, TCI-Sprache, Terran-Terminologie, preflight-sync, terminal-language, branding,
+  cache-bust --verify: OK.
+- Alle Selbsttests der GitHub-Jobs lokal: gruen.
+- Fehlereinbauten: 11 gezielte Fehler, alle erkannt (drei erst nach geschaerften Tests).
+- Gesamte Testreihe: Ergebnis folgt.
+
+NICHT GETESTET
+- Ein echter Lauf mit Core Normal.
+
+NAECHSTER SCHRITT
+- Nach dem Update "fahren wir mit dem blog weiter" erneut beauftragen; spaetestens nach zehn
+  Aenderungen von blog.html kommt der Zwischenstand.
+
+Version: 0.8.33
