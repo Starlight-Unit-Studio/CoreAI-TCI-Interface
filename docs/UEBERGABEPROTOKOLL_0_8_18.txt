@@ -56,7 +56,24 @@ UNVERAENDERT
   Werkzeugmarker, hoechstens eine Reparatur, Abschluss nur mit Nachweisen und Journal.
 
 TESTS (in dieser Sitzung ausgefuehrt)
-- Werden nach dem Lauf eingetragen.
+- php -l fuer alle geaenderten PHP-Dateien, node --check fuer js/coreui-work-events.js, bash -n fuer
+  beide Preflights: ohne Fehler. Version-Guard (0.8.17 auf 0.8.18), Branding,
+  Cache-Fingerabdruecke, Preflight-Sync, Terminal-Sprache, TCI-Sprache, Terran-Terminologie: OK.
+- agent-loop-selftest.php, external-provider-selftest.php (mit und ohne nachgebaute
+  config.local.php; die alte Fassung scheitert damit wie auf dem Server mit "local answer"),
+  voice-input-selftest.php, data-controls-selftest.php, work-events-ui-selftest.js,
+  native-tools-selftest.php, task-journal-selftest.php, work-events-selftest.php,
+  project-file-tools-selftest.php, thinking-switch-selftest.php: OK.
+- Fehlereinbauten: 13 gezielte Fehler, alle erkannt.
+- GitHub-Pruefungen auf fc850138: alle 15 gruen.
+- Gesamte Testreihe (nachgetragen mit 0.8.30, der Lauf endete nach dem Merge von PR #379):
+  0.8.18: 204 bestanden, 16 fehlgeschlagen. main 0.8.17 in derselben Umgebung: 203 bestanden,
+  17 fehlgeschlagen. Behoben: data-controls, voice-input. Nur auf 0.8.18: storage-ui, unter der
+  Last der Testreihe; einzeln drei Laeufe hintereinander gruen. Die uebrigen 15 auf beiden Seiten
+  gleich (browse-image, browse-live-ui, chat-menu-ui, image-progress-ui,
+  insights-chat-visibility-ui, long-chat, model-library-ui, pets-ui, profile-stats-ui,
+  progress-browser, security-ui, session-list-ui, settings-tabs-ui, update-ui,
+  voice-samples-ui).
 
 BEKANNT, NICHT TEIL DIESER VERSION
 - voice-live-selftest.php mit COREUI_SELFTEST_DB=1 scheitert hier mit "Mara Normal answers live

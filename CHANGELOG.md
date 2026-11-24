@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.8.30 - 24.11.2026
+
+- **A tool block confirmed by the correction runs:** A homepage request with Core Normal ended with "Ich konnte meine Werkzeugantwort auch nach einem Korrekturversuch nicht sicher auswerten (tool_text_around_block)": the Core wrote its plan block with explanations, links or bracketed words around it, the one correction asked for only the block or a normal answer, and the Core wrote the same block with text around it again. Nothing was planned or built. The first reply with text around a block is still never executed (it may quote or describe a tool). When the correction again contains exactly one complete block of the same tool, that tool was chosen twice: the block runs and the text around it is dropped, neither executed nor shown. Mixed, fenced, unclosed, too short or example blocks and a different tool than in the first reply stay refused. The work timeline says that the block was confirmed.
+- **0.8.18 test record:** The full suite of 0.8.18 finished after its merge: 204 passed, 16 failed; main 0.8.17 in the same environment: 203 passed, 17 failed. The data controls and voice input tests now pass; the one extra failure (`storage-ui`) only occurred under the load of the full run and passed three times on its own.
+- **Tests:** `native-tools-selftest.php` (a block confirmed by the correction runs without the text around it; a different tool, two blocks, a fenced block, an example, a too short or unclosed block and a first reply without a tool stay refused; both correction paths), `work-events-ui-selftest.js`. 7 deliberate faults were caught; the eighth removed a check that the form check before it already guarantees.
+
 ## 0.8.29 - 23.11.2026
 
 - Project replies are checked for public text before a draft can be accepted. If only filtered content remains, Mara gets one chance to choose the next action or provide a visible answer without repeating a verified file operation.

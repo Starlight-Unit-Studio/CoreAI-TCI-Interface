@@ -171,6 +171,9 @@
           + (TOOL_SHAPES[event.meta.reason] ? ' (' + TOOL_SHAPES[event.meta.reason] + ')' : '')
           + '. Daraus führe ich nichts aus.';
       // 0.8.17: a turn with attached files has no plan or build tool; the answer stays text.
+      // 0.8.30: the same tool block chosen in the reply and in its correction.
+      case 'Werkzeugblock nach Korrektur bestaetigt':
+        return 'Ich habe zweimal dasselbe Werkzeug gewählt. Ich führe den Werkzeugblock aus; der Text darum gehört nicht dazu.';
       case 'Werkzeugmarker ohne Werkzeug in diesem Zug entfernt':
         return 'Mit angehängten Dateien nutze ich in diesem Zug kein Plan- oder Bauwerkzeug. '
           + 'Meine Antwort steht deshalb als Text da; gespeichert oder gebaut habe ich nichts.';

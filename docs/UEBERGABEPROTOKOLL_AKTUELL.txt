@@ -1,3 +1,12 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
+Version main: 0.8.29, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.30).
+ZIEL 0.8.30: ein von der einen Korrektur bestaetigter Werkzeugblock (dasselbe
+Werkzeug zweimal, Text drumherum) wird ausgefuehrt, der Text darum faellt weg;
+Testergebnis 0.8.18 nachgetragen. Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_30.txt.
+Naechster Schritt: Homepage-Anfrage mit Core Normal auf dem Server wiederholen.
+Nach Merge naechste Version 0.8.31.
+--- VORHERIGER STAND ---
 COREAI: TCI INTERFACE // CURRENT WORK 23.11.2026
 Base 0.8.26, branch version 0.8.27.
 See docs/UEBERGABEPROTOKOLL_0_8_27.txt.
