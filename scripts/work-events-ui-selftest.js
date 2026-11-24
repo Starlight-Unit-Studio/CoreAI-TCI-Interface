@@ -378,6 +378,40 @@ const confirmedBlock = work.create({events:[{
 assert(confirmedBlock.textContent.includes('Ich habe zweimal dasselbe Werkzeug gewählt. Ich führe den Werkzeugblock aus; der Text darum gehört nicht dazu.'),
   'a confirmed tool block is narrated in Mara\'s words: ' + confirmedBlock.textContent);
 
+// 0.8.32: a rejected file change is told once by Mara's note; the raw tool and step errors fold
+// into the technical steps and are counted there. Other errors stay visible, and so does a stop.
+const editNote = 'Dateiänderung nicht gespeichert: SUCHEN-Text stimmt nicht mit dem gespeicherten Dateiinhalt überein. '
+  + 'Der gespeicherte Stand bleibt erhalten. Ich lese die Datei neu und setze die Änderung genau am gespeicherten Text an.';
+const rejectedEdit = work.create({events:[
+  {id:2901,kind:'commentary',state:'info',title:'Mara meldet ihren naechsten Schritt',meta:{public_note:'Ich ändere die Datei main.js',source:'agent_loop'}},
+  {id:2902,kind:'tool',state:'running',title:'Schritt 3: Projektdatei aendern',meta:{step:3,reason:'agent_loop'}},
+  {id:2903,kind:'tool',state:'error',title:'Projektdatei nicht geaendert',meta:{source:'project_files'}},
+  {id:2904,kind:'tool',state:'error',title:'Schritt 3: Projektdatei aendern',meta:{step:3,reason:'tool_result_error'}},
+  {id:2905,kind:'commentary',state:'info',title:'Mara ordnet das Werkzeugergebnis ein',meta:{public_note:editNote,source:'verified_tool_result'}},
+  {id:2906,kind:'tool',state:'info',title:'Datei nach fehlgeschlagener Änderung erneut lesen',meta:{reason:'edit_recovery_read',step:3}},
+]});
+// Only the lines shown without opening the technical steps.
+const shownLines = node => node.className.split(' ').includes('work-narration') ? [node.textContent]
+  : node.className.split(' ').includes('work-run-head') ? [node.children[0].textContent]
+  : node.children.flatMap(shownLines);
+const rejectedShown = shownLines(rejectedEdit);
+const rejectedText = rejectedShown.join('\n');
+assert.equal(rejectedText.split(editNote).length - 1, 1, 'the rejected change is told once: ' + rejectedText);
+assert(!rejectedText.includes('ist fehlgeschlagen') && !rejectedText.includes('Abschluss ist nicht bestätigt'),
+  'no red duplicate lines for the same rejected change: ' + rejectedText);
+assert(rejectedText.includes('1 Werkzeugaktion · 1 fehlgeschlagen · Details anzeigen'),
+  'the failure is still counted in the technical steps: ' + rejectedText);
+assert(rejectedEdit.textContent.includes('Der Schritt „Schritt 3: Projektdatei aendern“ ist fehlgeschlagen'),
+  'the step error stays in the technical details');
+const otherErrors = shownLines(work.create({events:[
+  {id:2911,kind:'tool',state:'error',title:'Schritt 4: Projektdatei lesen',meta:{step:4,reason:'tool_result_error'}},
+  {id:2912,kind:'tool',state:'error',title:'Wiederholte Dateiänderung ohne Speicherung gestoppt',meta:{reason:'same_file_edit_rejected_twice',step:5}},
+]})).join('\n');
+assert(otherErrors.includes('Der Schritt „Schritt 4: Projektdatei lesen“ ist fehlgeschlagen'),
+  'any other failed step is still shown: ' + otherErrors);
+assert(otherErrors.includes('Meine Änderung an dieser Datei passte zweimal nicht zum gespeicherten Stand. Ich höre hier auf, statt weiter zu raten; der gespeicherte Stand bleibt erhalten.'),
+  'the stop after two rejected changes is told in Mara\'s words: ' + otherErrors);
+
 const searchOutage = work.create({events:[{
   id:289, kind:'tool', state:'info', title:'Websuche beendet',
   meta:{reason:'research_search_backend_unavailable',knowledge_hits:0,source:'web'}

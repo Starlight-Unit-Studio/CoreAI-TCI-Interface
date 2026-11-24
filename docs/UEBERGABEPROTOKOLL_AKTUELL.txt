@@ -1,4 +1,13 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
+Version main: 0.8.31, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.32).
+ZIEL 0.8.32: Dateiaenderungen mit kopierten Zeilennummern, Codeblock, anderen
+Leerzeichen oder anderer Einrueckung werden genau einmal zugeordnet; eine
+abgelehnte Aenderung steht einmal im Arbeitsweg. Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_32.txt.
+Naechster Schritt: Gaestebuch mit Core Normal erneut beauftragen.
+Nach Merge naechste Version 0.8.33.
+--- VORHERIGER STAND ---
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
 Version main: 0.8.30, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.31).
 ZIEL 0.8.31: Hinweis ueber dem Eingabefeld (Mara kann Fehler machen, abgebrochenen
 Lauf mit ↻ wiederholen) und "↻ Erneut versuchen" an Antworten, deren Lauf

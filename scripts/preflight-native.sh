@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.31: a note above the input and a retry at a run that broke off.
+# CoreAI: TCI Interface 0.8.32: file changes with copied line numbers or other whitespace are matched exactly once.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -227,6 +227,7 @@ UI_FILES=(
   database/migrations/045_project_files_mara.sql
   api/project_file_tools.php
   scripts/project-file-tools-selftest.php
+  scripts/edit-tolerance-selftest.php
   database/migrations/056_chat_workspaces.sql
   js/coreui-chat-dev.js
   css/coreui-chat-dev.css
@@ -1340,6 +1341,15 @@ if command -v php >/dev/null 2>&1; then
   else
     project_file_tools_test_exit=$?
     fail "File tools-self-test (exit ${project_file_tools_test_exit}): ${project_file_tools_test:-No PHP output; inspect the PHP service logs and container OOM/kill events}"
+  fi
+
+  # 0.8.32: a SUCHEN text with copied line numbers, a fence or other whitespace is matched once, never loosely twice.
+  edit_tolerance_test=''
+  if edit_tolerance_test="$(runuser -u www-data -- php -d display_errors=stderr -d log_errors=1 "$PROJECT_ROOT/scripts/edit-tolerance-selftest.php" 2>&1)"; then
+    ok 'File changes: copied line numbers and whitespace matched exactly once.'
+  else
+    edit_tolerance_test_exit=$?
+    fail "File change tolerance self-test (exit ${edit_tolerance_test_exit}): ${edit_tolerance_test:-No PHP output; inspect the PHP service logs}"
   fi
 
   # 0.8.8: every saved chat owns its real, private file/run/preview workspace.

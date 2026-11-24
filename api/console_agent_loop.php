@@ -226,12 +226,14 @@ function coreui_agent_file_target(array $tool): string {
  * or model-internal reasoning. Only facts established by the tool state are
  * announced; the entire project is not declared finished by an exit code.
  */
-function coreui_agent_public_result_note(array $tool, string $state, string $result = ''): ?string {
+function coreui_agent_public_result_note(array $tool, string $state, string $result = '', bool $rereads = false): ?string {
   $kind = (string)($tool['tool'] ?? '');
   if ($state === 'error') {
     if ($kind === 'pfile_edit') {
       $reason=coreui_agent_edit_failure_reason($result);
-      return 'Dateiänderung nicht gespeichert: ' . $reason . '. Der gespeicherte Stand bleibt erhalten.';
+      // 0.8.32: say what comes next only when the loop really rereads the file.
+      return 'Dateiänderung nicht gespeichert: ' . $reason . '. Der gespeicherte Stand bleibt erhalten.'
+        . ($rereads ? ' Ich lese die Datei neu und setze die Änderung genau am gespeicherten Text an.' : '');
     }
     return 'Der Werkzeugschritt ist fehlgeschlagen. Ich werte den Fehler aus, bevor ich eine Korrektur versuche.';
   }
@@ -671,7 +673,10 @@ function coreui_agent_loop_run(string $out, ?array $tool, string $base, array $a
     $record('tool', $state, $title, ['step'=>$used,'source_chars'=>strlen($result),
       'reason'=>$reason]);
     if ($projectWorkflow) {
-      $outcomeNote = coreui_agent_public_result_note($tool, $state, $result);
+      // The first rejected change of a file is followed by a reread (below); a second one stops.
+      $rereads = $tool['tool'] === 'pfile_edit' && $state === 'error' && str_starts_with($result, 'Die Datei ')
+        && ($fileEditFailures[coreui_agent_file_target($tool)] ?? 0) === 0 && coreui_agent_file_target($tool) !== '';
+      $outcomeNote = coreui_agent_public_result_note($tool, $state, $result, $rereads);
       if ($outcomeNote !== null) $record('commentary','info','Mara ordnet das Werkzeugergebnis ein',
         ['public_note'=>$outcomeNote,'source'=>'verified_tool_result']);
     }

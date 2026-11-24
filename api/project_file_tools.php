@@ -290,7 +290,9 @@ function coreui_pftools_split(string $input): array {
  */
 function coreui_pftools_parse_edits(string $body): array {
   $body = str_replace("\r\n", "\n", $body);
-  preg_match_all('~^<{7,9}[ \t]*SUCHEN[ \t]*\n(.*?)^={7,9}[ \t]*\n(.*?)^>{7,9}[ \t]*ERSETZEN[ \t]*$~msu', $body, $all, PREG_SET_ORDER);
+  // 0.8.32: markers may be indented, carry a colon, or use the English words SEARCH/REPLACE.
+  preg_match_all('~^[ \t]*<{7,9}[ \t]*(?:SUCHEN|SEARCH):?[ \t]*\n(.*?)^[ \t]*={7,9}[ \t]*\n(.*?)^[ \t]*>{7,9}[ \t]*(?:ERSETZEN|REPLACE):?[ \t]*$~msu',
+    $body, $all, PREG_SET_ORDER);
   $pairs = [];
   foreach ($all as $m) {
     $search = (string)preg_replace('~\n$~', '', $m[1]);
@@ -310,6 +312,7 @@ function coreui_pftools_apply_edits(string $content, array $pairs): array {
   $text = $crlf ? str_replace("\r\n", "\n", $content) : $content;
   $added = 0;
   $removed = 0;
+  $tolerant = [];
   foreach ($pairs as $i => [$search, $replace]) {
     $n = $i + 1;
     if (trim($search) === '') {
@@ -317,6 +320,18 @@ function coreui_pftools_apply_edits(string $content, array $pairs): array {
         'error'=>'Block ' . $n . ': SUCHEN ist leer. Fuer eine ganze Datei nimm [DATEI_NEU: pfad].'];
     }
     $count = substr_count($text, $search);
+    if ($count === 0) {
+      // 0.8.32: the same lines with copied line numbers or other whitespace, found exactly once.
+      $loose = coreui_pftools_loose_match($text, $search, $replace);
+      if ($loose['count'] === 1) {
+        $text = $loose['text'];
+        $removed += $loose['removed'];
+        $added += $loose['added'];
+        $tolerant[] = $loose['how'];
+        continue;
+      }
+      $count = $loose['count'];
+    }
     if ($count !== 1) {
       return ['ok'=>false, 'content'=>$content, 'added'=>0, 'removed'=>0,
         'error'=>'Block ' . $n . ': der SUCHEN-Text kommt ' . ($count === 0 ? 'nicht' : $count . ' Mal') . ' in der Datei vor'
@@ -327,7 +342,107 @@ function coreui_pftools_apply_edits(string $content, array $pairs): array {
     $removed += substr_count($search, "\n") + 1;
     $added += $replace === '' ? 0 : substr_count($replace, "\n") + 1;
   }
-  return ['ok'=>true, 'content'=>$crlf ? str_replace("\n", "\r\n", $text) : $text, 'error'=>'', 'added'=>$added, 'removed'=>$removed];
+  return ['ok'=>true, 'content'=>$crlf ? str_replace("\n", "\r\n", $text) : $text, 'error'=>'', 'added'=>$added, 'removed'=>$removed,
+    'tolerant'=>array_values(array_unique($tolerant))];
+}
+
+/**
+ * 0.8.32: a search text that is not in the file verbatim (pure). Small Cores copy the numbered
+ * read view with its "12 | " prefixes, wrap the lines in a code fence, or change indentation and
+ * trailing spaces. Tried in that order: without line numbers or fence, then line by line with
+ * trailing whitespace ignored, then with all surrounding whitespace ignored. Only a match of whole
+ * lines that occurs exactly once is used; the replacement takes over the file's indentation.
+ * Returns ['count', 'text', 'added', 'removed', 'how'].
+ */
+function coreui_pftools_loose_match(string $text, string $search, string $replace): array {
+  $none = ['count'=>0, 'text'=>$text, 'added'=>0, 'removed'=>0, 'how'=>''];
+  $candidates = [[$search, $replace, '']];
+  $numbered = '~^[ \t]*[0-9]{1,7} \|(?: |$)~';
+  $strip = static function (string $part, bool $all) use ($numbered): string {
+    $lines = explode("\n", $part);
+    $filled = array_filter($lines, static fn(string $l): bool => trim($l) !== '');
+    if ($filled === [] || ($all && count(preg_grep($numbered, $filled)) !== count($filled))) return $part;
+    return implode("\n", array_map(static fn(string $l): string => (string)preg_replace($numbered, '', $l), $lines));
+  };
+  $searchPlain = $strip($search, true);
+  if ($searchPlain !== $search) {
+    $replacePlain = $strip($replace, false);
+    $candidates[] = [$searchPlain, $replacePlain, 'ohne Zeilennummern'];
+  }
+  $fence = '~\A[ \t]*```[A-Za-z0-9_+-]*[ \t]*\n(.*)\n[ \t]*```[ \t]*\z~s';
+  foreach ($candidates as [$s, $r, $how]) {
+    if (preg_match($fence, $s, $fs) === 1) {
+      $candidates[] = [$fs[1], preg_match($fence, $r, $fr) === 1 ? $fr[1] : $r, trim($how . ' ohne Codeblock')];
+    }
+  }
+  $fileLines = explode("\n", $text);
+  foreach ($candidates as [$s, $r, $how]) {
+    // Whole lines only: a fragment in the middle of a line is taken verbatim or not at all.
+    if (trim($s) === '') continue;
+    $searchLines = explode("\n", $s);
+    $m = count($searchLines);
+    foreach (['rtrim'=>'abweichende Leerzeichen am Zeilenende', 'trim'=>'abweichende Einrueckung'] as $level => $label) {
+      $norm = static fn(string $l): string => $level === 'trim' ? trim($l) : rtrim($l);
+      $want = array_map($norm, $searchLines);
+      $hits = [];
+      for ($i = 0, $n = count($fileLines) - $m; $i <= $n; $i++) {
+        for ($k = 0; $k < $m && $norm($fileLines[$i + $k]) === $want[$k]; $k++);
+        if ($k === $m) $hits[] = $i;
+      }
+      if (count($hits) > 1) return ['count'=>count($hits)] + $none;
+      if (count($hits) === 1) {
+        $at = $hits[0];
+        $newLines = $r === '' ? [] : explode("\n", $r);
+        if ($level === 'trim') $newLines = coreui_pftools_reindent($searchLines, array_slice($fileLines, $at, $m), $newLines);
+        $verbatim = array_slice($fileLines, $at, $m) === $searchLines;
+        array_splice($fileLines, $at, $m, $newLines);
+        return ['count'=>1, 'text'=>implode("\n", $fileLines), 'removed'=>$m, 'added'=>count($newLines),
+          'how'=>$verbatim ? $how : trim($how . ($how !== '' ? ', ' : '') . $label)];
+      }
+    }
+  }
+  return $none;
+}
+
+/**
+ * 0.8.32: the replacement lines in the file's indentation (pure). A line also in the search text
+ * takes the indentation of the file line it matched, plus what the replacement adds; a new line
+ * keeps its offset to the line before it.
+ */
+function coreui_pftools_reindent(array $searchLines, array $fileLines, array $newLines): array {
+  $lead = static fn(string $l): string => preg_match('~^[ \t]*~', $l, $m) === 1 ? $m[0] : '';
+  $shift = static function (string $base, string $from, string $to): string {
+    if (str_starts_with($to, $from)) return $base . substr($to, strlen($from));
+    if (str_starts_with($from, $to)) return substr($base, 0, max(0, strlen($base) - (strlen($from) - strlen($to))));
+    return $to;
+  };
+  $anchor = null;
+  foreach ($searchLines as $k => $line) {
+    if (trim($line) !== '') { $anchor = [$lead((string)$fileLines[$k]), $lead($line)]; break; }
+  }
+  if ($anchor === null) return $newLines;
+  // Replacement lines already written in the file's indentation stay as they are.
+  foreach ($newLines as $line) {
+    if (trim($line) === '') continue;
+    if ($lead($line) === $anchor[0] && $anchor[1] !== $anchor[0]) return $newLines;
+    break;
+  }
+  $next = 0;
+  $out = [];
+  foreach ($newLines as $line) {
+    if (trim($line) === '') { $out[] = ''; continue; }
+    $indent = $lead($line);
+    for ($k = $next, $n = count($searchLines); $k < $n && trim($searchLines[$k]) !== trim($line); $k++);
+    if ($k < count($searchLines)) {
+      $next = $k + 1;
+      $new = $shift($lead((string)$fileLines[$k]), $lead($searchLines[$k]), $indent);
+    } else {
+      $new = $shift($anchor[0], $anchor[1], $indent);
+    }
+    $anchor = [$new, $indent];
+    $out[] = $new . ltrim($line, " \t");
+  }
+  return $out;
 }
 
 /** Raw saved text for patch recovery, focused on a unique surviving search line. */
@@ -637,7 +752,9 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
       if (!$result['changed']) return 'Die Datei ' . $path . ' hatte diesen Inhalt schon; nichts geaendert.';
       coreui_pftools_record($pdo, 'success', 'Projektdatei geaendert', ['count'=>1]);
       return 'Datei ' . $path . ' geaendert (jetzt Stand ' . $result['file']['revision'] . '): ' . $applied['removed']
-        . ' Zeilen ersetzt durch ' . $applied['added'] . '. Der vorige Stand bleibt im Tab Dateien wiederherstellbar.';
+        . ' Zeilen ersetzt durch ' . $applied['added'] . '. Der vorige Stand bleibt im Tab Dateien wiederherstellbar.'
+        . (($applied['tolerant'] ?? []) !== [] ? ' (SUCHEN-Text zugeordnet: ' . implode('; ', $applied['tolerant'])
+          . '. Kopiere SUCHEN beim naechsten Mal genau aus der Datei, ohne Zeilennummern.)' : '');
     }
     if ($kind === 'pfile_write') {
       $content = coreui_pftools_file_body($body);
