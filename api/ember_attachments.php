@@ -137,11 +137,21 @@ function ember_attach_read_plain(string $path, int $max): string {
   return ember_attach_clean_text($raw, $max);
 }
 
+/** 0.8.34: at most this many bytes of text are taken out of one PDF or Office file. */
+const EMBER_ATTACH_EXTRACT_BYTES = 8 * 1024 * 1024;
+
 function ember_attach_read_pdf(string $path, int $max): ?string {
   $bin = ember_attach_bin('pdftotext');
   if ($bin === null) return null;
-  $out = @shell_exec(escapeshellcmd($bin) . ' -layout -q -enc UTF-8 ' . escapeshellarg($path) . ' - 2>/dev/null');
-  if (!is_string($out) || trim($out) === '') return null;
+  // 0.8.34: a time limit and a byte cap; a crafted or huge PDF could hold the chat turn and fill memory.
+  $timeout = ember_attach_bin('timeout');
+  $cmd = ($timeout !== null ? escapeshellarg($timeout) . ' 60 ' : '')
+    . escapeshellcmd($bin) . ' -layout -q -enc UTF-8 ' . escapeshellarg($path) . ' - 2>/dev/null';
+  $pipe = @popen($cmd, 'r');
+  if (!is_resource($pipe)) return null;
+  $out = (string)stream_get_contents($pipe, EMBER_ATTACH_EXTRACT_BYTES);
+  pclose($pipe);
+  if (trim($out) === '') return null;
   return ember_attach_clean_text($out, $max);
 }
 
@@ -162,13 +172,19 @@ function ember_attach_read_ooxml(string $path, string $ext, int $max): ?string {
 
   $buf = '';
   foreach ($targets as $t) {
-    $xml = $zip->getFromName($t);
+    // 0.8.34: a small ZIP can unpack to hundreds of MB of XML (a zip bomb); read at most the byte cap.
+    $stat = $zip->statName($t);
+    if ($stat === false) continue;
+    // A length of 0 would read the whole entry, so a size of 0 (or a lying header) also gets the cap.
+    $len = (int)$stat['size'];
+    $xml = $zip->getFromName($t, $len > 0 && $len < EMBER_ATTACH_EXTRACT_BYTES ? $len : EMBER_ATTACH_EXTRACT_BYTES);
     if ($xml === false) continue;
     // Absatz- und Zeilenwechsel in echte Umbrueche uebersetzen, sonst klebt
     // der komplette Text zu einer einzigen Zeile zusammen.
     $xml = preg_replace('~</w:p>|</a:p>|<w:br\s*/>|</si>~i', "\n", $xml);
     $buf .= strip_tags((string)$xml) . "\n";
-    if (mb_strlen($buf, 'UTF-8') > $max * 4) break;
+    unset($xml);
+    if (strlen($buf) > EMBER_ATTACH_EXTRACT_BYTES || mb_strlen($buf, 'UTF-8') > $max * 4) break;
   }
   $zip->close();
   $buf = html_entity_decode($buf, ENT_QUOTES | ENT_XML1, 'UTF-8');

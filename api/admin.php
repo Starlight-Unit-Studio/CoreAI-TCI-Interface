@@ -64,11 +64,30 @@ function coreui_admin_log_path(): string {
   return dirname(__DIR__) . '/logs/stu_error.log';
 }
 
-function coreui_admin_tail(string $file, int $limit): array {
+/**
+ * The last $limit lines of a log. 0.8.34: read backwards from the end in blocks; file() loaded the whole
+ * never-rotated log into memory and the Logs view and "clear" died with a fatal error above ~280 MB.
+ */
+function coreui_admin_tail(string $file, int $limit, int $maxBytes = 4194304): array {
   if (!is_file($file) || !is_readable($file)) return [];
-  $lines = file($file, FILE_IGNORE_NEW_LINES);
-  if (!is_array($lines)) return [];
-  return array_slice($lines, -max(1, min(2000, $limit)));
+  $limit = max(1, min(2000, $limit));
+  $fh = @fopen($file, 'rb');
+  if ($fh === false) return [];
+  $size = (int)(fstat($fh)['size'] ?? 0);
+  $pos = $size;
+  $buf = '';
+  while ($pos > 0 && substr_count($buf, "\n") <= $limit && strlen($buf) < $maxBytes) {
+    $read = (int)min(65536, $pos);
+    $pos -= $read;
+    fseek($fh, $pos);
+    $buf = (string)fread($fh, $read) . $buf;
+  }
+  fclose($fh);
+  $lines = explode("\n", rtrim($buf, "\n"));
+  // Without the start of the file the first line may be cut in the middle.
+  if ($pos > 0 && count($lines) > 1) array_shift($lines);
+  if ($lines === ['']) return [];
+  return array_slice($lines, -$limit);
 }
 
 function coreui_admin_setting_rows(PDO $pdo): array {
