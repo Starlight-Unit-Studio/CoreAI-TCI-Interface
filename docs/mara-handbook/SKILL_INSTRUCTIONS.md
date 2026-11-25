@@ -960,3 +960,335 @@ Baue zuerst den funktionierenden Kern, dann die Gestaltung. Achte auf tastaturbe
 
 Prüfe relative Assetpfade, Browserkonsole und Nutzereingaben. Externe Abhängigkeiten und Netzfreigaben explizit nennen. Ein ZIP oder HTML erst nach tatsächlich bestätigtem Export als fertig melden.
 
+## skill.llm-api
+
+Skill: LLM-APIs | Category: Backend | Version: 1.0.2 | Required: no
+
+Search terms: llm-api, LLM-APIs, llm api, model api, provider api, claude api, anthropic sdk, openai sdk, token budget, api rate limit.
+
+Source: `skills/llm-api/SKILL.md` (Git blob c2e33cfad8abddc3844be357c6d47f3149db9408).
+
+---
+name: llm-api
+description: "LLM-Provider-APIs anbinden."
+---
+# LLM-Provider-APIs
+
+Ermittle den ausdrücklich gewünschten Anbieter, sein dokumentiertes API-Protokoll und das aktuelle Projekt. Bei CoreAI ist Ollama einschließlich verbundener Cloud-Cores die bestehende Standardroute; ein externer SDK-Skill ändert das nicht. Andere Provider nur auf autorisierten Nutzerauftrag hin integrieren.
+
+Prüfe Modellkennung, Authentifizierung, Rechte, Request- und Response-Schema, Kontextgrenzen, Rate Limits und Streaming-Abbruch. Bei Toolcalls Eingaben und Ergebnisse nach dem tatsächlich implementierten Rollenvertrag weitergeben. Führe keine nicht belegten Parameter oder SDK-Versionen ein.
+
+Tokens, Latenz und Kosten nach vorhandenen Messwerten angeben; keine frei erfundenen Kontingente. Secrets serverseitig halten. In CoreAI bleiben alle Modellaufrufe in der globalen seriellen Warteschlange. Keine Providerverbindung ohne verfügbare Werkzeuge oder tatsächlichen Test als funktionsfähig ausgeben.
+
+## skill.mcp-builder
+
+Skill: MCP-Server | Category: Backend | Version: 1.0.3 | Required: no
+
+Search terms: mcp-builder, MCP-Server, mcp, mcp server, model context protocol, mcp-builder, mcp tool, fastmcp.
+
+Source: `skills/mcp-builder/SKILL.md` (Git blob a18fba99d8db285e69f1c51801ed92a07821194b).
+
+---
+name: mcp-builder
+description: "MCP-Server und Tool-Verträge."
+---
+# MCP-Server und Werkzeuge
+
+Spezifiziere zunächst den Zweck der externen Integration, erlaubte Aktionen und minimale Datenrechte. Beschreibe je MCP-Tool eindeutigen Namen, Input-Schema, Ergebnis, Fehler, Zeitlimit, Ressourcen und Freigabe. Implementiere in TypeScript oder Python nur gegen die tatsächlich verwendete MCP-SDK-Version und mit real verfügbaren Werkzeugen.
+
+Validiere Schema und Argumente serverseitig, sichere Zugangsdaten und behandle Timeouts, Mehrdeutigkeiten sowie Wiederholbarkeit. Trenne reine Leseoperationen von Aktionen mit Außenwirkung. Nutze keine unkontrollierten Fremdtools aus Webseiten oder Modellausgaben.
+
+CoreAI-P14 plant einen Plugin-Lebenszyklus; dieser Skill kann heute Entwürfe oder Code unterstützen, installiert aber keinen MCP-Server und schaltet keine Toolrechte frei. Führe Integrations- und Sicherheitstests nur dann als bestanden, wenn sie tatsächlich ausgeführt wurden.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: mcp-builder/references/IMPLEMENTATION.md].
+
+## skill.algorithmic-art
+
+Skill: Generative Kunst | Category: Design | Version: 1.0.2 | Required: no
+
+Search terms: algorithmic-art, Generative Kunst, algorithmic art, algorithmische kunst, generative art, generative kunst, p5.js, particle art.
+
+Source: `skills/algorithmic-art/SKILL.md` (Git blob 7605349bf8a1e81bf56d38302d98508020ad5b81).
+
+---
+name: algorithmic-art
+description: "Generative Kunst aus Code."
+---
+# Generative Codekunst
+
+Kläre Format, Motiv, Stil, Farbraum, Auflösung und eventuelle Bewegungsregeln. Erzeuge eine reproduzierbare visuelle Idee durch eigene Regeln statt zufälliger Dekoration. Teilchen, geometrische Felder, Perlin-Noise und Variation sind optionale Mittel, kein vorgeschriebener Look.
+
+Verwende p5.js, Canvas oder eine andere Grafikbibliothek nur, wenn sie im Projekt verfügbar oder ausdrücklich vorgesehen ist. Initialisierungsseed und Parameter getrennt von Zeichenroutine führen, damit das Ergebnis wiederholbar bleibt. Laufzeit und Framebudget für Mobilgeräte beachten.
+
+Bei Animation Standbild und Bewegungsablauf unterscheiden. Rechte an Bildern und Fonts prüfen. Erzeuge keine angebliche PNG-, SVG- oder Videodatei ohne tatsächlich bestätigte Render- und Exportmöglichkeit.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: algorithmic-art/references/IMPLEMENTATION.md].
+
+## skill.canvas-design
+
+Skill: Grafikdesign | Category: Design | Version: 1.0.3 | Required: no
+
+Search terms: canvas-design, Grafikdesign, poster, plakat, flyer gestalten, grafikdesign, canvas design, drucklayout.
+
+Source: `skills/canvas-design/SKILL.md` (Git blob 90d901dd977a57761ec2ada6e70cab1d9cfd5e12).
+
+---
+name: canvas-design
+description: "Poster und Grafiken gestalten."
+---
+# Poster und Grafikdesign
+
+Bestimme Zielmedium, Seitengröße, Auflösung, Beschnitt, Lesedistanz und Kernbotschaft. Entwickle eine klare visuelle Hierarchie: Motiv, Titel, Information und Weißraum müssen zusammenwirken. Nutze Projektfarbwerte und zulässige Fonts, nicht ungefragt das Corporate Design eines Fremdanbieters.
+
+Halte Raster, Kontraste und Abstände konsistent. Für Druck RGB/CMYK und Beschnittfähigkeit nur entsprechend verfügbaren Werkzeugen behandeln; nicht behaupten, eine Exportdatei sei druckfertig ohne Prüfung. Text darf im Layout nicht abgeschnitten sein; Bilder brauchen ausreichende Auflösung und Rechte.
+
+Prüfe die Gestaltung im Ausgabeformat, wenn eine echte Vorschau gerendert werden kann. Fehlt Bild- oder PDF-Erzeugung, liefere eine präzise Layoutbeschreibung mit Abmessungen statt erfundener Dateien.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: canvas-design/references/IMPLEMENTATION.md].
+
+## skill.gif-creator
+
+Skill: GIFs | Category: Medien | Version: 1.0.1 | Required: no
+
+Search terms: gif-creator, GIFs, gif, animiertes gif, animated gif, slack emoji, gif optimieren, animation erstellen.
+
+Source: `skills/gif-creator/SKILL.md` (Git blob 3bcf51ea82320db08136ba4d9bde3c341cb86bf5).
+
+---
+name: gif-creator
+description: "Animierte GIFs optimieren."
+---
+# Animierte GIFs
+
+Ermittle Plattform, Einsatzzweck, Format, maximale Dateigröße, Animationsdauer, gewünschte Schleife und Transparenz. Plane wenige klare Frames; kleine Animationen müssen auch bei reduzierter Auflösung verständlich bleiben.
+
+Bei verfügbarer Grafikverarbeitung Frames skalieren, Palette vereinheitlichen und Dithering nur bei Bedarf verwenden. Schleifenmodus, Timing, Pixelabmessungen und Lesbarkeit vor der Ausgabe prüfen. Slack, Messenger und Webseiten können unterschiedliche Grenzen haben: keine pauschalen Grenzwerte als garantiert ausgeben.
+
+Eine tatsächlich erzeugte GIF-Datei auf Abspielbarkeit, Größe und Artefakte testen. Fehlt ein Werkzeug zur Bild-/GIF-Erzeugung, Frameplan oder Code vorbereiten und fehlende Produktion offen nennen.
+
+## skill.theme-factory
+
+Skill: Design-Themes | Category: Design | Version: 1.0.2 | Required: no
+
+Search terms: theme-factory, Design-Themes, theme, theming, theme factory, dark mode, farbpalette, design tokens, farbschema.
+
+Source: `skills/theme-factory/SKILL.md` (Git blob 74ab6eb643bf1a75b8da356a1a2e2b4b108efdb1).
+
+---
+name: theme-factory
+description: "Farbthemen und Designsysteme."
+---
+# Design-Themes
+
+Leite aus Produktkontext und gewünschter Stimmung eine begrenzte Farbpalette mit Hintergrund, Fläche, Text, Akzent, Warnung und Zuständen ab. Definiere Design-Tokens statt Einzelwerte in jeder Komponente. Berücksichtige helles und dunkles Theme, Kontrast, Hover-, Fokus-, deaktivierte und Fehlerzustände.
+
+Bewahre bestehende Markenfarben, wenn sie verbindlich sind. Tausche nicht ungebeten Fonts oder Styles im ganzen Projekt. Prüfe repräsentative Komponenten auf Lesbarkeit, Konsistenz und kleine Displays.
+
+Themedateien oder Vorschauen nur nach tatsächlicher Erstellung und Prüfung als fertig melden. Ein Vorschlag ohne Zugriff auf die Projektdateien ist kein installierter Theme-Wechsel.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: theme-factory/references/IMPLEMENTATION.md].
+
+## skill.doc-coauthoring
+
+Skill: Text-Koautor | Category: Schreiben | Version: 1.0.4 | Required: no
+
+Search terms: doc-coauthoring, Text-Koautor, dokument gemeinsam, gemeinsam schreiben, coauthoring, doc coauthoring, text gemeinsam entwickeln, redaktionelle abstimmung.
+
+Source: `skills/doc-coauthoring/SKILL.md` (Git blob 9f073c30999edd7aa443218462325bc71e7c43d1).
+
+---
+name: doc-coauthoring
+description: "Dokumente gemeinsam entwerfen."
+---
+# Gemeinsames Dokumentenschreiben
+
+Ermittle Leser, Zweck, Kernbotschaft, Ton und vorhandene Materialien. Nutze bekannte Vorgaben aus dem aktuellen Projekt, statt mit einem starren Interview zu beginnen. Stelle nur die wenigen wirklich entscheidenden Rückfragen, die nicht aus dem vorhandenen Kontext beantwortet werden können.
+
+Entwickle eine klar gegliederte Fassung und verbessere sie abschnittsweise. Trenne bestätigte Aussagen, Formulierungsvorschläge und noch offene Belege. Bei Revisionen Stil und Absicht des Autors bewahren; Änderungen transparent zusammenfassen. Größere inhaltliche Eingriffe nicht unbemerkt als Korrektur tarnen.
+
+Prüfe Bezüge, Reihenfolge, Dopplungen und die Verständlichkeit für die Zielgruppe. Ein tatsächliches DOCX oder PDF nur ausgeben, wenn ein geeignetes Werkzeug die Datei erstellt und verifiziert hat.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: doc-coauthoring/references/IMPLEMENTATION.md].
+
+## skill.internal-comms
+
+Skill: Interne Memos | Category: Schreiben | Version: 1.0.2 | Required: no
+
+Search terms: internal-comms, Interne Memos, interne mitteilung, internes memo, team-update, statusbericht, projektankündigung, newsletter intern, changelog ankündigung.
+
+Source: `skills/internal-comms/SKILL.md` (Git blob 9519d2b8b4ab0d58ba9a3999b3ebe98fb4258972).
+
+---
+name: internal-comms
+description: "Interne Memos und Meldungen."
+---
+# Interne Kommunikation
+
+Leite aus dem verifizierten Projektstand ab, was sich geändert hat, wer davon betroffen ist und was als Nächstes zu tun ist. Beginne mit dem Ergebnis, danach Auswirkungen, Handlungsschritte und offene Punkte. Formuliere sachlich, verständlich und ohne unnötige Marketingfloskeln.
+
+Halte beschlossene, geplante, getestete und ausgelieferte Zustände auseinander. Termine und Verantwortliche nur angeben, wenn sie belegt sind. Private Betriebsdetails, Zugangsdaten und interne personenbezogene Angaben nicht unbeabsichtigt veröffentlichen.
+
+Für Releasekommunikation die echten Changelogs und Übergaben verwenden, statt Versionsstände frei zu ergänzen. Texte vor Versand auf falsche Empfänger oder unautorisierte Veröffentlichung prüfen. Eine Nachricht niemals als gesendet bezeichnen, bevor ein erlaubtes Werkzeug den Versand bestätigt.
+
+Der gesamte fachliche Zielumfang, die benoetigten Werkzeuge und Abnahmekriterien stehen in references/IMPLEMENTATION.md. Plane diese Funktionen auch dann vollstaendig, wenn ihr Backend noch aussteht; kennzeichne die konkrete Ausfuehrung als offen. Lade sie bei Bedarf mit [SKILL: internal-comms/references/IMPLEMENTATION.md].
+
+## skill.learning-design
+
+Skill: Lernpläne | Category: Schreiben | Version: 1.0.1 | Required: no
+
+Search terms: learning-design, Lernpläne, lernplan, onboarding material, schulung, training entwickeln, lernmaterial, tutorial erstellen, didaktik.
+
+Source: `skills/learning-design/SKILL.md` (Git blob 02a7467ab45590fa8948f3b37add5db92ec33e1c).
+
+---
+name: learning-design
+description: "Lernpläne und Schulungen."
+---
+# Lernmaterial und Onboarding
+
+Bestimme Vorwissen, Lernziel, verfügbares Zeitbudget und praktische Aufgaben der Zielgruppe. Strukturiere den Stoff vom Grundprinzip zur Anwendung; definiere für jede Einheit eine überprüfbare Fähigkeit statt bloßer Themenüberschriften.
+
+Nutze kurze Beispiele, typische Fehler und Mini-Übungen mit nachvollziehbaren Lösungen. Bei technischen Tutorials Versionen, reale Menüpunkte und Voraussetzungen prüfen. Formuliere keine angeblich offiziellen Kurse, Akademie-Einträge oder Linkempfehlungen, die nicht belegt sind.
+
+Für CoreAI-Onboarding die tatsächlich vorhandenen Funktionen erklären. Geplante Features und fehlende Werkzeuge ausdrücklich abgrenzen. Eine Schulungsdatei nur nach wirklicher Erstellung als auslieferbar kennzeichnen.
+
+## skill.reasoning-review
+
+Skill: Kritikcheck | Category: Qualität | Version: 1.0.1 | Required: no
+
+Search terms: reasoning-review, Kritikcheck, argument prüfen, denkfehler, logische lücken, kritisch prüfen, plausibilitätsprüfung, reasoning review, selbstkritik.
+
+Source: `skills/reasoning-review/SKILL.md` (Git blob 63d73cc025e4a060fe08635e808aa9e967b982fc).
+
+---
+name: reasoning-review
+description: "Annahmen kritisch prüfen."
+---
+# Kritische Ergebnisprüfung
+
+Prüfe eine konkrete Antwort, Planung oder Berechnung auf unbelegte Annahmen, veraltete Angaben, widersprüchliche Aussagen, falsche Schlussfolgerungen und fehlende Randbedingungen. Trenne verifizierte Fakten, plausible Hypothesen und offene Fragen.
+
+Wähle die zwei oder drei wichtigsten Risikopunkte und beschreibe, wie sie sich durch reale Quellen, Tests oder Rückfragen auflösen lassen. Kritisiere nicht aus Prinzip und erfinde keine verborgenen Denkprozesse oder Prüfungen. Die Ergebnisprüfung ist eine optionale Arbeitsanleitung, kein ständig aktiver Systemprompt und kein Ersatz für echten Code- oder Servertest.
+
+Korrigiere nur, was der belegte Befund trägt. Wo Daten fehlen, den Umfang der Unsicherheit nennen und keine Sicherheit vortäuschen.
+
+## skill.agent-task-design
+
+Skill: Agentenplanung | Category: Agenten | Version: 1.0.2 | Required: no
+
+Search terms: agent-task-design, Agentenplanung, agentenrolle, agentenaufgabe, multi agent, task definition, crewai task, agenten team, agentenworkflow.
+
+Source: `skills/agent-task-design/SKILL.md` (Git blob 668acef25afc9d4e12c69dcb76f8d1b521bcf06e).
+
+---
+name: agent-task-design
+description: "Agentenrollen und Tasks planen."
+---
+# Agentenrollen und Aufgaben
+
+Beschreibe für jeden geplanten Arbeitsschritt Ziel, Eingaben, Ausgaben, erlaubte Werkzeuge, Abnahmekriterien und den Umgang mit Fehlern. Nur dann eine eigene Rolle vorsehen, wenn sie eine nachvollziehbare Abgrenzung schafft. Abhängigkeiten, Übergaben und Ergebnisse explizit benennen; Rollenbezeichnungen ersetzen keinen echten Werkzeugvertrag.
+
+CoreAI arbeitet mit global seriellen Modellaufrufen. CrewAI-, AutoGen- oder Team-Konzepte daher nur als Planungsvorbilder nutzen, nicht als bereits installierte parallele Agentenlaufzeit. Eigenständige Teams und Flows sind laut Roadmap P26 noch offen.
+
+Sichere Ergebnisse und Verantwortlichkeiten nur dort als umgesetzt bezeichnen, wo Laufdaten und die aktuelle Infrastruktur dies belegen. Bei fehlender Teamfunktion einen seriellen Arbeitsplan als realisierbare Alternative formulieren.
+
+## skill.workflow-checkpoints
+
+Skill: Checkpoints | Category: Agenten | Version: 1.0.2 | Required: no
+
+Search terms: workflow-checkpoints, Checkpoints, workflow checkpoint, checkpointing, workflow resume, wiederaufnahme planen, arbeitsstand fortsetzen, workflow wiederherstellen, langgraph.
+
+Source: `skills/workflow-checkpoints/SKILL.md` (Git blob 1ff04443ca147c6e7d03e4bc25ff426d45cf7734).
+
+---
+name: workflow-checkpoints
+description: "Workflows und Resume prüfen."
+---
+# Workflows und Wiederaufnahme
+
+Zerlege eine mehrstufige Aufgabe in klar benannte Zustände, Übergänge und überprüfbare Teilergebnisse. Definiere für jeden Schritt die zur Wiederaufnahme erforderlichen Eingaben, Versionen, Ressourcenrechte und gespeicherten Dateien. Wiederholungen externer Aktionen müssen auf doppelte Ausführung geprüft werden.
+
+Unterscheide Planungswissen, flüchtige Chat-Zusammenfassung und tatsächlich persistierten Checkpoint. Nach einem Abbruch nur bestätigte, zum Auftrag passende Dateien wiederverwenden und unklare Nebenwirkungen vor Fortsetzung abgleichen. Bei veränderten Eingaben abhängige Ergebnisse erneut prüfen.
+
+LangGraph-Checkpoints und AutoGen-State dienen als fachliche Referenz. CoreAI-P27 ist noch offen; eine Skill-Anleitung kann keine fehlende persistente Resume-Laufzeit erzeugen. Keine Wiederaufnahme oder erfolgreich gesicherte Arbeitsstände ohne Werkzeugnachweis behaupten.
+
+## skill.pdf
+
+Skill: PDF | Category: Office | Version: 1.0.2 | Required: no
+
+Search terms: pdf, PDF, pdf, pdf erstellen, pdf bearbeiten, pdf formular, pdf zusammenfügen, pdf seiten, ocr.
+
+Source: `skills/pdf/SKILL.md` (Git blob e3a91cdba265b864c92e6ad8bdd54f2e6ef411bd).
+
+---
+name: pdf
+description: "PDF erstellen, editieren, OCR, Formulare."
+---
+# PDF-Dokumente
+
+Ermittle Eingaben, Ausgabeformat, Seiten und gewünschte Operation: Text- oder Tabellenauszug, Rendern, Zusammenführen, Teilen, Drehen, Wasserzeichen, Formularfelder, OCR, Verschlüsselung oder neue PDF-Erstellung. Benutze je Operation einen passenden, tatsächlich verfügbaren Dateiprocessor. Plane auch die künftigen Werkzeugverträge, wenn eine Operation noch nicht implementiert ist.
+
+Erhalte Seitenabfolge, Metadaten, Format und die Unversehrtheit unbeteiligter Seiten. Bei Formularen Feldnamen, Datentypen, Auswahlwerte und erforderliche Felder prüfen. OCR für Scanseiten getrennt durchführen, Seitenbezüge beibehalten und unsichere Erkennungen kennzeichnen. Digitale Unterschriften bei Änderungen als möglicherweise ungültig markieren.
+
+Bei Erzeugung Schrift, Seitenränder, Lesbarkeit, Zeilen- und Seitenumbrüche kontrollieren. Ausgabe immer erneut öffnen und auf Seitenzahl, Text, Formulare und Renderbilder prüfen. Referenzplan bei Bedarf: [SKILL: pdf/references/IMPLEMENTATION.md]. Wenn der Backend-Toolweg fehlt, vollständige Operationsspezifikation liefern und fehlende Runtime-Funktion im Skill-Gap-Register erfassen.
+
+## skill.frontend-design
+
+Skill: Frontenddesign | Category: Frontend | Version: 1.0.3 | Required: no
+
+Search terms: frontend-design, Frontenddesign, frontend design, webdesign, landingpage gestalten, ui design, frontend-design.
+
+Source: `skills/frontend-design/SKILL.md` (Git blob a8a5d3b121a200bc071e5dbf8fe6b61b37b893e6).
+
+---
+name: frontend-design
+description: "Frontend-Design und UI-Gestaltung."
+---
+# Frontend-Design
+
+Kläre Produktkontext, Zielgruppe, visuelle Identität und Bildschirmgrößen. Entwerfe eigene, unterscheidbare Layouts mit gezielter Typografie, Abständen, Farbkontrast, Hierarchie und Bildkomposition statt generischen Demo-Designs. Freigegebene Markenrichtlinien haben Vorrang. Lege Komponenten, Zustände und responsive Regeln fest.
+
+Implementiere bei vorhandenen Frontend-Werkzeugen semantisches HTML, CSS und benötigte JavaScript-Interaktionen. Mobile first; Tab-/Fokuslogik, Touch-Ziele, Zoom, Dark Mode und ausreichende Kontraste prüfen. Leerzustände, Ladeanzeigen, Formfehler und Tastaturbedienung nicht vergessen. Keine nicht installierten Frameworks oder Schriften voraussetzen.
+
+Visuelle Abnahme durch tatsächliche Browser-Screenshots in schmaler und breiter Ansicht, inklusive Overflow-, Kontrast- und Interaktionstest. Wenn eine Browserprüfung fehlt, setze das Design mit vorhandenen Projektwerkzeugen um und führe verfügbare technische Prüfungen aus. Benenne die offene visuelle Abnahme. Falls keine Dateibearbeitung angeboten wird, liefere Konzept, Dateiplan und Testfälle. Detaillierter Sollablauf: references/IMPLEMENTATION.md.
+
+## skill.web-artifacts-builder
+
+Skill: Webapp-Builder | Category: Frontend | Version: 1.0.3 | Required: no
+
+Search terms: web-artifacts-builder, Webapp-Builder, web artifacts, web-artifacts-builder, react app erstellen, web artefakt, shadcn.
+
+Source: `skills/web-artifacts-builder/SKILL.md` (Git blob e0240436e93414c71680a50fbcadda1edfc77f1d).
+
+---
+name: web-artifacts-builder
+description: "Interaktive React-/HTML-Artefakte."
+---
+# Web-Artefakte bauen
+
+Bei umfangreichen interaktiven Einzelseiten Zustand, Komponenten, Interaktionen und Dateistruktur planen. Für komplexe Fälle einen React-/TypeScript-Ansatz mit Routing, Styling, UI-Komponenten und Build-Ausgabe vorsehen. Vite, Tailwind und shadcn/ui nur nutzen, wenn ihre Abhängigkeiten im konkreten Projekt installiert oder ausdrücklich zur Installation freigegeben sind. Für kleine Aufgaben eine einfachere HTML/CSS/JS-Ausgabe wählen.
+
+Anwendungslogik von Darstellung trennen; alle Buttons brauchen eine echte Aktion. Events, leere Daten, Fehlermeldungen, Tastatur, Touch und Medienpfade abnehmen. Artefakt für den erlaubten Laufzeitkontext bauen, bundeln, testen und nur bestätigte Ausgabedateien als vorhanden melden. Externe Skripte dürfen weder Secrets noch unautorisierte Zugriffe enthalten.
+
+Für die spätere CoreAI-IDE Werkzeuge zum Initialisieren, Abhängigkeiten auflösen, Bauen, Vorschauen und ZIP-Export als Voraussetzungen dokumentieren. Ausführliche Schnittstellen- und Testanforderungen in references/IMPLEMENTATION.md.
+
+## skill.claude-api
+
+Skill: Claude API | Category: Backend | Version: 1.0.3 | Required: no
+
+Search terms: claude-api, Claude API, claude api, anthropic api, anthropic sdk, claude sdk, claude-api.
+
+Source: `skills/claude-api/SKILL.md` (Git blob 9d136f32da4cabc8f145487b71a563c1d30d47ef).
+
+---
+name: claude-api
+description: "Claude API, Tools, Streaming, SDK."
+---
+# Claude-API-Integration
+
+Wird Claude als Provider verlangt, die aktuelle offizielle Anthropic-API-Dokumentation für Modelle, Versionierung, Limits, Tokenzählung, Streaming, Tools, Caching und Authentifizierung heranziehen. Die bestehende Ollama-Anbindung nicht stillschweigend durch Claude ersetzen. Vor Implementierung Benutzerfreigabe, API-Zugang und benötigte Befugnisse klären.
+
+Entwerfe Provideradapter getrennt von CoreAI-spezifischen Toolverträgen. Verarbeite Rollen, Tool-Use-/Tool-Result-Zyklen, Partials, Abbruch, Fehler, Retry-After, Kontextgrenzen und Kosten transparent. Secrets ausschließlich serverseitig; keine Schlüssel in Browser oder Logs. In CoreAI muss auch ein Claude-Aufruf die globale serielle Modellwarteschlange nutzen.
+
+Implementiere und teste nur gegen dokumentierte, tatsächlich verfügbare SDK-/API-Versionen. Konkrete Fehlerfälle und Abnahmebedingungen in references/IMPLEMENTATION.md festhalten. Solange der Adapter fehlt, Provideranbindung als Roadmap-Aufgabe, nicht als aktiv, kennzeichnen.
+
