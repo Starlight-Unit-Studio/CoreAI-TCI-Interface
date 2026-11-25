@@ -54,12 +54,29 @@ isd_test(count($log) === 1 && ($log[0]['cause'] ?? '') === 'image_dir_missing' &
 unlink($tmp . '/images');
 
 // --- The folder is not writable for PHP: image_dir_not_writable ------------------------------
-// root may write everywhere, so this case runs only as an ordinary user (as in CI and the preflights).
-mkdir($tmp . '/images', 0500);
-if (!is_writable($tmp . '/images')) {
+// root may write everywhere. As an ordinary user (CI, both preflights run it as www-data) the case runs
+// directly; as root it runs in a forked child that becomes the nobody user, where pcntl exists.
+mkdir($tmp . '/images', 0555);
+$asRoot = function_exists('posix_geteuid') && posix_geteuid() === 0;
+if (!$asRoot) {
+  isd_test(!is_writable($tmp . '/images'), 'the test folder is read-only for this user');
   $r = coreui_image_store($media(), 0, '', $png, ['prompt' => 'fox']);
   isd_test(($r['detail'] ?? '') === 'image_dir_not_writable' && $pngs() === [],
     'a folder PHP may not write names image_dir_not_writable: ' . json_encode($r));
+} elseif (function_exists('pcntl_fork')) {
+  chmod($tmp, 0711);
+  $pid = pcntl_fork();
+  if ($pid === 0) {
+    posix_setgid(65534);
+    posix_setuid(65534);
+    ini_set('error_log', '/dev/null'); // the root-owned test log is not writable for nobody
+    $r = coreui_image_store($media(), 0, '', $png, ['prompt' => 'fox']);
+    exit(!is_writable($tmp . '/images') && ($r['detail'] ?? '') === 'image_dir_not_writable' && $pngs() === [] ? 0 : 3);
+  }
+  pcntl_waitpid($pid, $status);
+  chmod($tmp, 0700);
+  isd_test(pcntl_wifexited($status) && pcntl_wexitstatus($status) === 0,
+    'a folder PHP may not write names image_dir_not_writable (checked as nobody)');
 }
 chmod($tmp . '/images', 0700);
 

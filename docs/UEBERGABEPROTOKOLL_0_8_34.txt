@@ -101,8 +101,10 @@ TESTS (in dieser Sitzung ausgefuehrt)
 - php -l fuer alle geaenderten PHP-Dateien, node --check/vm fuer die geaenderten JS-Dateien,
   bash -n fuer beide Preflights: ohne Fehler.
 - Neue Selbsttests mit Fehlereinbau (Korrektur zurueckgedreht, Test faellt durch):
-  stabilize-security (11 von 11), stabilize-history (5 von 5), stabilize-frontend (17 von 17),
-  stabilize-backend, stabilize-loop, stabilize-loop-journal, image-store-diagnostic.
+  stabilize-security (11 von 11 erkannt), stabilize-history (5 von 5), stabilize-frontend
+  (17 von 17), image-store-diagnostic (9 von 9; der Fall "Ordner nicht beschreibbar" laeuft als
+  root in einem Kindprozess als nobody). stabilize-backend, stabilize-loop und
+  stabilize-loop-journal stammen von den Pruefern mit eigener Mutationspruefung.
 - image-store-diagnostic, image-gen und storage zusaetzlich als gewoehnlicher Benutzer (nicht
   root) ausgefuehrt: OK; der Bildtest entfernt nur den Ordner, den er selbst angelegt hat.
 - Migration 058 auf MariaDB 10.11 eingespielt und ein zweites Mal ausgefuehrt (keine Aenderung).
