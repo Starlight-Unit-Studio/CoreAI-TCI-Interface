@@ -163,7 +163,18 @@ foreach ([['pfile_read', 'info', 'verified'], ['pproc_output', 'info', 'verified
 foreach (['Baue eine Seite mit Node.js' => [], 'Was ist neu in Node.js 24? Bitte kurz recherchieren.' => [],
     'Erstelle eine Seite mit Three.js, Chart.js, Vue.js und Next.js in app.js' => ['app.js'],
     'Benenne app.js in main.js um' => ['main.js'], 'Loesche alt.html' => [], 'Lösche alt.html und erstelle neu.html' => ['neu.html'],
-    'Bitte index.html und about.html erstellen.' => ['index.html', 'about.html'], 'Erklaere mir app.js' => []] as $goal => $want) {
+    'Bitte index.html und about.html erstellen.' => ['index.html', 'about.html'], 'Erklaere mir app.js' => [],
+    // Review 0.8.34: lists after a request, a name at the end of a sentence, "brauche".
+    "Erstelle folgende Dateien:\n- index.html\n- style.css\n- app.js" => ['index.html', 'style.css', 'app.js'],
+    'Erstelle eine Webseite mit index.html, style.css und app.js.' => ['index.html', 'style.css', 'app.js'],
+    'Ich brauche eine Landingpage: index.html und style.css.' => ['index.html', 'style.css'],
+    'Baue mir ein Spiel. Dateien: index.html, game.js, style.css' => ['index.html', 'game.js', 'style.css'],
+    "Erstelle eine Seite.\nindex.html\nstyle.css" => ['index.html', 'style.css'],
+    "Create these files:\n* index.html\n* main.js" => ['index.html', 'main.js'],
+    "Erstelle folgende Dateien:\n1. index.html\n2. app.js" => ['index.html', 'app.js'],
+    "Lösche folgende Dateien:\n- alt.html\n- alt.css" => [],
+    'Erstelle index.html. Die Daten stehen in data.json.' => ['index.html'],
+    "Erstelle index.html.\nErklaere mir dann app.js" => ['index.html']] as $goal => $want) {
   slj_test(array_column(coreui_task_journal_requirements_from_goal($goal), 'path') === $want,
     'F2: deliverables of "' . $goal . '": ' . json_encode(coreui_task_journal_requirements_from_goal($goal)));
 }

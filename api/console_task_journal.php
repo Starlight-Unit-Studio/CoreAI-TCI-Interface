@@ -65,20 +65,36 @@ function coreui_task_journal_requirements_from_goal(string $goal): array {
   if ($goal==='' || strlen($goal)>20000 || preg_match('//u',$goal)!==1) return [];
   $safe=(string)preg_replace('~```[\s\S]*?```~u','', $goal);
   $name='[A-Za-z0-9_+-]+(?:/[A-Za-z0-9_.+-]+){0,6}\\.(?:html?|css|js|mjs|json|md|txt|svg|py|ts|tsx|jsx|vue|svelte)';
-  $file='(?<![A-Za-z0-9_./:@-])(' . $name . ')(?![A-Za-z0-9_./-])';
+  // Review 0.8.34: a name may end a sentence ("... und app.js."); a dot followed by more of a name may not.
+  $file='(?<![A-Za-z0-9_./:@-])(' . $name . ')(?![A-Za-z0-9_/-]|\\.[A-Za-z0-9_])';
   // Stabilize 0.8.33: only a file the person asks to create or change is a deliverable that must exist
   // at the end. A library name ("Node.js", "Three.js"), a file to delete and the old name of a renamed
   // or moved file are no deliverables; a run with them could never finish.
   $create='~\b(?:erstell|anleg|leg\w*\s+\S+\s+an|schreib|bau|generier|erzeug|mach|programmier|entwickl|ergaenz|ergänz|'
     . 'hinzufueg|hinzufüg|fueg|füg|aender|änder|anpass|pass\w*\s+an|bearbeit|ueberarbeit|überarbeit|aktualisier|korrigier|'
-    . 'verbesser|repar|implementier|neue?[nrsm]?\b|create|write|build|make|generate|add|implement|update|edit|modify|fix|change)~iu';
+    . 'verbesser|repar|implementier|neue?[nrsm]?\b|create|write|build|make|generate|add|implement|update|edit|modify|fix|change|'
+    // Review 0.8.34: "Ich brauche eine Landingpage: index.html und style.css" asks for files as well.
+    . 'brauch|benoetig|benötig|moecht|möcht|wuensch|wünsch|need|want)~iu';
   $removeWord='(?:l(?:ö|oe|o)sch|entfern|delete|remove|wegmach)\w*';
   $remove='~\b' . $removeWord . '~iu';
   $rename='~\b(?:benenn|umbenenn|rename|verschieb|move|mv)\w*~iu';
   $keep=[];
+  // Review 0.8.34: a list that follows a request ("Erstelle folgende Dateien:" and lines "- index.html",
+  // "Erstelle eine Seite." and bare names, "Dateien: a.html, b.js") belongs to that request. The intent
+  // carries over list lines only; any other sentence ends it.
+  $listLine='~^\s*(?:(?:[-*•+]|\d+[.)])(?:\s|$)|(?:dateien|datei|files?)\s*:|' . $file . ')~iu';
+  $carry=false;
   // Sentences end at . ! ? ; or a line break that is not part of a file name.
   foreach (preg_split('~(?<=[.!?;])\s+|\R+~u',$safe) ?: [] as $sentence) {
-    if (preg_match_all('~' . $file . '~iu',$sentence,$hits,PREG_OFFSET_CAPTURE)<1) continue;
+    $isList=preg_match($listLine,$sentence)===1;
+    $intent=preg_match($create,(string)preg_replace([$remove,$rename],' ',$sentence))===1;
+    if (preg_match_all('~' . $file . '~iu',$sentence,$hits,PREG_OFFSET_CAPTURE)<1) {
+      if ($intent) $carry=true;
+      elseif (!$isList) $carry=false;
+      continue;
+    }
+    $carried=$carry && $isList;
+    $carry=$intent || $carried;
     $drop=[];
     if (preg_match($rename,$sentence)===1) {
       // "benenne app.js in main.js um", "rename a.js to b.js": the first name is gone afterwards.
@@ -101,7 +117,7 @@ function coreui_task_journal_requirements_from_goal(string $goal): array {
       }
     }
     $creates=preg_match($create,(string)preg_replace([$remove,$rename],' ',$sentence))===1
-      || (preg_match($rename,$sentence)===1 && $drop!==[]);
+      || (preg_match($rename,$sentence)===1 && $drop!==[]) || $carried;
     if (!$creates) continue;
     foreach ($hits[1] as [$found]) {
       $found=(string)$found;
