@@ -724,7 +724,7 @@ foreach ([true, false] as $recovers) {
 
 $streamSource = (string)file_get_contents($root . '/api/console_stream.php');
 loop_test(str_contains($streamSource, 'coreui_task_journal_resume_check($pdo,(int)$uid,$sessionId,(string)$sourceRun')
-  && str_contains($streamSource, "if (!empty(\$GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || \$projectContinuation)")
+  && str_contains($streamSource, "if ((!empty(\$GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || \$projectContinuation) && (string)(\$acc['failure'] ?? '') === '')")
   && str_contains($streamSource, "\$projectDecision = \$decision['tool'];")
   && str_contains($streamSource, 'coreui_agent_execution_repair($decision,$projectToolAllowed)')
   && str_contains($streamSource, 'coreui_agent_blocked_text($decision,$projectToolAllowed)'),
