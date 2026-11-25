@@ -320,11 +320,21 @@ const smallText = page => page.evaluate(() => {
     await page.waitForFunction(() => document.getElementById('aiLanguage').value === 'en');
     assert.equal(await page.isDisabled('#aiLanguage'), false, 'the language can be chosen');
     await page.selectOption('#aiLanguage', 'de');
+    // Wait for this click's own POST: the "visible" save notice can still be left over (2.6 s) from the
+    // Gedächtnis save moments earlier, whose body carries the old server snapshot (main_language 'en').
+    const aiRequest = page.waitForRequest(r => r.method() === 'POST' && new URL(r.url()).pathname === '/api/user_settings.php'
+      && !('action' in JSON.parse(r.postData() || '{}')));
     await page.click('#saveAiSettings');
+    const aiPost = {post: JSON.parse((await aiRequest).postData())};
     await page.waitForFunction(() => document.getElementById('settingsSaveState').classList.contains('visible'));
-    // The KI-Profil save is the newest POST (Allgemein and Gedächtnis posted earlier in this run).
-    const aiPost = srv.calls.filter(c => c.key === 'user_settings.php' && c.post && c.post.action !== 'general').pop();
-    assert(aiPost && !('model_override' in aiPost.post) && aiPost.post.provider === 'local', 'KI-Profil saves without a Core');
+    assert(srv.calls.some(c => c.key === 'user_settings.php' && c.post && JSON.stringify(c.post) === JSON.stringify(aiPost.post)),
+      'the KI-Profil save reached the server stand-in');
+    // 0.8.15 (External Cores in the Core menu): local and external Cores are chosen only in the chat's Core
+    // menu; the KI-Profil save carries neither a Core nor a provider (api/user_settings.php reads none).
+    assert(aiPost && !('model_override' in aiPost.post) && !('provider' in aiPost.post), 'KI-Profil saves without a Core');
+    assert.deepEqual(Object.keys(aiPost.post).sort(),
+      ['main_language', 'memory_enabled', 'memory_limit', 'num_ctx', 'num_predict', 'system_prompt', 'temperature'],
+      'KI-Profil saves exactly its own fields');
     assert.equal(aiPost.post.main_language, 'de', 'the chosen language is saved');
     assert.deepEqual(errors, []);
     await page.close();

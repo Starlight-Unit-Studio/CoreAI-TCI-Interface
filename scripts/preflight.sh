@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.33: a project run that changes one file again and again is asked to finish, then pauses.
+# CoreAI: TCI Interface 0.8.34: stabilisation (account limits, file history, stream and loop fixes, image saving with a named cause).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
@@ -246,6 +246,11 @@ UI_FILES=(
   scripts/project-file-tools-selftest.php
   scripts/edit-tolerance-selftest.php
   scripts/file-change-pause-selftest.php
+  scripts/stabilize-security-selftest.php
+  scripts/stabilize-history-selftest.php
+  scripts/stabilize-backend-selftest.php
+  scripts/stabilize-loop-selftest.php
+  scripts/stabilize-loop-journal-selftest.php
   database/migrations/056_chat_workspaces.sql
   js/coreui-chat-dev.js
   css/coreui-chat-dev.css
@@ -305,6 +310,7 @@ UI_FILES=(
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
   scripts/retry-hint-ui-selftest.cjs
+  scripts/stabilize-frontend-selftest.cjs
   scripts/text-selection-ui-selftest.cjs
   scripts/tci-chat-layout-ui-selftest.cjs
   js/console-app.js
@@ -355,6 +361,7 @@ UI_FILES=(
   database/migrations/012_console_work_events.sql
   database/migrations/013_console_agent_runs.sql
   database/migrations/057_task_journal.sql
+  database/migrations/058_project_file_history.sql
   api/console_task_journal.php
   scripts/task-journal-selftest.php
   api/console_work_events.php
@@ -422,6 +429,7 @@ UI_FILES=(
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
+  scripts/image-store-diagnostic-selftest.php
   api/image_ab_diagnostic.php
   js/coreui-image-ab.js
   scripts/image-ab-diagnostic-selftest.php
@@ -434,6 +442,7 @@ UI_FILES=(
   css/coreui-image-viewer.css
   js/coreui-image-progress.js
   scripts/image-progress-ui-selftest.cjs
+  scripts/progress-browser-selftest.cjs
   api/console_composer_intent.php
   api/composer_tools.php
   js/coreui-composer-menu.js
@@ -1431,10 +1440,18 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.6.39 (P20.5 C): Mara’s images in the chat: marker, work loop step, keeping the image for
   # the account, cancel, history, deletion with the chat, switches under Betrieb and per account.
   image_gen_test=''
-  if image_gen_test="$(compose exec -T php php scripts/image-gen-selftest.php 2>&1)"; then
+  if image_gen_test="$(compose exec -T -u 33:33 php php scripts/image-gen-selftest.php 2>&1)"; then
     ok 'Images in chat: markers, work step, per-account storage, cancel, history, delete and toggles verified.'
   else
     fail "Images in chat-self-test: ${image_gen_test:-Unknown error}"
+  fi
+
+  # 0.8.34: a finished image that cannot be kept names its cause (work view, log), the image folder stays PHP's.
+  image_store_diag_test=''
+  if image_store_diag_test="$(compose exec -T -u 33:33 php php scripts/image-store-diagnostic-selftest.php 2>&1)"; then
+    ok 'Image saving: a failed save names its cause, self-tests keep the image folder writable for PHP.'
+  else
+    fail "Image saving self-test: ${image_store_diag_test:-Unknown error}"
   fi
 
   # 0.6.81: Benachrichtigungen: Web Push (RFC 8291 example, VAPID), saving, dispatch and triggers.
@@ -1520,7 +1537,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.28: Settings > Speicher: the limit for all accounts and per account, usage, Dateien and Bilder, favourites, deleting.
   storage_test=''
-  if storage_test="$(compose exec -T php php scripts/storage-selftest.php 2>&1)"; then
+  if storage_test="$(compose exec -T -u 33:33 php php scripts/storage-selftest.php 2>&1)"; then
     ok 'Storage management self-test passed.'
   else
     fail "Storage-self-test: ${storage_test:-Unknown error}"
@@ -1583,6 +1600,51 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     file_change_pause_test_exit=$?
     fail "File change pause self-test (exit ${file_change_pause_test_exit}): ${file_change_pause_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  security_hardening_test=''
+  if security_hardening_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-security-selftest.php 2>&1)"; then
+    ok 'Accounts: limits for second-factor codes and password resets, capped attachments, no database text in answers.'
+  else
+    security_hardening_test_exit=$?
+    fail "Security hardening self-test (exit ${security_hardening_test_exit}): ${security_hardening_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  file_history_test=''
+  if file_history_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-history-selftest.php 2>&1)"; then
+    ok 'Project files: saved states survive a change of working state.'
+  else
+    file_history_test_exit=$?
+    fail "File history self-test (exit ${file_history_test_exit}): ${file_history_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization: stream pauses and refusals, closed actions after a worker loss, queue wait, one first call.
+  backend_hardening_test=''
+  if backend_hardening_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-backend-selftest.php 2>&1)"; then
+    ok 'Chat backend: stream pauses, provider refusals, actions after a worker loss and the model queue verified.'
+  else
+    backend_hardening_test_exit=$?
+    fail "Backend hardening self-test (exit ${backend_hardening_test_exit}): ${backend_hardening_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  loop_hardening_test=''
+  if loop_hardening_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-loop-selftest.php 2>&1)"; then
+    ok 'Project runs: finish evidence, requirements, repairs, oscillation, edits and prompt cache verified.'
+  else
+    loop_hardening_test_exit=$?
+    fail "Loop hardening self-test (exit ${loop_hardening_test_exit}): ${loop_hardening_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  loop_journal_test=''
+  if loop_journal_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-loop-journal-selftest.php 2>&1)"; then
+    ok 'Task journal: info steps, requirements and resume verified.'
+  else
+    loop_journal_test_exit=$?
+    fail "Loop journal self-test (exit ${loop_journal_test_exit}): ${loop_journal_test:-No PHP output; inspect the PHP service logs}"
   fi
 
   # 0.8.8: every saved chat owns its real, private file/run/preview workspace.
@@ -1830,6 +1892,11 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
     else
       fail 'Chat: the note above the input or the retry at a broken-off run is missing.'
     fi
+    if node "$PROJECT_ROOT/scripts/stabilize-frontend-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: follow-ups, server errors, stop, research panel, chat switch and polls verified.'
+    else
+      fail 'Chat: the frontend stabilization self-test failed.'
+    fi
     if compose exec -T php php /var/www/coreui/scripts/general-controls-selftest.php >/dev/null 2>&1; then
       ok 'General: Core routing, stored settings and real reasoning levels verified.'
     else
@@ -1980,6 +2047,22 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Profile: UI test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.8.34: research cards in a real browser (hits vs. visited pages, no overflow); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/progress-browser-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Research cards: search hits and visited pages verified in browser.'
+      else
+        fail 'Research cards: browser test failed.'
+      fi
+    else
+      warn 'Research cards: browser test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.8.34: the image progress card was only listed as a required file, never run.
+    if node "$PROJECT_ROOT/scripts/image-progress-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Image progress card: steps, width and image id verified.'
+    else
+      fail 'Image progress card: UI test failed.'
     fi
     # 0.6.85: Sicherheit und Anmeldung and the sign-in with second step and passkey; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
@@ -2561,6 +2644,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail "Container writable directory is not ready: ${writable_dir#/var/www/coreui/}"
     fi
   done
+
+  # 0.8.34: PHP-FPM saves Mara's images in var/console_media/images (made on the first image). A folder
+  # left to root (earlier preflights ran the image self-tests as root) made every image fail with storage_failed.
+  if compose exec -T -u 33:33 php sh -c 'test ! -e /var/www/coreui/var/console_media/images || test -w /var/www/coreui/var/console_media/images' >/dev/null 2>&1; then
+    ok 'Image folder is writable for PHP: var/console_media/images'
+  else
+    fail 'Image folder var/console_media/images is not writable for PHP. Run: chown -R 33:33 var/console_media'
+  fi
 
   # 0.5.83: the update window needs the host units (installed by scripts/install.sh).
   if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then

@@ -1,4 +1,6 @@
 // Active-chat-only Core/Kontext/Werkzeuge/Projekt visibility, 390px + desktop.
+// 0.8.8 added the Entwicklung action beside them (phone: fifth chip #chatDevTab,
+// desktop: one .insight-dev-launch in the rail); see CHANGELOG 0.8.8.
 // node scripts/insights-chat-visibility-ui-selftest.cjs
 'use strict';
 
@@ -79,14 +81,16 @@ async function run(browser,width,height) {
     const chips = page.locator('#insightChips');
     assert.equal(await aside.isVisible(),false,'desktop rail absent on welcome');
     assert.equal(await chips.isVisible(),false,'phone shortcuts absent on welcome');
-    assert.equal(await page.locator('#insightChips .insight-chip').count(),4,
-      'four controls remain mounted while hidden');
+    assert.equal(await page.locator('#insightChips .insight-chip').count(),5,
+      'four insight controls and Entwicklung remain mounted while hidden');
+    assert.equal(await page.locator('#insightChips .insight-chip').nth(4).getAttribute('id'),'chatDevTab',
+      'the fifth control is the Entwicklung action');
     await page.evaluate(()=>window.insightTest.enterChat());
     if (width < 1400) {
-      assert.equal(await chips.isVisible(),true,'four shortcuts return on phone');
+      assert.equal(await chips.isVisible(),true,'four shortcuts and Entwicklung return on phone');
       assert.equal(await aside.isVisible(),false,'no desktop rail on phone');
       const labels = await page.locator('.insight-chip-label').allTextContents();
-      assert.deepEqual(labels,['Core','Kontext','Werkzeuge','Projekt']);
+      assert.deepEqual(labels,['Core','Kontext','Werkzeuge','Projekt','Entwicklung']);
       // Never shrink the original 11px / 13px-padded buttons just to fit
       // all four into a fixed width. The row may scroll horizontally.
       const geometry = await page.locator('#insightChips .insight-chip-row').evaluate(node=>{
@@ -104,9 +108,12 @@ async function run(browser,width,height) {
       assert.equal(geometry.rowGap,'8px','restore original gap between blocks');
       assert.equal(geometry.overflowX,'auto','overflow should scroll, not shrink');
       assert(geometry.scrollWidth>=geometry.clientWidth,'row remains scrollable');
+      await page.locator('#insightChips .insight-chip').nth(3).scrollIntoViewIfNeeded();
+      assert.equal(await page.locator('#insightChips .insight-chip').nth(3).isVisible(),true,
+        'Projekt stays reachable even on a narrow phone');
       await page.locator('#insightChips .insight-chip').last().scrollIntoViewIfNeeded();
       assert.equal(await page.locator('#insightChips .insight-chip').last().isVisible(),true,
-        'Projekt stays reachable even on a narrow phone');
+        'Entwicklung stays reachable even on a narrow phone');
       await page.locator('#insightChips .insight-chip').nth(1).click();
       assert.equal(await page.locator('.insight-sheet').isVisible(),true,
         'Kontext panel opens in active chat');
@@ -117,6 +124,8 @@ async function run(browser,width,height) {
       assert.equal(await chips.isVisible(),false,'chips not duplicated on wide screens');
       assert.equal(await aside.isVisible(),true,'right rail restored in active chat');
       assert.equal(await aside.locator('.insight-box').count(),4);
+      assert.equal(await aside.locator('.insight-dev-launch').count(),1,
+        'one Entwicklung launcher in the desktop rail');
       assert((await aside.innerText()).includes('Testprojekt'));
     }
     await page.evaluate(()=>window.insightTest.welcome());
@@ -137,7 +146,7 @@ async function run(browser,width,height) {
   try {
     await run(browser,390,844);
     await run(browser,1600,900);
-    console.log('CoreAI insights: welcome hidden, four phone shortcuts and desktop rail restored OK');
+    console.log('CoreAI insights: welcome hidden, four phone shortcuts plus Entwicklung and desktop rail restored OK');
   } finally { await browser.close(); }
 })().catch(error=>{
   console.error('CoreAI insights chat visibility FAIL:',error);

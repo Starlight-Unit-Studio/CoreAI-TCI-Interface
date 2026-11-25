@@ -12,6 +12,12 @@ require_once __DIR__ . '/security_store.php';
 // Simple username/password auth for Alpha.
 // - Session cookie stores stu_uid when logged in.
 
+// 0.8.34: limits per ACCOUNT (not per session or network) for second-factor codes and password resets.
+const COREUI_AUTH_MFA_FAIL_MAX = 10;
+const COREUI_AUTH_MFA_FAIL_WINDOW = 900;
+const COREUI_AUTH_RESET_CODES_PER_HOUR = 3;
+const COREUI_AUTH_RESET_TRIES = 5;
+
 $action = $_GET['action'] ?? 'me';
 
 function stu_rate_limit_key(): string {
@@ -397,6 +403,13 @@ if ($action === 'mfa_verify' || $action === 'mfa_email') {
     stu_json(['ok' => false, 'error' => 'mfa_expired'], 401);
   }
   $uid = (int)$pending['uid'];
+  // 0.8.34: failed codes also count per ACCOUNT, across sign-ins, sessions and networks. The per-session
+  // limit alone restarted with every password sign-in, so a leaked password allowed endless code guesses.
+  $mfaFailKey = coreui_abuse_key($pdo, 'mfa_fail', (string)$uid);
+  if (coreui_abuse_count($pdo, $mfaFailKey, COREUI_AUTH_MFA_FAIL_WINDOW, 0)['n'] >= COREUI_AUTH_MFA_FAIL_MAX) {
+    unset($_SESSION['coreui_mfa_pending']);
+    stu_json(['ok' => false, 'error' => 'rate_limited'], 429);
+  }
   $methods = coreui_security_methods($pdo, $uid);
   $offer = coreui_auth_mfa_offer($pdo, $uid, $methods);
   $body = stu_read_json_body();
@@ -420,8 +433,8 @@ if ($action === 'mfa_verify' || $action === 'mfa_email') {
     $_SESSION['coreui_mfa_pending'] = $pending;
     stu_json(['ok' => true, 'sent_to' => $offer['email_hint']]);
   }
-  $kind = (string)($body['method'] ?? '');
-  $code = trim((string)($body['code'] ?? ''));
+  $kind = is_string($body['method'] ?? null) ? $body['method'] : '';
+  $code = is_string($body['code'] ?? null) ? trim($body['code']) : '';
   $passed = false;
   if ($kind === 'totp' && $offer['totp']) {
     $passed = coreui_security_totp_check($pdo, $uid, $code, time());
@@ -435,6 +448,7 @@ if ($action === 'mfa_verify' || $action === 'mfa_email') {
     if ($passed) coreui_security_event($pdo, $uid, 'recovery_used', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')));
   }
   if (!$passed) {
+    coreui_abuse_count($pdo, $mfaFailKey, COREUI_AUTH_MFA_FAIL_WINDOW, 1);
     $pending['tries'] = (int)($pending['tries'] ?? 0) + 1;
     coreui_security_event($pdo, $uid, 'mfa_failed', coreui_auth_device_label((string)($_SERVER['HTTP_USER_AGENT'] ?? '')), $kind);
     if ($pending['tries'] >= COREUI_SECURITY_MFA_TRIES) {
@@ -496,9 +510,11 @@ if ($action === 'forgot') {
     stu_json(['ok' => false, 'error' => 'method_not_allowed'], 405);
   }
 
+  stu_rate_limit($action, 5, 300);
   // Nicht verraten, ob ein Konto existiert (anti-account-enumeration).
   $body = stu_read_json_body();
-  $email = strtolower(trim($body['email'] ?? ''));
+  // 0.8.34: an array or number in "email" was a TypeError (HTTP 500), not an invalid address.
+  $email = strtolower(trim(is_string($body['email'] ?? null) ? $body['email'] : ''));
 
   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     stu_json(['ok' => false, 'error' => 'invalid_email']);
@@ -552,17 +568,16 @@ if ($action === 'forgot') {
     stu_json(['ok' => true]);
   }
 
-  // Light rate-limit per account: do not send more than once per 60s.
-  try {
-    $st = $pdo->prepare('SELECT created_at FROM stu_password_resets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
-    $st->execute([(int)$uid]);
-    $last = $st->fetchColumn();
-    if ($last && (time() - strtotime((string)$last)) < 60) {
-      stu_json(['ok' => true]);
-    }
-  } catch (Throwable $e) {
-    // ignore
+  // 0.8.34: per account at most one code a minute and three an hour. Each new code restarts its own five
+  // attempts, so without the hourly cap a code could be guessed five times a minute forever. Both windows
+  // use the PHP clock on both sides; the old check compared the database NOW() with PHP time() and held
+  // every reset back for hours when the database ran in another time zone.
+  if (coreui_abuse_count($pdo, coreui_abuse_key($pdo, 'reset_send_minute', (string)$uid), 60, 0)['n'] >= 1
+      || coreui_abuse_count($pdo, coreui_abuse_key($pdo, 'reset_send_hour', (string)$uid), 3600, 0)['n'] >= COREUI_AUTH_RESET_CODES_PER_HOUR) {
+    stu_json(['ok' => true]);
   }
+  coreui_abuse_count($pdo, coreui_abuse_key($pdo, 'reset_send_minute', (string)$uid), 60, 1);
+  coreui_abuse_count($pdo, coreui_abuse_key($pdo, 'reset_send_hour', (string)$uid), 3600, 1);
 
   $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
   $codeHash = password_hash($code, PASSWORD_DEFAULT);
@@ -615,10 +630,11 @@ if ($action === 'reset') {
   stu_rate_limit($action, 10, 300);
 
   $body = stu_read_json_body();
-  $token = (string)($body['token'] ?? ''); // legacy link-token flow
-  $email = strtolower(trim((string)($body['email'] ?? '')));
-  $code  = trim((string)($body['code'] ?? ''));
-  $newPass = (string)($body['new_password'] ?? '');
+  $str = static fn(string $k): string => is_string($body[$k] ?? null) ? $body[$k] : '';
+  $token = $str('token'); // legacy link-token flow
+  $email = strtolower(trim($str('email')));
+  $code  = trim($str('code'));
+  $newPass = $str('new_password');
 
   if (strlen($newPass) < 8) stu_json(['ok' => false, 'error' => 'invalid_password'], 400);
 
@@ -649,12 +665,15 @@ if ($action === 'reset') {
     if (!$row) stu_json(['ok' => false, 'error' => 'invalid_code'], 400);
     if (!empty($row['used_at'])) stu_json(['ok' => false, 'error' => 'code_used'], 400);
     if (strtotime((string)$row['expires_at']) < time()) stu_json(['ok' => false, 'error' => 'code_expired'], 400);
-    if ((int)($row['attempts'] ?? 0) >= 5) stu_json(['ok' => false, 'error' => 'too_many_attempts'], 429);
+    // 0.8.34: claim the attempt atomically BEFORE checking the code; parallel requests could otherwise
+    // all read attempts=4 and get far more than five guesses at one code.
+    $claim = $pdo->prepare('UPDATE stu_password_resets SET attempts = attempts + 1 WHERE id = ? AND attempts < ?');
+    $claim->execute([(int)$row['id'], COREUI_AUTH_RESET_TRIES]);
+    if ($claim->rowCount() !== 1) stu_json(['ok' => false, 'error' => 'too_many_attempts'], 429);
 
     $ok = false;
     try { $ok = password_verify($code, (string)($row['code_hash'] ?? '')); } catch (Throwable $e) { $ok = false; }
     if (!$ok) {
-      $pdo->prepare('UPDATE stu_password_resets SET attempts = attempts + 1 WHERE id = ? LIMIT 1')->execute([(int)$row['id']]);
       stu_json(['ok' => false, 'error' => 'invalid_code'], 400);
     }
 

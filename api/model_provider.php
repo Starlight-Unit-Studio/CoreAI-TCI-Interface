@@ -355,24 +355,44 @@ function coreui_provider_decode(string $raw, string $key = ''): string {
  * without a finish_reason or [DONE] stays "not done", as with Ollama.
  */
 function coreui_provider_stream_translator(string $key = ''): array {
-  $state = (object)['reason'=>null, 'done'=>false, 'eval'=>0, 'prompt'=>0];
+  // 'body' collects a JSON body spread over several lines (0.8.34): an error answer such as HTTP 429
+  // is often pretty-printed, and its lines were dropped one by one, so the reason was lost.
+  $state = (object)['reason'=>null, 'done'=>false, 'eval'=>0, 'prompt'=>0, 'body'=>''];
   $flags = JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
   $closing = static function () use ($state, $flags): string {
     $state->done = true;
     return (string)json_encode(['done'=>true, 'done_reason'=>coreui_provider_done_reason($state->reason ?? 'stop'),
       'eval_count'=>$state->eval, 'prompt_eval_count'=>$state->prompt], $flags);
   };
-  $feed = static function (string $line) use ($state, $flags, $closing, $key): array {
+  $handle = null;
+  $feed = static function (string $line) use ($state, $flags, $closing, $key, &$handle): array {
     $line = trim($line);
-    if ($line === '' || str_starts_with($line, ':') || $state->done) return [];
+    if ($line === '' || $state->done) return [];
+    if ($state->body !== '') {
+      // The rest of a JSON body that began on an earlier line.
+      if (strlen($state->body) > 65536) { $state->body = ''; return []; }
+      $state->body .= "\n" . $line;
+      if (!is_array(json_decode($state->body, true))) return [];
+      $data = $state->body;
+      $state->body = '';
+      return $handle($data);
+    }
+    if (str_starts_with($line, ':')) return [];
     if (str_starts_with($line, 'data:')) {
       $data = trim(substr($line, 5));
     } elseif (str_starts_with($line, '{')) {
       // Not an event stream: an error body (for example HTTP 401) or a whole JSON answer.
       $data = $line;
+      if (!is_array(json_decode($data, true))) {
+        $state->body = $line;
+        return [];
+      }
     } else {
       return [];
     }
+    return $handle($data);
+  };
+  $handle = static function (string $data) use ($state, $flags, $closing, $key): array {
     if ($data === '[DONE]') return [$closing()];
     $json = json_decode($data, true);
     if (!is_array($json)) return [];
@@ -402,7 +422,13 @@ function coreui_provider_stream_translator(string $key = ''): array {
     }
     return $out;
   };
-  $finish = static function () use ($state, $closing): array {
+  $finish = static function () use ($state, $closing, $flags, $key): array {
+    if ($state->body !== '') {
+      // A JSON body that never closed is still a failed answer, not an empty success.
+      $message = coreui_provider_error_message($state->body, $key);
+      $state->body = '';
+      return [(string)json_encode(['error'=>$message !== '' ? $message : 'Fehler der externen API'], $flags)];
+    }
     // Some providers end with a finish_reason but no [DONE]; that is a complete answer.
     return !$state->done && $state->reason !== null ? [$closing()] : [];
   };

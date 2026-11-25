@@ -450,6 +450,10 @@
   }
   function closeHome() {
     if(!current && !directoryVisible && $('coreuiProjectHome').hidden)return;
+    // Leaving the project page also ends its 1 s command and process polls;
+    // an unsaved draft in the Dateien tab stays.
+    var files=filesTab();
+    if(files&&files.pause)files.pause();
     dismissFloatingMenu();
     restoreComposer();
     current=null;directoryVisible=false;$('coreuiProjectDirectory').hidden=true;$('coreuiProjectHome').hidden=true;

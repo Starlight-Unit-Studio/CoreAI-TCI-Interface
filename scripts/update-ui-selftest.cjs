@@ -127,7 +127,10 @@ async function advance(page, ms) {
     assert.equal(await page.isChecked('#updateAutoEnable'), false, 'automatic updates are disabled by default');
     await page.click('.cu-later');
     await page.waitForSelector('#coreaiUpdate', {state:'detached'});
-    await page.check('#updateAutoEnable');
+    // Click the visible custom switch; the checkbox is covered by its styled track (restores 875bee90,
+    // which the 0.7.88 revert of the pre-0.7.87 update UI test dropped by accident).
+    await page.locator('label[for="updateAutoEnable"] .settings-switch i').click();
+    assert.equal(await page.isChecked('#updateAutoEnable'), true, 'custom switch toggles the real checkbox');
     await page.waitForFunction(() => !document.querySelector('#updateAutoEnable').disabled);
     assert(srv.calls.some(c=>c.key==='update.php' && c.action==='auto' && c.post.enabled===true),
       'the opt-in is an authenticated server action');
@@ -140,6 +143,10 @@ async function advance(page, ms) {
     assert(srv.calls.some(c=>c.key==='update.php' && c.action==='later'),
       'Later uses server-side scheduling, not just a tab flag');
     await page.reload();
+    // This reload is intentional (testing snooze persistence), not an unexpected reload by the updater:
+    // mark the new document so later checks still catch an updater reload (restores 67d01568, which the
+    // 0.7.88 revert dropped by accident).
+    await page.evaluate(() => { window.__sameDocument = true; });
     await advance(page, 61000);
     assert.equal(await page.locator('#coreaiUpdate').count(), 0, 'Später survives a page reload and repeated polling');
     assert.equal(await page.isChecked('#updateAutoEnable'), true, 'the opt-in survives the next page load');

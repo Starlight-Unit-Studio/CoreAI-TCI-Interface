@@ -126,6 +126,8 @@ putenv('COREUI_EXTERNAL_API_KEY=' . EXT_KEY);
 define('STU_EMBER_OLLAMA_URL', 'http://127.0.0.1:' . $port . '/api/chat');
 define('STU_EXTERNAL_API_KEY', EXT_KEY);
 define('STU_EMBER_SINGLE_RESIDENT', true);
+// 0.8.34: the "Core in use" marks of running agent runs live in this test's own directory.
+define('STU_EMBER_CORE_IN_USE_DIR', $tmp . '/cores-in-use');
 define('STU_CHAT_LIB', 1);
 set_error_handler(static fn(int $no, string $msg): bool => $no === E_WARNING && str_contains($msg, 'already defined'));
 require $root . '/api/chat.php';
@@ -457,6 +459,21 @@ ext_test(ember_ollama_single_resident('ember-coreui', static fn(): array => ['em
   && ember_ollama_single_resident('gemma4:31b-cloud', static fn(): array => ['qwen3:8b'], static fn(string $n): bool => true) === []
   && ember_ollama_single_resident('gemma4:e4b', static fn(): array => ['qwen3:8b'], static fn(string $n): bool => false) === [],
   'single resident Core: rule');
+// 0.8.34: a Core that a running agent run of another chat uses stays loaded between its steps.
+$unloadedPure = [];
+ext_test(ember_ollama_single_resident('gemma4:e4b', static fn(): array => ['qwen3:8b', 'llava:13b', 'x:20b-cloud'],
+    static function (string $n) use (&$unloadedPure): bool { $unloadedPure[] = $n; return true; },
+    static fn(): array => ['QWEN3:8B']) === ['llava:13b'] && $unloadedPure === ['llava:13b'],
+  'single resident Core: a Core in use by a running run is kept');
+$GLOBALS['COREUI_WORK_CONTEXT'] = ['user_id'=>7, 'session_id'=>'session_demo', 'turn_id'=>23, 'agent_run_id'=>str_repeat('a', 32)];
+ember_core_in_use_mark('qwen3:8b');
+unset($GLOBALS['COREUI_WORK_CONTEXT']);
+$unloadedPure = [];
+ext_test(ember_ollama_single_resident('gemma4:e4b', static fn(): array => ['qwen3:8b', 'llava:13b'],
+    static function (string $n) use (&$unloadedPure): bool { $unloadedPure[] = $n; return true; }) === ['llava:13b'],
+  'single resident Core: the run\'s own mark protects its Core');
+ember_core_in_use_release();
+ext_test(ember_core_in_use_models() === [], 'the mark goes with the run');
 // A provider in the runtime settings without the server key, or with a bad address, is never used.
 $GLOBALS['COREUI_AI_RUNTIME_SETTINGS'] = ['provider'=>'external', 'external'=>['label'=>'T', 'base_url'=>'http://10.0.0.5/v1', 'model'=>'m']];
 ext_test(coreui_provider_active() === null, 'a bad address is never called');
@@ -607,8 +624,10 @@ ext_test(str_contains($chat, '$wire = coreui_provider_wire(coreui_provider_activ
   && str_contains($streamSource, '$wire = coreui_provider_wire(coreui_provider_active(), $url, $payload, $model);')
   && str_contains($streamSource, "coreui_work_record(\$workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>\$wire['model']]);")
   && substr_count($chat, 'ember_global_lock_acquire()') >= 1, 'both model calls use the line, the work view names the external Core');
-ext_test(substr_count($chat, "  if (!\$wire['external']) ember_ollama_single_resident(\$model);") === 1
-  && substr_count($streamSource, "  if (!\$wire['external']) ember_ollama_single_resident(\$model);") === 1
+// 0.8.34: before the unload both calls mark their Core as used by the running run (P7).
+$singleResident = "  if (!\$wire['external']) {\n    ember_core_in_use_mark(\$model);\n    ember_ollama_single_resident(\$model);\n  }";
+ext_test(substr_count($chat, $singleResident) === 1
+  && substr_count($streamSource, $singleResident) === 1
   && str_contains($userSettings, 'coreui_core_unload_local();'), 'both model calls keep one local Core, the external switch unloads');
 ext_test(str_contains($chat, '  $sys = ember_turn_persona_system();') && str_contains($chat, '  $sysBase = ember_turn_persona_system();')
   && substr_count($chat, 'ember_persona_system_for(ember_model())') === 1, 'both chat turns take the persona of this turn\'s Core');

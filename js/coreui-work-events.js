@@ -88,6 +88,14 @@
     cancelled:'Der Bildauftrag wurde abgebrochen.'
   };
 
+  // 0.8.34: why a finished image could not be kept (api/image_gen.php, coreui_image_store_failed).
+  var STORAGE_CAUSES = {
+    image_dir_missing:'Der Bildordner auf dem Server fehlt und konnte nicht angelegt werden.',
+    image_dir_not_writable:'Der Webserver darf nicht in den Bildordner auf dem Server schreiben.',
+    image_write_failed:'Die Bilddatei konnte nicht vollständig auf den Server geschrieben werden.',
+    media_insert_failed:'Der Eintrag des Bildes in der Datenbank ist fehlgeschlagen.'
+  };
+
   function imageFailureNote(event) {
     var meta = event.meta || {};
     var code = String(meta.reason || '');
@@ -97,6 +105,9 @@
     }
     if (code === 'image_worker_exception' && meta.error_type) {
       note += ' Fehlerklasse: ' + meta.error_type + '.';
+    }
+    if (code === 'storage_failed' && STORAGE_CAUSES[meta.error_type]) {
+      note += ' ' + STORAGE_CAUSES[meta.error_type];
     }
     var last = IMAGE_PHASES[meta.image_phase];
     if (last) {
@@ -1114,11 +1125,18 @@
     if (status) {
       timeline.appendChild(status);
       if (typeof window.setInterval === 'function') {
+        var detachedTicks = 0;
         var ticker = window.setInterval(function () {
-          // The finished reply replaces the live row; stop with it.
-          if (timeline.isConnected === false && timeline._wasConnected) {
-            window.clearInterval(ticker);
-            return;
+          // The finished reply replaces the live row; stop with it. A row that
+          // was replaced before it was ever shown stops after a few ticks.
+          if (timeline.isConnected === false) {
+            detachedTicks++;
+            if (timeline._wasConnected || detachedTicks > 3) {
+              window.clearInterval(ticker);
+              return;
+            }
+          } else {
+            detachedTicks = 0;
           }
           if (timeline.isConnected) timeline._wasConnected = true;
           renderStatus();

@@ -106,7 +106,7 @@ async function open(browser, srv, viewport, url) {
     assert.equal(await page.textContent('#view-pets h2'), 'Pet auswählen');
     assert.match(await page.textContent('#petUploadOpen'), /Pet hochladen/);
     assert.deepEqual(await page.$$eval('#petRows .pet-row strong', l => l.map(x => x.textContent)), NAMES);
-    assert.equal(await page.$eval('#petRows .coreai-pet', nodes => nodes.length), 9);
+    assert.equal(await page.$$eval('#petRows .coreai-pet', nodes => nodes.length), 9);
     assert.equal(await page.isChecked('#pet-mara'), true, 'Mara is preselected');
     assert.equal(await page.textContent('#petStatus'), '');
     const first = await page.getAttribute('#petRows .coreai-pet >> nth=0', 'data-frame');

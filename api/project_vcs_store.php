@@ -388,6 +388,9 @@ function coreui_pvcs_file(PDO $pdo, int $uid, string $projectId, $commit, $path)
 /**
  * The project files become $target (path => sha256, contents stored). Files that change get a
  * revision of kind $source; files that are not in $target go. Returns the number of changed paths.
+ * 0.8.34: a file that goes keeps its revisions (migration 058 removed the cascade from the file row),
+ * and a file that comes back continues them. Before, switching working state away and back deleted
+ * every saved state of such a file although the Files tab says earlier states stay restorable.
  */
 function coreui_pvcs_apply(PDO $pdo, int $uid, string $projectId, array $target, string $source): int {
   $st = $pdo->prepare('SELECT id, path, sha256, revision FROM stu_console_project_files WHERE project_id=? AND user_id=?');
@@ -395,16 +398,14 @@ function coreui_pvcs_apply(PDO $pdo, int $uid, string $projectId, array $target,
   $current = [];
   foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) $current[(string)$row['path']] = $row;
   $changed = 0;
-  $dropRevisions = $pdo->prepare('DELETE FROM stu_console_project_file_revisions WHERE file_id=? AND user_id=?');
   $dropFile = $pdo->prepare('DELETE FROM stu_console_project_files WHERE id=? AND user_id=?');
   foreach ($current as $path => $row) {
     if (isset($target[$path])) continue;
-    $dropRevisions->execute([$row['id'], $uid]);
     $dropFile->execute([$row['id'], $uid]);
     $changed++;
   }
   $insert = $pdo->prepare('INSERT INTO stu_console_project_files (id, project_id, user_id, path, content, size_bytes, sha256, revision,
-    created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
+    created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)');
   $update = $pdo->prepare('UPDATE stu_console_project_files SET content=?, size_bytes=?, sha256=?, revision=?, updated_at=CURRENT_TIMESTAMP
     WHERE id=? AND user_id=?');
   foreach ($target as $path => $sha) {
@@ -412,9 +413,11 @@ function coreui_pvcs_apply(PDO $pdo, int $uid, string $projectId, array $target,
     if (isset($current[$path]) && $current[$path]['sha256'] === $sha) continue;
     $content = coreui_pvcs_blob($pdo, $projectId, $sha);
     if (!isset($current[$path])) {
-      $id = bin2hex(random_bytes(16));
-      $insert->execute([$id, $projectId, $uid, $path, $content, strlen($content), $sha]);
-      coreui_pfiles_add_revision($pdo, $id, $projectId, $uid, 1, $path, $content, $source, null, null);
+      $trail = coreui_pfiles_history_trail($pdo, $projectId, $uid, $path);
+      $id = $trail['file_id'] ?? bin2hex(random_bytes(16));
+      $revision = ($trail['revision'] ?? 0) + 1;
+      $insert->execute([$id, $projectId, $uid, $path, $content, strlen($content), $sha, $revision]);
+      coreui_pfiles_add_revision($pdo, $id, $projectId, $uid, $revision, $path, $content, $source, null, null);
     } else {
       $revision = (int)$current[$path]['revision'] + 1;
       $update->execute([$content, strlen($content), $sha, $revision, $current[$path]['id'], $uid]);

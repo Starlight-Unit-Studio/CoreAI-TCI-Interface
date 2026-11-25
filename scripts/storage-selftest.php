@@ -82,7 +82,13 @@ try {
   $media = static function (int $user, string $kind, string $name, int $size, string $dir) use ($pdo, $root, &$written): string {
     $uuid = bin2hex(random_bytes(16));
     $rel = $dir . $uuid . ($kind === 'image' ? '.png' : '.bin');
-    @mkdir(dirname($root . '/' . $rel), 0770, true);
+    $folder = dirname($root . '/' . $rel);
+    if (!is_dir($folder) && @mkdir($folder, 0770, true) && function_exists('posix_geteuid') && posix_geteuid() === 0) {
+      // 0.8.34: a run as root must not leave a real media folder (var/console_media/images) to root:
+      // PHP-FPM (www-data) saves Mara's images there and failed with storage_failed afterwards.
+      @chown($folder, (int)fileowner(dirname($folder)));
+      @chgrp($folder, (int)filegroup(dirname($folder)));
+    }
     file_put_contents($root . '/' . $rel, str_repeat('x', $size));
     $written[] = $root . '/' . $rel;
     $pdo->prepare('INSERT INTO stu_console_media (uuid, user_id, kind, orig_name, stored_name, rel_path, mime_type, file_size) VALUES (?,?,?,?,?,?,?,?)')

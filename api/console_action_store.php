@@ -155,6 +155,27 @@ function coreui_console_feedback_map(PDO $pdo, int $uid, array $messageIds): arr
   return $out;
 }
 
+/**
+ * 0.8.34: a queued or running agent run still writes into this chat (a new message is answered
+ * without a generation request). An edit or a new variant must wait for it like for a running
+ * action: otherwise the edit hid the turn the worker answered and its reply arrived as an orphan.
+ * A run whose worker is gone is ended first (coreui_agent_run_reap_stale), so it blocks nothing.
+ */
+function coreui_console_agent_run_busy(PDO $pdo, int $uid, string $sessionId): bool {
+  try {
+    if (function_exists('coreui_agent_run_reap_stale')) coreui_agent_run_reap_stale($pdo, $uid, $sessionId);
+    $st = $pdo->prepare(
+      "SELECT run_id FROM stu_console_agent_runs
+        WHERE user_id=? AND session_id=? AND status IN ('queued','running') LIMIT 1"
+    );
+    $st->execute([$uid, $sessionId]);
+    return (bool)$st->fetchColumn();
+  } catch (PDOException $e) {
+    // An install without migration 013 has no runs that could still write.
+    return false;
+  }
+}
+
 function coreui_console_assert_idle_for_edit(
   PDO $pdo,
   int $uid,
@@ -168,6 +189,7 @@ function coreui_console_assert_idle_for_edit(
   );
   $stBusy->execute([$uid, $sessionId]);
   if ($stBusy->fetchColumn()) throw new RuntimeException('generation_busy');
+  if (coreui_console_agent_run_busy($pdo, $uid, $sessionId)) throw new RuntimeException('generation_busy');
 
   $stBrowse = $pdo->prepare(
     "SELECT id FROM stu_ember_browse_jobs
@@ -328,6 +350,47 @@ function coreui_console_generation_expire(PDO $pdo, int $uid): void {
       WHERE user_id=? AND status IN ('issued','running') AND expires_at<NOW()"
   );
   $st->execute([$uid]);
+  // 0.8.34: a running action whose worker is gone (its agent run ended) is closed now, not only
+  // after its 40 minutes: until then a new variant, an edit, the branch and deleting the chat
+  // were refused as busy. coreui_console_generation_reconcile decides per request.
+  $stRunning = $pdo->prepare(
+    "SELECT * FROM stu_console_generation_requests
+      WHERE user_id=? AND status='running' AND response_message_id IS NULL
+        AND (browse_job_id IS NULL OR browse_job_id=0)
+      ORDER BY created_at ASC LIMIT 20"
+  );
+  $stRunning->execute([$uid]);
+  foreach (($stRunning->fetchAll(PDO::FETCH_ASSOC) ?: []) as $request) {
+    coreui_console_generation_reconcile($pdo, $uid, (string)$request['id'], $request);
+  }
+}
+
+/**
+ * The agent run of a generation request (run_key = request id), or null. A run without a sign
+ * of life is first ended by coreui_agent_run_reap_stale, exactly as for the chat's spinner.
+ */
+function coreui_console_generation_run(PDO $pdo, int $uid, array $request): ?array {
+  $sessionId = (string)($request['session_id'] ?? '');
+  $requestId = (string)($request['id'] ?? '');
+  if ($uid <= 0 || $sessionId === '' || $requestId === '') return null;
+  $load = static function () use ($pdo, $uid, $sessionId, $requestId, $request): ?array {
+    $st = $pdo->prepare(
+      "SELECT run_id,status,error_code,response_message_id FROM stu_console_agent_runs
+        WHERE user_id=? AND session_id=? AND turn_id=? AND run_key=? LIMIT 1"
+    );
+    $st->execute([$uid, $sessionId, (int)($request['trigger_message_id'] ?? 0), $requestId]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return is_array($row) ? $row : null;
+  };
+  try {
+    $run = $load();
+    if (is_array($run) && (string)$run['status'] === 'running' && function_exists('coreui_agent_run_reap_stale')) {
+      if (coreui_agent_run_reap_stale($pdo, $uid, $sessionId) > 0) $run = $load();
+    }
+    return $run;
+  } catch (PDOException $e) {
+    return null; // no migration 013: the request keeps its expiry as before
+  }
 }
 
 function coreui_console_generation_prepare(
@@ -363,6 +426,7 @@ function coreui_console_generation_prepare(
     );
     $stBusy->execute([$uid, $sessionId]);
     if ($stBusy->fetchColumn()) throw new RuntimeException('generation_busy');
+    if (coreui_console_agent_run_busy($pdo, $uid, $sessionId)) throw new RuntimeException('generation_busy');
 
     $stBrowse = $pdo->prepare(
       "SELECT id FROM stu_ember_browse_jobs
@@ -471,7 +535,18 @@ function coreui_console_generation_reconcile(
   $responseId = (int)($stResponse->fetchColumn() ?: 0);
   if ($responseId <= 0) {
     $browseJobId = (int)($request['browse_job_id'] ?? 0);
-    if ($browseJobId <= 0) return $request;
+    if ($browseJobId <= 0) {
+      // 0.8.34: the worker of this action is gone when its run ended without an answer
+      // (interrupted, failed, cancelled). Close the request instead of holding it for 40 minutes.
+      $run = coreui_console_generation_run($pdo, $uid, $request + ['id'=>$requestId]);
+      $runStatus = is_array($run) ? (string)$run['status'] : '';
+      if (!in_array($runStatus, ['interrupted', 'failed', 'cancelled', 'completed'], true)) return $request;
+      $errorCode = $runStatus === 'cancelled' ? 'agent_cancelled' : 'agent_run_' . $runStatus;
+      coreui_console_generation_finish($pdo, $uid, $requestId, 0, $errorCode);
+      $request['status'] = 'error';
+      $request['error_code'] = $errorCode;
+      return $request;
+    }
     $stBrowse = $pdo->prepare(
       "SELECT status FROM stu_ember_browse_jobs
         WHERE id=? AND channel='console' AND recipient_uid=? AND session_id=? AND trigger_message_id=?
@@ -522,18 +597,25 @@ function coreui_console_generation_attach_browse(
   }
 }
 
+/**
+ * Ends a generation request. 0.8.34: an error only ends a request that is still open (issued or
+ * running); it never replaces a saved answer (a late exception overwrote "done" with
+ * generation_failed). A saved answer still wins over an earlier error or expiry.
+ * Returns whether the request changed.
+ */
 function coreui_console_generation_finish(
   PDO $pdo,
   int $uid,
   string $requestId,
   int $responseMessageId,
   string $errorCode = ''
-): void {
+): bool {
   $status = $responseMessageId > 0 && $errorCode === '' ? 'done' : 'error';
+  $open = $status === 'done' ? "status<>'done'" : "status IN ('issued','running')";
   $st = $pdo->prepare(
     'UPDATE stu_console_generation_requests
         SET status=?,response_message_id=?,error_code=?,finished_at=NOW()
-      WHERE id=? AND user_id=?'
+      WHERE id=? AND user_id=? AND ' . $open
   );
   $st->execute([
     $status,
@@ -542,6 +624,7 @@ function coreui_console_generation_finish(
     $requestId,
     $uid,
   ]);
+  return $st->rowCount() === 1;
 }
 
 function coreui_console_generation_metadata_map(PDO $pdo, int $uid, array $messageIds): array {

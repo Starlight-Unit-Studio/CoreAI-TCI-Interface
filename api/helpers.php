@@ -56,6 +56,14 @@ $payload = ['ok' => false, 'error' => 'server_error'];
     $payload['file'] = is_object($e) && method_exists($e, 'getFile') ? $e->getFile() : '';
     $payload['line'] = is_object($e) && method_exists($e, 'getLine') ? $e->getLine() : 0;
   }
+  if (PHP_SAPI === 'cli') {
+    // A crashed command line script (a selftest, a worker) must fail: exit code 0 made both
+    // preflights report a test as passed although most of its assertions never ran.
+    $where = $e instanceof Throwable ? basename($e->getFile()) . ':' . $e->getLine() : 'unknown';
+    fwrite(STDERR, 'Uncaught ' . (is_object($e) ? get_class($e) : 'error') . ' at ' . $where . ': '
+      . ($e instanceof Throwable ? $e->getMessage() : (string)$e) . "\n");
+    exit(1);
+  }
   stu__safe_json($payload, 500);
   exit;
 });
@@ -85,8 +93,23 @@ function stu_json($data, int $status = 200): void {
   http_response_code($status);
   header('Content-Type: application/json; charset=utf-8');
   header('Cache-Control: no-store');
-  echo json_encode($data, JSON_UNESCAPED_UNICODE);
+  echo json_encode(stu_json_public_error($data), JSON_UNESCAPED_UNICODE);
   exit;
+}
+
+/**
+ * 0.8.34: many endpoints answer a RuntimeException with its message as the error code. PDOException is a
+ * RuntimeException too, so database text (SQLSTATE, table and column names) reached the browser on a
+ * deadlock or a restarted database. Such a message is logged and answered as server_error.
+ */
+function stu_json_public_error($data) {
+  if (!is_array($data) || !is_string($data['error'] ?? null)) return $data;
+  if (preg_match('~SQLSTATE\[|PDOException|Integrity constraint|Syntax error or access violation|General error: \d|Lock wait timeout|Deadlock found~i', $data['error']) !== 1) {
+    return $data;
+  }
+  if (function_exists('stu__log_error')) stu__log_error(['type' => 'database_error_hidden', 'message' => mb_substr($data['error'], 0, 500)]);
+  $data['error'] = 'server_error';
+  return $data;
 }
 
 function stu_read_json_body(): array {

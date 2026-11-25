@@ -1,0 +1,127 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.34
+Datum: 25.11.2026
+
+STABILISIERUNG
+- Audit aller Module durch parallele Pruefer; jede Korrektur wurde von einem
+  unabhaengigen Pruefer gegengeprueft und hat einen Offline-Selbsttest, der
+  bei zurueckgedrehter Korrektur fehlschlaegt.
+
+WARUM PROJEKTLAEUFE EINE HALBE STUNDE UND LAENGER BRAUCHTEN
+- Jeder Schritt aenderte die Mitte des Prompts (fruehere Ergebnisse bei
+  jedem Aufruf verdichtet, Reparaturen bauten den Prompt neu, der Skill-
+  Block wechselte mit dem Schritt). Ollama konnte seinen Prompt-Cache nicht
+  nutzen und las den ganzen Prompt neu, auf der CPU etwa 170 Token je
+  Sekunde.
+- Fruehere Ergebnisse werden selten und in Schueben verdichtet, eine
+  Reparatur baut auf dem gerade gesendeten Prompt auf, die Zeitangabe ist je
+  Turn fest, der Skill-Block bleibt im Projektlauf gleich, und die erste
+  Antwort mit Werkzeug startet den Arbeitsweg ohne zweiten gleichen Aufruf.
+  Ein Core, den ein laufender Agentenlauf nutzt, wird nicht entladen.
+- Denken in jedem Schritt bleibt unveraendert (Schalter im Chat).
+
+ARBEITSSCHLEIFE IM PROJEKT
+- Ein Schritt mit reiner Information blockiert den Abschluss nicht mehr;
+  Bibliotheksnamen (Node.js, Three.js), zu loeschende und umbenannte Dateien
+  sind keine Pflichtdateien; ein Werkzeugblock zusammen mit DONE wird zuerst
+  ausgefuehrt; gleiche Ergebnisse seit der letzten Dateiaenderung beenden den
+  Lauf ohne allgemeines Schrittlimit; reine Recherche behaelt ihre sechs
+  Schritte; abschnittsweiser Aufbau zaehlt nicht fuer Pruefen nach sechs und
+  Pause nach zehn; eine abgelehnte Aenderung blockiert den Abschluss nicht,
+  wenn die Datei sie schon enthaelt; eine mehrdeutige Zeile ======= aendert
+  nichts; "Projektauftrag unterbrochen, Dateien bleiben erhalten" wird
+  wieder gespeichert.
+
+CHAT UND STREAM
+- Ende bei Stillstand statt nach festen 600 s (erstes Byte im Core-
+  Zeitlimit, Pausen bis 180 s, hoechstens 3600 s); angekommener Text bleibt
+  mit Hinweis. Nach HTTP 4xx/5xx oder einem stummen Core keine zweite
+  Anfrage, sondern ein kurzer Hinweis.
+- Variante, Fortsetzung oder Bearbeitung, deren Lauf endete, wird immer
+  geschlossen; ein Fehler ersetzt nie eine gespeicherte Antwort.
+- Ein Core-Aufruf wartet, solange ein lebender Worker den Core haelt, statt
+  nach 90 s abzubrechen. Gedaechtnis und Reflexion laufen nach der Antwort.
+- Bearbeiten und Neu generieren warten auf laufende Agentenlaeufe; nicht
+  oeffenbare Sperrdateien gelten nicht als belegt; SSE mit ungueltigem UTF-8
+  bleibt gueltiges JSON.
+
+CHATANSICHT
+- Vorgemerkte Folgefrage wartet die 4-s-Sperre ab; ein benannter SSE-Fehler
+  beendet den Turn statt 17 Minuten schnellen Abfragens; Stopp auf einen
+  schon beendeten Lauf gibt den Chat frei; ein Recherchejob wird nach dem
+  Neuzeichnen weiter beobachtet; Regenerieren und Bearbeiten nach einem
+  Chatwechsel zeichnen nicht in den anderen Chat; eine abgewiesene Nachricht
+  kommt in die leere Eingabe zurueck; Befehls- und Prozessabfragen der
+  Projektdateien pausieren auf anderen Seiten und im verborgenen Tab.
+
+KONTOSICHERHEIT
+- Zweiter Faktor: hoechstens 10 Fehlversuche je Konto in 15 Minuten.
+- Passwort zuruecksetzen: Ratenlimit, ein Code je Minute, drei je Stunde und
+  Konto, Versuche atomar gezaehlt.
+- Office-Anhaenge und PDF-Text hoechstens 8 MB Text, pdftotext mit
+  Zeitgrenze; Admin-Logs lesen nur das Dateiende; keine Datenbank-
+  Fehlertexte im Browser.
+
+DATEIVERLAUF
+- Ein Wechsel des Arbeitsstands loeschte die gespeicherten Fassungen einer
+  Datei, die der andere Stand nicht hatte. Sie bleiben jetzt erhalten, eine
+  zurueckkehrende Datei setzt ihren Verlauf fort. Migration
+  058_project_file_history (vom Betreiber ausdruecklich freigegeben) haengt
+  den Cascade an das Projekt; Projekt oder Datei loeschen raeumt weiter auf.
+
+BILDGENERIERUNG: "DAS BILD KONNTE NICHT DAUERHAFT GESPEICHERT WERDEN"
+- Der Bilddienst war fertig, aber das Speichern des PNG schlug fehl und
+  meldete nur storage_failed. Der Arbeitsweg nennt jetzt die Ursache
+  (Bildordner fehlt, Bildordner fuer den Webserver nicht beschreibbar, Datei
+  nicht geschrieben, Datenbankeintrag fehlgeschlagen); das Fehlerprotokoll
+  nennt Ordner, Besitzer, PHP-Benutzer und freien Platz.
+- Wahrscheinliche Ursache: Der Compose-Preflight fuehrte die Bild- und
+  Speichertests als root aus; sie legten den echten Ordner
+  var/console_media/images als root an, wenn er noch fehlte. PHP-FPM konnte
+  danach keine Bilder speichern. Die Tests laufen jetzt als www-data, ein
+  selbst angelegter Ordner gehoert dem Besitzer von var/console_media, ein
+  leeres var/console_media wird nicht mehr entfernt, und beide Preflights
+  pruefen, dass PHP in den Bildordner schreiben darf.
+
+UNABHAENGIGE GEGENPRUEFUNG
+- Ein eigener Pruefer hat das Zusammenspiel aller Korrekturen geprueft und
+  jeden Fund mit einem Skript gegen den Branch und gegen main belegt.
+  Behoben:
+- Nach dem Umbenennen einer Datei brach der Wechsel auf einen Arbeitsstand
+  mit dem alten Namen an einer doppelten Revision ab; die naechste Revision
+  folgt jetzt der neuesten der ganzen Datei.
+- Derselbe Abschnitt immer wieder eingefuegt wurde nie gezaehlt; ein Abschnitt,
+  der schon in der Datei steht oder in diesem Lauf schon eingefuegt wurde,
+  zaehlt jetzt wie ein Umbau (Pause nach zehn).
+- Eine nach sechs Rechercheschritten verlangte Datei fiel ohne Hinweis weg;
+  sie laeuft jetzt und macht den Lauf zum Projektlauf.
+- Listen wie "Erstelle folgende Dateien:" mit einem Namen je Zeile,
+  "Dateien: a.html, b.js" und ein Name am Satzende galten nicht mehr als
+  verlangte Dateien.
+- Fruehere Werkzeugergebnisse im Projekt-Prompt richten sich nach dem
+  Kontextfenster des Cores (etwa 1,5 Bytes je Token, 12 bis 96 KB).
+- Nur die gestreamte Antwort und die Arbeitsschritte eines Chat-Zugs warten
+  auf einen belegten Core (hoechstens 900 s mehr); Hintergrundaufrufe geben
+  wie vorher nach 90 s auf.
+- Ein Lauf schuetzt nur den Core, den er gerade nutzt; "ein lokaler Core im
+  RAM" aus 0.8.16 gilt wieder.
+- PDF-Text wird ohne popen ueber shell_exec mit derselben Grenze gelesen.
+- Ein fortgesetzter Lauf mit Anbieterfehler behaelt dessen Erklaerung.
+
+ABGESTUERZTE SELBSTTESTS GALTEN ALS BESTANDEN
+- Der CLI-Fehlerhandler endete mit Exit 0; beide Preflights zeigten
+  abgestuerzte Selbsttests als bestanden. Jetzt Exit 1 mit Klasse, Datei und
+  Meldung. Zwoelf veraltete Selbsttests pruefen das dokumentierte aktuelle
+  Verhalten, gleich streng; Tests ohne Datenbank melden SKIPPED.
+
+KLEINE KORREKTUREN
+- Profil bearbeiten setzt den Fokus ins Namensfeld; der Deinstallations-
+  status in Admin Core wird nur fuer den Inhaber abgefragt.
+
+TESTS
+- Neu und in beiden Preflights registriert: stabilize-security-selftest.php,
+  stabilize-history-selftest.php, stabilize-frontend-selftest.cjs,
+  stabilize-backend-selftest.php, stabilize-loop-selftest.php,
+  stabilize-loop-journal-selftest.php, image-store-diagnostic-selftest.php.
+  progress-browser und image-progress-ui laufen jetzt in beiden Preflights.
+
+Version: 0.8.34

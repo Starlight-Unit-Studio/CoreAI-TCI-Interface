@@ -816,14 +816,21 @@ foreach (["Hier ist dein Bild! Ein Fuchs im Schnee.", "(Das Bild zeigt einen Fuc
 require_once $root . '/api/console_session_store.php';
 $realDir = $root . '/var/console_media/images';
 $madeDir = !is_dir($realDir);
-if ($madeDir) mkdir($realDir, 0750, true);
+$madeParent = !is_dir(dirname($realDir));
+if ($madeDir) {
+  mkdir($realDir, 0770, true);
+  // 0.8.34: a run as root must not leave the real folder to root; PHP-FPM (www-data) saves the images there.
+  $parent = dirname($realDir);
+  if (function_exists('posix_geteuid') && posix_geteuid() === 0) { @chown($realDir, (int)fileowner($parent)); @chgrp($realDir, (int)filegroup($parent)); }
+}
 $probe = bin2hex(random_bytes(16));
 file_put_contents("{$realDir}/{$probe}.png", 'png');
 file_put_contents("{$realDir}/{$probe}.json", '{}');
 $deleted = coreui_console_session_delete_media_files(["var/console_media/images/{$probe}.png", 'var/console_media/images/../../x.png']);
 img_gen_test(!is_file("{$realDir}/{$probe}.png") && !is_file("{$realDir}/{$probe}.json") && $deleted['files_deleted'] === 2
   && $deleted['files_failed'] === 1, 'a deleted chat takes the image and its description, nothing outside: ' . json_encode($deleted));
-if ($madeDir) { @rmdir($realDir); @rmdir(dirname($realDir)); }
+// 0.8.34: var/console_media is removed only when this test made it (it used to go whenever it was empty).
+if ($madeDir) { @rmdir($realDir); if ($madeParent) @rmdir(dirname($realDir)); }
 
 // --- Wiring -----------------------------------------------------------------------------
 $read = static fn(string $f): string => (string)file_get_contents($root . '/' . $f);

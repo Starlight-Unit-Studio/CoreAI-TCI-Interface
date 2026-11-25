@@ -64,16 +64,75 @@ function coreui_task_journal_get(PDO $pdo, int $uid, string $session, string $ru
 function coreui_task_journal_requirements_from_goal(string $goal): array {
   if ($goal==='' || strlen($goal)>20000 || preg_match('//u',$goal)!==1) return [];
   $safe=(string)preg_replace('~```[\s\S]*?```~u','', $goal);
-  preg_match_all(
-    '~(?<![A-Za-z0-9_./:@-])([A-Za-z0-9_+-]+(?:/[A-Za-z0-9_.+-]+){0,6}\\.(?:html?|css|js|mjs|json|md|txt|svg|py|ts|tsx|jsx|vue|svelte))(?![A-Za-z0-9_./-])~iu',
-    $safe,$matches);
+  $name='[A-Za-z0-9_+-]+(?:/[A-Za-z0-9_.+-]+){0,6}\\.(?:html?|css|js|mjs|json|md|txt|svg|py|ts|tsx|jsx|vue|svelte)';
+  // Review 0.8.34: a name may end a sentence ("... und app.js."); a dot followed by more of a name may not.
+  $file='(?<![A-Za-z0-9_./:@-])(' . $name . ')(?![A-Za-z0-9_/-]|\\.[A-Za-z0-9_])';
+  // Stabilize 0.8.33: only a file the person asks to create or change is a deliverable that must exist
+  // at the end. A library name ("Node.js", "Three.js"), a file to delete and the old name of a renamed
+  // or moved file are no deliverables; a run with them could never finish.
+  $create='~\b(?:erstell|anleg|leg\w*\s+\S+\s+an|schreib|bau|generier|erzeug|mach|programmier|entwickl|ergaenz|ergänz|'
+    . 'hinzufueg|hinzufüg|fueg|füg|aender|änder|anpass|pass\w*\s+an|bearbeit|ueberarbeit|überarbeit|aktualisier|korrigier|'
+    . 'verbesser|repar|implementier|neue?[nrsm]?\b|create|write|build|make|generate|add|implement|update|edit|modify|fix|change|'
+    // Review 0.8.34: "Ich brauche eine Landingpage: index.html und style.css" asks for files as well.
+    . 'brauch|benoetig|benötig|moecht|möcht|wuensch|wünsch|need|want)~iu';
+  $removeWord='(?:l(?:ö|oe|o)sch|entfern|delete|remove|wegmach)\w*';
+  $remove='~\b' . $removeWord . '~iu';
+  $rename='~\b(?:benenn|umbenenn|rename|verschieb|move|mv)\w*~iu';
+  $keep=[];
+  // Review 0.8.34: a list that follows a request ("Erstelle folgende Dateien:" and lines "- index.html",
+  // "Erstelle eine Seite." and bare names, "Dateien: a.html, b.js") belongs to that request. The intent
+  // carries over list lines only; any other sentence ends it.
+  $listLine='~^\s*(?:(?:[-*•+]|\d+[.)])(?:\s|$)|(?:dateien|datei|files?)\s*:|' . $file . ')~iu';
+  $carry=false;
+  // Sentences end at . ! ? ; or a line break that is not part of a file name.
+  foreach (preg_split('~(?<=[.!?;])\s+|\R+~u',$safe) ?: [] as $sentence) {
+    $isList=preg_match($listLine,$sentence)===1;
+    $intent=preg_match($create,(string)preg_replace([$remove,$rename],' ',$sentence))===1;
+    if (preg_match_all('~' . $file . '~iu',$sentence,$hits,PREG_OFFSET_CAPTURE)<1) {
+      if ($intent) $carry=true;
+      elseif (!$isList) $carry=false;
+      continue;
+    }
+    $carried=$carry && $isList;
+    $carry=$intent || $carried;
+    $drop=[];
+    if (preg_match($rename,$sentence)===1) {
+      // "benenne app.js in main.js um", "rename a.js to b.js": the first name is gone afterwards.
+      if (preg_match_all('~' . $file . '\s+(?:in|zu|nach|to|into|als|as)\s+(?:den\s+|die\s+|das\s+)?' . $file . '~iu',
+          $sentence,$pairs)>0) {
+        foreach ($pairs[1] as $old) $drop[strtolower((string)$old)]=true;
+      }
+    }
+    if (preg_match($remove,$sentence)===1) {
+      $list='(?:\s*(?:,|und|and|sowie|oder|or)\s*(?:die\s+|den\s+|das\s+|the\s+)?' . $file . ')*';
+      // "loesche alt.html und alt.css", "alt.html bitte loeschen": these names are gone afterwards.
+      foreach (['~\b' . $removeWord . '\s+(?:(?:die|den|das|the|datei|dateien|file|files)\s+)*' . $file . $list . '~iu',
+          '~' . $file . $list . '\s+(?:\w+\s+){0,2}' . $removeWord . '~iu'] as $pattern) {
+        if (preg_match_all($pattern,$sentence,$gone,PREG_SET_ORDER)>0) {
+          foreach ($gone as $match) {
+            preg_match_all('~' . $file . '~iu',$match[0],$names);
+            foreach ($names[1] as $old) $drop[strtolower((string)$old)]=true;
+          }
+        }
+      }
+    }
+    $creates=preg_match($create,(string)preg_replace([$remove,$rename],' ',$sentence))===1
+      || (preg_match($rename,$sentence)===1 && $drop!==[]) || $carried;
+    if (!$creates) continue;
+    foreach ($hits[1] as [$found]) {
+      $found=(string)$found;
+      // A capitalised name.js without a folder is a library or product, not a file to create.
+      if (!str_contains($found,'/') && preg_match('~^[A-Z][A-Za-z0-9_+-]*\.m?js$~D',$found)===1) continue;
+      if (isset($drop[strtolower($found)])) continue;
+      $keep[]=$found;
+    }
+  }
   $unique=[];
-  foreach (($matches[1]??[]) as $name) {
-    $name=(string)$name;
+  foreach ($keep as $name) {
     try {
       if (!function_exists('coreui_pfiles_path')) continue;
       $path=coreui_pfiles_path($name);
-      $unique[$path]=['kind'=>'file','path'=>$path,'origin'=>'user_turn'];
+      $unique[strtolower($path)]=['kind'=>'file','path'=>$path,'origin'=>'user_turn'];
     } catch (Throwable $ignored) {}
   }
   return array_values($unique);
@@ -111,12 +170,13 @@ function coreui_task_journal_requirements_satisfied(PDO $pdo,int $uid,string $se
     if ($projectId==='') return false;
     $listing=coreui_pfiles_list($pdo,$uid,$projectId);
     $files=[];
+    // Stabilize 0.8.33: "Index.html" in the request and a saved index.html are the same deliverable.
     foreach (($listing['files']??[]) as $f) {
-      $files[(string)($f['path']??'')]=(string)($f['sha256']??'');
+      $files[strtolower((string)($f['path']??''))]=(string)($f['sha256']??'');
     }
     foreach ($requirements as $r) {
       if (!is_array($r) || ($r['kind']??'')!=='file')return false;
-      $name=(string)($r['path']??'');
+      $name=strtolower((string)($r['path']??''));
       if (!isset($files[$name]) || preg_match('/^[a-f0-9]{64}$/D',$files[$name])!==1)
         return false;
     }
@@ -201,13 +261,33 @@ function coreui_task_journal_proof(string $result, string $state,
  * in the SAME transaction as the verified step receipt. Fail closed on
  * duplicates and unknown outcomes; never fabricate a successful file.
  */
+/** Stabilize 0.8.33: tools that only read or look; they leave nothing behind that could still be pending. */
+const COREUI_TASK_JOURNAL_READ_ONLY = ['pfile_read','pproc_output','pserver_fetch','web','archive','skill','browse','python'];
+
+/**
+ * Stabilize 0.8.33: the durable state of a finished step. 'uncertain' blocked DONE and every resume for
+ * the rest of the run, but a finished step with an 'info' result has a KNOWN outcome: a read that found
+ * nothing new, a stop or input with no process running (nothing was executed), or a start the tool did
+ * not confirm (a failed confirmation, so 'error'). Only a claim without a result stays open ('claimed').
+ */
+function coreui_task_journal_proof_state(array $tool, string $state, string $result): string {
+  if ($state === 'success') return 'verified';
+  if ($state === 'error') return 'error';
+  $kind = (string)($tool['tool'] ?? '');
+  $result = ltrim($result);
+  if (in_array($kind, COREUI_TASK_JOURNAL_READ_ONLY, true)
+      || str_starts_with($result, 'Gerade laeuft kein Prozess')
+      || str_starts_with($result, 'In diesem Projekt wurde noch kein Prozess')) return 'verified';
+  return 'error';
+}
+
 function coreui_task_journal_finish(PDO $pdo, int $uid, string $session, string $run,
     int $step, array $tool, string $state, string $result,
     array $actual = []): bool {
   if (!coreui_task_journal_valid_ref($uid,$session,$run) || $step <= 0
       || !in_array($state,['success','error','info'],true)) return false;
   $proof=coreui_task_journal_proof($result,$state,$tool,$actual);
-  $proofState=$state==='success' ? 'verified' : ($state==='error' ? 'error' : 'uncertain');
+  $proofState=coreui_task_journal_proof_state($tool,$state,$result);
   $hash=coreui_task_journal_tool_sha($tool);
   $outer=$pdo->inTransaction();
   if ($outer) $pdo->exec('SAVEPOINT coreui_task_journal_step');
@@ -395,12 +475,16 @@ function coreui_task_journal_can_finish(PDO $pdo, int $uid, string $session, str
   if (!coreui_task_journal_valid_ref($uid,$session,$run)) return false;
   $s=$pdo->prepare('SELECT COUNT(*) AS total,'
     . "COALESCE(SUM(state='verified'),0) AS verified,"
-    . "COALESCE(SUM(state IN ('claimed','uncertain')),0) AS pending "
+    . "COALESCE(SUM(state IN ('claimed','uncertain')),0) AS pending,"
+    . "COALESCE(SUM(tool_name IN ('web','archive','skill','browse','python','image')),0) AS research "
     . 'FROM stu_console_task_actions WHERE run_id=? AND user_id=? AND session_id=?');
   $s->execute([$run,$uid,$session]);
   $row=$s->fetch(PDO::FETCH_ASSOC) ?: [];
   if (!((int)($row['total']??0)>0 && (int)($row['verified']??0)>0
       && (int)($row['pending']??0)===0)) return false;
+  // Stabilize 0.8.33: a run that only searched, looked up or loaded a guide made no project files;
+  // file names in its question ("Was ist neu in Node.js 24?") are no deliverables of it.
+  if ((int)($row['research']??0)===(int)$row['total']) return true;
   $task=coreui_task_journal_get($pdo,$uid,$session,$run);
   if ($task===null) return false;
   $requirements=json_decode((string)($task['requirements_json']??'[]'),true);

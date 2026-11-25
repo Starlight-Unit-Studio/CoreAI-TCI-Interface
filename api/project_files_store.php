@@ -177,6 +177,25 @@ function coreui_pfiles_add_revision(PDO $pdo, string $fileId, string $projectId,
 }
 
 /**
+ * 0.8.34: the kept history of a path whose file row went away with a change of working state (the
+ * revisions stay; see coreui_pvcs_apply). Returns the newest such trail ['file_id', 'revision'] or null.
+ * A file that comes back at that path continues this history instead of starting again at revision 1.
+ */
+function coreui_pfiles_history_trail(PDO $pdo, string $projectId, int $uid, string $path): ?array {
+  $st = $pdo->prepare('SELECT r.file_id, MAX(r.id) AS newest FROM stu_console_project_file_revisions r '
+    . 'LEFT JOIN stu_console_project_files f ON f.id = r.file_id WHERE r.project_id = ? AND r.user_id = ? AND r.path = ? '
+    . 'AND f.id IS NULL GROUP BY r.file_id ORDER BY newest DESC LIMIT 1');
+  $st->execute([$projectId, $uid, $path]);
+  $row = $st->fetch(PDO::FETCH_ASSOC);
+  if (!is_array($row) || (string)$row['file_id'] === '') return null;
+  // A renamed file keeps its id, so its later revisions carry the new path: the next revision follows the
+  // newest one of the whole file, not only of this path (otherwise it repeats an existing (file_id, revision)).
+  $max = $pdo->prepare('SELECT MAX(revision) FROM stu_console_project_file_revisions WHERE file_id = ? AND user_id = ?');
+  $max->execute([(string)$row['file_id'], $uid]);
+  return ['file_id'=>(string)$row['file_id'], 'revision'=>(int)$max->fetchColumn()];
+}
+
+/**
  * Write one file. $opts: base_sha256 (the state the editor started from; a
  * different current state is a conflict), create_only (the path must be new),
  * session_id and message_id (where a build came from). Returns the file and
@@ -204,11 +223,13 @@ function coreui_pfiles_write(PDO $pdo, int $uid, string $projectId, string $path
     $sessionId = isset($opts['session_id']) && is_string($opts['session_id']) ? $opts['session_id'] : null;
     $messageId = isset($opts['message_id']) && (int)$opts['message_id'] > 0 ? (int)$opts['message_id'] : null;
     if ($row === null) {
-      $id = bin2hex(random_bytes(16));
+      $trail = coreui_pfiles_history_trail($pdo, $project['id'], $uid, $path);
+      $id = $trail['file_id'] ?? bin2hex(random_bytes(16));
+      $revision = ($trail['revision'] ?? 0) + 1;
       $st = $pdo->prepare('INSERT INTO stu_console_project_files (id, project_id, user_id, path, content, size_bytes, sha256, '
-        . 'revision, created_at, updated_at) VALUES (?,?,?,?,?,?,?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)');
-      $st->execute([$id, $project['id'], $uid, $path, $content, strlen($content), $sha]);
-      coreui_pfiles_add_revision($pdo, $id, $project['id'], $uid, 1, $path, $content,
+        . 'revision, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)');
+      $st->execute([$id, $project['id'], $uid, $path, $content, strlen($content), $sha, $revision]);
+      coreui_pfiles_add_revision($pdo, $id, $project['id'], $uid, $revision, $path, $content,
         in_array($source, ['build', 'mara'], true) ? $source : 'create', $sessionId, $messageId);
     } else {
       $id = (string)$row['id'];

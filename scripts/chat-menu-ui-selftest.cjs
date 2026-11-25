@@ -4,7 +4,8 @@
 // js/coreui-chat-menu.js; a stand-in for the app (window.CoreAIChatApp) and for
 // api/console_sessions.php. Checks: hidden without a chat; the title and the items in the order
 // of the reference; keyboard and outside click; Teilen (a Markdown file); Anpinnen and back;
-// Chat sperren and Zum Projekt hinzufügen planned (no request); Hochgeladene Dateien (list, empty);
+// Chat sperren and Zum Projekt hinzufügen active since 0.7.22/0.7.29 (handed to CoreAIChatLock and
+// CoreAIProjects, no request of the menu itself, a toast without the module); Hochgeladene Dateien (list, empty);
 // Im Chat suchen (two letters, hits with marks, a hit jumps to its message); Zum Startbildschirm
 // hinzufügen (the address leads to the chat, link copied); Archivieren with the dialog of the
 // reference (cancel, then archive); Löschen (archive_first, an error, then deleted); a busy chat;
@@ -66,7 +67,11 @@ function harness(chat) {
 ${Array.from({length: 4}, (_, i) => `<div class="msg-row user" data-message-id="${11 + i}"><p>Nachricht ${11 + i}</p></div>`).join('')}
 </div></main></div>${menuHtml}
 <script>
-window.__calls = {refresh: 0, removed: [], reveal: []};
+window.__calls = {refresh: 0, removed: [], reveal: [], lock: [], assign: []};
+// 0.7.22 / 0.7.29: Chat sperren and Zum Projekt hinzufügen hand the chat to their own modules
+// (js/coreui-chat-lock.js, js/coreui-projects.js); stand-ins record what the menu passes on.
+window.CoreAIChatLock = {lockChat: function (chat) { window.__calls.lock.push(chat && chat.id); }};
+window.CoreAIProjects = {assignChat: function (id) { window.__calls.assign.push(id); }};
 window.__chat = ${JSON.stringify(chat)};
 window.CoreAIChatApp = {apiBase: './api',
   active: function () { return window.__chat; },
@@ -108,8 +113,7 @@ async function choose(page, action) {
   await page.evaluate(() => { const t = document.getElementById('chatMenuToast'); t.hidden = true; t.textContent = ''; });
   await page.click('#chatMenuBtn');
   await page.waitForSelector('#chatMenu:not([hidden])');
-  // Planned items carry aria-disabled; a person can still tap them and gets the hint.
-  await page.click(`#chatMenu [data-chat-action="${action}"]`, {force: ['lock', 'project'].includes(action)});
+  await page.click(`#chatMenu [data-chat-action="${action}"]`);
 }
 
 (async () => {
@@ -154,8 +158,10 @@ async function choose(page, action) {
     assert.deepEqual(await page.$$eval('#chatMenu .chat-menu-item span', l => l.map(x => x.textContent)),
       ['Teilen', 'Anpinnen', 'Chat sperren', 'Zum Projekt hinzufügen', 'Hochgeladene Dateien', 'Im Chat suchen', 'Zum Startbildschirm hinzufügen', 'Archivieren', 'Löschen'],
       'the items of the reference in its order');
-    assert.deepEqual(await page.$$eval('#chatMenu .is-planned', l => l.map(x => x.getAttribute('data-chat-action'))), ['lock', 'project']);
-    assert.match(await page.textContent('[data-chat-action="lock"]'), /IN VORBEREITUNG/);
+    // Since 0.7.22 (chat lock) and 0.7.29 (projects) no item is planned or disabled any more.
+    assert.deepEqual(await page.$$eval('#chatMenu .is-planned, #chatMenu [aria-disabled="true"]', l => l.map(x => x.getAttribute('data-chat-action'))), []);
+    assert.equal(await page.textContent('[data-chat-action="lock"]'), 'Chat sperren', 'no IN VORBEREITUNG badge on Chat sperren');
+    assert.equal(await page.textContent('[data-chat-action="project"]'), 'Zum Projekt hinzufügen', 'no IN VORBEREITUNG badge on the project item');
     assert.equal(await page.getAttribute('[data-chat-action="delete"]', 'class'), 'chat-menu-item danger');
     assert.equal(await page.evaluate(() => document.activeElement.getAttribute('data-chat-action')), 'share', 'focus on the first item');
     await page.keyboard.press('ArrowDown');
@@ -186,13 +192,24 @@ async function choose(page, action) {
     assert.equal(await page.textContent('#chatMenuPinLabel'), 'Nicht mehr anpinnen');
     await page.keyboard.press('Escape');
 
-    // Planned items send nothing.
+    // Chat sperren and Zum Projekt hinzufügen hand this chat to their modules; the menu itself sends nothing.
     const before = srv.st.posts.length + srv.st.gets.length;
     await choose(page, 'lock');
-    assert.match(await toast(page), /Chat sperren ist in Vorbereitung/);
+    await page.waitForSelector('#chatMenu', {state: 'hidden'});
+    assert.deepEqual(await page.evaluate(() => window.__calls.lock), ['cs_test1234'], 'Chat sperren opens the PIN lock for this chat');
     await choose(page, 'project');
-    assert.match(await toast(page), /Projekte sind in Vorbereitung/);
-    assert.equal(srv.st.posts.length + srv.st.gets.length, before, 'planned items make no request');
+    await page.waitForSelector('#chatMenu', {state: 'hidden'});
+    assert.deepEqual(await page.evaluate(() => window.__calls.assign), ['cs_test1234'], 'Zum Projekt hinzufügen opens the project choice for this chat');
+    assert.equal(srv.st.posts.length + srv.st.gets.length, before, 'the menu makes no request of its own for lock and project');
+    // Without the modules (not loaded) the person gets a clear hint instead of a dead item.
+    await page.evaluate(() => { window.__savedLock = window.CoreAIChatLock; window.__savedProjects = window.CoreAIProjects; delete window.CoreAIChatLock; delete window.CoreAIProjects; });
+    await choose(page, 'lock');
+    assert.equal(await toast(page), 'Chat-Sperre ist nicht verfügbar.');
+    await choose(page, 'project');
+    assert.equal(await toast(page), 'Projektverwaltung nicht verfügbar.');
+    assert.equal(srv.st.posts.length + srv.st.gets.length, before, 'no request without the modules either');
+    assert.deepEqual(await page.evaluate(() => [window.__calls.lock.length, window.__calls.assign.length]), [1, 1]);
+    await page.evaluate(() => { window.CoreAIChatLock = window.__savedLock; window.CoreAIProjects = window.__savedProjects; });
 
     // Hochgeladene Dateien.
     await choose(page, 'files');
@@ -302,7 +319,7 @@ async function choose(page, action) {
   } finally {
     await browser.close();
   }
-  console.log('CoreAI chat menu: hidden without a chat, items like the reference, keyboard, Teilen as Markdown, Anpinnen, planned Chat sperren '
-    + 'and Projekt, Hochgeladene Dateien, Im Chat suchen with jump (older pages loaded), Startbildschirm link, Archivieren and Löschen with '
+  console.log('CoreAI chat menu: hidden without a chat, items like the reference, keyboard, Teilen as Markdown, Anpinnen, Chat sperren '
+    + 'and Zum Projekt hinzufügen handed to their modules, Hochgeladene Dateien, Im Chat suchen with jump (older pages loaded), Startbildschirm link, Archivieren and Löschen with '
     + 'dialogs, busy chat, phone OK');
 })().catch(error => { console.error(error); process.exit(1); });
