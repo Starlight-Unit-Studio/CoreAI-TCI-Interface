@@ -83,6 +83,28 @@ coreui_pfiles_write($pdo, 7, $p, 'fremd.md', "eigen\n", 'create');
 $own = coreui_pfiles_get($pdo, 7, $p, 'fremd.md');
 hist_test((int)$own['revision'] === 1 && coreui_pfiles_history_trail($pdo, $p, 7, 'fremd.md') === null, 'another project or account is never continued');
 
+// Review finding: a renamed file keeps its id, its later revisions carry the new path. Switching to a working
+// state that still has the old name must continue after the file's newest revision, not repeat one.
+$r = str_repeat('e', 32);
+$pdo->prepare('INSERT INTO stu_console_projects (id,user_id,name,context_mode,instructions_md,pinned_at,created_at) VALUES (?,?,?,?,?,?,?)')
+  ->execute([$r, 7, 'Umbenennen', 'open', '', null, '2026-11-25']);
+coreui_pfiles_write($pdo, 7, $r, 'a.js', "eins\n", 'build');
+coreui_pvcs_state($pdo, 7, $r);
+coreui_pvcs_branch_create($pdo, 7, $r, 'alt', false);
+$rid = [];
+foreach (coreui_pvcs_state($pdo, 7, $r)['branches'] as $b) $rid[$b['name']] = $b['id'];
+coreui_pvcs_switch($pdo, 7, $r, $rid['main']);
+coreui_pfiles_rename($pdo, 7, $r, 'a.js', 'b.js');
+$renamed = coreui_pfiles_get($pdo, 7, $r, 'b.js');
+coreui_pfiles_write($pdo, 7, $r, 'b.js', "zwei\n", 'edit', ['base_sha256'=>$renamed['sha256']]);
+coreui_pvcs_switch($pdo, 7, $r, $rid['alt']);
+$old = coreui_pfiles_get($pdo, 7, $r, 'a.js');
+$revs = $pdo->query("SELECT revision FROM stu_console_project_file_revisions WHERE project_id='{$r}' ORDER BY revision")->fetchAll(PDO::FETCH_COLUMN);
+hist_test($old['content'] === "eins\n" && (int)$old['revision'] === 4 && array_map('intval', $revs) === [1, 2, 3, 4],
+  'after a rename the old name continues after the newest revision of the file: ' . json_encode([$old['revision'], $revs]));
+coreui_pvcs_switch($pdo, 7, $r, $rid['main']);
+hist_test(coreui_pfiles_get($pdo, 7, $r, 'b.js')['content'] === "zwei\n", 'and the renamed file is back on its own working state');
+
 // Migration 058: the cascade moves from the file row to the project, every step repeatable.
 $sql = (string)file_get_contents($root . '/database/migrations/058_project_file_history.sql');
 hist_test(str_contains($sql, 'DROP FOREIGN KEY fk_project_file_revisions_file')

@@ -182,12 +182,17 @@ function coreui_pfiles_add_revision(PDO $pdo, string $fileId, string $projectId,
  * A file that comes back at that path continues this history instead of starting again at revision 1.
  */
 function coreui_pfiles_history_trail(PDO $pdo, string $projectId, int $uid, string $path): ?array {
-  $st = $pdo->prepare('SELECT r.file_id, MAX(r.revision) AS revision, MAX(r.id) AS newest FROM stu_console_project_file_revisions r '
+  $st = $pdo->prepare('SELECT r.file_id, MAX(r.id) AS newest FROM stu_console_project_file_revisions r '
     . 'LEFT JOIN stu_console_project_files f ON f.id = r.file_id WHERE r.project_id = ? AND r.user_id = ? AND r.path = ? '
     . 'AND f.id IS NULL GROUP BY r.file_id ORDER BY newest DESC LIMIT 1');
   $st->execute([$projectId, $uid, $path]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
-  return is_array($row) && (string)$row['file_id'] !== '' ? ['file_id'=>(string)$row['file_id'], 'revision'=>(int)$row['revision']] : null;
+  if (!is_array($row) || (string)$row['file_id'] === '') return null;
+  // A renamed file keeps its id, so its later revisions carry the new path: the next revision follows the
+  // newest one of the whole file, not only of this path (otherwise it repeats an existing (file_id, revision)).
+  $max = $pdo->prepare('SELECT MAX(revision) FROM stu_console_project_file_revisions WHERE file_id = ? AND user_id = ?');
+  $max->execute([(string)$row['file_id'], $uid]);
+  return ['file_id'=>(string)$row['file_id'], 'revision'=>(int)$max->fetchColumn()];
 }
 
 /**
