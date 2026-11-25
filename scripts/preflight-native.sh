@@ -232,6 +232,8 @@ UI_FILES=(
   scripts/stabilize-security-selftest.php
   scripts/stabilize-history-selftest.php
   scripts/stabilize-backend-selftest.php
+  scripts/stabilize-loop-selftest.php
+  scripts/stabilize-loop-journal-selftest.php
   database/migrations/056_chat_workspaces.sql
   js/coreui-chat-dev.js
   css/coreui-chat-dev.css
@@ -1393,6 +1395,24 @@ if command -v php >/dev/null 2>&1; then
   else
     backend_hardening_test_exit=$?
     fail "Backend hardening self-test (exit ${backend_hardening_test_exit}): ${backend_hardening_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  loop_hardening_test=''
+  if loop_hardening_test="$(runuser -u www-data -- php -d display_errors=stderr -d log_errors=1 "$PROJECT_ROOT/scripts/stabilize-loop-selftest.php" 2>&1)"; then
+    ok 'Project runs: finish evidence, requirements, repairs, oscillation, edits and prompt cache verified.'
+  else
+    loop_hardening_test_exit=$?
+    fail "Loop hardening self-test (exit ${loop_hardening_test_exit}): ${loop_hardening_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  loop_journal_test=''
+  if loop_journal_test="$(runuser -u www-data -- php -d display_errors=stderr -d log_errors=1 "$PROJECT_ROOT/scripts/stabilize-loop-journal-selftest.php" 2>&1)"; then
+    ok 'Task journal: info steps, requirements and resume verified.'
+  else
+    loop_journal_test_exit=$?
+    fail "Loop journal self-test (exit ${loop_journal_test_exit}): ${loop_journal_test:-No PHP output; inspect the PHP service logs}"
   fi
 
   # 0.8.8: every saved chat owns its real, private file/run/preview workspace.
