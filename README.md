@@ -10,7 +10,7 @@
 
 **TCI Cores are defaults, not an exclusive model requirement.** CoreAI supports other compatible Ollama models, including **language models from Hugging Face that have been installed through Ollama**. The owner can select installed models and grant access to individual models for other accounts. Model format, capabilities and permissions still matter. No separate application framework needs to be installed.
 
-**Current source version: `0.8.34`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
+**Current source version: `0.8.35`** | [CHANGELOG.md](CHANGELOG.md) | [Roadmap](ROADMAP.md) | [Capabilities](docs/CAPABILITIES.md) | [Operations](docs/OPERATIONS.md) | [License](LICENSE.md)
 
 **Animated chat companion:** Mara's OpenPet v2 Pet uses distinct work, waiting, review, completion, failure and interaction animations; tap to wave, double tap to jump, drag for directional movement, and (on desktop) move the pointer nearby for idle gaze. Other compatible Pet formats remain supported.
 
@@ -129,7 +129,7 @@ This is an inventory of **implemented, user-facing functions**, not a claim that
 - Generate one, two or four images with the **optional CPU FLUX.2-klein/pGen service**, when enabled and permitted.
 - Choose separately among **pGen Standard/Magic 4B or 9B** profiles when available; 9B and Magic have hardware, weight and/or individual license requirements.
 - Use model-specific text encoders; unavailable Magic assets never silently become Standard or bypass a user license.
-- Display actual image progress, completion and diagnostic errors, preserve original images and offer gallery previews/downloads. When a finished image cannot be saved, the work timeline names the cause (image folder missing, image folder not writable for the web server, file not written, database entry failed); both preflights check that PHP may write `var/console_media/images`.
+- Display actual image progress, completion and diagnostic errors, preserve original images and offer gallery previews/downloads. When a finished image cannot be saved, the work timeline names the cause (image folder missing, image folder not writable for the web server, file not written, database entry failed); both preflights check that PHP may write `var/console_media/images`, and every install and update gives that folder back to the web server.
 - Edit generated or uploaded images with text/guidance shapes where supported; **not pixel-perfect inpainting**.
 - Use a custom Mara portrait plus additional account-specific reference images for identity consistency when generating Mara-related scenes.
 - Crop user and assistant avatars on touch devices; manage the chosen images and portraits in profile/personalization settings.

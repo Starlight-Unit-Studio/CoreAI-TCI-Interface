@@ -273,6 +273,34 @@ def verify(root: Path) -> list[str]:
         if "coreui_build_intent_select_for_plan(" not in body:
             failures.append(f"{path}: returning completed plan must retain original authorization")
 
+    # 0.8.34/0.8.35: the image folder stays PHP's. The Compose preflight runs the image and storage
+    # self-tests as www-data (as root they created var/console_media/images for root, and every image
+    # failed with storage_failed), and both preflights check that PHP may write the folder. These checks
+    # live here because the preflights are readable for root only (chmod 0750), not for www-data,
+    # which runs scripts/image-store-diagnostic-selftest.php.
+    compose = (root / "scripts/preflight.sh").read_text(encoding="utf-8")
+    for test in ("image-gen-selftest.php", "storage-selftest.php"):
+        if f"compose exec -T -u 33:33 php php scripts/{test}" not in compose:
+            failures.append(f"scripts/preflight.sh: {test} must run as www-data (33:33)")
+        if f"compose exec -T php php scripts/{test}" in compose:
+            failures.append(f"scripts/preflight.sh: {test} still runs as root")
+    # 0.8.35: every install and update gives the image folder back to PHP-FPM (the native installer already
+    # hands var/console_media to www-data recursively).
+    installer = (root / "scripts/install.sh").read_text(encoding="utf-8")
+    permissions = installer[installer.find("prepare_permissions() {"):]
+    permissions = permissions[:permissions.find("\n}\n")]
+    if ('"$PROJECT_ROOT/var/console_media/images" \\' not in permissions
+            or 'chown -R 33:33 "$PROJECT_ROOT/var/console_media/images"' not in permissions):
+        failures.append("scripts/install.sh: prepare_permissions must give var/console_media/images to PHP (33:33)")
+    native = (root / "scripts/install-native.sh").read_text(encoding="utf-8")
+    if not re.search(r'chown -R www-data:www-data \\\n(?:\s+"[^"\n]+" \\\n)*\s+"\$PROJECT_ROOT/var/console_media"', native):
+        failures.append("scripts/install-native.sh: var/console_media must stay www-data's recursively")
+    for rel in PREFLIGHTS:
+        body = (root / rel).read_text(encoding="utf-8")
+        if ("Image folder is writable for PHP: var/console_media/images" not in body
+                or "Image folder var/console_media/images is not writable for PHP" not in body):
+            failures.append(f"{rel}: image folder write check for PHP missing")
+
     for rel in ("scripts/model-project-intent-selftest.php",
                 "scripts/contextual-project-selftest.php"):
         text = (root / rel).read_text(encoding="utf-8")

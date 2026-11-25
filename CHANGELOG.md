@@ -1,5 +1,11 @@
 # CoreAI: TCI Interface
 
+## 0.8.35 - 25.11.2026
+
+- **Image folder repaired on every update:** The 0.8.34 preflight on the operator's server confirmed the cause of "Das Bild konnte nicht dauerhaft gespeichert werden": `var/console_media/images` belonged to root, so PHP-FPM could not save any image ("Image folder var/console_media/images is not writable for PHP"). With the operator's approval the Docker installer's `prepare_permissions` now creates the folder for PHP (33:33) and hands it and the files in it back on every install and update, so the built-in updater repairs an affected server by itself. The native installer already hands `var/console_media` to `www-data` recursively.
+- **Image saving self-test on a real server:** `image-store-diagnostic-selftest.php` runs as `www-data` in both preflights but also read `scripts/preflight.sh`, which is readable for root only (`chmod 0750`), so it failed there. The preflight wiring checks (image and storage self-tests as `www-data`, the image folder check in both preflights) and the new installer check now live in `preflight-sync-selftest.py`, which runs as root and in CI; nothing was dropped.
+- **Tests:** `preflight-sync-selftest.py` (image folder wiring and installer), `image-store-diagnostic-selftest.php` (runs as `www-data` with root-only preflights).
+
 ## 0.8.34 - 25.11.2026
 
 Stabilisation release: an audit of every module by parallel reviewers, each fix checked again by an independent reviewer and covered by an offline self-test that fails when the fix is reverted.
