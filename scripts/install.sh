@@ -238,6 +238,7 @@ prepare_permissions() {
     "$PROJECT_ROOT/logs" \
     "$PROJECT_ROOT/var/cache" \
     "$PROJECT_ROOT/var/console_media" \
+    "$PROJECT_ROOT/var/console_media/images" \
     "$PROJECT_ROOT/var/profile_media" \
     "$PROJECT_ROOT/var/knowledge_uploads" \
     "$PROJECT_ROOT/var/ember_py" \
@@ -254,6 +255,11 @@ prepare_permissions() {
     "$PROJECT_ROOT/assets/profile_photos" \
     "$PROJECT_ROOT/assets/profile_photos/pending" \
     "$PROJECT_ROOT/assets/profile_photos/approved"
+
+  # 0.8.35 (operator approval 25.11.2026): Mara's images belong to PHP-FPM (33). Preflights before 0.8.34
+  # ran the image self-tests as root and left var/console_media/images and files in it to root, so every
+  # image failed with storage_failed; every install and update gives them back.
+  chown -R 33:33 "$PROJECT_ROOT/var/console_media/images"
 
   # 0.5.83: self-update. var/update is root's (the web app only reads it),
   # var/backups holds the database backups taken before an update.

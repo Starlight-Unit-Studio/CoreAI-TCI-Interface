@@ -1,0 +1,28 @@
+COREAI: TCI INTERFACE // CHANGELOG 0.8.35
+Datum: 25.11.2026
+
+BILDORDNER WIRD BEI JEDEM UPDATE REPARIERT
+- Der Preflight von 0.8.34 auf dem Server des Betreibers bestaetigte die
+  Ursache von "Das Bild konnte nicht dauerhaft gespeichert werden":
+  var/console_media/images gehoerte root, PHP-FPM durfte kein Bild
+  speichern ("Image folder var/console_media/images is not writable for
+  PHP").
+- Mit Freigabe des Betreibers legt prepare_permissions im Docker-Installer
+  den Ordner fuer PHP (33:33) an und gibt ihn samt Inhalt bei jeder
+  Installation und jedem Update zurueck. Der eingebaute Updater repariert
+  einen betroffenen Server damit selbst. Der native Installer gibt
+  var/console_media schon rekursiv an www-data.
+
+BILDSPEICHER-SELBSTTEST AUF EINEM ECHTEN SERVER
+- image-store-diagnostic-selftest.php laeuft in beiden Preflights als
+  www-data, las aber scripts/preflight.sh, die nur fuer root lesbar ist
+  (chmod 0750), und schlug dort fehl. Die Pruefungen der Preflight-
+  Verdrahtung und die neue Installer-Pruefung stehen jetzt in
+  preflight-sync-selftest.py (als root und in CI); nichts wurde entfernt.
+
+TESTS
+- preflight-sync-selftest.py (Bildordner-Verdrahtung, Installer),
+  image-store-diagnostic-selftest.php (als www-data mit Preflights, die nur
+  root lesen darf).
+
+Version: 0.8.35

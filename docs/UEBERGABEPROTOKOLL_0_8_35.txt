@@ -1,0 +1,65 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.35
+Datum: 25.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.34 nach PR #397 (615db0f1)
+Branch: claude/bold-galileo-myoyi0
+
+AUFTRAG
+Betreiber mit fuenf Screenshots des Compose-Preflights nach dem Update auf 0.8.34: "problem".
+"Preflight failed: 4 issue(s)". Auf die Frage, ob der Installer den Bildordner bei jedem Update
+reparieren soll: "Ja, Installer ergaenzen".
+
+BEFUND
+- [ERROR] Image folder var/console_media/images is not writable for PHP: die neue Pruefung aus
+  0.8.34 bestaetigt die Ursache des Bildfehlers auf dem Server.
+- [ERROR] Images in chat-self-test und [ERROR] Storage-self-test: beide laufen seit 0.8.34 als
+  www-data und schreiben in den echten Bildordner; Permission denied, dieselbe Ursache.
+- [ERROR] Image saving self-test: "the Compose preflight runs the image and storage self-tests as
+  www-data". Der Test laeuft als www-data und las scripts/preflight.sh; der Installer setzt die
+  Preflights auf chmod 0750 root, www-data darf sie nicht lesen. Ein Fehler im Test aus 0.8.34.
+  In dieser Sitzung nachgestellt (Kopie mit Preflights 0700, Test als nobody): alter Test faellt mit
+  genau dieser Meldung, neuer laeuft.
+
+UMSETZUNG
+- scripts/install.sh, prepare_permissions: var/console_media/images in der install -d-Liste
+  (0770, 33:33) und chown -R 33:33 des Ordners, mit Kommentar zur Freigabe. Gilt fuer Installation,
+  SSH-Installer und den eingebauten Updater (update-from-main.sh ruft install.sh).
+- scripts/install-native.sh unveraendert: chown -R www-data:www-data var/console_media gibt es schon.
+- scripts/image-store-diagnostic-selftest.php: liest keine Preflight-Dateien mehr.
+- scripts/preflight-sync-selftest.py: prueft die Verdrahtung (Bild- und Speichertest als 33:33,
+  nie als root; Ordnerpruefung in beiden Preflights) und die Installer-Zeilen (install.sh
+  prepare_permissions, install-native.sh chown -R var/console_media).
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Ollama, Datenbank (keine Migration), sonst nichts am Installer.
+
+BEOBACHTUNG (nicht geaendert)
+- Neun Selbsttests lesen im nativen Preflight als www-data die Datei preflight-native.sh. Der native
+  Installer setzt das Projekt auf Gruppe www-data mit g+rX, die Datei bleibt also lesbar; auf einer
+  Compose-Installation laufen diese Tests als root. Kein Fehler gefunden, nur vermerkt.
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- bash -n fuer scripts/install.sh und beide Preflights, php -l fuer die geaenderten PHP-Dateien:
+  ohne Fehler.
+- preflight-sync-selftest.py: OK; Fehlereinbauten erkannt (Speichertest wieder als root, chown-
+  Zeile im Installer entfernt, var/console_media aus dem nativen chown entfernt).
+- image-store-diagnostic-selftest.php als root und als nobody mit Preflights 0700: OK; die alte
+  Fassung faellt dort mit der Meldung vom Server.
+- terminal-language, TCI-Sprache, Terran-Terminologie, branding, cache-bust --verify,
+  version-merge-check (0.8.34 -> 0.8.35), tests/update-runner-selftest.sh,
+  tests/update-auto-selftest.py, image-gen und storage: OK.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf 9a054262 (Code wie im Endstand, danach
+  nur Doku): 229 bestanden, 1 fehlgeschlagen: browse-image-selftest.py, weil Playwright fuer Python
+  in dieser Testumgebung fehlt (auf main genauso).
+- GitHub-Jobs auf 6489ddce: 15 von 15 gruen (auf 9a054262 rot nur am Versions-Check, weil dieses
+  Protokoll noch fehlte).
+
+NICHT GETESTET
+- Ein Update auf dem echten Server.
+
+NAECHSTER SCHRITT
+- Nach dem Merge das Update starten (Settings > System > CoreAI Update). Das Update gibt den
+  Bildordner dem Webserver zurueck; der Preflight sollte ohne Fehler durchlaufen. Danach ein Bild
+  erzeugen. Wer nicht warten will: einmal cd /opt/ember-coreui && chown -R 33:33 var/console_media.
+
+Version: 0.8.35

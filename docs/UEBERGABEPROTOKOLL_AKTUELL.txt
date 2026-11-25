@@ -1,4 +1,14 @@
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 25.11.2026
+Version main: 0.8.34, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.35).
+ZIEL 0.8.35: der Installer gibt var/console_media/images bei jeder Installation
+und jedem Update dem Webserver zurueck (Freigabe des Betreibers); der
+Bildspeicher-Selbsttest liest als www-data keine Preflight-Dateien mehr.
+Keine Migration.
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_35.txt.
+Naechster Schritt: Update starten, Preflight pruefen, ein Bild erzeugen.
+Nach Merge naechste Version 0.8.36.
+--- VORHERIGER STAND ---
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 25.11.2026
 Version main: 0.8.33, Branch in Arbeit: stabilize/coreai-hardening (0.8.34).
 ZIEL 0.8.34: Stabilisierung aller Module (Prompt-Cache und Arbeitsschleife,
 Chat/Stream, Chatansicht, Kontosicherheit, Dateiverlauf mit Migration 058,

@@ -138,18 +138,9 @@ isd_test(str_contains($gen, '$madeParent = !is_dir(dirname($realDir));')
 $storage = $read('scripts/storage-selftest.php');
 isd_test(str_contains($storage, '@chown($folder, (int)fileowner(dirname($folder)));')
   && !str_contains($storage, "@mkdir(dirname(\$root . '/' . \$rel), 0770, true);"), 'the storage self-test hands a folder it made to the owner of its parent');
-$compose = $read('scripts/preflight.sh');
-isd_test(str_contains($compose, 'compose exec -T -u 33:33 php php scripts/image-gen-selftest.php')
-  && str_contains($compose, 'compose exec -T -u 33:33 php php scripts/storage-selftest.php')
-  && !str_contains($compose, 'compose exec -T php php scripts/image-gen-selftest.php')
-  && !str_contains($compose, 'compose exec -T php php scripts/storage-selftest.php'),
-  'the Compose preflight runs the image and storage self-tests as www-data');
-foreach (['scripts/preflight.sh', 'scripts/preflight-native.sh'] as $file) {
-  $src = $read($file);
-  isd_test(str_contains($src, 'Image folder is writable for PHP: var/console_media/images')
-    && str_contains($src, 'Image folder var/console_media/images is not writable for PHP'),
-    $file . ' checks that PHP may write the image folder');
-}
+// The preflight wiring (image and storage self-tests as www-data, the image folder check in both preflights)
+// is checked in scripts/preflight-sync-selftest.py: the preflights are readable for root only (chmod 0750),
+// and this test runs as www-data in both preflights (0.8.35; reading them here failed on a real server).
 $gen = coreui_image_store_failed('image_write_failed', $tmp . '/nowhere');
 isd_test($gen === ['ok' => false, 'error' => 'storage_failed', 'detail' => 'image_write_failed'], 'the result never carries a path');
 

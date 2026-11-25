@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.34: stabilisation (account limits, file history, stream and loop fixes, image saving with a named cause).
+# CoreAI: TCI Interface 0.8.35: the image folder belongs to PHP again; the image self-test runs as www-data without reading root-only files.
 set -Eeuo pipefail
 IFS=$'\n\t'
 
