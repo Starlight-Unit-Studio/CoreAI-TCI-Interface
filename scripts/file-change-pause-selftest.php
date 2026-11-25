@@ -4,6 +4,9 @@ declare(strict_types=1);
 // After six saved changes of one file Mara is asked once to check and finish; after ten the run
 // pauses with an honest interim report. Many different files, failed changes and a finish after
 // the check stay as before; there is still no limit on total steps.
+// Stabilize 0.8.33: only changes that do not move the file forward count (a rewrite of existing text,
+// a write that drops lines, a change back to an earlier version). Building a file section by section,
+// as the protocol asks (skeleton, then one insertion per section), is not counted.
 //   php scripts/file-change-pause-selftest.php
 if (PHP_SAPI !== 'cli') exit(1);
 $root = dirname(__DIR__);
@@ -108,6 +111,26 @@ $edits = array_values(array_filter($saved['tools'], static fn(array $t): bool =>
 fc_test(count($edits) === 12 && !in_array('Lauf nach zehn Aenderungen derselben Datei pausiert', $titles($saved), true)
   && ($saved['loop']['outcome'] ?? '') === 'completed',
   'rejected changes are not counted as changes: ' . count($edits) . ' ' . json_encode($saved['loop']['reason'] ?? null));
+
+// --- Stabilize 0.8.33: section by section is not "the same file again" ------------------------------
+$insert = static fn(string $path, int $n): string => "[DATEI_AENDERN: {$path}]\n<<<<<<< SUCHEN\n<!-- weiter -->\n=======\n"
+  . "<section id=\"s{$n}\">Teil {$n}</section>\n<!-- weiter -->\n>>>>>>> ERSETZEN\n[/DATEI_AENDERN]";
+$replies = ["[DATEI_NEU: blog.html]\n<main>\n<!-- weiter -->\n</main>\n[/DATEI_NEU]"];
+for ($i = 1; $i <= 14; $i++) $replies[] = $insert('blog.html', $i);
+$replies[] = $done;
+$sections = fc_run($replies);
+fc_test(count($sections['tools']) === 15 && ($sections['loop']['outcome'] ?? '') === 'completed' && $checkPrompts($sections) === []
+  && !in_array('Lauf nach zehn Aenderungen derselben Datei pausiert', $titles($sections), true),
+  'a skeleton and fourteen section insertions: no check, no pause: ' . json_encode([count($sections['tools']), $sections['loop']['reason'] ?? null]));
+// Rewrites between insertions still count: the tenth rewrite pauses the run, the insertions do not count.
+$replies = [];
+for ($i = 1; $i <= 12; $i++) { $replies[] = $insert('blog.html', $i); $replies[] = $edit('blog.html', $i); }
+$mixed = fc_run($replies);
+$mixedChecks = $checkPrompts($mixed);
+fc_test(count($mixed['tools']) === 20 && ($mixed['loop']['reason'] ?? '') === 'same_file_changed_repeatedly'
+  && count($mixedChecks) === 1 && $mixed['prompts'][11] === $mixedChecks[0]
+  && str_starts_with((string)$mixed['loop']['out'], 'Ich habe blog.html in diesem Auftrag 20-mal geändert'),
+  'ten rewrites between ten insertions: check after the sixth rewrite, pause after the tenth: ' . count($mixed['tools']));
 
 // --- The interim report -------------------------------------------------------------------------
 $report = coreui_agent_change_pause_report('blog.html', ['blog.html'=>10, 'style.css'=>1, 'guestbook.html'=>2]);

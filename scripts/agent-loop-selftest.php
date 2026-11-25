@@ -178,8 +178,10 @@ loop_test(str_contains(coreui_agent_step_prompt('B', [], 10, 0, ['web','pfile_wr
   && coreui_agent_step_title(['tool'=>'pfile_write','input'=>'x'],7,0) === 'Schritt 7: Projektdatei schreiben',
   'project loop has no artificial six-file final step');
 $projectAllowed = ['web','pfile_write','pfile_edit','prun'];
-$projectResponses = [];
-for ($i=1; $i<=8; $i++) $projectResponses[] = '[WEB: neuer-schritt-' . $i . ']';
+// Stabilize 0.8.33 (F5): a run becomes a project run with its first project tool (here the second
+// step); from then on it is not bound to six steps. A web-only run stays bounded (see below).
+$projectResponses = ["[DATEI_NEU: notizen.md]\n# Notizen\n[/DATEI_NEU]"];
+for ($i=2; $i<=8; $i++) $projectResponses[] = '[WEB: neuer-schritt-' . $i . ']';
 $projectResponses[] = $taskDone('Projektauftrag abgeschlossen mit geprueften Werkzeugen.');
 $projectTools = [];
 $projectEvents = [];
@@ -905,51 +907,90 @@ loop_test(($cutLoop['outcome'] ?? '') === 'completed' && array_column($cutTools,
   && str_contains($cutPrompts[1] ?? '', 'Davon wurde NICHTS gespeichert'),
   'a cut page is repaired into a smaller step and the run completes: ' . json_encode([$cutLoop, $cutMissing]));
 
-// Earlier tool results are kept within a byte budget; the newest and every failure stay complete.
-$bigOld = 'OLD_FILE_' . str_repeat('o', 30000);
-$bigMid = 'MID_FILE_' . str_repeat('m', 30000);
-$failOld = 'FAILED_' . str_repeat('f', 5000);
-$budgeted = coreui_agent_budget_steps([
-  ['label'=>'a','state'=>'success','result'=>$bigOld],
-  ['label'=>'b','state'=>'error','result'=>$failOld],
-  ['label'=>'c','state'=>'success','result'=>'small result'],
-  ['label'=>'d','state'=>'success','result'=>$bigMid],
-  ['label'=>'e','state'=>'success','result'=>'NEWEST_' . str_repeat('n', 60000)],
-]);
-loop_test($budgeted[4]['result'] === 'NEWEST_' . str_repeat('n', 60000)
-  && str_contains($budgeted[3]['result'], hash('sha256', $bigMid)) && !str_contains($budgeted[3]['result'], 'MID_FILE_')
-  && str_contains($budgeted[0]['result'], hash('sha256', $bigOld)) && $budgeted[1]['result'] === $failOld
-  && $budgeted[2]['result'] === 'small result'
-  && coreui_agent_budget_steps([['label'=>'x','state'=>'success','result'=>$bigOld],['label'=>'y','state'=>'success','result'=>'z']])[0]['result'] === $bigOld,
-  'the project prompt keeps recent results within the budget and older large ones as size and hash');
-$growReplies = ['[DATEI: b.html]', '[DATEI: c.html]', $taskDone('Gelesen.')];
+// Stabilize 0.8.33 (P1, F10): earlier tool results are compacted in rare batches, not on every step.
+// Twenty 16 KB reads with failures in between: the shown results never exceed the high mark, the
+// steps part of each prompt is a prefix of the next one except at the few compaction points, and
+// after a compaction older successes are size and hash, older failures start and end, while the
+// newest failure, a skill guide and the newest step stay complete.
+$stepsPart = static function (array $shown): string {
+  $prompt = coreui_agent_step_prompt('BASIS', $shown, count($shown), 0, ['pfile_read','pfile_edit','pfile_write','prun']);
+  return substr($prompt, 0, (int)strpos($prompt, "\n--- ENDE ARBEITSSCHRITTE ---"));
+};
+$batchSteps = []; $batchView = []; $previousPart = null; $batchPoints = 0; $prefixKept = 0; $maxShown = 0;
+for ($n = 1; $n <= 20; $n++) {
+  if ($n === 2) {
+    $batchSteps[] = ['label'=>'Skill geladen: webseite','state'=>'success','tool'=>'skill','result'=>'SKILL_GUIDE_' . str_repeat('g', 3000)];
+  } elseif ($n % 5 === 0) {
+    $batchSteps[] = ['label'=>'Fehlgeschlagener Versuch: Ausgeführt: „npm test“','state'=>'error','tool'=>'prun',
+      'result'=>'FAIL_' . $n . '_' . str_repeat('f', 8000) . '_END_' . $n];
+  } else {
+    $batchSteps[] = ['label'=>'Datei gelesen: „s' . $n . '.html“','state'=>'success','tool'=>'pfile_read',
+      'result'=>'READ_' . $n . '_' . str_repeat('r', 16000)];
+  }
+  $before = $batchView['batches'] ?? 0;
+  $shown = coreui_agent_prompt_steps($batchSteps, $batchView);
+  $maxShown = max($maxShown, coreui_agent_steps_bytes($shown));
+  loop_test($shown[$n - 1]['result'] === $batchSteps[$n - 1]['result'], 'the newest result is always complete (step ' . $n . ')');
+  $part = $stepsPart($shown);
+  if (($batchView['batches'] ?? 0) !== $before) $batchPoints++;
+  elseif ($previousPart !== null) {
+    loop_test(str_starts_with($part, $previousPart), 'between compactions the steps part of a prompt is a prefix of the next (step ' . $n . ')');
+    $prefixKept++;
+  }
+  $previousPart = $part;
+}
+loop_test($maxShown <= COREUI_AGENT_PROJECT_RESULT_HIGH && $batchPoints >= 2 && $batchPoints <= 5 && $prefixKept >= 14,
+  'results stay under the high mark with few compactions: ' . json_encode([$maxShown, $batchPoints, $prefixKept]));
+loop_test($shown[1]['result'] === $batchSteps[1]['result'] && $shown[19]['result'] === $batchSteps[19]['result']
+  && str_contains($shown[0]['result'], hash('sha256', $batchSteps[0]['result'])) && !str_contains($shown[0]['result'], 'rrrr')
+  && str_contains($shown[4]['result'], hash('sha256', $batchSteps[4]['result'])) && str_starts_with($shown[4]['result'], 'FAIL_5_')
+  && str_ends_with($shown[4]['result'], '_END_5') && strlen($shown[4]['result']) < 1700,
+  'after a compaction: older successes as size and hash, older failures start and end with hash, skill guide and newest complete');
+// A compaction keeps the newest failure complete even when it falls below the mark.
+$failView = [];
+$failSteps = [['label'=>'a','state'=>'success','tool'=>'pfile_read','result'=>'A_' . str_repeat('a', 40000)],
+  ['label'=>'b','state'=>'error','tool'=>'prun','result'=>'B_' . str_repeat('b', 9000)],
+  ['label'=>'c','state'=>'success','tool'=>'pfile_read','result'=>'C_' . str_repeat('c', 40000)],
+  ['label'=>'d','state'=>'success','tool'=>'pfile_read','result'=>'D_' . str_repeat('d', 20000)]];
+$failShown = coreui_agent_prompt_steps($failSteps, $failView);
+loop_test(($failView['marker'] ?? 0) === 3 && $failShown[1]['result'] === $failSteps[1]['result']
+  && str_contains($failShown[0]['result'], hash('sha256', $failSteps[0]['result'])) && $failShown[3]['result'] === $failSteps[3]['result'],
+  'the newest failure stays complete below the compaction mark: ' . json_encode($failView['marker'] ?? null));
+// End to end: three 30 KB reads stay complete (no compaction below the high mark); the fourth read
+// compacts once, and the prompts after it grow by appending again.
+$growReplies = ['[DATEI: b.html]', '[DATEI: c.html]', '[DATEI: d.html]', '[DATEI: e.html]', $taskDone('Gelesen.')];
 $growPrompts = [];
 coreui_agent_loop_run('[DATEI: a.html]', ['tool'=>'pfile_read','input'=>'a.html'], 'BASIS', $projectFileTools, 0,
   static function (string $p) use (&$growReplies, &$growPrompts): ?string { $growPrompts[] = $p; return array_shift($growReplies); },
   static fn(array $t): string => 'INHALT_' . $t['input'] . '_' . str_repeat('x', 30000),
   static function (string $k, string $s, string $t, array $m): void {}, static fn(): bool => false);
-loop_test(count($growPrompts) === 3 && str_contains($growPrompts[2], 'INHALT_c.html_')
-  && !str_contains($growPrompts[2], 'INHALT_a.html_') && str_contains($growPrompts[2], 'Bestaetigtes Werkzeugergebnis bereits verarbeitet'),
-  'a long project run no longer sends every earlier file in full');
+$growPart = static fn(string $p): string => substr($p, 0, (int)strpos($p, "\n--- ENDE ARBEITSSCHRITTE ---"));
+loop_test(count($growPrompts) === 5 && str_contains($growPrompts[2], 'INHALT_a.html_')
+  && str_starts_with($growPart($growPrompts[1]), $growPart($growPrompts[0])) && str_starts_with($growPart($growPrompts[2]), $growPart($growPrompts[1]))
+  && !str_contains($growPrompts[3], 'INHALT_a.html_') && str_contains($growPrompts[3], 'INHALT_d.html_')
+  && str_contains($growPrompts[3], 'Bestaetigtes Werkzeugergebnis bereits verarbeitet')
+  && str_starts_with($growPart($growPrompts[4]), $growPart($growPrompts[3])),
+  'a long project run compacts earlier files once at the high mark, not on every step');
 
 // A read-only tool that repeats the same result leaves the run; the project work goes on.
+// Stabilize 0.8.33 (F5): the run starts with a project read, so it is a project run from step 1.
 $webReplies = ['[WEB: webdesign trends 2026]', '[WEB: webdesign trends 2026]', '[WEB: webdesign trends 2026]',
   "[DATEI_NEU: index.html]\n<h1>Start</h1>\n[/DATEI_NEU]", $taskDone('Startseite angelegt.')];
 $webTools = []; $webEvents = []; $webPrompts = [];
-$webLoop = coreui_agent_loop_run('[WEB: webdesign trends 2026]', ['tool'=>'web','input'=>'webdesign trends 2026'], 'BASIS',
+$webLoop = coreui_agent_loop_run('[DATEI: notizen.md]', ['tool'=>'pfile_read','input'=>'notizen.md'], 'BASIS',
   array_merge(['web'], $projectFileTools), 0,
   static function (string $p) use (&$webReplies, &$webPrompts): ?string { $webPrompts[] = $p; return array_shift($webReplies); },
   static function (array $t) use (&$webTools): string { $webTools[] = $t['tool']; return $t['tool'] === 'web' ? 'Keine verwertbaren Treffer.' : 'Bestaetigt.'; },
   static function (string $k, string $s, string $t, array $m) use (&$webEvents): void { $webEvents[] = $m['reason'] ?? ''; },
   static fn(): bool => false);
-loop_test(($webLoop['outcome'] ?? '') === 'completed' && $webTools === ['web', 'web', 'web', 'pfile_write']
+loop_test(($webLoop['outcome'] ?? '') === 'completed' && $webTools === ['pfile_read', 'web', 'web', 'web', 'pfile_write']
   && in_array('repeated_identical_tool_disabled', $webEvents, true) && !in_array('repeated_identical_tool_result', $webEvents, true)
   && !str_contains(end($webPrompts), '[WEB: neue, genauere Suchbegriffe]'),
   'three identical web results end the web search, not the project run: ' . json_encode([$webLoop, $webTools]));
-$missReplies = ['[WEB: zweiter Begriff]', '[WEB: dritter Begriff]',
+$missReplies = ['[WEB: erster Begriff]', '[WEB: zweiter Begriff]', '[WEB: dritter Begriff]',
   "[DATEI_NEU: index.html]\n<h1>Start</h1>\n[/DATEI_NEU]", $taskDone('Startseite angelegt.')];
 $missEvents = [];
-$missLoop = coreui_agent_loop_run('[WEB: erster Begriff]', ['tool'=>'web','input'=>'erster Begriff'],
+$missLoop = coreui_agent_loop_run('[DATEI: notizen.md]', ['tool'=>'pfile_read','input'=>'notizen.md'],
   'BASIS', array_merge(['web'], $projectFileTools), 0,
   static function (string $prompt) use (&$missReplies): ?string { return array_shift($missReplies); },
   static fn(array $tool): string|array => $tool['tool'] === 'web'
@@ -960,7 +1001,7 @@ $missLoop = coreui_agent_loop_run('[WEB: erster Begriff]', ['tool'=>'web','input
 loop_test(($missLoop['outcome'] ?? '') === 'completed'
   && ($missEvents['research_no_search_results'] ?? []) === ['error', 'error', 'error']
   && ($missEvents['repeated_identical_tool_disabled'] ?? []) === ['info']
-  && ($missEvents['verified_tool_result'] ?? []) === ['success'],
+  && ($missEvents['verified_tool_result'] ?? []) === ['success', 'success'],
   'three misses with different queries give no verified evidence but let the project continue');
 
 $readReplies = ['[DATEI: index.html]', $taskDone('Datei gelesen.')];

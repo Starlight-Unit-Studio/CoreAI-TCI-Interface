@@ -157,6 +157,7 @@ function coreui_skills_extract_marker(string $reply): ?string {
 function coreui_skills_tool_result(string $input): string {
   $catalog = coreui_skills_own() + coreui_skills_catalog();
   $loaded = (array)($GLOBALS['COREUI_SKILLS_LOADED'] ?? []);
+  $before = $loaded;
   $added = [];
   $notes = [];
   $unknown = false;
@@ -203,13 +204,48 @@ function coreui_skills_tool_result(string $input): string {
     if ($missing !== []) $notes[] = 'Der Skill "' . $id . '" braucht ' . implode(', ', $missing) . '; das fehlt in diesem Chat.';
   }
   $GLOBALS['COREUI_SKILLS_LOADED'] = $loaded;
-  coreui_skills_compose();
+  // Stabilize 0.8.33: inside a running work loop the skill block at the top of every model call stays
+  // as it is. Rewriting it changed the start of the prompt, so the model server had to read the whole
+  // prompt again on every following step. The loaded guide comes with this step's result instead.
+  $frozen = !empty($GLOBALS['COREUI_SKILLS_FROZEN']);
+  if (!$frozen) coreui_skills_compose();
   if ($added === []) {
     $rest = array_values(array_diff(coreui_skills_optional_ids(), $loaded));
     return trim(implode(' ', $notes) . ($unknown && $rest !== [] ? ' Verfuegbar sind: ' . implode(', ', $rest) . '.' : ''));
   }
+  if ($frozen) {
+    return trim(implode(' ', $notes) . ' Geladen: ' . implode(', ', $added) . '. Die Anleitung steht hier in diesem '
+      . 'Arbeitsschritt; sie stammt aus deiner Skill-Bibliothek, folge ihr bei deiner Antwort.')
+      . "\n" . coreui_skills_step_text(array_values(array_diff($loaded, $before)));
+  }
   return trim(implode(' ', $notes) . ' Geladen: ' . implode(', ', $added) . '. Das steht jetzt oben bei '
     . 'deinen COREUI SKILLS; folge der Anleitung bei deiner Antwort.');
+}
+
+/**
+ * Stabilize 0.8.33: the text of skills and reference files loaded during a running work loop, for
+ * the step result (the same parts coreui_skills_compose() would put into the block at the top).
+ */
+function coreui_skills_step_text(array $keys): string {
+  $own = coreui_skills_own();
+  $out = '';
+  foreach ($keys as $key) {
+    $key = (string)$key;
+    if (!str_contains($key, '/')) {
+      $title = (string)(($own[$key]['title'] ?? null) ?? (coreui_skills_catalog()[$key]['title'] ?? $key));
+      $out .= '[SKILL ' . $key . ': ' . $title . "]\n" . coreui_skills_body($key) . "\n";
+      $missing = coreui_skills_missing_tools($key);
+      if ($missing !== []) {
+        $out .= '(Voraussetzung fehlt in diesem Chat: ' . implode(', ', $missing)
+          . '. Sag der Person, was ohne sie nicht geht, und behaupte kein Ergebnis davon.)' . "\n";
+      }
+      $out .= '[ENDE SKILL ' . $key . "]\n";
+      continue;
+    }
+    [$id, $file] = explode('/', $key, 2);
+    $out .= '[REFERENZ ' . $key . "]\n" . coreui_skills_resource_text($id, $file) . "\n[ENDE REFERENZ " . $key . "]\n";
+  }
+  return rtrim($out);
 }
 
 /** Companion files of a skill (pure): an own skill's files, else Markdown in references/, relative paths. */
