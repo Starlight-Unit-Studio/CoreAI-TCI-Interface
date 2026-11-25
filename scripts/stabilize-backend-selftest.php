@@ -482,6 +482,14 @@ stab_test(str_contains($chatSource, 'function ember_global_lock_acquire(?int $ti
   && substr_count($chatSource, '$modelSlot = ember_global_lock_acquire();') === 1,
   'the streamed answer and the work loop steps keep their place while the model is busy; other calls wait 90 s');
 
+// Review 0.8.34: a resumed run whose stream failed keeps the provider or timeout explanation of B1; the resume
+// decision (which would replace the empty reply with "keine gueltige Werkzeugentscheidung") runs only without a failure.
+$resumeAt = strpos($streamSource, "if ((!empty(\$GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || \$projectContinuation) && (string)(\$acc['failure'] ?? '') === '') {");
+$planAt = strpos($streamSource, '$streamPlan = ($fileTaskHandled || $nativeToolHandled) ? \'complete\'');
+stab_test($resumeAt !== false && $planAt !== false && $resumeAt < $planAt
+  && substr_count($streamSource, "\$GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || \$projectContinuation)") === 1,
+  'a failed stream of a resumed run is explained by B1, not turned into an invalid task decision');
+
 // === B4: memory and reflection after the answer is out =============================================================
 $doneAt = strpos($streamSource, "  sse_send('done', [\n    'agent_task'   => \$taskSnapshot,");
 $afterAt = strpos($streamSource, 'ember_after_insert_tasks($pdo, $char, $message, $replyFinal);');

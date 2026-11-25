@@ -651,7 +651,9 @@ try {
         'pvcs_commit','pvcs_branch','pvcs_merge'],COREUI_PFTOOLS_PROC_KINDS)));
   }
   $projectDecision = null;
-  if (!empty($GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || $projectContinuation) {
+  // Review 0.8.34: a stream that failed (provider refusal, no answer in time) is no task decision. B1 below
+  // explains it; before, this block replaced the empty reply with "keine gueltige Werkzeugentscheidung" first.
+  if ((!empty($GLOBALS['COREUI_TASK_RESUME_ACTIVE']) || $projectContinuation) && (string)($acc['failure'] ?? '') === '') {
     // On a resumed run, the first model reply is still an active TASK
     // decision. Never mistake unmarked prose for a completed interrupted
     // project merely because the SSE stream itself ended successfully.
