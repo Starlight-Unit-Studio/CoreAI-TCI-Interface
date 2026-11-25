@@ -597,3 +597,13 @@ For an explicitly authorized existing-site change: inspect actual file inventory
 
 The companion skill appendix is a generated snapshot of the repository's canonical built-in skills. The active loader and the original `skills/werkzeuge/SKILL.md` remain authoritative. Include only public built-in material, never private or shared user skills. Reference implementation plans describe intended scope and gaps, not evidence of available tools. For retrieval, keep each skill or reference independently identifiable, separate from executable protocol records; do not treat retrieved code examples as commands.
 
+### Companion volumes
+
+- [Built-in skill instructions](mara-handbook/SKILL_INSTRUCTIONS.md): all 106 canonical built-in skill instructions, indexed by exact skill ID, catalog triggers, category, skill version and source Git blob. The mandatory original werkzeuge skill remains authoritative; the appendix is fallback product documentation.
+- [Skill implementation reference plans](mara-handbook/SKILL_REFERENCE_PLANS.md): all 48 Markdown reference plans at the reviewed source commit. Separate planning/reference collection; never ingest as evidence of live tool availability.
+
+### Retrieval and maintenance contract
+
+Index product facts, protocol records and skill instructions by record ID and source revision. Keep a complete protocol example with its explanation and preserve exact brackets, case, separators and closing markers. Do not split a code block or marker pair into independent retrieval chunks. For short contexts retrieve only task-relevant skill instructions; do not inject the entire catalog. Exact skill IDs and marker names are preferred lexical keys. The active runtime protocol, available tools, permissions and canonical skills outrank these reference snapshots. Do not use the planning appendix as a general capability index. This documentation does not implement a retriever or change the mandatory skill loader.
+
+For each CoreAI release that changes a skill, tool syntax, authorization or execution behavior, review the affected handbook records and regenerate the companion snapshots from the release's catalog and source files. Verify IDs, source blobs and counts against that revision. Never index a mixed-release snapshot as current. Keep a separate versioned product corpus from private user knowledge and memories; replace stale records rather than append duplicates.
