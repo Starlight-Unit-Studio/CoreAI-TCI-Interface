@@ -169,6 +169,22 @@ sl_test(!str_contains($switch['prompts'][0], 'Aktiver Projektauftrag') && str_co
   && str_contains($switch['prompts'][2] ?? '', 'keine gueltige Steuerentscheidung') && ($switch['loop']['outcome'] ?? '') === 'completed',
   'F5: the first project tool turns the run into a project run with the DONE protocol (prose gets the one repair)');
 
+// Review 0.8.34: research first, then the file the person asked for. The file after the sixth research step
+// still runs, turns the run into a project run and the DONE finishes it (it was dropped without a word).
+$reportReplies = array_map(static fn(int $i): string => '[WEB: quelle ' . $i . ']', range(1, 5));
+$reportReplies[] = "[DATEI_NEU: report.md]\n# Bericht\nInhalt\n[/DATEI_NEU]";
+$reportReplies[] = $done('Bericht gespeichert.');
+$report = sl_run('[WEB: quelle 0]', $reportReplies,
+  static fn(array $t, int $n): string => $t['tool'] === 'web' ? '1. Treffer ' . $n . "\n   https://example.org/" . $n
+    : 'Datei report.md angelegt (Stand 1, 18 Bytes).', $webAllowed);
+sl_test(array_column($report['tools'], 'tool') === ['web', 'web', 'web', 'web', 'web', 'web', 'pfile_write']
+  && ($report['loop']['outcome'] ?? '') === 'completed' && $report['loop']['out'] === 'Bericht gespeichert.' && $report['left'] === []
+  && str_contains($report['prompts'][5], 'Verlangt der Auftrag eine Projektdatei, schreibe sie stattdessen jetzt mit genau einem Dateimarker.'),
+  'research, then the file after the sixth step: written and finished: ' . json_encode([array_column($report['tools'], 'tool'), $report['loop']['out'] ?? null]));
+$plain = sl_run('[WEB: a0]', array_merge(array_map(static fn(int $i): string => '[WEB: a' . $i . ']', range(1, 5)), ['[WEB: noch eins]']),
+  static fn(array $t): string => '1. Treffer', $webAllowed);
+sl_test(count($plain['tools']) === 6, 'after six research steps a seventh search still does not run: ' . count($plain['tools']));
+
 // --- F6: section by section is not "the same file again" ------------------------------------------------
 $sections = [];
 for ($i = 1; $i <= 12; $i++) {

@@ -497,6 +497,9 @@ function coreui_agent_step_prompt(string $base, array $steps, int $used, int $ma
       : ($last
         ? "Das war dein letzter Schritt: antworte jetzt in deinem persoenlichen Anzeigenamen mit dem, was du herausgefunden hast, ohne Werkzeugmarker. "
           . "Sag offen, was offen geblieben ist.\n"
+          // Review 0.8.34: research first, then a file. The file step still runs (it starts the project run).
+          . (in_array('pfile_write', $allowed, true)
+            ? "Verlangt der Auftrag eine Projektdatei, schreibe sie stattdessen jetzt mit genau einem Dateimarker.\n" : '')
         : "Reicht das fuer eine gute Antwort, antworte jetzt in deinem persoenlichen Anzeigenamen, vollstaendig und ohne Werkzeugmarker; nenne kurz die "
           . "Quellen, die du genutzt hast. Erfinde nichts, was nicht in den Ergebnissen oder deinem sicheren Wissen steht.\n"
           . "Fehlt dir noch etwas Wichtiges, antworte mit genau einem Marker fuer den naechsten Schritt. "
@@ -917,7 +920,10 @@ function coreui_agent_loop_steps(string $out, ?array $tool, string $base, array 
   $fileChangeCheck = '';
   // Stabilize 0.8.33 (P1): which earlier results the project prompt shows compacted (state of this run).
   $promptView = [];
-  while ($tool !== null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS)) {
+  // Review 0.8.34: research first, then a file: the six-step research bound must not drop the first
+  // project tool; it switches the run into project mode below, as on any earlier step.
+  while ($tool !== null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS
+      || ($projectCapable && coreui_agent_is_project_tool($tool)))) {
     if (!$projectWorkflow && $projectCapable && coreui_agent_is_project_tool($tool)) {
       $projectWorkflow = true;
       $maxSteps = 0;
@@ -1416,7 +1422,10 @@ function coreui_agent_loop_steps(string $out, ?array $tool, string $base, array 
             ? ['error_type'=>(string)($decision['shape'] ?? '')] + coreui_agent_done_reason_meta($callReport()) : []));
       break;
     }
-    $tool = $used < COREUI_AGENT_MAX_STEPS ? coreui_agent_next_tool($out, $allowed) : null;
+    // Review 0.8.34: the next tool is read after the sixth research step too; the loop condition lets only
+    // a project tool run then (it turns the run into a project run). Before, the file asked for after the
+    // research was dropped without a word.
+    $tool = coreui_agent_next_tool($out, $allowed);
     if ($tool === null && $used < COREUI_AGENT_MAX_STEPS) {
       $tool = coreui_agent_recover_promised_read($out, $allowed);
     }
