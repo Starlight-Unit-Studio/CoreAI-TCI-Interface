@@ -2048,6 +2048,22 @@ function ember_clock_line(?DateTime $dt = null): string {
   return '[UHRZEIT JETZT: ' . $dt->format('H:i') . ' Uhr, ' . ember_tz() . ']';
 }
 
+/**
+ * 0.8.34: the instant of this turn, taken once per request. The streamed prompt and the prompt the
+ * reply path builds again for the work loop carry the same SERVERZEIT; a minute that changed in
+ * between made the two prompts differ right at the top, so Ollama re-read the whole prompt
+ * instead of reusing its cache. A request older than an hour takes a fresh instant.
+ */
+function ember_turn_clock(): int {
+  $now = time();
+  $anchor = $GLOBALS['COREUI_TURN_CLOCK'] ?? null;
+  if (!is_int($anchor) || $anchor > $now || $now - $anchor > 3600) {
+    $anchor = $now;
+    $GLOBALS['COREUI_TURN_CLOCK'] = $anchor;
+  }
+  return $anchor;
+}
+
 /** Main prompt: keep legacy game/server time unchanged, localize console. */
 function ember_formatted_chat_time(string $channel): string {
   $name = $channel === 'console' ? ember_tz() : 'Europe/Berlin';
@@ -2057,7 +2073,7 @@ function ember_formatted_chat_time(string $channel): string {
     $name = 'Europe/Berlin';
     $tz = new DateTimeZone($name);
   }
-  $dt = new DateTime('now', $tz);
+  $dt = (new DateTime('@' . ember_turn_clock()))->setTimezone($tz);
   $days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
   return $days[(int)$dt->format('w')] . ', ' . $dt->format('d.m.Y') . ', '
     . $dt->format('H:i') . ' Uhr' . ($channel === 'console' ? ', ' . $name : '');
@@ -3515,7 +3531,27 @@ function ember_insert(
   $savepoint = $targetChannel === 'console' && !$ownTransaction;
   if ($ownTransaction) $pdo->beginTransaction();
   elseif ($savepoint) $pdo->exec('SAVEPOINT coreui_artifact_message');
+  unset($GLOBALS['COREUI_INSERT_REFUSED']);
   try {
+  if ($targetChannel === 'console' && $replyToId !== null && $replyToId > 0) {
+    // 0.8.34: never save a reply to a user turn that is gone. An edit of an earlier message hides
+    // the later turns; a worker still answering one of them left an orphaned reply in the chat.
+    $stTurn = $pdo->prepare(
+      "SELECT id FROM stu_chat_messages WHERE id=? AND user_id=? AND session_id=?
+         AND channel='console' AND deleted_at IS NULL LIMIT 1"
+      . ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? ' FOR UPDATE' : '')
+    );
+    $stTurn->execute([(int)$replyToId, $uid, $sessionId]);
+    if (!$stTurn->fetchColumn()) {
+      $GLOBALS['COREUI_INSERT_REFUSED'] = 'turn_deleted';
+      if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
+      elseif ($savepoint && $pdo->inTransaction()) {
+        $pdo->exec('ROLLBACK TO SAVEPOINT coreui_artifact_message');
+        $pdo->exec('RELEASE SAVEPOINT coreui_artifact_message');
+      }
+      return 0;
+    }
+  }
   if ($targetChannel === 'console') {
     $st = $pdo->prepare(
       'INSERT INTO stu_chat_messages '
@@ -3562,11 +3598,6 @@ function ember_insert(
     if ($ownTransaction) $pdo->commit();
     elseif ($savepoint) $pdo->exec('RELEASE SAVEPOINT coreui_artifact_message');
     if ($pendingArtifacts !== null) unset($GLOBALS['COREUI_PENDING_ARTIFACTS']);
-    // 0.6.81: a reply that took a while (research, images, long work) is announced on the
-    // account's chosen channels, after the response (Settings > Benachrichtigungen > Antworten).
-    if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null && (int)$replyToId > 0) {
-      coreui_notify_answer($pdo, $uid, (string)$sessionId, (int)$replyToId, (string)$text, coreui_profile_assistant_name($pdo, $uid));
-    }
   } catch (Throwable $e) {
     if ($ownTransaction && $pdo->inTransaction()) $pdo->rollBack();
     elseif ($savepoint && $pdo->inTransaction()) {
@@ -3575,8 +3606,29 @@ function ember_insert(
     }
     throw $e;
   }
-  chat_time_tick_virtual_online($pdo, $uid);
-  ember_self_xp_grant($pdo, ember_self_xp_amount_per_message(), 'chat_message');
+  // 0.8.34: the reply is saved. What follows is bookkeeping; its failure must not turn a saved
+  // reply into an error (the stream lost the new id and marked the run interrupted).
+  $afterSave = [
+    // 0.6.81: a reply that took a while (research, images, long work) is announced on the
+    // account's chosen channels, after the response (Settings > Benachrichtigungen > Antworten).
+    'notify' => static function () use ($pdo, $uid, $sessionId, $replyToId, $text, $targetChannel, $insertedId): void {
+      if ($targetChannel === 'console' && $insertedId > 0 && $sessionId !== null && (int)$replyToId > 0) {
+        coreui_notify_answer($pdo, $uid, (string)$sessionId, (int)$replyToId, (string)$text, coreui_profile_assistant_name($pdo, $uid));
+      }
+    },
+    'online' => static fn() => chat_time_tick_virtual_online($pdo, $uid),
+    'xp' => static fn() => ember_self_xp_grant($pdo, ember_self_xp_amount_per_message(), 'chat_message'),
+  ];
+  foreach ($afterSave as $step => $run) {
+    try {
+      $run();
+    } catch (Throwable $e) {
+      if (function_exists('stu__log_error')) {
+        stu__log_error(['type'=>'ember_insert_after_save_failed', 'step'=>$step, 'message_id'=>$insertedId,
+          'error'=>get_class($e)]);
+      }
+    }
+  }
   return $insertedId;
 }
 
@@ -3889,7 +3941,10 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
     return null;
   }
   // 0.8.16: only this local Core stays in the RAM (inside the model queue).
-  if (!$wire['external']) ember_ollama_single_resident($model);
+  if (!$wire['external']) {
+    ember_core_in_use_mark($model);
+    ember_ollama_single_resident($model);
+  }
   try {
     if ($previewActive) {
       $raw = '';
@@ -3904,8 +3959,9 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
       $fileName = $sourcePreview['file_name'];
       $attemptNo = (int)($sourcePreview['attempt'] ?? 1);
       $publish(['phase'=>'begin','file_name'=>$fileName,'attempt'=>$attemptNo]);
+      $previewDurations = [];
       $consumePreview = static function (string $line) use (&$previewContent,&$previewThinking,&$previewDone,
-          &$previewDoneReason,&$previewEval,&$previewPromptEval,$publish,$fileName,$attemptNo): void {
+          &$previewDoneReason,&$previewEval,&$previewPromptEval,&$previewDurations,$publish,$fileName,$attemptNo): void {
         $json = json_decode(trim($line), true);
         if (!is_array($json)) return;
         $msg = $json['message'] ?? [];
@@ -3928,6 +3984,9 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
         if (isset($json['done_reason'])) $previewDoneReason = (string)$json['done_reason'];
         if (isset($json['eval_count'])) $previewEval = (int)$json['eval_count'];
         if (isset($json['prompt_eval_count'])) $previewPromptEval = (int)$json['prompt_eval_count'];
+        foreach (['load_duration','prompt_eval_duration','eval_duration'] as $durationKey) {
+          if (isset($json[$durationKey])) $previewDurations[$durationKey] = $json[$durationKey];
+        }
       };
       curl_setopt($ch,CURLOPT_RETURNTRANSFER,false);
       $feed = $wire['feed'];
@@ -3945,7 +4004,7 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
       $raw = $raw === false ? false : json_encode(['message'=>['content'=>$previewContent,
         'thinking'=>$previewThinking],'done'=>$previewDone ?? false,
         'done_reason'=>$previewDoneReason,'eval_count'=>$previewEval,
-        'prompt_eval_count'=>$previewPromptEval], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+        'prompt_eval_count'=>$previewPromptEval] + $previewDurations, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
       $publish(['phase'=>'end','file_name'=>$fileName,'attempt'=>$attemptNo]);
     } else {
       $raw = curl_exec($ch);
@@ -4021,6 +4080,8 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   $GLOBALS['STU_EMBER_LAST_CALL']['done_reason'] = trim((string)($j['done_reason'] ?? ''));
   $GLOBALS['STU_EMBER_LAST_CALL']['eval_count'] = max(0, (int)($j['eval_count'] ?? 0));
   $GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'] = max(0, (int)($j['prompt_eval_count'] ?? 0));
+  // 0.8.34: where the call spent its time (model load, reading the prompt, writing), from Ollama.
+  $GLOBALS['STU_EMBER_LAST_CALL'] += ember_ollama_timing_ms($j);
   // 0.6.84: Settings > Profil counts the tokens of the account's calls (numbers only).
   if (function_exists('coreui_usage_record_call')) {
     coreui_usage_record_call($wire['model'], (int)$GLOBALS['STU_EMBER_LAST_CALL']['prompt_eval_count'],
@@ -4080,6 +4141,141 @@ function ember_call_ollama(string $model, string $systemPrompt, string $userProm
   return null;
 }
 
+/**
+ * 0.8.34 (B1): time limits of a streamed Core call in seconds. A short internal call
+ * ($timeoutOverride) keeps one fixed limit. A chat answer instead has
+ * - first_byte: the old total limit, the Core's timeout ($modelSeconds, at most 900), for loading
+ *   the Core and reading the prompt,
+ * - stall: how long the stream may pause once it sends (STU_EMBER_STREAM_STALL_SECONDS, 180),
+ * - total: a last safety net (STU_EMBER_STREAM_MAX_SECONDS, 3600).
+ * A long answer that keeps arriving is therefore no longer cut at 600 seconds.
+ */
+function ember_stream_limits(int $modelSeconds, ?int $timeoutOverride = null): array {
+  if ($timeoutOverride !== null) {
+    $fixed = max(30, min(240, $timeoutOverride));
+    return ['first_byte'=>$fixed, 'stall'=>$fixed, 'total'=>$fixed];
+  }
+  $base = max(30, min(900, $modelSeconds));
+  $total = max($base, min(14400, (int)ember_cfg('STU_EMBER_STREAM_MAX_SECONDS', 3600)));
+  $firstByte = max(1, min($total, (int)ember_cfg('STU_EMBER_STREAM_FIRST_BYTE_SECONDS', $base)));
+  $stall = max(1, min($firstByte, (int)ember_cfg('STU_EMBER_STREAM_STALL_SECONDS', 180)));
+  return ['first_byte'=>$firstByte, 'stall'=>$stall, 'total'=>$total];
+}
+
+/** Whether a stream must stop now (pure): 'first_byte_timeout', 'stall_timeout' or null. */
+function ember_stream_stall_reason(float $now, float $startedAt, ?float $lastByteAt, array $limits): ?string {
+  if ($lastByteAt === null) {
+    return ($now - $startedAt) >= (float)$limits['first_byte'] ? 'first_byte_timeout' : null;
+  }
+  return ($now - $lastByteAt) >= (float)$limits['stall'] ? 'stall_timeout' : null;
+}
+
+/**
+ * Why a streamed call failed (pure): '' (ok), 'cancelled', 'provider' (the Core or the external
+ * API answered with an HTTP error or an error message), 'timeout' (no byte in time, a pause too
+ * long, the safety net), 'transport' (connection lost or refused) or 'incomplete' (ended without
+ * its last line).
+ */
+function ember_stream_failure(bool $ok, int $httpCode, int $curlErrno, string $apiError, string $stallReason,
+    bool $cancelled): string {
+  if ($ok) return '';
+  if ($cancelled) return 'cancelled';
+  if ($httpCode >= 400 || trim($apiError) !== '') return 'provider';
+  if ($stallReason !== '' || $curlErrno === 28) return 'timeout';
+  if ($curlErrno !== 0) return 'transport';
+  return 'incomplete';
+}
+
+/** The work view's reason for a failed stream (pure). */
+function ember_stream_failure_reason(string $failure, int $httpCode, string $stallReason): string {
+  return match ($failure) {
+    'provider' => $httpCode === 429 ? 'provider_rate_limited' : ($httpCode >= 400 ? 'provider_http_error' : 'provider_error'),
+    'timeout' => $stallReason === 'stall_timeout' ? 'stream_stalled' : ($stallReason === 'first_byte_timeout' ? 'first_byte_timeout' : 'stream_timeout'),
+    'transport' => 'transport_error',
+    'cancelled' => 'cancelled',
+    default => 'stream_incomplete',
+  };
+}
+
+/**
+ * What the stream does after its first call (pure). $visibleReply is the answer text without tool
+ * markers. 'complete': as before (tools, continuation, the reply path for an empty answer);
+ * 'cancelled': the cancellation check ends the run; 'keep_partial': text arrived before the stream
+ * broke, it is kept and marked as unfinished; 'provider_error' / 'timeout_error': nothing usable
+ * arrived, a short explanation is saved and the request is NOT sent again (a second paid request
+ * after HTTP 429, another 10 minutes for a Core that stopped answering); 'sync_fallback': the
+ * connection broke before anything arrived, the reply path tries once more as before.
+ */
+function ember_stream_failure_plan(array $acc, string $visibleReply): string {
+  if (!empty($acc['ok']) && !empty($acc['done'])) return 'complete';
+  $failure = (string)($acc['failure'] ?? '');
+  if ($failure === 'cancelled') return 'cancelled';
+  if ($failure === '') return 'sync_fallback'; // no streamed call (vision, + menu tool)
+  if (trim($visibleReply) !== '') return 'keep_partial';
+  if ($failure === 'provider') return 'provider_error';
+  if ($failure === 'timeout') return 'timeout_error';
+  return 'sync_fallback';
+}
+
+/** Mara's short explanation for a stream that delivered nothing usable (German UI text). */
+function ember_stream_failure_text(string $plan, bool $external, int $httpCode): string {
+  $code = $httpCode >= 400 ? ' (HTTP ' . $httpCode . ')' : '';
+  if ($plan === 'timeout_error') {
+    return 'Mein Core hat zu lange keine Antwort geliefert, deshalb habe ich die Anfrage beendet. '
+      . 'Ich habe sie nicht automatisch neu gestartet. Bitte versuche es noch einmal.';
+  }
+  if ($external) {
+    return ($httpCode === 429
+        ? 'Der externe Anbieter meldet zu viele Anfragen' . $code . '. '
+        : 'Der externe Anbieter hat meine Anfrage abgelehnt' . $code . '. ')
+      . 'Ich habe sie nicht erneut gesendet, damit keine doppelte Anfrage entsteht. Bitte versuche es gleich noch einmal.';
+  }
+  return 'Mein Core hat die Anfrage mit einem Fehler beendet' . $code . '. '
+    . 'Ich habe sie nicht automatisch neu gestartet. Bitte versuche es gleich noch einmal.';
+}
+
+/** The work-loop tools a first reply may start, as in ember_generate_reply's loop. */
+const COREUI_AGENT_LOOP_FIRST_TOOLS = ['web', 'archive', 'skill', 'image', 'pfile_read', 'pfile_edit', 'pfile_write',
+  'prun', 'pvcs_commit', 'pvcs_branch', 'pvcs_merge'];
+
+/**
+ * 0.8.34 (P4): the work-loop tool a complete streamed first reply asks for, or null. The stream
+ * hands it with the reply to ember_generate_reply, which then starts its loop from it instead of
+ * building the prompt and asking the Core the same first question again. Replies with [PY],
+ * [BROWSE:] or a native tool keep their own routes; a cancelled run starts nothing.
+ */
+function ember_agent_loop_first_tool(string $reply, array $allowed): ?array {
+  if (trim($reply) === '' || ember_py_extract_marker($reply) !== null || ember_extract_browse_marker($reply) !== null
+      || (function_exists('coreui_native_tool_attempt') && coreui_native_tool_attempt($reply))) return null;
+  $loopTools = array_values(array_intersect($allowed, array_merge(COREUI_AGENT_LOOP_FIRST_TOOLS,
+    defined('COREUI_PFTOOLS_PROC_KINDS') ? COREUI_PFTOOLS_PROC_KINDS : [])));
+  if ($loopTools === []) return null;
+  return coreui_agent_next_tool($reply, $loopTools) ?? coreui_agent_recover_promised_read($reply, $allowed);
+}
+
+/**
+ * 0.8.34: Ollama reports load_duration, prompt_eval_duration and eval_duration in nanoseconds on its
+ * final line. As milliseconds (0 when absent, as for an external API) for STU_EMBER_LAST_CALL and the
+ * work view: a prompt that Ollama had to read again shows up as a long prompt_eval_ms.
+ */
+function ember_ollama_timing_ms(array $final): array {
+  $ms = static fn($ns): int => is_numeric($ns) ? max(0, min(100000000, (int)round((float)$ns / 1000000))) : 0;
+  return [
+    'load_ms' => $ms($final['load_duration'] ?? null),
+    'prompt_eval_ms' => $ms($final['prompt_eval_duration'] ?? null),
+    'eval_ms' => $ms($final['eval_duration'] ?? null),
+  ];
+}
+
+/** The timing of the last Core call for a work record (eval_count included). */
+function ember_last_call_timing(): array {
+  $last = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
+  if (!is_array($last)) return [];
+  return ['eval_count'=>(int)($last['eval_count'] ?? 0), 'prompt_eval_count'=>(int)($last['prompt_eval_count'] ?? 0),
+    'load_ms'=>(int)($last['load_ms'] ?? 0), 'prompt_eval_ms'=>(int)($last['prompt_eval_ms'] ?? 0),
+    'eval_ms'=>(int)($last['eval_ms'] ?? 0)];
+}
+
 /** One model-call snapshot for the project agent, without URLs, secrets or model text. */
 function ember_agent_followup_last_call(): array {
   $last = $GLOBALS['STU_EMBER_LAST_CALL'] ?? [];
@@ -4094,6 +4290,9 @@ function ember_agent_followup_last_call(): array {
     'done_reason'=>(string)($last['done_reason'] ?? ''),
     'prompt_eval_count'=>(int)($last['prompt_eval_count'] ?? 0),
     'eval_count'=>(int)($last['eval_count'] ?? 0),
+    'load_ms'=>(int)($last['load_ms'] ?? 0),
+    'prompt_eval_ms'=>(int)($last['prompt_eval_ms'] ?? 0),
+    'eval_ms'=>(int)($last['eval_ms'] ?? 0),
   ];
 }
 
@@ -4153,6 +4352,81 @@ function ember_ollama_context_store(string $model, int $tokens): void {
   $GLOBALS['COREUI_OLLAMA_CONTEXT_MEMO'][$model] = $tokens;
 }
 
+/** Ollama's name of a local Core, compared without case and with ":latest" added when no tag is given. */
+function ember_core_key(string $name): string {
+  $name = strtolower(trim($name));
+  return ($name !== '' && !str_contains($name, ':')) ? $name . ':latest' : $name;
+}
+
+/**
+ * 0.8.34: "this Core is in use" marks of running agent runs, one small file per run under
+ * var/cache/locks/cores-in-use (STU_EMBER_CORE_IN_USE_DIR). The run's heartbeat keeps its mark
+ * fresh; the mark goes when the request ends, and a mark of a lost worker is stale after
+ * COREUI_AGENT_RUN_STALE_SECONDS like the run itself.
+ */
+function ember_core_in_use_dir(): string {
+  $dir = (string)ember_cfg('STU_EMBER_CORE_IN_USE_DIR', ember_generation_lock_dir() . DIRECTORY_SEPARATOR . 'cores-in-use');
+  if (!is_dir($dir)) @mkdir($dir, 0770, true);
+  return $dir;
+}
+
+function ember_core_in_use_file(string $runId): string {
+  return ember_core_in_use_dir() . DIRECTORY_SEPARATOR . $runId . '.json';
+}
+
+/** Marks the local Core this request's agent run is about to call (no run, no mark). */
+function ember_core_in_use_mark(string $model): void {
+  $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
+  $runId = is_array($ctx) ? (string)($ctx['agent_run_id'] ?? '') : '';
+  if (preg_match('/^[a-f0-9]{32}$/D', $runId) !== 1 || trim($model) === '' || ember_model_is_cloud($model)) return;
+  $mark = $GLOBALS['COREUI_RUN_CORES'] ?? null;
+  if (!is_array($mark) || ($mark['run'] ?? '') !== $runId) {
+    if (is_array($mark)) ember_core_in_use_release();
+    $mark = ['run'=>$runId, 'models'=>[]];
+    if (empty($GLOBALS['COREUI_RUN_CORES_SHUTDOWN'])) {
+      $GLOBALS['COREUI_RUN_CORES_SHUTDOWN'] = true;
+      register_shutdown_function(static function (): void { ember_core_in_use_release(); });
+    }
+  }
+  $key = ember_core_key($model);
+  if (!in_array($key, $mark['models'], true)) $mark['models'] = array_slice(array_merge($mark['models'], [$key]), -4);
+  $GLOBALS['COREUI_RUN_CORES'] = $mark;
+  @file_put_contents(ember_core_in_use_file($runId), json_encode(['models'=>$mark['models']], JSON_UNESCAPED_SLASHES), LOCK_EX);
+}
+
+/** Keeps this run's mark fresh (called with the run's heartbeat). */
+function ember_core_in_use_touch(): void {
+  $mark = $GLOBALS['COREUI_RUN_CORES'] ?? null;
+  if (!is_array($mark) || preg_match('/^[a-f0-9]{32}$/D', (string)($mark['run'] ?? '')) !== 1) return;
+  @file_put_contents(ember_core_in_use_file((string)$mark['run']), json_encode(['models'=>$mark['models']], JSON_UNESCAPED_SLASHES), LOCK_EX);
+}
+
+function ember_core_in_use_release(): void {
+  $mark = $GLOBALS['COREUI_RUN_CORES'] ?? null;
+  unset($GLOBALS['COREUI_RUN_CORES']);
+  if (is_array($mark) && preg_match('/^[a-f0-9]{32}$/D', (string)($mark['run'] ?? '')) === 1) {
+    @unlink(ember_core_in_use_file((string)$mark['run']));
+  }
+}
+
+/** The Cores that running agent runs are using now (fresh marks only). */
+function ember_core_in_use_models(?int $maxAge = null): array {
+  $maxAge ??= defined('COREUI_AGENT_RUN_STALE_SECONDS') ? (int)COREUI_AGENT_RUN_STALE_SECONDS : 180;
+  $models = [];
+  foreach ((glob(ember_core_in_use_dir() . DIRECTORY_SEPARATOR . '*.json') ?: []) as $file) {
+    $mtime = @filemtime($file);
+    if ($mtime === false || $mtime < time() - $maxAge) {
+      if ($mtime !== false && $mtime < time() - 86400) @unlink($file);
+      continue;
+    }
+    $json = json_decode((string)@file_get_contents($file), true);
+    foreach ((array)($json['models'] ?? []) as $name) {
+      if (is_string($name) && $name !== '') $models[ember_core_key($name)] = true;
+    }
+  }
+  return array_keys($models);
+}
+
 /**
  * 0.8.16: one local Core in memory. CoreAI keeps a Core loaded (keep_alive -1, STU_EMBER_KEEP_ALIVE)
  * so the next message starts without a cold start; but every Core used once stayed loaded (the
@@ -4163,12 +4437,15 @@ function ember_ollama_context_store(string $model, int $tokens): void {
  * keeps the old behaviour (for a machine with room for several Cores). $ps returns the loaded
  * names, $unload unloads one; both are replaceable in tests. Returns the names that were unloaded.
  */
-function ember_ollama_single_resident(string $model, ?callable $ps = null, ?callable $unload = null): array {
+function ember_ollama_single_resident(string $model, ?callable $ps = null, ?callable $unload = null,
+    ?callable $inUse = null): array {
   if (!ember_cfg('STU_EMBER_SINGLE_RESIDENT', true) || trim($model) === '' || ember_model_is_cloud($model)) return [];
-  $key = static function (string $name): string {
-    $name = strtolower(trim($name));
-    return ($name !== '' && !str_contains($name, ':')) ? $name . ':latest' : $name;
-  };
+  $key = static fn(string $name): string => ember_core_key($name);
+  // 0.8.34: a Core that a running agent run of any chat is using stays loaded. The model queue
+  // is held per call, so a call from another chat, tab, tier, the vision or reflection Core
+  // between two steps of a run unloaded its Core: the next step then loaded it again and
+  // re-read the whole prompt. $inUse returns those names (replaceable in tests).
+  $busy = array_flip(array_map($key, ($inUse ?? static fn(): array => ember_core_in_use_models())()));
   $base = (string)preg_replace('~/api/(?:chat|generate)/?$~', '', ember_url());
   $ps = $ps ?? static function () use ($base): array {
     $json = ember_http_get_json($base . '/api/ps', 3);
@@ -4193,6 +4470,7 @@ function ember_ollama_single_resident(string $model, ?callable $ps = null, ?call
   foreach ($ps() as $name) {
     $name = trim((string)$name);
     if ($name === '' || $key($name) === $key($model) || ember_model_is_cloud($name)) continue;
+    if (isset($busy[$key($name)])) continue;
     if ($unload($name)) $done[] = $name;
   }
   if ($done !== [] && function_exists('ember_debug_log')) ember_debug_log('ember_single_resident_unloaded', ['kept'=>$model, 'unloaded'=>$done]);
@@ -4590,15 +4868,55 @@ function ember_generation_lock_key(string $channel, int $afterId, array $senderC
   return sha1($channel . '|' . $afterId . '|' . $uid . '|' . $cid . '|' . trim($message));
 }
 
+/**
+ * The per-turn lock (deduplicates a reconnect). Returns the open file when this request owns the
+ * turn and false only when another request really holds it. 0.8.34: a lock file that cannot be
+ * opened (full disk, wrong owner of var/cache/locks) is no proof of a running generation: before,
+ * the turn then answered "busy" for ever. It is logged and the turn proceeds; the agent run's
+ * claim (queued -> running) still refuses a second worker for the same turn.
+ */
 function ember_generation_lock_acquire(string $channel, int $afterId, array $senderChar, string $message) {
   $key = ember_generation_lock_key($channel, $afterId, $senderChar, $message);
-  $path = ember_generation_lock_dir() . DIRECTORY_SEPARATOR . $key . '.lock';
+  $dir = ember_generation_lock_dir();
+  ember_generation_lock_cleanup($dir);
+  $path = $dir . DIRECTORY_SEPARATOR . $key . '.lock';
   $fp = @fopen($path, 'c+');
-  if (!$fp) return false;
+  if (!$fp) {
+    if (function_exists('stu__log_error')) {
+      stu__log_error(['type'=>'ember_generation_lock_unavailable', 'dir_writable'=>is_writable($dir) ? 1 : 0]);
+    }
+    return 'unlocked';
+  }
   if (!@flock($fp, LOCK_EX | LOCK_NB)) { @fclose($fp); return false; }
   @ftruncate($fp, 0);
   @fwrite($fp, (string)getmypid());
   return $fp;
+}
+
+/**
+ * 0.8.34: per-turn lock files used to stay for ever (one per turn). Removes, at most once an hour,
+ * files older than $maxAge seconds that nobody holds. Returns the number removed.
+ */
+function ember_generation_lock_cleanup(string $dir, int $maxAge = 86400, bool $force = false): int {
+  $stamp = $dir . DIRECTORY_SEPARATOR . '.cleanup';
+  $last = @filemtime($stamp);
+  if (!$force && $last !== false && $last > time() - 3600) return 0;
+  @touch($stamp);
+  $removed = 0;
+  foreach ((glob($dir . DIRECTORY_SEPARATOR . '*.lock') ?: []) as $file) {
+    if (preg_match('~^[a-f0-9]{40}\.lock$~D', basename($file)) !== 1) continue;
+    $mtime = @filemtime($file);
+    if ($mtime === false || $mtime > time() - $maxAge) continue;
+    $fp = @fopen($file, 'c+');
+    if (!$fp) continue;
+    // Only a file nobody holds is removed, while this request holds it.
+    if (@flock($fp, LOCK_EX | LOCK_NB)) {
+      if (@unlink($file)) $removed++;
+      @flock($fp, LOCK_UN);
+    }
+    @fclose($fp);
+  }
+  return $removed;
 }
 
 require_once __DIR__ . '/console_model_queue.php';
@@ -4614,6 +4932,7 @@ function ember_agent_heartbeat(): void {
   $now = microtime(true);
   if ($now - (float)($GLOBALS['COREUI_AGENT_HEARTBEAT_AT'] ?? 0) < 15.0) return;
   $GLOBALS['COREUI_AGENT_HEARTBEAT_AT'] = $now;
+  ember_core_in_use_touch();
   $db = $GLOBALS['COREUI_WORK_PDO'] ?? null;
   if (!$db instanceof PDO) return;
   try {
@@ -4674,8 +4993,13 @@ function ember_generation_lock_release($fp): void {
  * A single FIFO queue covers every Ollama HTTP request. The connection-bound
  * MariaDB named lock still enforces exactly one concurrent provider call.
  * Nested calls on the same PDO share the existing slot (reference counted).
+ * 0.8.34: without an explicit wait (a Core call of a chat turn) the call waits 90 seconds for a
+ * free model and keeps waiting while a live worker holds it (STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS,
+ * 3600): a generation may hold the Core up to its stream limit. An explicit wait stays exact.
  */
-function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
+function ember_global_lock_acquire(?int $timeoutSeconds = null): mixed {
+  $holderWait = $timeoutSeconds === null ? max(0, (int)ember_cfg('STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS', 3600)) : 0;
+  $timeoutSeconds ??= 90;
   if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
   $depth = (int)($GLOBALS['COREUI_MODEL_LOCK_DEPTH'] ?? 0);
   if ($depth > 0) {
@@ -4689,7 +5013,8 @@ function ember_global_lock_acquire(int $timeoutSeconds = 90): mixed {
     $ticket = coreui_model_queue_acquire(
       $connection,ember_lock_name('global_ollama'),$timeoutSeconds,
       static fn(): bool => ember_agent_cancel_requested(),
-      ember_lock_name('global_ollama_image')
+      holderWaitSeconds: $holderWait,
+      longJobLock: ember_lock_name('global_ollama_image')
     );
     if ($ticket === false) return false;
     $GLOBALS['COREUI_MODEL_QUEUE_TICKET'] = $ticket;
@@ -5723,8 +6048,11 @@ function ember_generate_reply(
   ?int $excludeReplyToId = null,
   int $triggerMessageId = 0,
   int $triggerRevision = 0,
-  ?array $projectDecision = null
+  ?array $projectDecision = null,
+  ?string $firstReply = null
 ): ?string {
+  // 0.8.34: $projectDecision with $firstReply is the stream's complete first reply and the
+  // work-loop tool it chose. The loop starts from it; the same first call is not made again.
   unset($GLOBALS['COREUI_PENDING_ARTIFACTS']);
   // v1.1.1.07: Smalltalk-/Fast-Conversation-Routing und Tool-Fastpaths entfernt.
   // Jede @Ember-Nachricht bekommt jetzt vollen Kontext, Memory und Lore-Routing ohne
@@ -6327,7 +6655,8 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       },false,null,$userMsg
     );
   };
-  if ($buildEligible && !$fileTask && trim($attachBlock) === '') {
+  // A decided first step (resume, or the stream's checked first reply) already passed this choice.
+  if ($buildEligible && !$fileTask && trim($attachBlock) === '' && $projectDecision === null) {
     $result = $runApprovedBuild();
     if (is_string($result)) return $result;
   }
@@ -6578,7 +6907,7 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     coreui_work_record($pdo, 'model', is_string($out) && trim($out) !== ''
         ? ($outTruncated ? 'info' : 'success') : 'error',
       is_string($out) && trim($out) !== '' ? 'Modellantwort empfangen' : 'Modellaufruf ohne Antwort',
-      ['model'=>$primaryModel] + $fileModelStatus);
+      ['model'=>$primaryModel] + $fileModelStatus + ember_last_call_timing());
   }
   $finalPrompt = $u;
   // For explicitly named/inferred browser-game ZIP sources, accept only
@@ -7032,6 +7361,9 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
     }
     if ($loopTool !== null) {
       $agentLoopHandled = true;
+      // The stream's first reply (its public note before the tool) opens the loop, as a reply
+      // of this path would have; the pre-loop steps above did not see it (no second dispatch).
+      if ($projectDecision !== null && is_string($firstReply) && trim($firstReply) !== '') $out = $firstReply;
       $uBase = $u;
       if (isset($loreBlock) && $loreBlock !== '') $uBase = str_replace($loreBlock, '', $uBase);
       foreach ([$webHint ?? '', $browseHint ?? '', $pyHint ?? '', $imageHint ?? '', $intentHint ?? ''] as $hint) {
@@ -7040,7 +7372,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $agentWebSession = [];
       $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed,
         max($pyHandled ? 1 : 0, (int)($GLOBALS['COREUI_TASK_RESUME_STEP'] ?? 0)),
-        static fn(string $prompt): ?string => ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []),
+        static function (string $prompt) use ($pdo, $primaryModel, $sys): ?string {
+          $stepReply = ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []);
+          // 0.8.34: each step's Core time (load, prompt reading, writing) in the work view.
+          coreui_work_record($pdo, 'model', is_string($stepReply) && trim($stepReply) !== '' ? 'success' : 'info',
+            'Modellantwort erhalten', ['model'=>$primaryModel] + ember_last_call_timing());
+          return $stepReply;
+        },
         static function (array $tool) use ($pdo, $channel, $consoleUid, $consoleSessionId,
           $triggerMessageId, $triggerRevision, $composerIntent, &$agentWebSession): string|array {
           return ember_agent_run_tool($pdo, $tool, $channel, $consoleUid, (string)$consoleSessionId,
