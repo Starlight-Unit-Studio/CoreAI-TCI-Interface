@@ -1,3 +1,14 @@
+COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 25.11.2026
+Version main: 0.8.33, Branch in Arbeit: stabilize/coreai-hardening (0.8.34).
+ZIEL 0.8.34: Stabilisierung aller Module (Prompt-Cache und Arbeitsschleife,
+Chat/Stream, Chatansicht, Kontosicherheit, Dateiverlauf mit Migration 058,
+abgestuerzte Selbsttests) und die Bildgenerierung (Speicherfehler nennt die
+Ursache, Bildordner bleibt beim Webserver).
+Dokument: docs/UEBERGABEPROTOKOLL_0_8_34.txt.
+Naechster Schritt: nach dem Update ein Bild erzeugen, danach den Blog mit
+Core Normal erneut beauftragen.
+Nach Merge naechste Version 0.8.35.
+--- VORHERIGER STAND ---
 COREAI: TCI INTERFACE // AKTUELLER ARBEITSSTAND 24.11.2026
 Version main: 0.8.32, Branch in Arbeit: claude/bold-galileo-myoyi0 (0.8.33).
 ZIEL 0.8.33: ein Projektlauf, der dieselbe Datei immer wieder aendert, wird nach

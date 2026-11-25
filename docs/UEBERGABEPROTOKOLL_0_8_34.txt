@@ -1,0 +1,127 @@
+COREAI: TCI INTERFACE // UEBERGABEPROTOKOLL 0.8.34
+Datum: 25.11.2026
+Repository: Starlight-Unit-Studio/CoreAI-TCI-Interface
+Basis: main 0.8.33 nach PR #395 (99f49486)
+Branch: stabilize/coreai-hardening
+
+AUFTRAG
+Betreiber: "warum hat die ueberhaupt die probleme und braucht halbe stunde und laenger? das lief
+mal alles schneller". Auftrag: vollstaendige Stabilisierung im Ultracode-Modus mit parallelen
+Pruefern (Audit nach Modulen, Priorisierung nach Nutzer-Auswirkung, Haertung, unabhaengige
+Gegenpruefung jeder Korrektur, Test fuer jeden behobenen Fehler), eigener Stabilisierungs-Branch,
+autonom, am Ende CHANGELOG, aktueller Stand und Doku. Fuer die Migration (M3, Dateiverlauf) liegt
+die ausdrueckliche Zustimmung des Betreibers vor. Nachtrag des Betreibers mit zwei Screenshots:
+"geht die Bildergenerierung nicht mehr" (storage_failed, flux2-klein-9b und -4b, Phase 4/4).
+
+VORGEHEN
+- Fuenf Pruefer parallel (Sicherheit/Konten, Projektdateien/Verlauf, Chat-Frontend,
+  Chat-/Stream-Backend, Arbeitsschleife und Prompt-Cache), jeder Fund mit Nachweis.
+- Korrekturen in eigenen Arbeitskopien, jede mit Offline-Selbsttest und Fehlereinbau
+  (Korrektur zurueckgedreht: Test faellt durch), danach in stabilize/coreai-hardening
+  zusammengefuehrt.
+- Ein unabhaengiger Pruefer hat den Gesamtdiff gegen Seiteneffekte geprueft.
+
+URSACHE DER LANGEN LAUFZEITEN
+- Ollama nutzt den Prompt-Cache nur bei gleichem Anfang. Jeder Schritt aenderte die Mitte des
+  Prompts: fruehere Ergebnisse wurden bei jedem Aufruf verdichtet, Reparaturen bauten den Prompt
+  neu, die Zeitangabe wechselte, der Skill-Block wechselte mit dem Schritt, und die erste Antwort
+  mit Werkzeug wurde ein zweites Mal gleich aufgerufen. Folge: der ganze Prompt wurde neu gelesen,
+  auf der CPU etwa 170 Token je Sekunde. Dazu Leerlaeufe: info-Schritte blockierten DONE,
+  Bibliotheksnamen galten als Pflichtdateien, der Abschnittsaufbau zaehlte fuer die Pause nach
+  zehn Aenderungen.
+- Behoben in api/console_agent_loop.php, console_task_journal.php, console_task_control.php,
+  project_file_tools.php, skills.php, chat.php, console_stream.php, console_model_queue.php.
+- Denken in jedem Schritt bleibt eine bewusste Produktentscheidung (Schalter im Chat).
+
+BEHOBEN (KRITISCH UND MITTEL)
+- Sicherheit: Zweiter Faktor je Konto begrenzt (10 in 15 Minuten), Passwort-Reset mit
+  Ratenlimit (1/min, 3/h je Konto) und atomarer Versuchszaehlung, Anhaenge hoechstens 8 MB Text,
+  pdftotext mit Zeitgrenze (ZIP-Bombe), Log-Ende rueckwaerts gelesen, keine SQLSTATE-Texte im
+  Browser (api/auth.php, ember_attachments.php, admin.php, helpers.php).
+- Dateiverlauf: Wechsel des Arbeitsstands loeschte Revisionen; Migration
+  058_project_file_history (FK an das Projekt, Index nach Pfad, wiederholbar), Verlauf wird
+  fortgesetzt (project_files_store.php, project_vcs_store.php). Auf MariaDB 10.11 zweimal
+  eingespielt.
+- Stream/Backend: Ende bei Stillstand statt fester 600 s, keine zweite Anfrage nach HTTP-Fehler,
+  Aktionen werden immer geschlossen, Warteschlange wartet auf lebenden Worker, Gedaechtnis nach
+  der Antwort, Bearbeiten/Neu generieren warten auf Agentenlaeufe, Sperrdateien, UTF-8 in SSE.
+- Frontend: Folgefrage und 4-s-Sperre, benannter SSE-Fehler, Stopp auf beendeten Lauf,
+  Recherchejob nach Neuzeichnen, Chatwechsel bei Regenerieren/Bearbeiten, fremder Verlauf bricht
+  offenen Chat nicht ab, abgewiesene Nachricht zurueck in die Eingabe, Polls pausieren
+  (console-app.js, coreui-work-events.js, coreui-projects.js, coreui-project-files.js).
+- Arbeitsschleife: F1 bis F13 und P1, P3, P6 (siehe CHANGELOG_0_8_34.txt).
+- Abgestuerzte CLI-Selbsttests endeten mit Exit 0 und galten in beiden Preflights als bestanden;
+  jetzt Exit 1. Zwoelf veraltete Selbsttests auf das dokumentierte Verhalten gebracht.
+- Profil bearbeiten fokussiert das Namensfeld; Deinstallationsstatus nur fuer den Inhaber.
+
+BILDGENERIERUNG (NACHTRAG DES BETREIBERS)
+- Befund: Phase 4/4 bestaetigt, danach storage_failed. Das kommt nur aus coreui_image_store:
+  Bildordner anlegen, PNG schreiben oder Eintrag in stu_console_media. Alle drei meldeten
+  bisher dieselbe Meldung ohne Angabe.
+- Wahrscheinliche Ursache (aus dem Code belegt, auf dem Server nicht gesehen): Der Compose-
+  Preflight fuehrte image-gen-selftest.php und storage-selftest.php mit "compose exec -T php" als
+  root aus. Beide legten den echten Ordner var/console_media/images an, wenn er fehlte (der
+  Bildtest 0750 root:root, der Speichertest 0770 root:root mit Datenbank). PHP-FPM (www-data)
+  darf danach dort nicht schreiben. Der Installer setzt nur var/console_media selbst auf 33:33,
+  nicht den Unterordner.
+- Korrektur: genaue Ursache als Code (image_dir_missing, image_dir_not_writable,
+  image_write_failed, media_insert_failed) im Arbeitsweg, Protokollzeile mit Ordner, Besitzer,
+  PHP-Benutzer, freiem Platz und Datenbankmeldung (api/image_gen.php, image_work_diagnostic.php,
+  js/coreui-work-events.js). Beide Tests laufen im Compose-Preflight als 33:33, ein selbst
+  angelegter Ordner geht an den Besitzer von var/console_media, der Bildtest entfernt
+  var/console_media nur noch, wenn er ihn selbst angelegt hat. Beide Preflights pruefen, dass PHP
+  in var/console_media/images schreiben darf, und nennen sonst den Befehl.
+- Fuer einen schon betroffenen Server einmalig (Compose): chown -R 33:33 var/console_media
+  (nativ: chown -R www-data:www-data var/console_media). Eine Ergaenzung von
+  var/console_media/images in prepare_permissions der Installer (scripts/install.sh,
+  scripts/install-native.sh) wuerde das bei jedem Update automatisch reparieren; sie ist NICHT
+  enthalten, weil Installer-Aenderungen eine Freigabe des Betreibers brauchen.
+
+UNVERAENDERT
+- Modelfile, SYSTEM-Prompts, Installer, Ollama-Einstellungen, fremde Projekte.
+- Keine allgemeine Schritt- oder Zeitgrenze fuer Projektlaeufe.
+
+OFFEN (im Audit gefunden, bewusst nicht geaendert)
+- M5: Schreiben einer Projektdatei wartet nicht auf Versionsoperationen (Wechsel,
+  Wiederherstellen, Zusammenfuehren lesen ohne Sperre). Speichert der Editor oder Mara genau
+  waehrend eines Wechsels des Arbeitsstands, kann die Aenderung auf dem falschen Stand landen
+  oder der Wechsel mit einem doppelten (file_id, revision) abbrechen. Die Korrektur betrifft die
+  Sperrreihenfolge in MariaDB und ist ohne Lasttest auf MariaDB nicht sicher pruefbar (Gefahr von
+  Deadlocks).
+- L3: Zwei Tabs, die die Versionen eines neuen Projekts zugleich zum ersten Mal oeffnen, koennen
+  auf den UNIQUE-Schluessel (project_id, name) laufen (HTTP 500).
+- L4: Anmelden nimmt auch Formular-Posts ohne Origin-Pruefung an, Abmelden geht per GET.
+- L5: Ein Projekt mit einem Arbeitsstand bleibt bei 200 Versionen stehen (history_full); braucht
+  eine Produktentscheidung und neuen sichtbaren Text.
+- P6 in reiner Recherche: der Skill-Block bleibt nur im Projektlauf fest; reine Recherche
+  behaelt das bisherige Verhalten (skills-selftest prueft es).
+- Installer-Zeile fuer var/console_media/images (siehe oben).
+
+TESTS (in dieser Sitzung ausgefuehrt)
+- php -l fuer alle geaenderten PHP-Dateien, node --check/vm fuer die geaenderten JS-Dateien,
+  bash -n fuer beide Preflights: ohne Fehler.
+- Neue Selbsttests mit Fehlereinbau (Korrektur zurueckgedreht, Test faellt durch):
+  stabilize-security (11 von 11), stabilize-history (5 von 5), stabilize-frontend (17 von 17),
+  stabilize-backend, stabilize-loop, stabilize-loop-journal, image-store-diagnostic.
+- image-store-diagnostic, image-gen und storage zusaetzlich als gewoehnlicher Benutzer (nicht
+  root) ausgefuehrt: OK; der Bildtest entfernt nur den Ordner, den er selbst angelegt hat.
+- Migration 058 auf MariaDB 10.11 eingespielt und ein zweites Mal ausgefuehrt (keine Aenderung).
+- preflight-sync, terminal-language, TCI-Sprache, Terran-Terminologie, branding, cache-bust,
+  version-merge-check (0.8.33 -> 0.8.34): OK.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) vor dem Bildfix auf a1791dc2: 227
+  bestanden, 2 fehlgeschlagen (browse-image: Playwright fuer Python fehlt in der Testumgebung;
+  image-progress-ui: Assertion auf die alte Zahlenliste im Arbeitsweg-Speicher, angepasst).
+  Auf main 0.8.33 in derselben Umgebung waren 14 Tests rot.
+- Gesamte Testreihe auf dem Endstand: wird nach dem Lauf hier nachgetragen.
+
+NICHT GETESTET
+- Ein echter Lauf mit Core Normal und ein echtes Bild auf dem Server; der gesamte Compose- und
+  Native-Preflight auf der Zielumgebung steht aus.
+
+NAECHSTER SCHRITT
+- Nach dem Update ein Bild erzeugen. Kommt wieder "nicht dauerhaft gespeichert", nennt der
+  Arbeitsweg jetzt die Ursache; bei "Webserver darf nicht in den Bildordner schreiben" den
+  chown-Befehl oben ausfuehren. Danach den Blog mit Core Normal erneut beauftragen und die Zeit
+  je Schritt im Arbeitsweg ansehen.
+
+Version: 0.8.34
