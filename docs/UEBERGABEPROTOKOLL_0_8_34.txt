@@ -54,6 +54,30 @@ BEHOBEN (KRITISCH UND MITTEL)
   jetzt Exit 1. Zwoelf veraltete Selbsttests auf das dokumentierte Verhalten gebracht.
 - Profil bearbeiten fokussiert das Namensfeld; Deinstallationsstatus nur fuer den Inhaber.
 
+UNABHAENGIGE GEGENPRUEFUNG (Befunde mit Skript gegen Branch und main belegt, alle behoben)
+- KRITISCH: Umbenennen, dann Wechsel auf einen Arbeitsstand mit dem alten Namen: doppelte
+  (file_id, revision), der Wechsel brach ab. coreui_pfiles_history_trail nimmt jetzt die hoechste
+  Revision der ganzen Datei. Test in stabilize-history-selftest.php.
+- MITTEL: dieselbe Einfuegung immer wieder wurde nie gezaehlt (60 Einfuegungen ohne Pause).
+  Bereits vorhandener oder in diesem Lauf schon eingefuegter Text zaehlt jetzt
+  (coreui_agent_change_moves_forward). Tests in file-change-pause-selftest.php.
+- MITTEL: Datei nach sechs Rechercheschritten fiel weg (F5). Die Schleife laesst ein
+  Projektwerkzeug noch zu; der letzte Rechercheschritt nennt die Moeglichkeit. Test in
+  stabilize-loop-selftest.php.
+- MITTEL: Dateilisten nach einem Auftrag galten nicht als Lieferungen (F2). Die Absicht des
+  Auftrags gilt fuer folgende Listenzeilen und "Dateien:"; "brauche" zaehlt; ein Name am Satzende
+  wird erkannt. Tests in stabilize-loop-journal-selftest.php. Bekannt: "Bitte eine kleine Todo-App
+  in index.html mit app.js" (ohne Verb) ergibt weiter keine Pflichtdateien.
+- MITTEL: Projekt-Prompt bis 96 KB auch bei 8k Kontext (P1). Marken nach
+  ember_ollama_context_window (coreui_agent_project_result_marks). Test mit 8k-Fenster.
+- MITTEL: jeder Core-Aufruf ohne Wartezeit wartete bis eine Stunde. Nur Stream-Antwort und
+  Arbeitsschritte warten auf den Halter, hoechstens 900 s (STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS).
+- MITTEL/NIEDRIG: Core-in-use schuetzte bis zu vier Cores je Lauf. Nur noch der aktuelle Core.
+- NIEDRIG: PDF ohne popen brach ab. Rueckfall auf shell_exec mit head -c; Test mit
+  disable_functions=popen.
+- NIEDRIG: fortgesetzter Lauf mit Anbieterfehler zeigte die falsche Meldung. Die Fortsetzung
+  entscheidet nur ohne Stream-Fehler.
+
 BILDGENERIERUNG (NACHTRAG DES BETREIBERS)
 - Befund: Phase 4/4 bestaetigt, danach storage_failed. Das kommt nur aus coreui_image_store:
   Bildordner anlegen, PNG schreiben oder Eintrag in stu_console_media. Alle drei meldeten
@@ -96,6 +120,13 @@ OFFEN (im Audit gefunden, bewusst nicht geaendert)
 - P6 in reiner Recherche: der Skill-Block bleibt nur im Projektlauf fest; reine Recherche
   behaelt das bisherige Verhalten (skills-selftest prueft es).
 - Installer-Zeile fuer var/console_media/images (siehe oben).
+- Aus der Gegenpruefung, niedrig, nicht geaendert: ein geladener Skill-Leitfaden steht im
+  Projektlauf im Abschnitt der ungeprueften Werkzeugdaten (Rahmen mit Server-Nonce waere
+  besser); nach einer abgelehnten Aenderung gibt jedes freiwillige Neulesen der Datei DONE frei;
+  ein Server- oder Prozessstart "Wartet auf den Sandbox-Dienst" gilt als Fehler statt unsicher;
+  ein nicht beschreibbarer Sperrordner laesst die Turn-Sperre "unlocked" melden.
+- Laufzeitrisiko ohne Beleg: ein externer Anbieter mit Denkpause ueber 180 s ohne Datenpaket
+  wird als Stillstand beendet.
 
 TESTS (in dieser Sitzung ausgefuehrt)
 - php -l fuer alle geaenderten PHP-Dateien, node --check/vm fuer die geaenderten JS-Dateien,
