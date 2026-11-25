@@ -465,11 +465,22 @@ stab_test(is_int($savedId) && $savedId > 26
 
 // === B3: a Core call waits while a live worker holds the model =====================================================
 // (The queue itself is tested in scripts/model-queue-selftest.php.)
-stab_test(str_contains($chatSource, 'function ember_global_lock_acquire(?int $timeoutSeconds = null): mixed {')
-  && str_contains($chatSource, "\$holderWait = \$timeoutSeconds === null ? max(0, (int)ember_cfg('STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS', 3600)) : 0;")
+// Review 0.8.34: only the Core calls of a chat turn (streamed answer, work loop steps) wait for a busy holder, at
+// most 900 s by default; background calls (memory, reflection, helpers) keep the 90 s, so a long generation cannot
+// make every PHP worker wait.
+if (preg_match('~^function ember_queue_holder_wait\(.*?^}~ms', $chatSource, $holderFn) === 1 && !function_exists('ember_queue_holder_wait')) eval($holderFn[0]);
+stab_test(function_exists('ember_queue_holder_wait') && ember_queue_holder_wait(null, true, 900) === 900
+  && ember_queue_holder_wait(null, false, 900) === 0 && ember_queue_holder_wait(120, true, 900) === 0
+  && ember_queue_holder_wait(null, true, 99999) === 3600 && ember_queue_holder_wait(null, true, -5) === 0,
+  'holder wait: only for chat-turn calls without an explicit wait, capped at one hour');
+stab_test(str_contains($chatSource, 'function ember_global_lock_acquire(?int $timeoutSeconds = null, bool $holdWhileBusy = false): mixed {')
+  && str_contains($chatSource, "(int)ember_cfg('STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS', 900));")
   && str_contains($chatSource, "holderWaitSeconds: \$holderWait,\n      longJobLock: ember_lock_name('global_ollama_image')\n    );")
-  && substr_count($streamSource, '$modelSlot = ember_global_lock_acquire();') === 1,
-  'a chat turn\'s Core call keeps its place while the model is busy; explicit waits stay exact');
+  && substr_count($chatSource, "\$GLOBALS['COREUI_QUEUE_HOLD_WHILE_BUSY'] = true;") === 1
+  && substr_count($chatSource, "unset(\$GLOBALS['COREUI_QUEUE_HOLD_WHILE_BUSY']);") === 1
+  && substr_count($streamSource, '$modelSlot = ember_global_lock_acquire(null, true);') === 1
+  && substr_count($chatSource, '$modelSlot = ember_global_lock_acquire();') === 1,
+  'the streamed answer and the work loop steps keep their place while the model is busy; other calls wait 90 s');
 
 // === B4: memory and reflection after the answer is out =============================================================
 $doneAt = strpos($streamSource, "  sse_send('done', [\n    'agent_task'   => \$taskSnapshot,");

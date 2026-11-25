@@ -4993,12 +4993,19 @@ function ember_generation_lock_release($fp): void {
  * A single FIFO queue covers every Ollama HTTP request. The connection-bound
  * MariaDB named lock still enforces exactly one concurrent provider call.
  * Nested calls on the same PDO share the existing slot (reference counted).
- * 0.8.34: without an explicit wait (a Core call of a chat turn) the call waits 90 seconds for a
- * free model and keeps waiting while a live worker holds it (STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS,
- * 3600): a generation may hold the Core up to its stream limit. An explicit wait stays exact.
+ * 0.8.34: a call waits 90 seconds for a free model. The Core calls of a chat turn (the streamed answer
+ * and the steps of Mara's work loop, $holdWhileBusy or COREUI_QUEUE_HOLD_WHILE_BUSY) keep waiting while
+ * a live worker holds the model, up to STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS (900) more. Background calls
+ * (memory, reflection, helpers) keep the 90 seconds: each waiting request holds a PHP worker, and a
+ * long wait of every call could take all of them. An explicit wait stays exact.
  */
-function ember_global_lock_acquire(?int $timeoutSeconds = null): mixed {
-  $holderWait = $timeoutSeconds === null ? max(0, (int)ember_cfg('STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS', 3600)) : 0;
+function ember_queue_holder_wait(?int $timeoutSeconds, bool $holdWhileBusy, int $configured): int {
+  return $timeoutSeconds === null && $holdWhileBusy ? max(0, min(3600, $configured)) : 0;
+}
+
+function ember_global_lock_acquire(?int $timeoutSeconds = null, bool $holdWhileBusy = false): mixed {
+  $holderWait = ember_queue_holder_wait($timeoutSeconds, $holdWhileBusy || !empty($GLOBALS['COREUI_QUEUE_HOLD_WHILE_BUSY']),
+    (int)ember_cfg('STU_EMBER_QUEUE_HOLDER_WAIT_SECONDS', 900));
   $timeoutSeconds ??= 90;
   if (ember_agent_cancel_requested(true)) throw new RuntimeException('agent_cancelled');
   $depth = (int)($GLOBALS['COREUI_MODEL_LOCK_DEPTH'] ?? 0);
@@ -7373,7 +7380,13 @@ AKTUELLER ABSENDER (WICHTIG): {$senderChar['name']} [{$senderChar['id']}]
       $loop = coreui_agent_loop_run($out, $loopTool, $uBase, $loopAllowed,
         max($pyHandled ? 1 : 0, (int)($GLOBALS['COREUI_TASK_RESUME_STEP'] ?? 0)),
         static function (string $prompt) use ($pdo, $primaryModel, $sys): ?string {
-          $stepReply = ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []);
+          // Review 0.8.34: a step of the turn keeps its place in the queue while another run holds the Core.
+          $GLOBALS['COREUI_QUEUE_HOLD_WHILE_BUSY'] = true;
+          try {
+            $stepReply = ember_call_ollama($primaryModel, $sys, $prompt, ember_timeout_for_model($primaryModel), []);
+          } finally {
+            unset($GLOBALS['COREUI_QUEUE_HOLD_WHILE_BUSY']);
+          }
           // 0.8.34: each step's Core time (load, prompt reading, writing) in the work view.
           coreui_work_record($pdo, 'model', is_string($stepReply) && trim($stepReply) !== '' ? 'success' : 'info',
             'Modellantwort erhalten', ['model'=>$primaryModel] + ember_last_call_timing());

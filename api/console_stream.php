@@ -1448,7 +1448,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       return strlen($chunk);
     },
   ]);
-  $modelSlot = ember_global_lock_acquire();
+  // Review 0.8.34: the streamed answer of a chat turn keeps its place while another run holds the Core.
+  $modelSlot = ember_global_lock_acquire(null, true);
   if ($modelSlot === false) {
     curl_close($ch);
     if ($workDb instanceof PDO) {
