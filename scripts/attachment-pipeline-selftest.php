@@ -80,7 +80,14 @@ function attachment_test_encoding_cases(): void {
   }
 }
 
-$pdo = stu_pdo();
+try {
+  $pdo = stu_pdo();
+} catch (PDOException $eDb) {
+  // This test needs the CoreAI database. Without one it is skipped explicitly, never reported as run.
+  fwrite(STDOUT, "SKIPPED: Attachment pipeline self-test needs the CoreAI database, which is not reachable here (error "
+    . (string)$eDb->getCode() . ").\n");
+  exit(0);
+}
 $mediaDir = $projectRoot . '/var/console_media';
 $created = [];
 $exitCode = 0;

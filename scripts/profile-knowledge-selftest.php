@@ -16,15 +16,23 @@ function coreui_pk_assert(bool $condition, string $message): void {
   if (!$condition) throw new RuntimeException($message);
 }
 
-$pdo = stu_pdo();
+try {
+  $pdo = stu_pdo();
+} catch (PDOException $eDb) {
+  // This test needs the CoreAI database. Without one it is skipped explicitly, never reported as run.
+  fwrite(STDOUT, "SKIPPED: Profile and knowledge self-test needs the CoreAI database, which is not reachable here (error "
+    . (string)$eDb->getCode() . ").\n");
+  exit(0);
+}
 coreui_pk_assert(coreui_profile_schema_ready($pdo), 'Migration 004 Profil-Schema fehlt.');
 coreui_pk_assert(coreui_knowledge_schema_ready($pdo), 'Migration 004 Knowledge-Schema fehlt.');
 $chatSource = (string)file_get_contents(__DIR__ . '/../api/chat.php');
 // The predicate gained a per-account knowledge_search switch. Checking for
 // two adjacent tokens incorrectly reported a breach although BOTH prompt
 // paths still check channel, permission and the account-scoped lookup.
+// Since project isolation both paths also skip the account knowledge inside an isolated project.
 $privateRagGuard = <<<'REGEX'
-~\$privateKnowledgeBlock\s*=\s*\$channel\s*===\s*'console'\s*&&\s*\(\(\$GLOBALS\['COREUI_PERSONALIZATION_CONTEXT'\]\['knowledge_search'\]\s*\?\?\s*true\)\s*===\s*true\)\s*&&\s*function_exists\('coreui_private_knowledge_block'\)\s*\?\s*coreui_private_knowledge_block\(\$pdo,\s*\$uid,~s
+~\$privateKnowledgeBlock\s*=\s*!\$projectIsolated\s*&&\s*\$channel\s*===\s*'console'\s*&&\s*\(\(\$GLOBALS\['COREUI_PERSONALIZATION_CONTEXT'\]\['knowledge_search'\]\s*\?\?\s*true\)\s*===\s*true\)\s*&&\s*function_exists\('coreui_private_knowledge_block'\)\s*\?\s*coreui_private_knowledge_block\(\$pdo,\s*\$uid,~s
 REGEX;
 $guardMatches = [];
 coreui_pk_assert(

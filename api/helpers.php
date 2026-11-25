@@ -56,6 +56,14 @@ $payload = ['ok' => false, 'error' => 'server_error'];
     $payload['file'] = is_object($e) && method_exists($e, 'getFile') ? $e->getFile() : '';
     $payload['line'] = is_object($e) && method_exists($e, 'getLine') ? $e->getLine() : 0;
   }
+  if (PHP_SAPI === 'cli') {
+    // A crashed command line script (a selftest, a worker) must fail: exit code 0 made both
+    // preflights report a test as passed although most of its assertions never ran.
+    $where = $e instanceof Throwable ? basename($e->getFile()) . ':' . $e->getLine() : 'unknown';
+    fwrite(STDERR, 'Uncaught ' . (is_object($e) ? get_class($e) : 'error') . ' at ' . $where . ': '
+      . ($e instanceof Throwable ? $e->getMessage() : (string)$e) . "\n");
+    exit(1);
+  }
   stu__safe_json($payload, 500);
   exit;
 });

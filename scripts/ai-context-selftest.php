@@ -30,9 +30,9 @@ $sourceChat=(string)file_get_contents($root.'/api/chat.php');
 $sourceStream=(string)file_get_contents($root.'/api/console_stream.php');
 $sourcePreload=(string)file_get_contents($root.'/api/core_preload.php');
 ctx_test(str_contains($sourceConfig,"coreui_env('COREUI_EMBER_KEEP_ALIVE', '-1')")
-  && str_contains($sourceChat, "'keep_alive' => $keepAlive")
-  && str_contains($sourceStream, "$"."payload['keep_alive'] = $keepAlive")
-  && str_contains($sourcePreload, "$"."body['keep_alive'] = $keepAlive"),
+  && str_contains($sourceChat, "'keep_alive' => \$keepAlive")
+  && str_contains($sourceStream, "$"."payload['keep_alive'] = \$keepAlive")
+  && str_contains($sourcePreload, "$"."body['keep_alive'] = \$keepAlive"),
   'preload, synchronous and streaming Ollama requests share keep_alive');
 ctx_test(str_contains($sourcePreload,"['model'=>$"."model, 'keep_alive'=>0]"),
   'explicit Core switching still unloads the old local model');

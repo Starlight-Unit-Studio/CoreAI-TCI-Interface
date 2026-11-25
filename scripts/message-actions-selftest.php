@@ -31,7 +31,7 @@ actions_test_expect(str_contains($editMigration, 'stu_console_message_revisions'
 actions_test_expect(str_contains($editMigration, "'edit'"), 'Migration 009 erweitert den Generierungsmodus nicht um Bearbeitung.');
 actions_test_expect(str_contains($endpoint, 'stu_require_csrf()'), 'Schreibende Nachrichtenaktionen besitzen keinen CSRF-Schutz.');
 actions_test_expect(str_contains($endpoint, "action === 'feedback_reply'")
-  && str_contains($endpoint, "'event_id'=>$eventId")
+  && str_contains($endpoint, "'event_id'=>\$eventId")
   && str_contains($client, "action: 'feedback_reply'"),
   'Persistentes Feedback startet eine eigene, authentifizierte Mara-Reaktion.');
 actions_test_expect(str_contains($client, "is-feedback-up")
@@ -48,7 +48,14 @@ actions_test_expect(str_contains($client, 'msg-variant-nav'), 'Persistente Varia
 actions_test_expect(str_contains($client, "window.CoreUIMarkdown.render(bubble, text)"), 'Sichere Markdown-Darstellung ist nicht am Nachrichtenpfad aktiv.');
 actions_test_expect(!str_contains($markdown, '.innerHTML'), 'Markdown-Renderer verwendet innerHTML.');
 
-$pdo = stu_pdo();
+try {
+  $pdo = stu_pdo();
+} catch (PDOException $eDb) {
+  // This test needs the CoreAI database. Without one it is skipped explicitly, never reported as run.
+  fwrite(STDOUT, "SKIPPED: Message actions self-test needs the CoreAI database, which is not reachable here (error "
+    . (string)$eDb->getCode() . ").\n");
+  exit(0);
+}
 actions_test_expect(coreui_console_actions_schema_ready($pdo), 'Migration 008 ist nicht aktiv.');
 actions_test_expect(coreui_console_edits_schema_ready($pdo), 'Migration 009 ist nicht aktiv.');
 actions_test_expect(coreui_feedback_events_ready($pdo), 'Migration 035 fuer Maras Feedback-Reaktionen fehlt.');
