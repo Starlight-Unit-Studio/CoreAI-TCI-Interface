@@ -632,12 +632,14 @@ function coreui_image_store(PDO $pdo, int $uid, string $characterId, string $png
   require_once __DIR__ . '/files_store.php';
   if (coreui_files_room($pdo, $uid, strlen($png)) !== null) return ['ok' => false, 'error' => 'storage_full', 'detail' => ''];
   $dir = coreui_image_dir();
-  if (!is_dir($dir) && !@mkdir($dir, 0750, true)) return ['ok' => false, 'error' => 'storage_failed', 'detail' => ''];
+  // 0.8.34: a failed save names its cause (work view and log); it was always reported without detail.
+  if (!is_dir($dir) && !@mkdir($dir, 0770, true)) return coreui_image_store_failed('image_dir_missing', $dir);
+  if (!is_writable($dir)) return coreui_image_store_failed('image_dir_not_writable', $dir);
   $uuid = bin2hex(random_bytes(16));
   $file = $dir . '/' . $uuid . '.png';
   if (@file_put_contents($file, $png, LOCK_EX) !== strlen($png)) {
     @unlink($file);
-    return ['ok' => false, 'error' => 'storage_failed', 'detail' => ''];
+    return coreui_image_store_failed('image_write_failed', $dir);
   }
   @chmod($file, 0640);
   $meta['created_at'] = $meta['created_at'] ?? gmdate('c');
@@ -656,9 +658,25 @@ function coreui_image_store(PDO $pdo, int $uid, string $characterId, string $png
   } catch (Throwable $e) {
     @unlink($file);
     @unlink($dir . '/' . $uuid . '.json');
-    return ['ok' => false, 'error' => 'storage_failed', 'detail' => ''];
+    return coreui_image_store_failed('media_insert_failed', $dir, $e->getMessage());
   }
   return ['ok' => true, 'uuid' => $uuid] + $meta;
+}
+
+/**
+ * 0.8.34: the result of a failed image save with a fixed cause code as detail, and a log line with what an
+ * operator needs (directory, owner, writable, free space, the database message). No path reaches the person.
+ */
+function coreui_image_store_failed(string $cause, string $dir, string $message = ''): array {
+  $owner = @fileowner($dir);
+  $free = @disk_free_space(is_dir($dir) ? $dir : dirname($dir));
+  $entry = ['type' => 'image_store_failed', 'cause' => $cause, 'dir' => $dir, 'exists' => is_dir($dir),
+    'writable' => is_dir($dir) && is_writable($dir), 'owner_uid' => $owner === false ? null : $owner,
+    'php_uid' => function_exists('posix_geteuid') ? posix_geteuid() : null,
+    'free_mb' => $free === false ? null : (int)floor($free / 1048576), 'message' => mb_substr($message, 0, 300)];
+  if (function_exists('stu__log_error')) stu__log_error($entry);
+  else error_log('[CoreAI] image_store_failed ' . json_encode($entry));
+  return ['ok' => false, 'error' => 'storage_failed', 'detail' => $cause];
 }
 
 /** What Mara knows about an image she made (the JSON next to it), or null. */

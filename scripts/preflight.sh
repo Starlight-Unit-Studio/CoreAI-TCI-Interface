@@ -429,6 +429,7 @@ UI_FILES=(
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
+  scripts/image-store-diagnostic-selftest.php
   api/image_ab_diagnostic.php
   js/coreui-image-ab.js
   scripts/image-ab-diagnostic-selftest.php
@@ -1439,10 +1440,18 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   # 0.6.39 (P20.5 C): Mara’s images in the chat: marker, work loop step, keeping the image for
   # the account, cancel, history, deletion with the chat, switches under Betrieb and per account.
   image_gen_test=''
-  if image_gen_test="$(compose exec -T php php scripts/image-gen-selftest.php 2>&1)"; then
+  if image_gen_test="$(compose exec -T -u 33:33 php php scripts/image-gen-selftest.php 2>&1)"; then
     ok 'Images in chat: markers, work step, per-account storage, cancel, history, delete and toggles verified.'
   else
     fail "Images in chat-self-test: ${image_gen_test:-Unknown error}"
+  fi
+
+  # 0.8.34: a finished image that cannot be kept names its cause (work view, log), the image folder stays PHP's.
+  image_store_diag_test=''
+  if image_store_diag_test="$(compose exec -T -u 33:33 php php scripts/image-store-diagnostic-selftest.php 2>&1)"; then
+    ok 'Image saving: a failed save names its cause, self-tests keep the image folder writable for PHP.'
+  else
+    fail "Image saving self-test: ${image_store_diag_test:-Unknown error}"
   fi
 
   # 0.6.81: Benachrichtigungen: Web Push (RFC 8291 example, VAPID), saving, dispatch and triggers.
@@ -1528,7 +1537,7 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
 
   # 0.7.28: Settings > Speicher: the limit for all accounts and per account, usage, Dateien and Bilder, favourites, deleting.
   storage_test=''
-  if storage_test="$(compose exec -T php php scripts/storage-selftest.php 2>&1)"; then
+  if storage_test="$(compose exec -T -u 33:33 php php scripts/storage-selftest.php 2>&1)"; then
     ok 'Storage management self-test passed.'
   else
     fail "Storage-self-test: ${storage_test:-Unknown error}"
@@ -2635,6 +2644,14 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fail "Container writable directory is not ready: ${writable_dir#/var/www/coreui/}"
     fi
   done
+
+  # 0.8.34: PHP-FPM saves Mara's images in var/console_media/images (made on the first image). A folder
+  # left to root (earlier preflights ran the image self-tests as root) made every image fail with storage_failed.
+  if compose exec -T -u 33:33 php sh -c 'test ! -e /var/www/coreui/var/console_media/images || test -w /var/www/coreui/var/console_media/images' >/dev/null 2>&1; then
+    ok 'Image folder is writable for PHP: var/console_media/images'
+  else
+    fail 'Image folder var/console_media/images is not writable for PHP. Run: chown -R 33:33 var/console_media'
+  fi
 
   # 0.5.83: the update window needs the host units (installed by scripts/install.sh).
   if command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then

@@ -28,6 +28,13 @@ function coreui_image_failure_work_meta(array $result, array $progress = []): ar
     'reason' => in_array($error, $known, true) ? $error : 'image_failed',
   ];
 
+  // 0.8.34: a failed save names its cause (coreui_image_store_failed) instead of a bare storage_failed.
+  if ($error === 'storage_failed' && in_array($detail, [
+      'image_dir_missing', 'image_dir_not_writable', 'image_write_failed', 'media_insert_failed',
+    ], true)) {
+    $meta['error_type'] = $detail;
+  }
+
   if ($error === 'image_failed') {
     if (preg_match('/^sd-cli Exit ([0-9]{1,3})$/D', $detail, $match) === 1) {
       $meta['reason'] = 'image_worker_exit';

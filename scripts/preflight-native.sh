@@ -399,6 +399,7 @@ UI_FILES=(
   database/migrations/026_image_tool.sql
   scripts/image-service-selftest.py
   scripts/image-gen-selftest.php
+  scripts/image-store-diagnostic-selftest.php
   api/image_ab_diagnostic.php
   js/coreui-image-ab.js
   scripts/image-ab-diagnostic-selftest.php
@@ -1220,6 +1221,14 @@ if command -v php >/dev/null 2>&1; then
     ok 'Images in chat: markers, work step, per-account storage, cancel, history, delete and toggles verified.'
   else
     fail "Images in chat-self-test: ${image_gen_test:-Unknown error}"
+  fi
+
+  # 0.8.34: a finished image that cannot be kept names its cause (work view, log), the image folder stays PHP's.
+  image_store_diag_test=''
+  if image_store_diag_test="$(runuser -u www-data -- php "$PROJECT_ROOT/scripts/image-store-diagnostic-selftest.php" 2>&1)"; then
+    ok 'Image saving: a failed save names its cause, self-tests keep the image folder writable for PHP.'
+  else
+    fail "Image saving self-test: ${image_store_diag_test:-Unknown error}"
   fi
 
   # 0.6.81: Benachrichtigungen: Web Push (RFC 8291 example, VAPID), saving, dispatch and triggers.
@@ -2545,6 +2554,14 @@ for writable_dir in \
     fail "PHP writable directory is not ready: ${writable_dir#"$PROJECT_ROOT"/}"
   fi
 done
+
+# 0.8.34: PHP-FPM saves Mara's images in var/console_media/images (made on the first image). A folder
+# left to root made every image fail with storage_failed.
+if [[ ! -e "$PROJECT_ROOT/var/console_media/images" ]] || runuser -u www-data -- test -w "$PROJECT_ROOT/var/console_media/images"; then
+  ok 'Image folder is writable for PHP: var/console_media/images'
+else
+  fail 'Image folder var/console_media/images is not writable for PHP. Run: chown -R www-data:www-data var/console_media'
+fi
 
 if command -v php >/dev/null 2>&1; then
   pdf_selftest=''

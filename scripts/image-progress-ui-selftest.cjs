@@ -37,7 +37,10 @@ assert(/<script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>\n  <sc
 const store = read('api/console_work_store.php');
 // 0.7.63 extended the same number whitelist with the worker-confirmed reference count, time limit,
 // elapsed time and peak RAM (CHANGELOG 0.7.63 "Fehlerdiagnose mit echten Messwerten").
-assert(store.includes("'steps','image_px','reference_count','time_limit_s','elapsed_s','peak_rss_mb'];")
+// 0.8.34 added the Core call timings to the same list, so the image keys are checked inside it.
+const storeNumbers = (store.match(/\$allowedNumbers = \[([\s\S]*?)\];/) || [null, ''])[1];
+assert(['steps', 'image_px', 'reference_count', 'time_limit_s', 'elapsed_s', 'peak_rss_mb']
+  .every((key) => storeNumbers.includes("'" + key + "'"))
   && store.includes("preg_match('/^[a-f0-9]{32}$/D', $raw['image_uuid'])"),
   'the work store keeps steps, width and the image id');
 const chat = read('api/chat.php');
