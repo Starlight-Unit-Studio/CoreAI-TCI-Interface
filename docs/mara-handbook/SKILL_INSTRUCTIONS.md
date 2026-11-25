@@ -1292,3 +1292,356 @@ Entwerfe Provideradapter getrennt von CoreAI-spezifischen Toolverträgen. Verarb
 
 Implementiere und teste nur gegen dokumentierte, tatsächlich verfügbare SDK-/API-Versionen. Konkrete Fehlerfälle und Abnahmebedingungen in references/IMPLEMENTATION.md festhalten. Solange der Adapter fehlt, Provideranbindung als Roadmap-Aufgabe, nicht als aktiv, kennzeichnen.
 
+## skill.skill-creator
+
+Skill: Skill-Creator | Category: Arbeitsweise | Version: 1.0.1 | Required: no
+
+Search terms: skill-creator, Skill-Creator, skill-creator, skill erstellen, neuen skill, skill paket, skills paket, skill generieren.
+
+Source: `skills/skill-creator/SKILL.md` (Git blob 921922e6a29f51b2d14ab80b6577a7914078df66).
+
+---
+name: skill-creator
+description: "Skills planen, validieren, paketieren."
+---
+# Skill-Creator
+
+Erstelle aus Nutzerauftrag und konkreten Eingabe-/Ausgabebeispielen ein wiederverwendbares Skill-Paket: Kennung, prägnante Triggerbeschreibung, Ablauf, Voraussetzungen, erwartetes Ergebnis und Abnahmefälle. Plane Referenzdokumente, Skripte und Assets nur, wenn sie zur Ausführung beitragen. Bei bestehenden Skills Revisionen und Abhängigkeiten prüfen statt Duplikate zu erzeugen.
+
+Im aktuellen CoreAI nur skills/<id>/SKILL.md plus katalogisierte Metadaten als aktive Anleitung behandeln. Body bis 2400 Byte, Gesamtindex innerhalb des Runtimebudgets, genau ein Pflicht-Skill werkzeuge. Referenzen und Skripte zusätzlich vorbereiten, aber ihre automatische Ausführung oder das dynamische Nachladen nicht vortäuschen.
+
+Validiere Frontmatter, Pfade, Katalog, Auswahltrigger, Quellangaben und negative Testfälle; prüfe Sicherheitsgrenzen und Lizenzlage. Bei ausführbaren Skripten echte Testausführung verlangen. Nach erfolgreicher Erstellung Version und Rollback-Möglichkeit dokumentieren. Für spätere P12/P13-Features vollständiges Paketformat, Import-/Export- und Regressionstests in references/IMPLEMENTATION.md spezifizieren.
+
+## skill.webapp-testing
+
+Skill: Playwright | Category: Qualität | Version: 1.0.2 | Required: no
+
+Search terms: webapp-testing, Playwright, webapp testing, webapp-testing, playwright automation, e2e app, web app testen, regressionstest browser.
+
+Source: `skills/webapp-testing/SKILL.md` (Git blob 17fcc49f625cb9774d782c44872a9c3e9396a235).
+
+---
+name: webapp-testing
+description: "Playwright-Automation für Webapps."
+---
+# Webapp-Testing
+
+Bestimme URL, Testumgebung, erlaubte Testkonten, wichtige Nutzerwege und Abnahmekriterien. Für Browserautomation Playwright gegen eine isolierte, autorisierte Anwendung vorsehen. Produktive Konten, Käufe, Nachrichten und destruktive Aktionen nur bei entsprechendem Auftrag und abgesichert ausführen.
+
+Startzustand stabil aufbauen, relevante Rollen und Daten vorbereiten, sichtbare Labels/Role-Locators statt fragiler CSS-Selektoren nutzen. Erfolgs-, Fehler-, Leer- und Ladezustände prüfen; Formularvalidierung, Navigation, Mobile-Viewport, Downloads, Wiederanmeldung, Console Errors und Netzwerkfehler abdecken. Deterministische Wartebedingungen statt starre Pausen wählen.
+
+Beim Scheitern echte Screenshots, Logs oder Traces mit Testumgebung und Reproduktionsschritten speichern. Kein bestandener Test ohne durchgeführten Browserlauf. Wenn CoreAI-Runner noch keinen Zugriff auf lokale Apps oder Playwright bietet, vollständige Testfälle mit benötigtem Werkzeug-Interface in references/IMPLEMENTATION.md vorbereiten.
+
+## skill.slack-gif-creator
+
+Skill: Slack-GIFs | Category: Medien | Version: 1.0.2 | Required: no
+
+Search terms: slack-gif-creator, Slack-GIFs, slack gif, slack emoji, slack-gif-creator, animiertes emoji.
+
+Source: `skills/slack-gif-creator/SKILL.md` (Git blob 18fcee8b6b3c79f3ccfcdc1549d08c263ae3a5f4).
+
+---
+name: slack-gif-creator
+description: "Slack-GIFs, Emoji und Animation."
+---
+# Slack-GIF-Creator
+
+Kläre, ob ein Slack-Emoji, Sticker, Reaktions-GIF oder Messenger-Clip benötigt wird, und ermittle die aktuell gültigen Größen-, Bildmaß- und Formatgrenzen der Zielplattform. Technische Grenzen nicht pauschal aus fremden Beispielen übernehmen. Aus Motiv und Dauer einen Frameplan mit eindeutiger Lesbarkeit bei kleiner Darstellung entwickeln.
+
+Bei vorhandenen Grafikwerkzeugen Animation rendern, Frames auf ein gemeinsames Maß bringen, Palette und Dithering passend optimieren sowie Bildrate, Schleife und Transparenz kontrollieren. Mehrere Optimierungsvarianten anhand von Dateigröße und optischer Qualität vergleichen. Bei Text in der Animation auch reduzierte Darstellung prüfen.
+
+GIF-Datei anschließend öffnen, sämtliche Frames und Timing kontrollieren, Größe und Format nachmessen. Ohne vorhandene Render-/Encoderfunktion einen prüfbaren Frameplan und die geplante Exportpipeline liefern. Vollständige Abnahmekriterien: references/IMPLEMENTATION.md.
+
+## skill.academy-guide
+
+Skill: Academy-Guide | Category: Schreiben | Version: 1.0.2 | Required: no
+
+Search terms: academy-guide, Academy-Guide, claude academy, academy, lernressourcen claude, claude kurs, onboarding claude.
+
+Source: `skills/academy-guide/SKILL.md` (Git blob db3cc6efe8bf5e73043fd6db1f4225b34875ea98).
+
+---
+name: academy-guide
+description: "Claude Academy und passende Lernpfade."
+---
+# Academy-Guide
+
+Wenn nach Claude-Funktionen, Einstieg, Schulungen oder Lernressourcen gefragt wird, anhand der aktuellen offiziellen Claude-Academy-Angebote prüfen, ob ein konkret passender Kurs existiert. Niemals Katalogeinträge, Kursnamen, Inhalte oder Verfügbarkeit erfinden. Die eigentliche Frage zuerst vollständig beantworten und nur bei belegter Passung auf Weiterbildung verweisen.
+
+Für CoreAI-eigene Schulungen denselben didaktischen Ablauf verwenden: Zielgruppe und Lernziel bestimmen, offizielle Produktanleitung heranziehen, Lernpfad mit Voraussetzungen, Übungen, Lernerfolgskontrolle und nächsten Schritten zusammenstellen. Claude Academy nicht als offizielle CoreAI-Akademie ausgeben.
+
+Katalogsuche, externe Ressourcen und Lernerfolgsdaten nur über tatsächlich bereitgestellte Werkzeuge verwenden. Für künftige Ausbildungsfunktionen Datenquellen, Aktualisierungsprüfung und Tests in references/IMPLEMENTATION.md planen.
+
+## skill.discernment-nudge
+
+Skill: Reflexionshilfe | Category: Qualität | Version: 1.0.2 | Required: no
+
+Search terms: discernment-nudge, Reflexionshilfe, discernment, entscheidungsprüfung, was übersehe ich, annahmen überprüfen, folgenabschätzung.
+
+Source: `skills/discernment-nudge/SKILL.md` (Git blob 096f0f287651073195c961afd132e67e79cba079).
+
+---
+name: discernment-nudge
+description: "Kritische Rückfragen bei Entscheidungen."
+---
+# Discernment-Nudge
+
+Bei einer folgenreichen Empfehlung, Bewertung, Planung, Prognose oder argumentativen Entscheidung vor dem Abschluss die tragenden Annahmen und mögliche Fehleinschätzungen prüfen. Berücksichtige belegte Fakten, abweichende Quellen, ausgelassene Perspektiven und Folgen falscher Annahmen. Die Antwort nicht künstlich relativieren, sondern klar und sachlich lassen.
+
+Falls ein sinnvoller offener Prüfpunkt bleibt, höchstens zwei oder drei kurze, konkrete Rückfragen oder Prüfschritte anschließen, die dem Nutzer helfen, die entscheidenden Voraussetzungen zu verifizieren. Bei Smalltalk, rein mechanischer Dateiumwandlung, einfachem Lookup, Programmiertasks mit direkten Tests oder ausdrücklich verlangtem Faktencheck darauf verzichten. In derselben Unterhaltung nicht ständig wiederholen.
+
+Dies ist ein optionaler fachlicher Workflow, keine automatisch immer aktive Sprachregel. Der heutige Katalog kann ihn bei passendem Auftrag laden; eine künftige generelle Vor-Abgabe-Prüfung braucht einen separat freizugebenden Auslöser. Die gewünschte spätere Integration und Negativtests in references/IMPLEMENTATION.md dokumentieren.
+
+## skill.legal-research
+
+Skill: Rechtsrecherche | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: legal-research, Rechtsrecherche, rechtsrecherche, gesetzeslage, rechtslage, rechtsquellen, gerichtsurteil, rechtsfrage, urteil recherchieren, gesetz, gesetzesänderung, gesetzesnovelle, rechtsauskunft, paragraph, paragraf, rechtsprechung.
+
+Source: `skills/legal-research/SKILL.md` (Git blob fe1441aa8f621170784bd179a8010b77e4313308).
+
+---
+name: legal-research
+description: "Rechtsrecherche."
+---
+# Juristische Quellenrecherche
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Sachverhalt, Rechtsgebiet, Bundesland, Beteiligte und maßgebliche Zeitpunkte festhalten. Normhierarchie prüfen: EU, Bund, Land, Satzung; relevante Tatbestandsmerkmale, Ausnahmen und Übergangsrecht gegeneinander abgleichen. Rechtsprechung nur mit Originalfundstelle, Gericht, Datum und Aktenzeichen auswerten.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.contract-review-summary
+
+Skill: Vertragsprüfung | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: contract-review-summary, Vertragsprüfung, vertrag prüfen, vertragsprüfung, vertragsklausel, vertrag analysieren, contract review, vertragsrisiko, agb prüfen, agb, vertragsanalyse, kündigungsklausel, vertragsbedingungen.
+
+Source: `skills/contract-review-summary/SKILL.md` (Git blob 9eab7b3e7e2de0b4794323afccc9091ff7f121b4).
+
+---
+name: contract-review-summary
+description: "Vertragsprüfung."
+---
+# Vertragsprüfung und Zusammenfassung
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Vollständigen Vertrag inklusive Anhängen, Parteienrolle und geltendem Recht ermitteln. Vertrag nach Leistung, Vergütung, Laufzeit, Kündigung, Haftung, Gewährleistung, Datenschutz, IP, Gerichtsstand und widersprüchlichen Klauseln prüfen. Klauseltabelle mit Fundort, Risiko, rechtlicher Begründung, Verhandlungsziel und Formulierungsvorschlag erstellen.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.legal-memo-standard
+
+Skill: Rechtsmemo | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: legal-memo-standard, Rechtsmemo, rechtsmemo, juristisches memo, rechtliches gutachten, rechtsgutachten, juristische stellungnahme, legal memo, juristische bewertung, rechtliche stellungnahme, rechtliche analyse.
+
+Source: `skills/legal-memo-standard/SKILL.md` (Git blob f4d836d17d617fbdf7835ad92ff0a22c724a36e6).
+
+---
+name: legal-memo-standard
+description: "Rechtsmemo."
+---
+# Juristisches Gutachten und Rechtsmemo
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Fragestellung und Entscheidungsziel formulieren. Fakten, Belege und Annahmen trennen. Im Gutachtenstil Obersatz, maßgebliche Definitionen, Subsumtion und Ergebnis pro Streitpunkt entwickeln, Gegenauffassungen und Unklarheiten dokumentieren. Kurzantwort, Rechtsquellen, Risikoanalyse und mögliche nächste Schritte ausgeben.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.policy-qa-from-knowledgebase
+
+Skill: Richtlinien-QA | Category: Recht | Version: 1.0.3 | Required: no
+
+Search terms: policy-qa-from-knowledgebase, Richtlinien-QA, policy qa, compliance richtlinie, interne richtlinie, policy prüfen, wissensbasis richtlinien, betriebsvereinbarung prüfen, compliance, gesetzeskonform, interne vorgaben.
+
+Source: `skills/policy-qa-from-knowledgebase/SKILL.md` (Git blob 620f541f574ea690e5b4cb81a5e5197c18e358df).
+
+---
+name: policy-qa-from-knowledgebase
+description: "Richtlinien-QA."
+---
+# Richtlinien- und Compliance-QA
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Interne Richtlinien aus ausschließlich autorisiertem RAG/Repository lesen und den genauen geltenden Dokumentstand festhalten. Inhalt, Geltungsbereich und Freigabe mit zwingendem aktuellem Recht abgleichen. Widersprüche zwischen interner Regel und Gesetz markieren, Rechtsquellen und Dokumentspur getrennt belegen. Keine Unternehmensinterna extern veröffentlichen.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.legal-drafting
+
+Skill: Rechtstexte | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: legal-drafting, Rechtstexte, widerspruch schreiben, rechtsschreiben, juristische formulierung, rechtsantrag, rechtstext verfassen, anwaltsschreiben, schriftsatz entwerfen, widerspruch, einspruch, schriftsatz, beschwerdeschreiben.
+
+Source: `skills/legal-drafting/SKILL.md` (Git blob 16d18de58ea79b10ec61930ee1c848d7f5ab1360).
+
+---
+name: legal-drafting
+description: "Rechtstexte entwerfen."
+---
+# Juristische Schreiben und Schriftsätze
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Anlass, Empfänger, Bescheid/Vertrag, Rechtsbehelf, Forderung und Belege bestimmen. Sachverhalt chronologisch und nur belegbar darstellen, Hauptantrag, Hilfsantrag, Begründung, Anlagen, Aktenzeichen und Unterschriftfelder sauber trennen. Entwurf als prüfbaren Text oder DOCX/PDF vorbereiten; keine unautorisierte Zustellung.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.legal-deadlines
+
+Skill: Rechtsfristen | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: legal-deadlines, Rechtsfristen, rechtsfrist, widerspruchsfrist, klagefrist, frist berechnen, zustellung, bekanntgabe, fristwahrung, rechtsmittelbelehrung, frist, fristende, rechtsbehelfsfrist, fristbeginn.
+
+Source: `skills/legal-deadlines/SKILL.md` (Git blob 1e22c8dc941bb8972e55556cbf4faf6cf9a2dd9b).
+
+---
+name: legal-deadlines
+description: "Fristenprüfung."
+---
+# Rechtsfristen und Zustellung
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Fristauslöser und genaue Bekanntgabe-/Zustellungsart samt Belegen erfassen. Rechtlich geltenden Fristentatbestand mit Zuständigkeit, Ferien/Feiertagen, Wochenenden, elektronischem Zugang und Übergangsregeln prüfen. Frühestes mögliches Fristende und Unsicherheit getrennt darstellen. Bei nahenden Fristen umgehend qualifizierte Prüfung empfehlen.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.administrative-law
+
+Skill: Verwaltungsrecht | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: administrative-law, Verwaltungsrecht, verwaltungsrecht, bescheid prüfen, behördenbescheid, verwaltungsakt, widerspruchsbescheid, vorgesetzte behörde, behörde, amtlicher bescheid, ablehnungsbescheid, antrag abgelehnt.
+
+Source: `skills/administrative-law/SKILL.md` (Git blob 6e2e1f8609449642c9ee96cb23d631a059b48a4e).
+
+---
+name: administrative-law
+description: "Verwaltungsrecht."
+---
+# Verwaltungs- und Behördenrecht
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Bescheid, Rechtsbehelfsbelehrung, Bekanntgabe, zuständige Stelle und einschlägiges Verwaltungsverfahrensrecht identifizieren. Ermächtigungsgrundlage, Anhörung, Ermessen, Begründung und Verhältnismäßigkeit prüfen. Widerspruch, Klage oder Eilverfahren nicht schematisch gleichsetzen; Bundesland/Spezialverfahren beachten.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.social-law
+
+Skill: Sozialrecht | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: social-law, Sozialrecht, sozialrecht, sgb, jobcenter, grundsicherung, erwerbsminderung, bürgergeld, sozialamt, krankenversicherung bescheid, pflegegeld, sozialleistungen, sozialhilfe, leistungsbescheid.
+
+Source: `skills/social-law/SKILL.md` (Git blob 4c4b4c101481501094941657b191bb077476bf7c).
+
+---
+name: social-law
+description: "Sozialrecht."
+---
+# Sozialrecht und Leistungsbescheide
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Leistungsträger, Zeitraum, Bescheide, Einkommens-/Vermögensbelege und maßgebliche SGB-Fassung trennen. Bedarf, Anrechnung, Sanktionen/Leistungsminderungen, Nachzahlungen, Anhörung, Widerspruch und Eilrechtsschutz anhand geltenden Rechts prüfen. Besonderheiten nach Leistungssystem und Übergangsrecht berücksichtigen.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.tenancy-law
+
+Skill: Mietrecht | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: tenancy-law, Mietrecht, mietrecht, mietvertrag, mieterhöhung, nebenkostenabrechnung, kaution, kündigung mietwohnung, wohnungsmangel, mieterschutz, vermieter, miete, mietminderung, heizkosten.
+
+Source: `skills/tenancy-law/SKILL.md` (Git blob e1916be4dabee7f67e2b410e924073d3f1d1cecd).
+
+---
+name: tenancy-law
+description: "Mietrecht."
+---
+# Miet- und Wohnrecht
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Mietart, Ort, Vertragsdaten und anwendbares Miet-/Landesrecht bestimmen. Kündigung, Kaution, Mängel, Mieterhöhung, Betriebskosten, Modernisierung und Schonfristen entlang tatsächlicher Daten prüfen. Lokale Sonderregeln und laufende Änderungen beachten.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.employment-law
+
+Skill: Arbeitsrecht | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: employment-law, Arbeitsrecht, arbeitsrecht, arbeitsvertrag, kündigung arbeit, arbeitszeugnis, urlaub anspruch, abmahnung, arbeitsgericht, arbeitgeber, lohn, kündigungsschutz, urlaubsanspruch.
+
+Source: `skills/employment-law/SKILL.md` (Git blob 7c56511ee4414daaf81d4c40c6c70a01ff765399).
+
+---
+name: employment-law
+description: "Arbeitsrecht."
+---
+# Arbeits- und Beschäftigungsrecht
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Arbeitsverhältnis, Vertrag, Tarifbindung, Betriebsvereinbarung und Stichtage erfassen. Probezeit, Kündigungsschutz, Urlaubsanspruch, Arbeitszeit, Entgelt, Abmahnung und Zeugnis anhand geltender Normen prüfen. Tarifliche/individuelle Abweichungen von zwingenden Regeln unterscheiden.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
+## skill.consumer-law
+
+Skill: Verbraucherrecht | Category: Recht | Version: 1.0.2 | Required: no
+
+Search terms: consumer-law, Verbraucherrecht, verbraucherrecht, widerruf, reklamation, gewährleistung, onlinekauf, rücktritt, mahnung, inkasso, widerrufsrecht, retoure, inkassoforderung, onlinebestellung, abo.
+
+Source: `skills/consumer-law/SKILL.md` (Git blob 00eb39fa10fd14885298086c3e752f833b51a959).
+
+---
+name: consumer-law
+description: "Verbraucherrecht."
+---
+# Verbraucher- und Vertragsrecht
+
+## Verbindliche Online-Aktualitätsprüfung
+Vor jeder konkreten rechtlichen Aussage, Frist oder Rechtsdurchsetzung den einschlägigen Rechtsstand **online an amtlichen Primärquellen** überprüfen. Jurisdiktion und Stichtag zuerst bestimmen: heutige Fassung und die am Ereignistag geltende Fassung können verschieden sein. Für Deutschland konsolidierte Norm auf gesetze-im-internet.de, Änderung und Inkrafttreten im amtlichen Bundesgesetzblatt auf recht.bund.de prüfen; Landesrecht im zuständigen Landesportal, EU-Recht auf EUR-Lex einschließlich Originalrechtsakt und Amtsblatt. Übergangs- und Rückwirkungsregeln sowie neue einschlägige Rechtsprechung berücksichtigen. Fundstelle, Gesetzesfassung, Abrufdatum und maßgebliches Wirksamkeitsdatum nennen. Bei fehlendem Internet oder nicht bestätigter amtlicher Fassung: **keine Aussage als aktuell oder durchsetzbar ausgeben**, sondern Unsicherheit und nötige Prüfung klar benennen.
+
+## Fachlicher Ablauf
+Verbraucher-/Unternehmerrolle, Vertragsart, Kauf-/Lieferdatum und Kommunikationsbelege erfassen. Widerruf, Gewährleistung, Rücktritt, Verzug, Forderungsprüfung und außergerichtliche Optionen anhand geltendem Recht unterscheiden. Ausnahmen für digitale Inhalte und Vertriebswege prüfen.
+
+## Grenzen
+Rechtliche Schlussfolgerungen als begründete Information mit offenen Risiken darstellen, nicht als garantierten Ausgang oder verbindliche anwaltliche/behördliche Entscheidung. Vor eingreifenden oder fristkritischen Schritten qualifizierte Fachprüfung empfehlen. Nur vorhandene Werkzeuge nutzen; erforderliche zukünftige Werkzeuge bleiben als Soll in references/IMPLEMENTATION.md dokumentiert.
+
