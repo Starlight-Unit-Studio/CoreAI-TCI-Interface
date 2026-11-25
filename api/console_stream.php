@@ -37,8 +37,12 @@ header('X-Accel-Buffering: no'); // verhindert Proxy-/Nginx-Pufferung
 header('Connection: keep-alive');
 
 function sse_send(string $event, $data): void {
+  // 0.8.34: invalid UTF-8 (a cut multibyte character in a partial answer) made json_encode
+  // return false, so the client got "data: " without a payload and lost the event.
+  $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+  if ($json === false) $json = '{"error":"event_encoding_failed"}';
   echo 'event: ' . $event . "\n";
-  echo 'data: ' . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
+  echo 'data: ' . $json . "\n\n";
   @flush();
 }
 function sse_comment(string $c): void { echo ': ' . $c . "\n\n"; @flush(); }
@@ -421,6 +425,17 @@ try {
     }
   }
   if ($priorState !== 'queued' && !$resumedFromCheckpoint) {
+    // 0.8.34: this action's run already ended (its worker is gone or it finished without an
+    // answer). Close the action too: it stayed "running" for 40 minutes and blocked a new
+    // variant, an edit, the branch and deleting the chat. A browser job keeps it open.
+    if ($generationRequest !== null && $priorState !== 'waiting_tool') {
+      try {
+        coreui_console_generation_finish($pdo, (int)$uid, $generationRequestId, 0,
+          $priorState === 'cancelled' ? 'agent_cancelled' : 'agent_run_' . $priorState);
+      } catch (Throwable $eFinish) {
+        error_log('[CoreAI] Generation request could not be closed: ' . get_class($eFinish));
+      }
+    }
     if ($priorState === 'cancelled') {
       sse_send('cancelled', ['agent_run_id'=>$agentRunId,'status'=>'cancelled']);
     } elseif ($priorState === 'waiting_tool') {
@@ -439,10 +454,15 @@ try {
     exit;
   }
   // Fatal errors can leave the provider outcome uncertain. Never auto-retry.
-  register_shutdown_function(static function () use ($pdo, $uid, $sessionId, $agentRunId): void {
+  register_shutdown_function(static function () use ($pdo, $uid, $sessionId, $agentRunId, $generationRequestId): void {
     try {
-      coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
+      $lost = coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
         'running', 'interrupted', 'worker_exit');
+      // 0.8.34: the action of a run that ended here without an answer ends with it (only while
+      // it is still open; a saved answer is never overwritten).
+      if ($lost && $generationRequestId !== '') {
+        coreui_console_generation_finish($pdo, (int)$uid, $generationRequestId, 0, 'worker_exit');
+      }
     } catch (Throwable $ignored) {}
   });
 
@@ -790,8 +810,48 @@ try {
     }
   }
 
-  $streamUnsafe = empty($acc['ok'])
-    || empty($acc['done']);
+  // 0.8.34 (B1): a stream that broke off is no reason to ask the Core everything again. Text
+  // that arrived stays (marked unfinished below); a refusal of the provider (HTTP 4xx/5xx) or a
+  // Core that stopped answering gets a short explanation instead of a second request.
+  $streamPlan = ($fileTaskHandled || $nativeToolHandled) ? 'complete'
+    : ember_stream_failure_plan($acc, trim(ember_strip_stray_tool_markers($reply)));
+  $skipAfterInsert = false;
+  if ($streamPlan === 'keep_partial') {
+    coreui_work_record($pdo, 'error', 'error', 'Modellstream unvollstaendig',
+      ['reason'=>'partial_answer_kept', 'http_code'=>(int)($acc['http_code'] ?? 0),
+       'content_chars'=>strlen($reply), 'error_type'=>(string)($acc['failure'] ?? '')]);
+    $reply = trim(ember_strip_stray_tool_markers($reply));
+    $acc['truncated'] = true;
+    $hasMarker = false;
+    $projectDecision = null;
+  } elseif ($streamPlan === 'provider_error' || $streamPlan === 'timeout_error') {
+    coreui_work_record($pdo, 'error', 'error', 'Modellstream unvollstaendig',
+      ['reason'=>$streamPlan === 'timeout_error' ? 'no_answer_in_time' : 'provider_refused',
+       'http_code'=>(int)($acc['http_code'] ?? 0), 'error_type'=>(string)($acc['failure'] ?? '')]);
+    $reply = ember_stream_failure_text($streamPlan, !empty($acc['external']), (int)($acc['http_code'] ?? 0));
+    $GLOBALS['COREUI_AGENT_TASK_OUTCOME'] = 'interrupted';
+    $acc['truncated'] = false;
+    $hasMarker = false;
+    $projectDecision = null;
+    $skipAfterInsert = true; // an error notice is nothing to remember or reflect on
+  }
+  $streamUnsafe = $streamPlan === 'sync_fallback';
+  // 0.8.34 (P4): a complete first reply that asks for a work-loop tool starts the loop with it.
+  // Before, the reply path built the whole prompt again and asked the Core the same question.
+  $firstReply = null;
+  if ($projectDecision === null && $streamPlan === 'complete' && $streamComplete && $hasMarker
+      && !$isVisionTurn && !$fileTaskHandled && !$nativeToolHandled && $composerIntentStream === null
+      && $attachmentIds === [] && !coreui_console_download_requested($promptMessage)
+      && !ember_agent_cancel_requested()) {
+    $firstTool = ember_agent_loop_first_tool($reply, ember_agent_allowed_tools((int)$uid, $sessionId,
+      coreui_agent_browse_available(null, ember_browse_enabled())));
+    if ($firstTool !== null) {
+      $projectDecision = $firstTool;
+      $firstReply = $reply;
+      coreui_work_record($pdo, 'run', 'info', 'Erste Antwort startet den Arbeitsweg',
+        ['reason'=>'stream_decision_reused', 'response_bytes'=>strlen($reply)]);
+    }
+  }
   if (!$fileTaskHandled && !$nativeToolHandled
       && ($hasMarker || $reply === '' || $streamUnsafe)) {
     if ($hasMarker) {
@@ -829,7 +889,8 @@ try {
         $excludeReplyToId,
         $afterId,
         $triggerRevision,
-        $projectDecision
+        $projectDecision,
+        $firstReply
       );
     }
     $enqueued = ember_browse_consume_request($pdo, $channel, (int)$uid, $sessionId, $afterId);
@@ -942,7 +1003,8 @@ try {
 
   if (!$nativeToolHandled && !empty($acc['truncated']) && $reply !== '') {
     coreui_work_record($pdo,'run','info','Antwort blieb nach Fortsetzung unvollstaendig',
-      ['reason'=>!empty($acc['context_tokens']) ? 'context_window_full' : 'continuation_limit',
+      ['reason'=>$streamPlan === 'keep_partial' ? 'stream_' . (string)($acc['failure'] ?? 'incomplete')
+        : (!empty($acc['context_tokens']) ? 'context_window_full' : 'continuation_limit'),
        'context_tokens'=>(int)($acc['context_tokens'] ?? 0),
        'source_chars'=>strlen($reply),
        'done_reason'=>(string)($acc['done_reason'] ?? ''),
@@ -981,6 +1043,11 @@ try {
       $sessionId,
       $afterId
     );
+    // 0.8.34 (B5): the user's turn was hidden meanwhile (an earlier message was edited). Its
+    // reply is not saved as an orphan; the run ends as cancelled.
+    if ($emberMsgId <= 0 && ($GLOBALS['COREUI_INSERT_REFUSED'] ?? '') === 'turn_deleted') {
+      throw new RuntimeException('turn_deleted');
+    }
     // Safety: lastInsertId() kann (selten) 0 liefern -> 'done' schickte id=0, die Client-Dedup
     // (streamedIds/since_id) liefe leer und der Hintergrund-Poll wuerde die Zeile doppelt rendern.
     // Daher die ID notfalls direkt nachschlagen.
@@ -989,7 +1056,7 @@ try {
         $sid = $pdo->prepare(
           "SELECT id FROM stu_chat_messages
            WHERE channel='console' AND user_id=? AND character_id=?
-             AND session_id=? AND reply_to_id=?
+             AND session_id=? AND reply_to_id=? AND deleted_at IS NULL
            ORDER BY id DESC LIMIT 1"
         );
         $sid->execute([(int)$uid, ember_character_id(), $sessionId, $afterId]);
@@ -998,9 +1065,9 @@ try {
     }
     // 0.6.19: read before ember_after_insert_tasks clears it; reflected after the transcript.
     $voiceTurn = !empty($GLOBALS['COREUI_VOICE_TURN']) && $generationRequest === null && !ember_last_call_is_guardrail();
-    if ($generationRequest === null && !ember_last_call_is_guardrail()) {
-      ember_after_insert_tasks($pdo, $char, $message, $replyFinal);
-    }
+    // 0.8.34 (B4): memory, reflection and relationship run AFTER the answer is out (see below);
+    // their Core calls (up to minutes in the model queue) held back the saved answer before.
+    $afterInsertDue = $generationRequest === null && !ember_last_call_is_guardrail() && !$skipAfterInsert;
   }
 
   if ($emberMsgId > 0) {
@@ -1113,6 +1180,19 @@ try {
     'generation_mode' => $generationMode !== '' ? $generationMode : null,
     'source_response_id' => $sourceResponseId > 0 ? $sourceResponseId : null,
   ]);
+  // 0.8.34 (B4): the answer is out; now what Mara keeps from this exchange (memory, reflection,
+  // relationship). Nothing of it belongs to the answer's work view any more.
+  if ($emberMsgId > 0 && !empty($afterInsertDue)) {
+    unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
+    ignore_user_abort(true);
+    try {
+      ember_after_insert_tasks($pdo, $char, $message, $replyFinal);
+    } catch (Throwable $eAfter) {
+      if (function_exists('stu__log_error')) {
+        stu__log_error(['type'=>'console_after_insert_failed', 'uid'=>(int)$uid, 'error'=>get_class($eAfter)]);
+      }
+    }
+  }
   // 0.6.17 (P20.1): after the answer is out, the transcript of the voice
   // messages and audio files of this turn, for the history and the small line
   // under the recording. Mara has already heard the audio herself.
@@ -1154,6 +1234,7 @@ try {
   }
 } catch (Throwable $e) {
   $cancelled = $e->getMessage() === 'agent_cancelled';
+  $turnGone = $e->getMessage() === 'turn_deleted';
   // A cancelled batch can already have finished images. Attach them before ending the run,
   // using the same account/session/turn transaction as an ordinary answer.
   if ($cancelled && empty($emberMsgId) && !empty($GLOBALS['COREUI_PENDING_IMAGES'])) {
@@ -1173,18 +1254,19 @@ try {
   if ($agentRunId !== '') {
     try {
       coreui_agent_run_transition($pdo, (int)$uid, $sessionId, $agentRunId,
-        'running', $cancelled ? 'cancelled' : 'interrupted',
-        $cancelled ? null : 'request_interrupted');
+        'running', ($cancelled || $turnGone) ? 'cancelled' : 'interrupted',
+        $turnGone ? 'turn_deleted' : ($cancelled ? null : 'request_interrupted'));
     } catch (Throwable $ignored) {}
   }
   if ($generationRequest !== null) {
     try {
+      // Only while the request is still open: an error never replaces a saved answer.
       coreui_console_generation_finish(
         $pdo,
         (int)$uid,
         $generationRequestId,
         0,
-        $cancelled ? 'agent_cancelled' : 'generation_failed'
+        $turnGone ? 'turn_deleted' : ($cancelled ? 'agent_cancelled' : 'generation_failed')
       );
     } catch (Throwable $ignored) {}
   }
@@ -1199,6 +1281,10 @@ try {
     coreui_work_record($pdo, 'run', 'info', 'Auftrag auf Wunsch abgebrochen',
       ['reason'=>'user_cancelled']);
     sse_send('cancelled', ['agent_run_id'=>$agentRunId,'status'=>'cancelled']);
+  } elseif ($turnGone) {
+    coreui_work_record($pdo, 'run', 'info', 'Antwort verworfen, die Nachricht wurde geaendert',
+      ['reason'=>'turn_deleted']);
+    sse_send('error', ['error'=>'turn_deleted']);
   } else {
     coreui_work_record($pdo, 'error', 'error', 'Verarbeitung abgebrochen',
       ['reason'=>'server_exception']);
@@ -1208,6 +1294,8 @@ try {
   }
 } finally {
   unset($GLOBALS['COREUI_WORK_CONTEXT'], $GLOBALS['COREUI_WORK_PDO'], $GLOBALS['COREUI_WORK_PUBLISH'], $GLOBALS['COREUI_SOURCE_PREVIEW_PUBLISH']);
+  // 0.8.34 (P7): this run no longer needs its Core kept loaded.
+  ember_core_in_use_release();
   ember_generation_lock_release($turnLock ?? null);
   // Console-AFK sofort zuruecknehmen -> Ember erscheint im Global wieder online.
   // (Bei [BROWSE:] haelt der Worker ueber sein eigenes Browse-Flag unabhaengig weiter AFK.)
@@ -1266,7 +1354,12 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
   $evalCount   = 0;
   $promptEvalCount = 0;
   $apiError    = '';
+  $timing      = [];
   $lastHeartbeat = microtime(true);
+  // 0.8.34: the stream ends when the Core stops sending, not after a fixed total time. A long
+  // answer that is still arriving (thinking on a CPU) was cut at 600 s and then started again.
+  $limits = ember_stream_limits(max(30, min(900, ember_timeout_for_model($model))), $timeoutOverride);
+  $transfer = (object)['started'=>microtime(true), 'last_byte'=>null, 'abort'=>''];
 
   $consumeLine = static function (string $line) use (
     &$thinkingAcc,
@@ -1276,7 +1369,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     &$doneReason,
     &$evalCount,
     &$promptEvalCount,
-    &$apiError
+    &$apiError,
+    &$timing
   ): void {
     $line = trim($line);
     if ($line === '') return;
@@ -1290,6 +1384,9 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     if (isset($j['done_reason'])) $doneReason = trim((string)$j['done_reason']);
     if (isset($j['eval_count'])) $evalCount = max(0, (int)$j['eval_count']);
     if (isset($j['prompt_eval_count'])) $promptEvalCount = max(0, (int)$j['prompt_eval_count']);
+    if (isset($j['prompt_eval_duration']) || isset($j['eval_duration']) || isset($j['load_duration'])) {
+      $timing = ember_ollama_timing_ms($j);
+    }
     $msg = $j['message'] ?? null;
     if (!is_array($msg)) return;
     if (isset($msg['thinking']) && is_string($msg['thinking'])) $thinkingAcc .= $msg['thinking'];
@@ -1306,9 +1403,14 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     CURLOPT_HTTPHEADER     => $wire['headers'],
     CURLOPT_POSTFIELDS     => $body,
     CURLOPT_CONNECTTIMEOUT => $wire['external'] ? 10 : 3,
+    // For a chat answer the total limit is only a last safety net; the Core's timeout (up to
+    // 900 s) now limits the first byte, and pauses are watched below.
     CURLOPT_TIMEOUT        => $timeoutOverride === null
-      ? max(30, min(900, ember_timeout_for_model($model)))
+      ? $limits['total']
       : max(30, min(240, $timeoutOverride)),
+    // Backstop of the same rule inside libcurl: no byte at all for the first-byte window.
+    CURLOPT_LOW_SPEED_LIMIT => 1,
+    CURLOPT_LOW_SPEED_TIME  => $limits['first_byte'],
     CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
     CURLOPT_NOSIGNAL       => true,
     CURLOPT_NOPROGRESS     => false,
@@ -1318,9 +1420,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       $downloadNow,
       $uploadTotal,
       $uploadNow
-    ) use (&$lastHeartbeat): int {
-      if (ember_agent_cancel_requested()) return 1;
+    ) use (&$lastHeartbeat, $transfer, $limits): int {
+      if (ember_agent_cancel_requested()) { $transfer->abort = 'cancelled'; return 1; }
       $now = microtime(true);
+      $stall = ember_stream_stall_reason($now, $transfer->started, $transfer->last_byte, $limits);
+      if ($stall !== null) { $transfer->abort = $stall; return 1; }
       if (($now - $lastHeartbeat) >= 10.0) {
         $lastHeartbeat = $now;
         sse_send('heartbeat', ['ok' => true]);
@@ -1328,7 +1432,8 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       return 0;
     },
     // Ollama streamt NDJSON: eine JSON-Zeile pro Token-Schritt.
-    CURLOPT_WRITEFUNCTION  => static function ($ch, $chunk) use (&$buf, $consumeLine, $feed, &$lastHeartbeat) {
+    CURLOPT_WRITEFUNCTION  => static function ($ch, $chunk) use (&$buf, $consumeLine, $feed, &$lastHeartbeat, $transfer) {
+      if ($chunk !== '') $transfer->last_byte = microtime(true);
       $buf .= $chunk;
       while (($nl = strpos($buf, "\n")) !== false) {
         $line = substr($buf, 0, $nl);
@@ -1354,12 +1459,17 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       'truncated'=>false,'error'=>'model_queue_timeout'];
   }
   // 0.8.16: only this local Core stays in the RAM (inside the model queue).
-  if (!$wire['external']) ember_ollama_single_resident($model);
+  if (!$wire['external']) {
+    ember_core_in_use_mark($model);
+    ember_ollama_single_resident($model);
+  }
   $modelStartedAt = microtime(true);
   try {
     if ($workDb instanceof PDO) {
       coreui_work_record($workDb, 'model', 'running', 'Modellstream gestartet', ['model'=>$wire['model']]);
     }
+    // The first-byte window starts with the request, not with the wait in the model queue.
+    $transfer->started = microtime(true);
     $curlOk = curl_exec($ch);
     if (trim($buf) !== '') foreach ($feed($buf) as $translated) $consumeLine($translated);
     foreach ($wire['finish']() as $translated) $consumeLine($translated);
@@ -1386,6 +1496,10 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     && $apiError === ''
     && $doneSeen
     && $done;
+  // 0.8.34: why a stream failed decides what happens next (console_stream.php main flow): a
+  // provider refusal is not sent again, a stopped Core is not asked the same again for minutes.
+  $stallReason = in_array($transfer->abort, ['first_byte_timeout', 'stall_timeout'], true) ? $transfer->abort : '';
+  $failure = ember_stream_failure($ok, $httpCode, $curlErrno, $apiError, $stallReason, $transfer->abort === 'cancelled');
   // Prompt plus answer filling the local window is a different cause than
   // an explicit output cap; show and remember it instead of guessing.
   $contextTokens = $truncated && !$wire['external']
@@ -1406,6 +1520,9 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       'thinking_chars' => strlen($thinkingAcc),
       'content_chars' => strlen($contentAcc),
       'num_predict' => $numPredict,
+      'failure' => $failure,
+      'stall' => $stallReason,
+      'external' => $wire['external'] ? 1 : 0,
     ]);
   }
 
@@ -1421,13 +1538,14 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
       $truncated ? 'Modellstream abgeschnitten'
         : ($ok ? 'Modellstream empfangen' : 'Modellstream fehlgeschlagen'),
       ['model'=>$wire['model'],'http_code'=>$httpCode,'duration_ms'=>$modelDurationMs,
-        'reason'=>$truncated ? ($contextTokens > 0 ? 'context_window_full' : 'output_truncated')
-          : ($ok ? 'completed' : 'request_failed'),
+        'reason'=>$failure !== '' ? ember_stream_failure_reason($failure, $httpCode, $stallReason)
+          : ($truncated ? ($contextTokens > 0 ? 'context_window_full' : 'output_truncated') : 'completed'),
         'done_reason'=>$doneReason, 'eval_count'=>$evalCount,
         'prompt_eval_count'=>$promptEvalCount,
         'context_tokens'=>$contextTokens,
+        'curl_errno'=>$curlErrno,
         'thinking_chars'=>strlen($thinkingAcc),
-        'content_chars'=>strlen($contentAcc)]);
+        'content_chars'=>strlen($contentAcc)] + $timing);
   }
   return [
     'thinking' => $thinkingAcc,
@@ -1439,7 +1557,11 @@ function console_stream_ollama(string $model, string $systemPrompt, string $user
     'eval_count' => $evalCount,
     'prompt_eval_count' => $promptEvalCount,
     'context_tokens' => $contextTokens,
-  ];
+    // 0.8.34: why it failed ('' when ok) and what the provider said, for the main flow.
+    'failure' => $failure,
+    'http_code' => $httpCode,
+    'external' => (bool)$wire['external'],
+  ] + $timing;
 }
 
 function console_stream_continue_truncated(

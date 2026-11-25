@@ -16,12 +16,14 @@ class CoreuiQueueFakeStatement extends PDOStatement {
       $this->db->tickets[$id] = ['status'=>'queued','seq'=>++$this->db->seq];
       $this->changed = 1;
     } elseif (str_contains($this->sql,'SELECT GET_LOCK')) {
+      $this->db->holderFinishes();
       $this->value = $this->db->lockOwner === null && !$this->db->forceBusy ? 1 : 0;
       if ($this->value === 1) $this->db->lockOwner = 'model';
     } elseif (str_contains($this->sql,'SELECT RELEASE_LOCK')) {
       $this->value = $this->db->lockOwner === null ? 0 : 1;
       $this->db->lockOwner = null;
     } elseif (str_contains($this->sql,'SELECT IS_USED_LOCK')) {
+      $this->db->holderFinishes();
       $this->value = $this->db->lockOwner === null ? null : 1;
     } elseif (str_contains($this->sql,"SET status='running'")) {
       $id = (string)$p[0];
@@ -55,7 +57,15 @@ class CoreuiQueueFakePDO extends PDO {
   public int $seq = 0;
   public ?string $lockOwner = null;
   public bool $forceBusy = false;
+  /** 0.8.34: a live worker that holds the model until this time, then releases it. */
+  public ?float $releaseAt = null;
   public function __construct() {}
+  public function holderFinishes(): void {
+    if ($this->releaseAt !== null && microtime(true) >= $this->releaseAt) {
+      $this->lockOwner = null;
+      $this->releaseAt = null;
+    }
+  }
   public function prepare(string $query, array $options = []): PDOStatement|false {
     return new CoreuiQueueFakeStatement($this,$query);
   }
@@ -109,6 +119,25 @@ queue_check(is_string($third) && $db->tickets[$third]['status']==='running',
   'new ticket can acquire after release');
 coreui_model_queue_release($db,'test_ollama',$third);
 queue_check($db->lockOwner===null,'final release');
+// 0.8.34: a generation may hold the model for many minutes. A call behind a live holder keeps its
+// place instead of failing with model_queue_timeout after its short wait (scaled: a 1 s wait behind
+// a holder that needs 2.5 s); a holder that is gone does not extend the wait.
+$holder = coreui_model_queue_acquire($db,'test_ollama',1);
+queue_check(is_string($holder) && $db->lockOwner !== null,'a long generation holds the model');
+$db->releaseAt = microtime(true) + 2.5;
+$waitStarted = microtime(true);
+$behind = coreui_model_queue_acquire($db,'test_ollama',1,null,null,30);
+queue_check(is_string($behind) && $db->tickets[$behind]['status']==='running'
+  && microtime(true) - $waitStarted >= 2.0,'a call behind a live holder is not timed out');
+$db->tickets[$holder]['status'] = 'completed';
+coreui_model_queue_release($db,'test_ollama',$behind);
+$db->forceBusy = true; // the lock cannot be taken, but nobody holds it: no live holder
+$waitStarted = microtime(true);
+queue_check(coreui_model_queue_acquire($db,'test_ollama',1,null,null,30)===false
+  && microtime(true) - $waitStarted < 5.0,'without a live holder the wait stays bounded');
+$db->forceBusy = false;
+$queueSource = (string)file_get_contents(dirname(__DIR__) . '/api/console_model_queue.php');
+queue_check(str_contains($queueSource,'&& coreui_model_queue_holder_alive($pdo, $lockName)) {'),'holder wait wired');
 $schema = file_get_contents(dirname(__DIR__) . '/database/migrations/013_console_agent_runs.sql');
 queue_check(is_string($schema) && str_contains($schema,'KEY idx_model_fifo (status,queue_id)'),
   'FIFO index');

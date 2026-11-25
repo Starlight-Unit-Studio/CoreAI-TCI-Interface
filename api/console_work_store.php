@@ -33,7 +33,9 @@ function coreui_work_safe_meta(array $raw): array {
     'plan_version','step','content_chars','thinking_chars','continuation_segments',
     'response_bytes','discarded_tool_body_bytes','context_tokens','knowledge_hits','knowledge_sources',
     // 0.6.41 (P20.5): the image progress card (steps of the image, its width).
-    'steps','image_px','reference_count','time_limit_s','elapsed_s','peak_rss_mb'];
+    'steps','image_px','reference_count','time_limit_s','elapsed_s','peak_rss_mb',
+    // 0.8.34: where a Core call spent its time (Ollama's load, prompt reading and writing), in ms.
+    'load_ms','prompt_eval_ms','eval_ms'];
   $allowedStrings = ['model','error_type','file_name','reason','source','done_reason','image_phase','image_encoder','provider'];
   $safe = [];
   $page = is_string($raw['page_url'] ?? null) ? coreui_work_page_url($raw['page_url']) : null;

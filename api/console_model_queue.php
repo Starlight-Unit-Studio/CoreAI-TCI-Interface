@@ -50,8 +50,29 @@ function coreui_model_queue_unmark_long(PDO $pdo, string $longJobLock): void {
   }
 }
 
+/**
+ * 0.8.34: whether another connection holds the model lock right now, i.e. a Core call of a live
+ * worker is running. A worker that died closed its connection, and with it the lock.
+ */
+function coreui_model_queue_holder_alive(PDO $pdo, string $lockName): bool {
+  try {
+    $st = $pdo->prepare('SELECT IS_USED_LOCK(?)');
+    $st->execute([$lockName]);
+    return $st->fetchColumn() !== null;
+  } catch (Throwable $e) {
+    return false;
+  }
+}
+
+/**
+ * Waits for this request's turn on the model. $timeoutSeconds is the wait for a free model.
+ * 0.8.34: with $holderWaitSeconds > 0 the call keeps waiting while a live worker holds the model
+ * (up to that many seconds more): a generation may hold the Core for many minutes, and a turn
+ * behind it ended after 90 seconds with model_queue_timeout although the queue was moving.
+ */
 function coreui_model_queue_acquire(
-  PDO $pdo, string $lockName, int $timeoutSeconds, ?callable $cancelRequested = null, ?string $longJobLock = null
+  PDO $pdo, string $lockName, int $timeoutSeconds, ?callable $cancelRequested = null, ?string $longJobLock = null,
+  int $holderWaitSeconds = 0
 ): string|false {
   $ticketId = bin2hex(random_bytes(16));
   $context = $GLOBALS['COREUI_WORK_CONTEXT'] ?? [];
@@ -66,6 +87,7 @@ function coreui_model_queue_acquire(
   $claimed = false;
   $cancelled = false;
   $deadline = microtime(true) + max(0, min(600, $timeoutSeconds));
+  $holderDeadline = $deadline + max(0, min(14400, $holderWaitSeconds));
   // Behind an image a call may wait up to 14 minutes in all (PHP and nginx allow 15).
   $longDeadline = microtime(true) + 840;
   $lastHeartbeat = 0.0;
@@ -153,6 +175,10 @@ function coreui_model_queue_acquire(
       if (microtime(true) >= $deadline && $deadline < $longDeadline
           && coreui_model_queue_long_job_running($pdo, $longJobLock)) {
         $deadline = min($longDeadline, microtime(true) + 20);
+      }
+      if (microtime(true) >= $deadline && $deadline < $holderDeadline
+          && coreui_model_queue_holder_alive($pdo, $lockName)) {
+        $deadline = min($holderDeadline, microtime(true) + 20);
       }
     } while (microtime(true) < $deadline);
     return false;
