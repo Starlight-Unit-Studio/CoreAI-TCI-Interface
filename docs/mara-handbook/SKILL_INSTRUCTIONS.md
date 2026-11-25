@@ -402,3 +402,271 @@ description: "Für nachvollziehbare Änderungen und gezielte Prüfung vor Veröf
 
 Prüfe Status und Diff, einschließlich neuer Dateien, bevor du einen Commit vorbereitest. Erhalte unabhängige Änderungen. Kontrolliere besonders Löschungen, Konfiguration und versehentlich enthaltene Geheimnisse. Beschreibe Problem, Änderung und tatsächliche Tests. Veröffentliche nur den beauftragten Umfang. Nach einem Merge dieses CoreUI-Projekts ist ein neues TXT-Übergabeprotokoll mit Commit, Prüfungen und offenen Punkten erforderlich.
 
+## skill.zip-delivery
+
+Skill: ZIP-Pakete | Category: Dateien | Version: 1.0.3 | Required: no
+
+Search terms: zip-delivery, ZIP-Pakete, zip, download, archiv, archive, dateipaket.
+
+Source: `skills/zip-delivery/SKILL.md` (Git blob 435df2be03adca57da2615f3ca814a39ad02cda4).
+
+---
+name: zip-delivery
+description: "Für vollständige Archive mit überprüften Dateien und Verweisen."
+---
+# ZIP und Dateiauslieferung
+
+Erzeuge und prüfe jede angeforderte Quelldatei, bevor du das Archiv zusammenstellst. Bewahre bei längeren Builds bestätigte Teilergebnisse und ihre eindeutigen Dateinamen; wo das Backend noch keine dauerhaften Checkpoints unterstützt, benenne diese Einschränkung. Keine vollständige zehnseitige Homepage aus nur drei Ersatzdateien behaupten. Sichere relative Pfade ohne Traversal, Symlinks oder versteckte Host-Ausführung. Prüfe Inhalt, Dateiliste, Größen, HTML/CSS/JS-Syntax soweit verfügbar, interne Links und ZIP-Integrität. CRC allein beweist keine funktionierende Anwendung. Liefere das Archiv erst aus, wenn das Werkzeug die tatsächlich gespeicherten Dateien bestätigt hat. Keine erfundenen Downloads und keine künstlichen Dateianzahl-Limits in der Skill-Anleitung.
+
+## skill.csv-data
+
+Skill: CSV | Category: Dateien | Version: 1.0.3 | Required: no
+
+Search terms: csv-data, CSV, csv, datenimport, data import, tabellendaten.
+
+Source: `skills/csv-data/SKILL.md` (Git blob 269acd0c60041c17d8300dec8999728e4ede16e9).
+
+---
+name: csv-data
+description: "Für zuverlässigen Import und Export strukturierter Textdaten."
+---
+# CSV und Datenimport
+
+Prüfe Trennzeichen, Zeichencodierung, Header und Zeilenenden anhand echter Daten. Nutze einen CSV-Parser statt split an Kommas. Behandle Anführungszeichen, mehrzeilige Felder und fehlende Werte ausdrücklich. Validiere Typen nach dem Einlesen und protokolliere fehlerhafte Zeilen ohne vertrauliche Daten. Prüfe einen Rückimport des erzeugten Exports. Schütze bei Tabellenprogrammen vor unbeabsichtigt ausführbaren Formeln.
+
+## skill.async-jobs
+
+Skill: Jobs/Queues | Category: Backend | Version: 1.0.3 | Required: no
+
+Search terms: async-jobs, Jobs/Queues, asyncio, async, queue, warteschlange, hintergrundjob.
+
+Source: `skills/async-jobs/SKILL.md` (Git blob 22ef7522a6b12c7dcb5b70aa04111dac5381bb26).
+
+---
+name: async-jobs
+description: "Für kontrollierte Nebenläufigkeit, Abbruch und Hintergrundaufgaben."
+---
+# Asynchrone Jobs
+
+Trenne Auftragszustand, Modellaufruf, Werkzeugarbeit und Benutzeranzeige. E.M.B.E.R. verarbeitet Modellanfragen global seriell: niemals mehrere Ollama-Inferenzen parallel, auch nicht über Ollama Cloud. Ein langer Projektbau muss in wiederaufnehmbare, möglichst idempotente Dateischritte zerlegt werden, wenn der entsprechende Runner dies unterstützt; verifizierte Quellen dürfen bei Unterbrechungen nicht stillschweigend verworfen werden. Prüfe bei Resume Benutzer-/Session-Besitz, gespeicherten Zustand, Dateihash und nächste fehlende Datei. Modell-Limits und reale Ressourcenbudgets unterscheiden; endliche Anzeige- und Serverzeiten dürfen keinen fertigen Erfolg vortäuschen. Abbruchsignale weiterleiten und fehlgeschlagen, abgebrochen, unvollständig und abgeschlossen strikt trennen.
+
+## skill.sse-streaming
+
+Skill: SSE-Streams | Category: Backend | Version: 1.1.2 | Required: no
+
+Search terms: sse-streaming, SSE-Streams, sse, streaming, eventsource, server-sent.
+
+Source: `skills/sse-streaming/SKILL.md` (Git blob d027eab19300514a5929a7b2c998a9288c7add85).
+
+---
+name: sse-streaming
+description: "Für robuste Ereignisströme, Wiederverbindung und Abschlusszustände."
+---
+# SSE und Streaming
+
+Sende nur autorisierte, explizit typisierte Server-Sent-Events mit eindeutigen Ereignis- und Run-Bezügen. Verbinde Workevents mit dem echten laufenden Auftrag; Wiederverbindungen dürfen keine zweite Inferenz starten. Zeige live eingehende, geprüfte öffentliche Arbeitsnotizen schrittweise und in tatsächlicher Reihenfolge. Die Anzeigewarteschlange verlangsamt ausschließlich die Präsentation, niemals Datenbank- oder Modellverarbeitung. Quellcodevorschau darf nur reale freigegebene content-Fragmente enthalten, keine thinking-Tokens, Secrets oder Werkzeug-Logs. Bei Abbruch, fehlendem done oder unvollständigem Quelltext keinen Erfolg melden. Gespeicherte Workevents nach Reload ohne doppelte Schritte rekonstruieren; die flüchtige Live-Vorschau nicht mit dauerhaft gesichertem Quellcode verwechseln.
+
+## skill.observability
+
+Skill: Logs | Category: Betrieb | Version: 1.1.3 | Required: no
+
+Search terms: observability, Logs, logging, logs, diagnose, observability, monitoring.
+
+Source: `skills/observability/SKILL.md` (Git blob e8261046cbd30df029b1809e0e15ede05bae7279).
+
+---
+name: observability
+description: "Für nachvollziehbare Ereignisse ohne unnötige sensible Inhalte."
+---
+# Logs und Diagnose
+
+Protokolliere tatsächliche Modell-, Werkzeug- und Dateiereignisse mit Auftrag/Run, Status, Quelle, erlaubtem Dateinamen, Fehlerklasse, HTTP-Status, done_reason, Tokenzählern, Dauer und geprüftem Ergebnis. Bei großen Projekten Plan-Bytezahl, geplante Dateianzahl und fehlenden/verifizierten Dateistatus nachvollziehbar machen, soweit die Infrastruktur diese Daten tatsächlich liefert. Trenne echte, als öffentlich autorisierte Mara-Kommentare von automatischen Erklärungen und technischen Metadaten. Keine privaten Prompts, Thinking-Tokens, fremden Accountpfade, Keys, Roh-stderr oder beliebigen Quelltext im Arbeitsprotokoll speichern. HTTP 200 bestätigt nur Transport, nicht Dateivollständigkeit. Nach Reload Fehler und Korrekturversuche in chronologischer Reihenfolge zeigen.
+
+Ein Skill-Ladeereignis ist kein Werkzeugaufruf. Zeige nur tatsächlich durch Werkzeuge erzeugte Namen und Ergebnisse, mit nachvollziehbarem Fehlerzustand; private Thinking-Tokens und Promptteile niemals als Worklog ausgeben.
+
+## skill.canvas-games
+
+Skill: Canvas-Spiele | Category: Frontend | Version: 1.0.2 | Required: no
+
+Search terms: canvas-games, Canvas-Spiele, canvas, spiel, game, animation, 2d.
+
+Source: `skills/canvas-games/SKILL.md` (Git blob a75d8a7767934fe5404c9e282340f62989d6a855).
+
+---
+name: canvas-games
+description: "Für Canvas-Darstellung und kleine interaktive Spiele."
+---
+# Canvas und kleine Spiele
+
+Trenne Spielzustand, Eingabe, Simulation und Zeichnen. Skaliere die Zeichenfläche passend zur Anzeige und berücksichtige das Pixelverhältnis. Berechne Bewegung anhand verstrichener Zeit statt einer angenommenen Bildrate. Pausiere oder begrenze Arbeit bei inaktiver Ansicht. Stelle Start, Neustart und verständliche Steuerung bereit. Nutze vorhandene oder selbst erzeugte Ressourcen und prüfe Kollisionen und Randfälle.
+
+## skill.release-handover
+
+Skill: Releases | Category: Betrieb | Version: 1.1.3 | Required: no
+
+Search terms: release-handover, Releases, release, version, changelog, übergabe, uebergabe, handover.
+
+Source: `skills/release-handover/SKILL.md` (Git blob c2cf8a3ee39cc54652f758097f03ae4f1dac7ec5).
+
+---
+name: release-handover
+description: "Für konsistente Versionsstände und fortsetzbare Übergaben."
+---
+# Release und Übergabe
+
+Jeder Merge nach main erfordert einen neuen numerischen Versionsstand gemäß docs/VERSIONING_POLICY.md. Pflege VERSION, sechs HTML-Seiten, JS-Bootstrap, SHA256-basierte numerische Cache-Keys, README, Changelog, TXT-Index, Selbsttests und ein neues Übergabeprotokoll gemeinsam. Bestehende historische Artefakte nicht umbenennen. Trenne verifizierten GitHub-Quellstand, Netcup-Deploy, Preflight, Modell-Livetest und fertig bestätigte Downloads. GitHub Actions sind keine verfügbare Erfolgsbedingung, solange das Kontingent ausgeschöpft ist. Dokumentiere offene Issues, gespeicherte Projektpläne und nächste reproduzierbare Arbeitsschritte; kein Erfolg ohne ausgeführte Prüfung.
+
+Vergleiche die Branchversion vor jedem Merge mit main über scripts/version-merge-check.py. Prüfe Skillkatalog, Cache-Keys und Preflights lokal; ein offener PR und ein nicht ausgeführter Servertest sind keine bestätigte Auslieferung.
+
+## skill.ollama-integration
+
+Skill: Ollama | Category: Backend | Version: 1.1.2 | Required: no
+
+Search terms: ollama-integration, Ollama, ollama, gemma, modelfile, inferenz, llm.
+
+Source: `skills/ollama-integration/SKILL.md` (Git blob 1d84357152492e50bd92b10b3d8bf7d6298012a5).
+
+---
+name: ollama-integration
+description: "Für Ollama-Modellanbindung, Schutz des CoreAI-Modelfiles, Werkzeugprotokoll und sichere Gemma-Parameter."
+---
+# Ollama und Modellanbindung
+
+Nutze für lokale und Cloud-Modelle denselben vom Nutzer konfigurierten lokalen Ollama-Endpunkt und die dort sichtbare Modellliste. Bewahre das aktive Betreiber-Modelfile mit Mara-Persona, TEMPLATE, RENDERER und PARSER unverändert; vor Änderungen docs/MODELFILE_CHANGE_POLICY.md prüfen. Der E2B-Referenzexport ersetzt nicht das E4B-Modelfile. Für lokale Gemma-Modelle keine zusätzlichen num_ctx- oder num_predict-Overrides; draft_num_predict 0 beibehalten. Modellaufrufe bleiben auch bei mehrstufigen Werkzeugfolgen seriell.
+
+Unterscheide Ollama HTTP-Erfolg von vollständiger message.content-Ausgabe; prüfe done, done_reason und Zähler. Verwende native tool_calls nur, wenn die aktuelle Backend-Route sie ausdrücklich bereitstellt und Ergebnisse in der korrekten Rolle zurückgibt. Sonst das bereits validierte Marker-/Source-Fallback verwenden, ohne eine native Werkzeugschleife zu behaupten. Neue Skill-Anweisungen statt ungefragtem SYSTEM-Tuning. Skills verleihen keine Werkzeugberechtigungen. Fehlende Ausgaben nicht als Provider-Erfolg verkaufen.
+
+## skill.skill-authoring
+
+Skill: CoreAI-Skills | Category: Arbeitsweise | Version: 1.1.3 | Required: no
+
+Search terms: skill-authoring, CoreAI-Skills, skill, skills, skill.md, anleitungspaket.
+
+Source: `skills/skill-authoring/SKILL.md` (Git blob 59c6019368a4f780485a5aad86c4de9198d741f0).
+
+---
+name: skill-authoring
+description: "Für kompakte, geprüfte und erweiterbare CoreAI-Arbeitsanleitungen."
+---
+# Eigene CoreAI-Skills
+
+Erstelle repository-eigene skills/<id>/SKILL.md mit name und description im Frontmatter, präziser Beschreibung und konkretem Ablauf. Registriere Titel, Kategorie, Trigger, Quellen, Version und Prüfdatum in skills/catalog.json. Das Backend interpretiert nur diesen sicheren Skill-Teilumfang: keine unkontrollierten Skripte oder Remote-Imports. Neue Skills stehen sofort in Maras Skill-Bibliothek; ihre description ist der Satz, an dem Mara erkennt, wann sie den Skill mit [SKILL: id] lädt, also kurz und eindeutig. Ein required-System-Skill darf nur durch bewusst genehmigte Backend-Änderung eingeführt werden; sein Status wird serverseitig erzwungen. Skills liefern Anleitungen, keine zusätzliche Werkzeugautorität oder garantierte Agentenfähigkeit. Modell-/Tool-Schnittstellen und Tests anpassen, bevor eine neue Fähigkeit behauptet wird.
+
+Prüfe vor jedem Eintrag: Referenzen unter references/*.md lädt Mara nur auf Anforderung ([SKILL: id/references/DATEI.md], höchstens 4000 Byte je Datei). Reiner Anleitungstext maximal 2400 Byte; Katalogbeschreibung kompakt halten, weil der vollständige Bibliotheksindex unter 3600 Byte bleiben muss. Eine normale Katalogerweiterung darf Auswahl, Loader, Modelfile und Pflicht-Skill nicht verändern.
+
+Orientiere neue Fach-Skills an realen Aufgaben, Eingaben, Ergebnissen und vorhandenen Werkzeugen. Prüfe Auslöser, Quellbezug, Duplikate und Kontextverbrauch. Die 0.5.80-Laufzeit lädt keine beigefügten Skripte oder Referenzdateien automatisch: als aktive Anleitung gilt ausschließlich die registrierte SKILL.md. Für zusätzliche Fähigkeiten einen separaten Roadmap-Schritt dokumentieren, keinen scheinbar wirksamen Skript-Hinweis eintragen.
+
+## skill.web-research
+
+Skill: Webrecherche | Category: Recherche | Version: 1.0.2 | Required: no
+
+Search terms: web-research, Webrecherche, recherche, recherchiere, websuche, quellenvergleich, web research.
+
+Source: `skills/web-research/SKILL.md` (Git blob 5c960e4c8342e53f6f9b8afe46443f5cdf8e2af7).
+
+---
+name: web-research
+description: "Für Webrecherche mit mehreren belegten Quellen."
+---
+# Webrecherche und Quellen
+
+Zerlege die Anfrage in überprüfbare Teilfragen. Beginne bei bereitgestelltem Material mit den tatsächlich verfügbaren Anhängen und Projektdaten. Nutze für fehlende Informationen die angebotene Websuche mit kurzen Suchbegriffen. Eine genannte URL öffnest du direkt, wenn der Browser für diesen Zug in **Plus → Recherche** gewählt wurde und angeboten wird. Bevorzuge Primärbelege und vergleiche unabhängige Quellen, soweit sie für den Auftrag nötig sind. Unterscheide Suchtreffer von tatsächlich geöffneten Webseiten; nenne nur belegte Fundstellen und Daten. Bei Widersprüchen beide Sichtweisen begründet darstellen. Fehlende Nachweise und abweichende Veröffentlichungs- und Ereignisdaten offen kennzeichnen. Keine Recherche als durchgeführt behaupten, wenn kein Werkzeugresultat vorliegt.
+
+Wenn die Suche leer bleibt, präzisiere die Suchbegriffe bei Bedarf einmal sinnvoll. Wenn der Runner die Websuche aus dem Werkzeugangebot entfernt, verwende sie für diesen Lauf nicht erneut. Arbeite mit vorhandenen Belegen weiter, sofern sie reichen. Andernfalls benenne die konkret fehlende Quelle.
+
+## skill.fact-checking
+
+Skill: Faktencheck | Category: Recherche | Version: 1.0.1 | Required: no
+
+Search terms: fact-checking, Faktencheck, faktencheck, fact check, behauptung prüfen, quellen prüfen, verifizieren, stimmt das.
+
+Source: `skills/fact-checking/SKILL.md` (Git blob 867cb96f00b29656aab8da3b60240ef9f9cce7e9).
+
+---
+name: fact-checking
+description: "Für überprüfbare Behauptungen und Quellenkritik."
+---
+# Faktencheck
+
+Präzisiere zunächst die Behauptung nach Zeit, Ort und Bedeutung. Prüfe Primärquellen, Gegenbelege und die Unabhängigkeit bestätigender Berichte. Bei Zahlen Zeitraum, Definition, Einheit und Grundgesamtheit nachvollziehen. Trenne Fakt, Interpretation und Prognose. Formuliere als Ergebnis belegt, widerlegt, teilweise zutreffend oder offen. Nenne echte Belege und Unsicherheiten; erfinde weder Zitate noch Prüfungen.
+
+## skill.rag-knowledge
+
+Skill: RAG-Wissen | Category: Wissen | Version: 1.0.3 | Required: no
+
+Search terms: rag-knowledge, RAG-Wissen, rag, wissensbasis, privates wissen, wissensarchiv, quellendokument, hochgeladenen dokumenten.
+
+Source: `skills/rag-knowledge/SKILL.md` (Git blob 0642ad965835c46fe08403c9f012b170b0697892).
+
+---
+name: rag-knowledge
+description: "Für Fragen zu privatem RAG-Wissen und Fundstellen."
+---
+# Privates Wissen und RAG-Lite
+
+Suche nur im privaten Wissen des autorisierten Kontos. Unterscheide RAG-Lite-Treffer, direkt angehängte Dokumente und externe Webseiten. Mehrere Abschnitte aus einer Datei sind eine Quelle. Gib bei Ausschnitten keine vollständige Dokumentprüfung an. Berücksichtige Eigennamen, Apostrophe, Schreibweisen und Rückfragen zum Gesprächskontext. Trenne wörtliche Treffer, Paraphrasen und eigene Schlussfolgerungen. Nenne Dokumente und Fundstellen nur, wenn die Werkzeugdaten sie tatsächlich ausweisen. RAG-Lite garantiert aktuell weder Seitenzitate noch Texterkennung; fehlende Belege und nicht lesbare Inhalte als Lücke benennen. Keine fremden Kontodaten heranziehen.
+
+## skill.document-analysis
+
+Skill: Dokumente | Category: Dateien | Version: 1.0.4 | Required: no
+
+Search terms: document-analysis, Dokumente, pdf, dokument analysieren, dokument auswerten, text extrahieren, seitenzahl, pdf prüfen.
+
+Source: `skills/document-analysis/SKILL.md` (Git blob e241bf90c3db55fded0ff6a36cf331bb36a4f6ea).
+
+---
+name: document-analysis
+description: "Für PDF- und Dokumentanalyse mit Seitenbezug."
+---
+# Dokumente und PDF auswerten
+
+Prüfe zuerst Dateityp, Zugänglichkeit und den tatsächlich verfügbaren Text. Auch Markdown wie README, ROADMAP und CHANGELOG kann als Quelle vorliegen. Unterscheide belegte Funktionen, geplante Funktionen und historische Änderungen. Wenn nur Ausschnitte verfügbar sind, nenne die Abdeckung und behaupte keine Volltextprüfung. Unterscheide Text, Tabellen, Bildseiten, Fußnoten und Anhänge. Bei langen Dateien zunächst Gliederung und relevante Seiten bestimmen. Vergleiche Fristen, Zahlen und Zitate mit dem Original. Seitenangaben nur anführen, wenn verfügbar; bei Scans oder gestörtem Layout Grenzen benennen. Eine neue Ausgabedatei erst nach tatsächlicher Erstellung und Prüfung als fertig melden.
+
+## skill.tabular-analysis
+
+Skill: Tabellen | Category: Daten | Version: 1.0.2 | Required: no
+
+Search terms: tabular-analysis, Tabellen, tabellenanalyse, tabelle auswerten, datenanalyse, kennzahlen, pivot, statistik auswerten.
+
+Source: `skills/tabular-analysis/SKILL.md` (Git blob e0bac0f891d14d32ad30d5c74e3966786606017b).
+
+---
+name: tabular-analysis
+description: "Für Tabellen, Kennzahlen und Datenprüfung."
+---
+# Tabellen und Kennzahlen
+
+Definiere Einheit, Zeitraum, Schlüssel und Zielkennzahlen. Beim Import Zeichensatz, Dezimaltrennzeichen, leere Felder und Dubletten prüfen. Rohdaten bewahren; Filter, Aggregation, Nenner, Rundung und Ausreißer offenlegen. Rechenergebnisse möglichst mit vorhandenem Rechenwerkzeug prüfen. Keine unbestätigte Exportdatei behaupten. Datenlücken nicht mit erfundenen Werten füllen.
+
+## skill.data-visualization
+
+Skill: Diagramme | Category: Daten | Version: 1.0.2 | Required: no
+
+Search terms: data-visualization, Diagramme, diagramm, datenvisualisierung, chart, plot, daten visualisieren, grafik aus daten.
+
+Source: `skills/data-visualization/SKILL.md` (Git blob 188cf750120b5c07049287fc68c9b5138af666e4).
+
+---
+name: data-visualization
+description: "Für passende Diagramme und visuelle Daten."
+---
+# Diagramme und Datenvisualisierung
+
+Diagrammtyp nach Aussage wählen: Balken für Kategorien, Linien für Verläufe, Punkte für Zusammenhänge. Einheiten, Zeitraum, Datenquelle und Filter sichtbar machen. Irreführende Skalen, 3D-Dekoration und erfundene Zwischenwerte vermeiden. Diagrammdaten mit den Originalzahlen abgleichen; bei wenigen Daten lieber Tabelle zeigen. Nur tatsächlich gerenderte Grafiken als erstellte Datei melden.
+
+## skill.json-yaml
+
+Skill: JSON/YAML | Category: Backend | Version: 1.0.2 | Required: no
+
+Search terms: json-yaml, JSON/YAML, json, yaml, yml, json schema, konfigurationsdatei, konfiguration prüfen.
+
+Source: `skills/json-yaml/SKILL.md` (Git blob 660301ecc85eaba6b416d0205662bcf7ae4c82ce).
+
+---
+name: json-yaml
+description: "Für sichere JSON- und YAML-Konfiguration."
+---
+# JSON und YAML
+
+Vorhandenes Schema und gewünschte Änderung bestimmen. Unbekannte Felder und gültige Datentypen erhalten. JSON-Escapes und YAML-Einrückung, doppelte Schlüssel, Nullwerte und Aliasnamen prüfen. Bei verfügbaren Parsern den vollständigen neuen Inhalt validieren. Keine Geheimnisse in Beispieldateien schreiben. Vor produktiven Änderungen Sicherung und Rückweg berücksichtigen.
+
