@@ -103,8 +103,8 @@ TESTS (in dieser Sitzung ausgefuehrt)
 - Neue Selbsttests mit Fehlereinbau (Korrektur zurueckgedreht, Test faellt durch):
   stabilize-security (11 von 11 erkannt), stabilize-history (5 von 5), stabilize-frontend
   (17 von 17), image-store-diagnostic (9 von 9; der Fall "Ordner nicht beschreibbar" laeuft als
-  root in einem Kindprozess als nobody). stabilize-backend, stabilize-loop und
-  stabilize-loop-journal stammen von den Pruefern mit eigener Mutationspruefung.
+  root in einem Kindprozess als nobody), stabilize-backend mit den erweiterten Warteschlangen-
+  und Anbieter-Tests (27 von 27), stabilize-loop und stabilize-loop-journal (30 von 30).
 - image-store-diagnostic, image-gen und storage zusaetzlich als gewoehnlicher Benutzer (nicht
   root) ausgefuehrt: OK; der Bildtest entfernt nur den Ordner, den er selbst angelegt hat.
 - Migration 058 auf MariaDB 10.11 eingespielt und ein zweites Mal ausgefuehrt (keine Aenderung).
