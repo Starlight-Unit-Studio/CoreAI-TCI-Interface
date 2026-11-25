@@ -290,6 +290,7 @@ UI_FILES=(
   scripts/tci-chat-message-selftest.cjs
   scripts/work-events-ui-selftest.js
   scripts/retry-hint-ui-selftest.cjs
+  scripts/stabilize-frontend-selftest.cjs
   scripts/text-selection-ui-selftest.cjs
   scripts/tci-chat-layout-ui-selftest.cjs
   setup.sh
@@ -1632,6 +1633,11 @@ if command -v php >/dev/null 2>&1; then
       ok 'Chat: a note above the input and a retry button at a run that broke off.'
     else
       fail 'Chat: the note above the input or the retry at a broken-off run is missing.'
+    fi
+    if node "$PROJECT_ROOT/scripts/stabilize-frontend-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Chat: follow-ups, server errors, stop, research panel, chat switch and polls verified.'
+    else
+      fail 'Chat: the frontend stabilization self-test failed.'
     fi
     if php "$PROJECT_ROOT/scripts/general-controls-selftest.php" >/dev/null 2>&1; then
       ok 'General: Core routing, stored settings and real reasoning levels verified.'
