@@ -1114,11 +1114,18 @@
     if (status) {
       timeline.appendChild(status);
       if (typeof window.setInterval === 'function') {
+        var detachedTicks = 0;
         var ticker = window.setInterval(function () {
-          // The finished reply replaces the live row; stop with it.
-          if (timeline.isConnected === false && timeline._wasConnected) {
-            window.clearInterval(ticker);
-            return;
+          // The finished reply replaces the live row; stop with it. A row that
+          // was replaced before it was ever shown stops after a few ticks.
+          if (timeline.isConnected === false) {
+            detachedTicks++;
+            if (timeline._wasConnected || detachedTicks > 3) {
+              window.clearInterval(ticker);
+              return;
+            }
+          } else {
+            detachedTicks = 0;
           }
           if (timeline.isConnected) timeline._wasConnected = true;
           renderStatus();

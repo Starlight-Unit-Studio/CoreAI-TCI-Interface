@@ -144,6 +144,9 @@
     thinkingPanelEl: null,
     sendTimestamp:   0,
     sendTimestampBySession: {},
+    // The last send per chat, for the server's 4 s turn spacing. Unlike
+    // sendTimestampBySession it is not consumed by the response time.
+    lastSendAtBySession: {},
     streamedIds:     {},
     pendingBySession: {},
     pendingCancelBySession: {},
@@ -413,6 +416,19 @@
         if (isActiveSession(sessionId)) appendMessageEl('system','Auftrag abgebrochen.');
       } else if (data.status === 'running' || data.status === 'waiting_tool') {
         pollCancelledRun(ses,runId,0);
+      } else if (data.status === 'interrupted' || data.status === 'failed') {
+        // The run had already ended: the chat must not stay busy.
+        clearAgentRun(sessionId);
+        resetGenerationUi(ses,null);
+        if (isActiveSession(sessionId)) {
+          appendMessageEl('system','Der Auftrag wurde unterbrochen.');
+          scrollToBottom();
+        }
+      } else if (data.status === 'completed') {
+        // Finished before the Stop arrived: the history load shows the saved reply.
+        clearAgentRun(sessionId);
+        resetGenerationUi(ses,null);
+        if (isActiveSession(sessionId)) loadChatHistory(ses);
       } else {
         clearAgentRun(sessionId);
       }
@@ -459,6 +475,7 @@
     rememberActiveSession('');
     if (state.editingMessage) clearMessageEdit(false);
     messagesInner.replaceChildren();
+    if (state.liveBrowse) state.liveBrowse.close();
     state.typingEl = null;
     state.thinkingPanelEl = null;
     state.agentStopEl = null;
@@ -497,7 +514,7 @@
   }
 
   // ── DB: Sessions laden ───────────────────────────────────
-  function dbLoadSessions() {
+  function dbLoadSessions(useRemembered) {
     var url = API_BASE + '/console_sessions.php?action=list'
       + (state.showArchived ? '&include_archived=1' : '');
     return fetch(url, {
@@ -512,7 +529,9 @@
       });
     })
     .then(function(d) {
-      var selected = String(state.activeSessionId || rememberedActiveSession());
+      // Only the page start may adopt the remembered chat. A later list
+      // refresh must not move the welcome screen into another tab's chat.
+      var selected = String(state.activeSessionId || (useRemembered === true ? rememberedActiveSession() : ''));
       state.sessions = d.sessions;
       if (selected && sessionById(selected)) state.activeSessionId = selected;
       // Project navigation loads after login and whenever the session list
@@ -587,6 +606,7 @@
     delete state.pollAttemptsBySession[sessionId];
     delete state.pendingBySession[sessionId];
     delete state.sendTimestampBySession[sessionId];
+    delete state.lastSendAtBySession[sessionId];
     (state.messageCacheBySession[sessionId] || []).forEach(function(message) {
       if (message && Number(message.id) > 0) delete state.streamedIds[Number(message.id)];
     });
@@ -1254,7 +1274,17 @@
     // No intermediate blank frame: the previous messages stay untouched
     // until the entire new view was built successfully.
     visibleInner.replaceChildren.apply(visibleInner,Array.prototype.slice.call(draft.childNodes));
-    if (state.liveBrowse && !state.liveBrowse.panel.isConnected) state.liveBrowse.close();
+    var browse = state.liveBrowse;
+    if (browse && !browse.panel.isConnected) {
+      browse.close();
+      // The same chat was only drawn again (a queued message, a variant, a
+      // profile update): its research job still runs, so watch it in the new
+      // typing row. Otherwise a later job error would never be noticed.
+      if (browse.sessionId === String(ses.id) && state.typingEl
+          && Number(state.pendingBySession[browse.sessionId]) === browse.turnId) {
+        openBrowseWindow(browse.jobId, browse.sessionId, browse.showLive, browse.turnId, browse.runKey);
+      }
+    }
     if (chatFollow) chatFollow.refresh();
   }
 
@@ -1384,6 +1414,16 @@
   // Exakte, serverseitig gefilterte History einer einzigen Sitzung.
   function loadChatHistory(ses, beforeId, prepend) {
     if (!state.characterId || !ses) return Promise.resolve();
+    if (!prepend && !isActiveSession(ses.id)) {
+      // A chat that is not open (its action finished in the background) must
+      // not cancel the open chat's request or its status. Its next opening
+      // loads it fresh from the server.
+      var closedId = String(ses.id);
+      delete state.messageCacheBySession[closedId];
+      delete state.historyHasMoreBySession[closedId];
+      delete state.historyOldestBySession[closedId];
+      return Promise.resolve();
+    }
     var epoch = state.viewEpoch;
     var url = API_BASE + '/console_messages.php?session_id=' + encodeURIComponent(ses.id)
       + '&character_id=' + encodeURIComponent(state.characterId)
@@ -2070,9 +2110,12 @@
       if (!request.id) throw new Error('generation_request_missing');
       guestTurnCounted();
       state.pendingBySession[ses.id] = Number(request.trigger_message_id) || true;
-      updateActivePendingUi();
-      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + (mode === 'continue' ? ' SETZT FORT\u2026' : ' ERZEUGT ALTERNATIVE\u2026'));
-      showTypingIndicator(true);
+      // The person may have opened another chat meanwhile: its view stays as it is.
+      if (isActiveSession(ses.id)) {
+        updateActivePendingUi();
+        setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + (mode === 'continue' ? ' SETZT FORT\u2026' : ' ERZEUGT ALTERNATIVE\u2026'));
+        showTypingIndicator(true);
+      }
       openStreamForReply(ses, Number(request.trigger_message_id) || 0, request);
     }).catch(function (error) {
       generationActionError(error && error.message ? error.message : 'console_action_failed');
@@ -3009,7 +3052,8 @@
     var ses = sessionById(key);
     var queue = state.queuedTurnsBySession[key] || [];
     if (!ses || !isActiveSession(key) || state.pendingBySession[key] || queue.length === 0) return;
-    var elapsed = Date.now() - Number(state.sendTimestampBySession[key] || 0);
+    // The server answers a turn only 4 s after the previous one in this chat.
+    var elapsed = Date.now() - Number(state.lastSendAtBySession[key] || 0);
     var delay = Math.max(0, 4200 - elapsed);
     setTimeout(function () {
       if (!isActiveSession(key) || state.pendingBySession[key]) return;
@@ -3053,15 +3097,20 @@
       ses.last_message_id = editedId;
       ses.last_read_message_id = editedId;
       state.variantSelectionBySession[ses.id] = {};
-      setComposerText('');
-      clearMessageEdit(false);
+      // Only this edit's own input row is emptied, not one in another chat.
+      if (state.editingMessage === edit) {
+        setComposerText('');
+        clearMessageEdit(false);
+      }
       state.pendingBySession[ses.id] = editedId;
       state.sendTimestampBySession[ses.id] = Date.now();
-      updateActivePendingUi();
-      renderHistory(ses);
-      setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' VERARBEITET DIE AENDERUNG…');
-      showTypingIndicator();
-      scrollToBottom();
+      if (isActiveSession(ses.id)) {
+        updateActivePendingUi();
+        renderHistory(ses);
+        setStatus('waiting', (state.assistantName || 'Mara').toUpperCase() + ' VERARBEITET DIE AENDERUNG…');
+        showTypingIndicator();
+        scrollToBottom();
+      }
       openStreamForReply(ses, editedId, request);
     }).catch(function (error) {
       var code = error && error.message ? error.message : 'console_action_failed';
@@ -3237,7 +3286,20 @@
     // @Ember-Praefix wuerde bei reinen Datei-Turns als einzelnes @ im
     // Modellprompt uebrig bleiben.
     var msgToSend = userText;
-    appendMessageEl('user', userText, state.userDisplayName || state.charName, null, atts, sentCreatedAt);
+    var sentRow = appendMessageEl('user', userText, state.userDisplayName || state.charName, null, atts, sentCreatedAt);
+    var acknowledged = false;
+    // A turn the server did not take goes back into the input row; its
+    // bubble must not look sent.
+    function returnUnsentTurn() {
+      if (options.from_queue || !isActiveSession(sessionId)) return;
+      if (sentRow && sentRow.parentNode) sentRow.parentNode.removeChild(sentRow);
+      if (!inputEl || String(inputEl.value || '').trim() || state.editingMessage) return;
+      var restored = userText;
+      var menu = window.CoreAIComposerMenu;
+      if (menu && typeof menu.parse === 'function' && typeof menu.loadFrom === 'function'
+          && menu.parse(userText).intent) restored = menu.loadFrom(userText, userText);
+      setComposerText(restored);
+    }
     if (!options.from_queue) clearAttachments();
     scrollToBottom(true); // A new user turn intentionally opens the latest view.
 
@@ -3247,6 +3309,7 @@
     updateActivePendingUi();
     state.sendTimestamp = Date.now();
     state.sendTimestampBySession[sessionId] = state.sendTimestamp;
+    state.lastSendAtBySession[sessionId] = state.sendTimestamp;
     // One explicit send owns the viewport; subsequent SSE work updates must
     // never re-enable following after the reader intentionally scrolls away.
     showTypingIndicator(true);
@@ -3272,6 +3335,8 @@
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
+      // The server stamps its turn spacing before it answers: count from here.
+      state.lastSendAtBySession[sessionId] = Date.now();
       if (!d.ok || (d.session_id && String(d.session_id) !== sessionId)) {
         var errMap = {
           'character_not_found': '\u26a0 Charakter nicht gefunden.',
@@ -3291,6 +3356,7 @@
           'guest_network_limit': '\u26a0 Die Gast-Nachrichten für dein Netzwerk sind für heute aufgebraucht. Mit einem eigenen Konto geht es weiter.',
           'guest_daily_limit':   '\u26a0 Der Gast-Zugang ist für heute ausgelastet. Mit einem eigenen Konto geht es weiter.',
           'guest_console_only':  '\u26a0 Als Gast chattest du nur im privaten CoreAI-Chat.',
+          'duplicate_message':   '\u26a0 Diese Nachricht wurde gerade schon gesendet.',
           'daily_message_limit': '\u26a0 Dein Tageslimit an Nachrichten ist erreicht.'
             + (d.retry_at ? ' Wieder möglich ab ' + new Date(d.retry_at).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + '.' : '')
         };
@@ -3298,6 +3364,7 @@
         delete state.pendingBySession[sessionId];
         restoreAttachments(atts);
         if (options.from_queue) restoreQueuedTurn(sessionId, options.queued_turn);
+        returnUnsentTurn();
         if (isActiveSession(sessionId)) {
           removeTypingIndicator();
           updateActivePendingUi();
@@ -3311,6 +3378,7 @@
         return;
       }
 
+      acknowledged = true;
       if (d.guest) {
         state.guest = d.guest;
         renderGuestQuota();
@@ -3359,6 +3427,8 @@
       delete state.pendingBySession[sessionId];
       restoreAttachments(atts);
       if (options.from_queue) restoreQueuedTurn(sessionId, options.queued_turn);
+      // A turn the server already confirmed stays sent (no second copy).
+      if (!acknowledged) returnUnsentTurn();
       if (isActiveSession(sessionId)) {
         removeTypingIndicator();
         updateActivePendingUi();
@@ -3536,9 +3606,38 @@
       }
       finalizeStream(data, ses, userMsgId, generationRequest || null);
     });
-    es.addEventListener('error', function() {
-      // Verbindung/SSE gestört -> Server generiert serverseitig zu Ende, Poll holt es.
-      fallbackPoll();
+    es.addEventListener('error', function(ev) {
+      // A named server error ({"error":...}) ends this turn without a saved
+      // reply; polling for one would wait for nothing. Only a bare connection
+      // error means the server may still finish: then the poll fetches it.
+      var payload = null;
+      try { payload = ev && typeof ev.data === 'string' && ev.data ? JSON.parse(ev.data) : null; } catch (e) {}
+      if (!payload || typeof payload !== 'object' || !payload.error) {
+        fallbackPoll();
+        return;
+      }
+      if (streamDone) return;
+      streamDone = true;
+      clearTimeout(watchdog);
+      try { es.close(); } catch (e) {}
+      if (!state.pendingBySession[sessionId]) return;
+      clearAgentRun(sessionId);
+      var code = String(payload.error);
+      if (code === 'agent_run_completed') {
+        // The run already ended; the history shows what it saved.
+        resetGenerationUi(ses, null);
+        if (isActiveSession(sessionId)) loadChatHistory(ses);
+        return;
+      }
+      if (generationRequest && generationRequest.id) {
+        resetGenerationUi(ses, code);
+        return;
+      }
+      resetGenerationUi(ses, null);
+      if (isActiveSession(sessionId)) {
+        appendMessageEl('system', 'Der Auftrag wurde unterbrochen.');
+        scrollToBottom();
+      }
     });
   }
 
@@ -4145,7 +4244,8 @@
       });
     }
 
-    state.liveBrowse = {jobId:jobId,sessionId:sessionId,panel:panel,close:function () {
+    state.liveBrowse = {jobId:jobId,sessionId:sessionId,panel:panel,
+      showLive:showLive,turnId:turnId,runKey:runKey,close:function () {
       finishB('GETRENNT');
     }};
     connect();
@@ -4735,7 +4835,7 @@
         // 0.6.87: a linked chat (?session=) opens directly.
         var linked = takeLinkedSession();
         var draft = takeLinkedDraft();
-        return dbLoadSessions()
+        return dbLoadSessions(true)
           .then(function () {
             var target = linked ? sessionById(linked) : null;
             if (target && !target.archived) return selectSession(target.id);

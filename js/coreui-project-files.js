@@ -445,6 +445,22 @@
     return 'is-fail';
   }
   function stopRunPoll() { if (runTimer) { clearTimeout(runTimer); runTimer = 0; } }
+  // The 1 s polls of a command and a process run only while the project page
+  // is open and the browser tab is visible; they continue when it is shown again.
+  var pollsPaused = false;
+  function pollsAllowed() { return !pollsPaused && !document.hidden; }
+  function pausePolls() { pollsPaused = true; stopRunPoll(); stopProcPoll(); }
+  function resumePolls() {
+    if (!pollsAllowed() || !state.project) return;
+    var r = state.run.current, p = state.proc.current;
+    if (state.run.open && r && !runTimer && (r.status === 'queued' || r.status === 'running')) showRun(r.id);
+    if (state.proc.open && procActive(p) && !procTimer) showProc(p.id);
+  }
+  if (typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { stopRunPoll(); stopProcPoll(); } else resumePolls();
+    });
+  }
   function loadRuns() {
     return getJson({ project_id: state.project, runs: 1 }).then(function (d) {
       state.run.list = d.runs || []; state.run.ready = d.ready !== false; state.run.allowed = d.allowed !== false;
@@ -461,7 +477,7 @@
       state.run.current = d.run; state.run.error = '';
       renderRun();
       if (d.run.status === 'queued' || d.run.status === 'running') {
-        runTimer = setTimeout(function () { showRun(id); }, 1000);
+        if (pollsAllowed()) { stopRunPoll(); runTimer = setTimeout(function () { showRun(id); }, 1000); }
       } else {
         var known = state.run.list.some(function (r) { return r.id === d.run.id && r.status === d.run.status; });
         if (!known) getJson({ project_id: state.project, runs: 1 }).then(function (x) { state.run.list = x.runs || []; renderRun(); }).catch(function () {});
@@ -612,7 +628,7 @@
       if (!before || before.id !== p.id || before.status !== p.status || before.stop_requested !== p.stop_requested || !procOutput) renderProc();
       else appendOutput();
       if (procActive(p)) {
-        procTimer = setTimeout(function () { showProc(id); }, 1000);
+        if (pollsAllowed()) { stopProcPoll(); procTimer = setTimeout(function () { showProc(id); }, 1000); }
       } else {
         var known = s.list.some(function (x) { return x.id === p.id && x.status === p.status; });
         if (!known) getJson({ project_id: state.project, procs: 1 }).then(function (x) { s.list = x.procs || []; renderProc(); }).catch(function () {});
@@ -1478,12 +1494,14 @@
   }
   function open(projectId) {
     if (projectId !== state.project) { reset(); state.project = projectId || ''; }
+    pollsPaused = false;
     if (!state.project) return Promise.resolve();
     render();
+    resumePolls();
     if (state.file) return Promise.resolve();
     return load().then(render);
   }
   window.addEventListener('beforeunload', function (e) { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
   function dirtyProject() { return dirty() ? state.project : ''; }
-  window.CoreAIProjectFiles = { open: open, leave: leave, reset: reset, dirtyProject: dirtyProject, diffLines: diffLines };
+  window.CoreAIProjectFiles = { open: open, leave: leave, reset: reset, pause: pausePolls, dirtyProject: dirtyProject, diffLines: diffLines };
 })();
