@@ -754,6 +754,7 @@ function coreui_agent_change_moves_forward(array $tool, string $result, ?string 
   [, $body] = array_pad(explode("\n", (string)($tool['input'] ?? ''), 2), 2, '');
   $after = null;
   $forward = false;
+  $inserted = [];
   if (($tool['tool'] ?? '') === 'pfile_write') {
     $after = function_exists('coreui_pftools_file_body') ? coreui_pftools_file_body($body) : $body;
     $forward = $shadow === null ? str_contains($result, ' angelegt (') : coreui_agent_text_grows($shadow, $after);
@@ -767,14 +768,24 @@ function coreui_agent_change_moves_forward(array $tool, string $result, ?string 
     foreach ($blocks as $choices) {
       $insertion = false;
       foreach ($choices as [$search, $replace]) {
-        if (trim($search) !== '' && str_contains($replace, $search)) $insertion = true;
+        if (trim($search) === '' || !str_contains($replace, $search)) continue;
+        $insertion = true;
+        // Review 0.8.34: the same section inserted again is no progress. The added text is what the
+        // replacement holds besides its search text; already in the file, or already inserted in this
+        // run, the change counts like a rewrite (an endless insertion loop paused at ten again).
+        $at = strpos($replace, $search);
+        $added = coreui_agent_norm_text(substr($replace, 0, (int)$at) . substr($replace, (int)$at + strlen($search)));
+        if ($added === '') continue;
+        $key = 'ins:' . hash('sha256', $added);
+        if (isset($seen[$key]) || ($shadow !== null && str_contains(coreui_agent_norm_text($shadow), $added))) $insertion = false;
+        $inserted[] = $key;
       }
       $forward = $forward && $insertion;
     }
   }
   $hash = $after !== null ? hash('sha256', coreui_agent_norm_text($after)) : '';
   if ($hash !== '' && isset($seen[$hash])) $forward = false;
-  return ['forward'=>$forward, 'content'=>$after, 'hash'=>$hash];
+  return ['forward'=>$forward, 'content'=>$after, 'hash'=>$hash, 'inserted'=>$inserted];
 }
 
 /** 0.8.17: how the last model call ended, for the work view (one bounded provider word, or nothing). */
@@ -1079,6 +1090,7 @@ function coreui_agent_loop_steps(string $out, ?array $tool, string $base, array 
         if ($move['content'] !== null) $fileShadows[$filePath] = $move['content'];
         else unset($fileShadows[$filePath]);
         if ($move['hash'] !== '') $fileVersions[$filePath][$move['hash']] = true;
+        foreach ($move['inserted'] as $key) $fileVersions[$filePath][$key] = true;
         if (!$move['forward']) $fileRewriteCounts[$filePath] = ($fileRewriteCounts[$filePath] ?? 0) + 1;
         if (($fileRewriteCounts[$filePath] ?? 0) >= COREUI_AGENT_FILE_CHANGE_PAUSE) {
           $stopReason = 'same_file_changed_repeatedly';

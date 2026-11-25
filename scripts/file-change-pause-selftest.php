@@ -132,6 +132,22 @@ fc_test(count($mixed['tools']) === 20 && ($mixed['loop']['reason'] ?? '') === 's
   && str_starts_with((string)$mixed['loop']['out'], 'Ich habe blog.html in diesem Auftrag 20-mal geändert'),
   'ten rewrites between ten insertions: check after the sixth rewrite, pause after the tenth: ' . count($mixed['tools']));
 
+// Review 0.8.34: the SAME section inserted again and again is no progress: it counts like a rewrite,
+// whether the file content is known (skeleton written first) or not.
+$replies = [];
+for ($i = 1; $i <= 30; $i++) $replies[] = $insert('blog.html', 1);
+$repeat = fc_run($replies);
+fc_test(count($repeat['tools']) === 11 && ($repeat['loop']['reason'] ?? '') === 'same_file_changed_repeatedly'
+  && count($checkPrompts($repeat)) === 1,
+  'one section inserted again and again: check after six repeats, pause after ten: ' . json_encode([count($repeat['tools']), $repeat['loop']['reason'] ?? null]));
+// The skeleton already holds section 1 (the stand-in result of the write says "geaendert", so the write
+// counts once): inserting it again counts from the first time, so the tenth count comes after nine.
+$replies = ["[DATEI_NEU: blog.html]\n<main>\n<section id=\"s1\">Teil 1</section>\n<!-- weiter -->\n</main>\n[/DATEI_NEU]"];
+for ($i = 1; $i <= 30; $i++) $replies[] = $insert('blog.html', 1);
+$known = fc_run($replies);
+fc_test(count($known['tools']) === 10 && ($known['loop']['reason'] ?? '') === 'same_file_changed_repeatedly',
+  'a section that is already in the known file counts the first time: ' . count($known['tools']));
+
 // --- The interim report -------------------------------------------------------------------------
 $report = coreui_agent_change_pause_report('blog.html', ['blog.html'=>10, 'style.css'=>1, 'guestbook.html'=>2]);
 fc_test(str_contains($report, 'blog.html (10 Änderungen), style.css (1 Änderung), guestbook.html (2 Änderungen).')
