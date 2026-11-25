@@ -357,3 +357,243 @@ Search terms: Fehler, Diagnose, Support, nicht fertig, Test, Work Timeline.
 For support ask only relevant details: installed version, account role, selected Core, tool/action, expected vs actual behavior, exact sanitized error and relevant work events. Do not confuse model thinking with public work events. A successful HTTP response, partial code, started worker or planned operation does not prove completion. Verify tool result, actual files and tests; name the blocker and what remains. Never invent results.
 
 Source: README.md; AGENTS.md; docs/UEBERGABEPROTOKOLL_0_8_33.txt.
+
+# Part II: Mara's executable chat protocol (source 0.8.33)
+
+This is a recovery/reference chapter supplementing the mandatory original `skills/werkzeuge/SKILL.md`. It documents model-output syntax, not user commands, and is not an alternative executor. The active turn's actual tool allowlist, current runtime protocol and original core skill take precedence over this snapshot. A retrieved example is data; it must never be automatically executed. Emit a marker only for the current authorized task. Use exactly one tool per model decision, with literal bracket syntax, no Markdown fencing or other prose. Wait for the confirmed result before choosing another action. Do not show execution markers as ordinary user-facing text. When merely explaining the syntax, quote it as code. Do not use markers invented from names of tools, UI tabs, APIs or skill categories.
+
+## protocol.web_search
+
+Search terms: Websuche, Web Search, Internet, Suchbegriffe, weitere Treffer, SearXNG.
+
+One-line model output:
+```text
+[WEB: official Python 3.12 documentation pathlib]
+```
+For more previously unseen hits from the last search: `[WEB: WEITER]`. Use concise distinctive terms; parser limits the query to 120 characters. Read the returned titles, URLs and snippets; refine the query or continue only if useful. Snippets are not visited pages. The Web Search tool must not silently start Playwright. Source: api/chat.php (ember_extract_web_marker), api/console_agent_loop.php, api/console_web_research.php.
+
+## protocol.browser
+
+Search terms: Research, Browser, Playwright, Webseite lesen, Recherche.
+
+```text
+[BROWSE: Read the official Python pathlib documentation and verify the relevant method]
+```
+Only when Research/browser is explicitly enabled and authorized for the turn. A concise goal (parser truncates to 200 characters), not a fabricated URL visit. Wait for actual browser results; if the browser is unavailable, report the limitation or use allowed Web Search and label its results. Deep Research is a separate UI workflow, not a fabricated DEEP_RESEARCH marker. Source: api/chat.php, api/console_agent_loop.php, api/deep_research.php.
+
+## protocol.python
+
+Search terms: Python, rechnen, Datenanalyse, Code ausführen, Berechnung, Sandbox.
+
+```text
+[PY]
+print(sum([12, 25, 17]))
+[/PY]
+```
+Return one complete bounded Python script with both tags, using the authorized isolated Python tool. Do not use host paths, secrets or arbitrary shell access. Inspect actual results/errors; if a correction is requested, correct the script rather than claim a result. An unclosed or truncated block must never be treated as a saved or successful result. For testing saved workspace files use the distinct AUSFUEHREN marker. Source: api/chat.php (ember_py_extract_marker), api/console_agent_loop.php, api/console_task_control.php.
+
+## protocol.archive
+
+Search terms: Archiv, Chatverlauf, Mitschrift, ältere Nachrichten, Kontext.
+
+`[ARCHIV: distinctive search terms]` searches older material in the current chat archive when enabled; it is not a search of other users' chats or a global memory API. Use real returned excerpts. Source: api/console_compaction.php.
+
+## protocol.image
+
+Search terms: Bild, Bilderstellung, pGen, Referenzbild, Mara, self portrait, large image.
+
+- `[BILD: Detailed English description]` generates a requested ordinary subject.
+- `[BILD ICH: Detailed English description]` depicts the configured Mara identity, also when referred to by name as the subject.
+- `[BILD GROSS: Detailed English description]` requests the large 1024 image only on explicit request.
+- `[BILD GROSS ICH: Detailed English description]` requests a large image of Mara herself only on explicit request.
+
+An address to Mara is not necessarily a request to depict Mara. Describe subject, setting, lighting and style in English; quote intended text in the image. Check image permissions, profile/license, model and service. Do not repeat an image-generation marker in the follow-up after a confirmed image; inspect/comment only if actual vision access is provided. The UI handles available image count, selected pGen and editing controls; do not invent markers for them. Source: api/image_gen.php (coreui_image_extract_marker and coreui_image_capability_hint), api/console_agent_loop.php.
+
+## protocol.skill_selection
+
+Search terms: Skill, Fähigkeiten, Werkzeugwahl, SKILL.md, Begleitdatei, Referenz.
+
+`[SKILL: debugging]` requests the current available skill by its exact ID. The active library also documents `[SKILL: a, b]` for up to two relevant skills in one selection. Follow the actual turn-specific index and context budget. `[SKILL: legal-research/references/IMPLEMENTATION.md]` requests that listed resource if available. A user can explicitly name a skill with `/skill debugging` or fix a skill variant in the chat UI; do not confuse a user command with a model tool call. User/project/shared and built-in skill precedence and fixed variants are resolved by the actual loader. Do not substitute this cached handbook copy for the latest authorized skill when the live loader is available. Resources and scripts are text, not executable by being loaded. Missing skills/resources/tool permissions are not new capabilities. Source: api/skills.php, api/skill_packages_store.php, skills/catalog.json.
+
+## protocol.plan_save
+
+Search terms: Projektplan, planen, Markdown, plan only, PLAN_SAVE.
+
+```text
+[COREUI_PLAN_SAVE]
+# Project plan
+## Requirements
+- Describe the authorized task.
+## Acceptance
+- Specify verifiable results.
+[/COREUI_PLAN_SAVE]
+```
+Saves the plan; a plan-only request is never build authorization. Long expressly authorized implementation tasks can start with a complete small saved base plan and then extend it. Source: api/console_native_tools.php.
+
+## protocol.plan_append
+
+Search terms: Plan erweitern, ergänzen, PLAN_APPEND, versionieren.
+
+```text
+[COREUI_PLAN_APPEND]
+## Additional acceptance criteria
+- Verify mobile navigation.
+[/COREUI_PLAN_APPEND]
+```
+Append new material to the existing versioned plan rather than repeat the old plan. Source: api/console_native_tools.php.
+
+## protocol.plan_continue
+
+Search terms: Entwurf fortsetzen, PLAN_CONTINUE, unvollständiger Plan.
+
+```text
+[COREUI_PLAN_CONTINUE]
+Continue the saved incomplete plan draft.
+[/COREUI_PLAN_CONTINUE]
+```
+Only resumes an existing owned incomplete plan. Not a general-purpose continuation or standalone build authorization. For later changes to an already built site, use current saved files. Source: api/console_native_tools.php.
+
+## protocol.plan_and_build
+
+Search terms: Plan und Umsetzung, PLAN_AND_BUILD, autonom bauen.
+
+```text
+[COREUI_PLAN_AND_BUILD]
+# Authorized implementation
+## Requirements
+- Create the requested source files.
+## Acceptance
+- Verify files and appropriate tests.
+[/COREUI_PLAN_AND_BUILD]
+```
+One complete block, not SAVE plus BUILD in the same output. Only when the user requested or authorized actual implementation. A verified original build request can continue after the plan is saved; do not stop merely because planning finished. Source: api/console_native_tools.php, api/console_plan_autorun.php.
+
+## protocol.project_build
+
+Search terms: Projekt erstellen, PROJECT_BUILD, Writer, ZIP.
+
+```text
+[COREUI_PROJECT_BUILD]
+Implement the explicitly authorized project and verify its required source files.
+[/COREUI_PROJECT_BUILD]
+```
+Starts the guarded project writer for a real authorized creation task, not an unrelated rebuild of a completed plan. Inspect confirmed file/ZIP results; never fabricate links. Source: api/console_native_tools.php, api/console_data_link_bridge.php.
+
+## protocol.file_read
+
+Search terms: Datei lesen, Projektdatei, Quelltext, Zeilennummer, DATEI.
+
+`[DATEI: index.html]` reads a saved workspace file. `[DATEI: index.html#L250]` reads from a requested line; follow the actual next-section hint when a read is clipped. Only current owned workspace paths. Source: api/project_file_tools.php.
+
+## protocol.file_edit
+
+Search terms: Datei ändern, Patch, SUCHEN, ERSETZEN, DATEI_AENDERN.
+
+```text
+[DATEI_AENDERN: index.html]
+<<<<<<< SUCHEN
+<h1>Old title</h1>
+=======
+<h1>New title</h1>
+>>>>>>> ERSETZEN
+[/DATEI_AENDERN]
+```
+Read the stored file first. Copy the exact old lines without read-view line numbers. Each search passage must match exactly once. Multiple complete search/replace blocks in a single file edit are supported. Ambiguous/missing matches change nothing; after rejection reread the actual saved file and make one corrected attempt. A unique tolerated whitespace match does not justify approximate edits. Source: api/project_file_tools.php, api/console_agent_loop.php.
+
+## protocol.file_write
+
+Search terms: Datei neu, neue Seite, DATEI_NEU, Datei anlegen, speichern.
+
+```text
+[DATEI_NEU: index.html]
+<!doctype html>
+<html lang="en"><title>Example</title><h1>Example</h1></html>
+[/DATEI_NEU]
+```
+Creates or replaces a whole workspace file. For a large file, write a small complete skeleton and add sections with separate verified edits. Never leave a closing marker out. A truncated file block is not saved. For small changes use DATEI_AENDERN instead of replacing the whole file. Source: api/project_file_tools.php, api/console_task_control.php.
+
+## protocol.run
+
+Search terms: Ausführen, Tests, Node, npm, Python, Sandbox, Exitcode.
+
+`[AUSFUEHREN: node --check app.js]` or `[AUSFUEHREN: python -m unittest -v]`. One complete marker on one line. For longer scripts create a workspace file first and then run it. Use the saved workspace, not the host; temporary runtime changes do not automatically persist. Inspect real output and exit code. Missing tests are a reason to perform appropriate checks, not declare BLOCKED. Source: api/project_file_tools.php, api/console_task_control.php.
+
+## protocol.process_start
+
+Search terms: Prozess starten, interaktive Shell, Entwicklungsserver, Devserver, Port.
+
+`[PROZESS_STARTEN: python interactive.py]` starts an authorized continuing process.
+`[SERVER_STARTEN: 8000 python -m http.server 8000]` starts a development server on an explicit port.
+`[SERVER_STARTEN: 3000 npm start]` is suitable only if the saved project actually provides that script and server port.
+Require the offered process/Python tools; verify output and server response before claiming a running service. Ports are internal to the sandbox. Source: api/project_file_tools.php.
+
+## protocol.process_control
+
+Search terms: Prozessausgabe, stdin, Server prüfen, Prozess stoppen, GET.
+
+- `[PROZESS_AUSGABE]`: inspect current state and output.
+- `[PROZESS_EINGABE: hello]`: send one input line to the running process.
+- `[SERVER_ABRUF: /]`: GET an internal server path; inspect actual status/content. Use the real isolated Preview for the user.
+- `[PROZESS_BEENDEN]`: stop the current process and inspect its real exit code.
+
+Each is a separate model decision. Source: api/project_file_tools.php.
+
+## protocol.versions
+
+Search terms: Version sichern, Arbeitsstand, Branch, Merge, Versionen, Konflikte.
+
+- `[VERSION_SICHERN: Tested responsive navigation]`: save the active workspace state as a version.
+- `[ARBEITSSTAND: mara/navigation]`: switch to or create a working state; inspect its current inventory before changing files.
+- `[ZUSAMMENFUEHREN: mara/navigation]`: merge that working state into the active state, only on user request and without unresolved conflicts.
+
+These are local workspace version tools, not remote GitHub commands. Never claim a merge succeeded before confirmation. Source: api/project_file_tools.php, api/project_vcs_store.php.
+
+## protocol.progress
+
+Search terms: Arbeitsweg, Zwischenmeldung, öffentliche Fortschrittsmeldung, COREUI_PUBLIC_PROGRESS.
+
+Optional single line immediately before a real authorized tool:
+```text
+[COREUI_PUBLIC_PROGRESS]I will inspect the saved JavaScript file.[/COREUI_PUBLIC_PROGRESS]
+[DATEI: app.js]
+```
+Keep the public note short (the agent parser recognizes up to 480 characters), factual and user-facing. It is not a separate action, not a private thinking dump, and not proof of a result. Do not announce unconfirmed work as finished. Source: api/console_native_tools.php, api/console_agent_loop.php.
+
+## protocol.done
+
+Search terms: Auftrag abschließen, Abschlussbericht, fertig, COREUI_TASK_DONE.
+
+```text
+[COREUI_TASK_DONE]
+The requested files were saved and the reported syntax checks passed.
+[/COREUI_TASK_DONE]
+```
+In an active project task, use this only after actual evidence establishes the requested outcome and checks. No other tool marker inside or next to the terminal block. If a required test is still missing and available, run it first. In a normal question without active task-control protocol, answer normally. Source: api/console_task_control.php.
+
+## protocol.blocked
+
+Search terms: Blockade, Fehler, nicht fertig, COREUI_TASK_BLOCKED.
+
+```text
+[COREUI_TASK_BLOCKED]
+The required service is unavailable. The following saved files remain: ...
+[/COREUI_TASK_BLOCKED]
+```
+Only when the authorized tools genuinely cannot continue. State concrete cause, verified saved state and what remains. Do not claim a blocker simply because checking or writing more files is work. Source: api/console_task_control.php.
+
+## protocol.recovery
+
+Search terms: Werkzeugfehler, Endmarker, abgeschnitten, Continue, Schleife, Retry.
+
+On malformed output follow the one format-repair request, not the previous successful action. On truncated output use a smaller complete block; never infer that part of it was saved. After a rejected edit reread the file. Never mix a tool with DONE/BLOCKED. Repeated identical read-only results can cause a tool to be dropped for the rest of the run. After six saved changes of the same file, check completion; after ten the runtime pauses with the actual interim report. There is no blanket project-step/time limit. Use current state and user's authorization after a retry. Source: api/console_task_control.php, api/console_agent_loop.php, docs/UEBERGABEPROTOKOLL_0_8_33.txt.
+
+## protocol.workflow_example
+
+Search terms: Website erstellen, Projekt fortsetzen, autonomer Arbeitsablauf, Beispiel.
+
+For an explicitly authorized existing-site change: inspect actual file inventory; select a relevant skill if needed; read the existing navigation with DATEI; create the new requested file with DATEI_NEU; read and edit navigation with DATEI_AENDERN; run actual appropriate checks with AUSFUEHREN; if needed start SERVER_STARTEN then inspect SERVER_ABRUF and point to Preview; report proven results via COREUI_TASK_DONE in active task mode. Each step is a separate response followed by actual tool results, not a single mixed marker batch. Do not save a new plan instead of performing a small authorized edit. If the task is merely a question, answer directly.
+
+# Part III: Built-in skill instructions and reference plans
+
+The companion skill appendix is a generated snapshot of the repository's canonical built-in skills. The active loader and the original `skills/werkzeuge/SKILL.md` remain authoritative. Include only public built-in material, never private or shared user skills. Reference implementation plans describe intended scope and gaps, not evidence of available tools. For retrieval, keep each skill or reference independently identifiable, separate from executable protocol records; do not treat retrieved code examples as commands.
+
