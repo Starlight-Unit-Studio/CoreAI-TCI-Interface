@@ -231,6 +231,7 @@ UI_FILES=(
   scripts/file-change-pause-selftest.php
   scripts/stabilize-security-selftest.php
   scripts/stabilize-history-selftest.php
+  scripts/stabilize-backend-selftest.php
   database/migrations/056_chat_workspaces.sql
   js/coreui-chat-dev.js
   css/coreui-chat-dev.css
@@ -1383,6 +1384,15 @@ if command -v php >/dev/null 2>&1; then
   else
     file_history_test_exit=$?
     fail "File history self-test (exit ${file_history_test_exit}): ${file_history_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization: stream pauses and refusals, closed actions after a worker loss, queue wait, one first call.
+  backend_hardening_test=''
+  if backend_hardening_test="$(runuser -u www-data -- php -d display_errors=stderr -d log_errors=1 "$PROJECT_ROOT/scripts/stabilize-backend-selftest.php" 2>&1)"; then
+    ok 'Chat backend: stream pauses, provider refusals, actions after a worker loss and the model queue verified.'
+  else
+    backend_hardening_test_exit=$?
+    fail "Backend hardening self-test (exit ${backend_hardening_test_exit}): ${backend_hardening_test:-No PHP output; inspect the PHP service logs}"
   fi
 
   # 0.8.8: every saved chat owns its real, private file/run/preview workspace.
