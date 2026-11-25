@@ -48,7 +48,11 @@ TESTS (in dieser Sitzung ausgefuehrt)
 - terminal-language, TCI-Sprache, Terran-Terminologie, branding, cache-bust --verify,
   version-merge-check (0.8.34 -> 0.8.35), tests/update-runner-selftest.sh,
   tests/update-auto-selftest.py, image-gen und storage: OK.
-- Gesamte Testreihe auf dem Endstand: wird nach dem Lauf hier nachgetragen.
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf 9a054262 (Code wie im Endstand, danach
+  nur Doku): 229 bestanden, 1 fehlgeschlagen: browse-image-selftest.py, weil Playwright fuer Python
+  in dieser Testumgebung fehlt (auf main genauso).
+- GitHub-Jobs auf 6489ddce: 15 von 15 gruen (auf 9a054262 rot nur am Versions-Check, weil dieses
+  Protokoll noch fehlte).
 
 NICHT GETESTET
 - Ein Update auf dem echten Server.
