@@ -386,5 +386,24 @@ coreui_agent_loop_run('[WEB: x]', ['tool'=>'web', 'input'=>'x'], 'BASIS', ['web'
 sl_test(count($researchSent) === 2 && strpos($researchSent[1], coreui_skills_body($skillId)) < strpos($researchSent[1], '--- DEINE ARBEITSSCHRITTE BISHER'),
   'P6: a research loop still puts a loaded guide into the trusted block');
 
+// --- Review 0.8.34: the result marks follow the Core's context window ---------------------------------
+sl_test(coreui_agent_project_result_marks(null) === [COREUI_AGENT_PROJECT_RESULT_HIGH, COREUI_AGENT_PROJECT_RESULT_LOW]
+  && coreui_agent_project_result_marks(8192) === [12288, 4000] && coreui_agent_project_result_marks(16384) === [24576, 6144]
+  && coreui_agent_project_result_marks(131072) === [96000, 24000] && coreui_agent_project_result_marks(2048) === [12000, 4000],
+  'marks: 1.5 bytes per window token, at least 12 KB, at most 96 KB, the fixed marks without a window');
+// A run with an 8k window (num_ctx 8192): nine large reads never push the shown results past ~12 KB.
+// Declared inside a block, so they exist only from here on (top-level functions would exist from the start).
+if (!function_exists('ember_model')) {
+  function ember_model(): string { return 'stand-in:8k'; }
+  function ember_ollama_context_window(string $model): ?int { return $model === 'stand-in:8k' ? 8192 : null; }
+}
+$reads = array_map(static fn(int $i): string => '[DATEI: datei' . $i . '.html]', range(2, 9));
+$reads[] = $done('Alle gelesen.');
+$small = sl_run('[DATEI: datei1.html]', $reads,
+  static fn(array $t): string => "Datei {$t['input']} (Stand 1, 9 KB):\n" . $t['input'] . '_' . str_repeat('w', 9000));
+$smallMax = max(array_map(static fn(string $p): int => strlen($stepsPart($p)), $small['prompts']));
+sl_test(count($small['tools']) === 9 && $smallMax <= 12288 + 4000 && ($small['loop']['outcome'] ?? '') === 'completed',
+  'an 8k window keeps the shown results near 12 KB (was up to 96 KB): ' . $smallMax);
+
 echo "CoreAI stabilize loop: status not content, DONE after the tool, no oscillation, research bound, section building, "
   . "edit recovery, separators, large replies, failures shortened, stable prompt start OK\n";

@@ -627,6 +627,17 @@ function coreui_agent_budget_steps(array $steps, int $budget = COREUI_AGENT_PROJ
  */
 const COREUI_AGENT_PROJECT_RESULT_HIGH = 96000;
 const COREUI_AGENT_PROJECT_RESULT_LOW = 24000;
+/**
+ * Review 0.8.34: the marks follow the Core's context window. Tool results may take about 1.5 bytes per
+ * token of the window (roughly 40 percent of it), the task, protocol and answer need the rest; 96 KB
+ * stays the upper cap. Without a known window (cloud or external Core) the fixed marks apply. Pure.
+ */
+function coreui_agent_project_result_marks(?int $windowTokens): array {
+  if ($windowTokens === null || $windowTokens <= 0) return [COREUI_AGENT_PROJECT_RESULT_HIGH, COREUI_AGENT_PROJECT_RESULT_LOW];
+  $high = max(12000, min(COREUI_AGENT_PROJECT_RESULT_HIGH, intdiv($windowTokens * 3, 2)));
+  return [$high, min(COREUI_AGENT_PROJECT_RESULT_LOW, max(4000, intdiv($high, 4)))];
+}
+
 /** Stabilize 0.8.33 (F10): an older failed result keeps about this many bytes (head and tail). */
 const COREUI_AGENT_FAILURE_KEEP = 1500;
 
@@ -920,6 +931,9 @@ function coreui_agent_loop_steps(string $out, ?array $tool, string $base, array 
   $fileChangeCheck = '';
   // Stabilize 0.8.33 (P1): which earlier results the project prompt shows compacted (state of this run).
   $promptView = [];
+  // Review 0.8.34: the result marks of the project prompt follow the Core's context window (num_ctx).
+  [$resultHigh, $resultLow] = coreui_agent_project_result_marks(
+    function_exists('ember_ollama_context_window') && function_exists('ember_model') ? ember_ollama_context_window(ember_model()) : null);
   // Review 0.8.34: research first, then a file: the six-step research bound must not drop the first
   // project tool; it switches the run into project mode below, as on any earlier step.
   while ($tool !== null && ($projectWorkflow || $used < COREUI_AGENT_MAX_STEPS
@@ -1209,7 +1223,7 @@ function coreui_agent_loop_steps(string $out, ?array $tool, string $base, array 
     // stay byte for byte as in the previous call; only the compaction points change them.
     $prompt = $projectWorkflow && $projectCompact
       ? coreui_agent_compact_project_prompt($base, $steps, $used, $allowed)
-      : coreui_agent_step_prompt($base, $projectWorkflow ? coreui_agent_prompt_steps($steps, $promptView) : $steps,
+      : coreui_agent_step_prompt($base, $projectWorkflow ? coreui_agent_prompt_steps($steps, $promptView, $resultHigh, $resultLow) : $steps,
         $used, $maxSteps, $allowed);
     if ($repairingEdit) {
       $prompt .= "\n\nDATEIÄNDERUNG KORRIGIEREN: Nutze den zuletzt gelesenen Quelltext. "
