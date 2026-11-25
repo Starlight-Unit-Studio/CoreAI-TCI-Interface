@@ -176,11 +176,14 @@ function coreui_task_decision_repair_prompt(string $verifiedContext, string $sha
   if (function_exists('mb_strlen') && mb_strlen($previous, 'UTF-8') > COREUI_TASK_REPAIR_ECHO_CHARS) {
     $previous = mb_substr($previous, 0, COREUI_TASK_REPAIR_ECHO_CHARS, 'UTF-8') . ' [...]';
   }
-  $echo = $previous === '' ? '' : "\nDeine letzte Ausgabe (nur zur Korrektur, nicht erneut ausfuehren):\n<<<\n"
+  // Stabilize 0.8.33: the echo said "nicht erneut ausfuehren", so a Core whose reply held an unexecuted
+  // tool block believed it was done and repeated DONE. Nothing of a refused reply ran or was saved.
+  $echo = $previous === '' ? '' : "\nDeine letzte Ausgabe (nur zur Korrektur; nichts daraus wurde gespeichert oder ausgefuehrt):\n<<<\n"
     . str_replace(['<<<', '>>>'], ['< < <', '> > >'], $previous) . "\n>>>\n"
     . "Beschreibt sie den fertigen Auftrag, gib genau diesen Text innerhalb von " . COREUI_TASK_DONE_OPEN
     . " und " . COREUI_TASK_DONE_CLOSE . " zurueck. Beschreibt sie eine Blockade, nimm " . COREUI_TASK_BLOCKED_OPEN
-    . " und " . COREUI_TASK_BLOCKED_CLOSE . ". Ist noch Arbeit offen, antworte nur mit dem naechsten Werkzeugmarker.";
+    . " und " . COREUI_TASK_BLOCKED_CLOSE . ". Ist noch Arbeit offen, antworte nur mit dem naechsten Werkzeugmarker."
+    . " Enthielt sie einen Werkzeugblock, wurde er NICHT ausgefuehrt: sende ihn allein noch einmal.";
   // 0.8.17: a cut-off block is not echoed (it would be written again and cut again).
   if ($shape === 'command_multiline' || ($shape === 'output_truncated' && coreui_task_multiline_command($previous))) {
     $echo = "\nDer vorige AUSFUEHREN-Aufruf war mehrzeilig und wurde nicht ausgefuehrt. "
@@ -188,14 +191,52 @@ function coreui_task_decision_repair_prompt(string $verifiedContext, string $sha
         . "Wenn du ein laengeres Pruefskript brauchst, speichere es zuerst mit DATEI_NEU.";
   } elseif (in_array($shape, ['tool_unclosed', 'output_truncated'], true)) {
     $echo = coreui_task_truncation_repair_text($shape);
+  } elseif ($shape === 'block_and_tool') {
+    $echo = coreui_task_block_and_tool_repair_text();
   }
-  return $verifiedContext . coreui_task_protocol_prompt() . $echo
+  // Stabilize 0.8.33: a repair built on the full step prompt (same prefix, cached by the model server)
+  // already ends with the protocol; it is not repeated.
+  $protocol = str_contains($verifiedContext, coreui_task_protocol_prompt()) ? '' : coreui_task_protocol_prompt();
+  return $verifiedContext . $protocol . $echo
     . "\nDeine letzte Ausgabe war keine gueltige Steuerentscheidung"
     . ($seen !== '' ? ' (erkannt: ' . $seen . ')' : '') . ". "
     . "Beantworte mit genau einem erlaubten Werkzeugmarker oder einem "
     . "vollstaendigen COREUI_TASK_DONE/COREUI_TASK_BLOCKED-Block. "
     . "Keine Erklaerung vor oder nach dem Steuerblock. Bereits bestaetigte "
-    . "Dateioperationen NICHT erneut ausfuehren.";
+    . "Dateioperationen aus frueheren Schritten NICHT erneut ausfuehren.";
+}
+
+/**
+ * Stabilize 0.8.33: the repair for a tool marker sent together with a DONE or BLOCKED block. The run
+ * was reported completed although the tool (a new page) was never saved: the old repair did not say
+ * that nothing had been executed.
+ */
+function coreui_task_block_and_tool_repair_text(): string {
+  return "\nIn deiner letzten Ausgabe standen ein Werkzeugmarker und ein Steuerblock zusammen. "
+    . "Davon wurde NICHTS gespeichert oder ausgefuehrt. Ist noch Arbeit offen, sende NUR den Werkzeugmarker "
+    . "mit seinem Schlussmarker, ohne " . COREUI_TASK_DONE_OPEN . " in derselben Antwort. Den Abschluss meldest du "
+    . "erst in einer eigenen Antwort, nachdem das Werkzeug das Ergebnis bestaetigt hat.";
+}
+
+/**
+ * Stabilize 0.8.33 (pure): a reply that holds exactly one complete DONE block and, OUTSIDE it, a complete
+ * authorized tool marker ("[DATEI_NEU: about.html] ... [/DATEI_NEU]" followed by DONE). The DONE is
+ * premature: the tool has not run. Returns that tool, so the caller runs it and drops the DONE; the
+ * Core decides again with the real result. A tool inside the block, a BLOCKED block, several blocks or
+ * a multiline command return null and stay a refused reply.
+ */
+function coreui_task_premature_done_tool(string $reply, callable $parseTool): ?array {
+  $reply = coreui_task_decision_normalise($reply);
+  if (coreui_task_multiline_command($reply)) return null;
+  if ((int)preg_match_all('~\[(/?)COREUI_TASK_([A-Z_]+)\]~', $reply, $hits, PREG_SET_ORDER | PREG_OFFSET_CAPTURE) !== 2) return null;
+  [$open, $close] = $hits;
+  if ($open[1][0] !== '' || $close[1][0] !== '/' || $open[2][0] !== 'DONE' || $close[2][0] !== 'DONE') return null;
+  $from = $open[0][1] + strlen($open[0][0]);
+  if (is_array($parseTool(substr($reply, $from, $close[0][1] - $from)))) return null;
+  $outside = trim(substr($reply, 0, $open[0][1]) . "\n" . substr($reply, $close[0][1] + strlen($close[0][0])));
+  if ($outside === '' || coreui_task_unclosed_tool_block($outside)) return null;
+  $tool = $parseTool($outside);
+  return is_array($tool) ? $tool : null;
 }
 
 /** A model completion assertion is accepted only after actual tool evidence. */

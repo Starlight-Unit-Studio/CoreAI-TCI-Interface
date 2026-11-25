@@ -97,11 +97,21 @@ function coreui_pftools_extract_read(string $reply): ?string {
   return trim($m[1]) !== '' ? trim($m[1]) : null;
 }
 
-/** A closed block [NAME: pfad] ... [/NAME] (pure): path . "\n" . body, or null. */
+/**
+ * A closed block [NAME: pfad] ... [/NAME] (pure): path . "\n" . body, or null.
+ * Stabilize 0.8.33: one regex with a lazy body over the whole reply hit the PCRE backtrack limit for
+ * replies above about 250 KB; preg_match then failed and a complete block counted as "no marker". The
+ * opening and the closing marker are now found separately, the body is cut out with substr.
+ */
 function coreui_pftools_extract_block(string $reply, string $name): ?string {
-  $pattern = '~\[\s*' . $name . '\s*:\s*([^\]\r\n]{1,200}?)\s*\][ \t]*\r?\n?(.*?)\r?\n?[ \t]*\[\s*/\s*' . $name . '\s*\]~su';
-  if (preg_match($pattern, $reply, $m) !== 1 || trim($m[1]) === '') return null;
-  return trim($m[1]) . "\n" . $m[2];
+  if (preg_match('~\[\s*' . $name . '\s*:\s*([^\]\r\n]{1,200}?)\s*\]~u', $reply, $open, PREG_OFFSET_CAPTURE) !== 1
+      || trim($open[1][0]) === '') return null;
+  $from = $open[0][1] + strlen($open[0][0]);
+  if (preg_match('~\[\s*/\s*' . $name . '\s*\]~u', $reply, $close, PREG_OFFSET_CAPTURE, $from) !== 1) return null;
+  $body = substr($reply, $from, $close[0][1] - $from);
+  $body = (string)preg_replace('~\A[ \t]*\r?\n?~', '', $body, 1);
+  $body = (string)preg_replace('~\r?\n?[ \t]*\z~', '', $body, 1);
+  return trim($open[1][0]) . "\n" . $body;
 }
 function coreui_pftools_extract_edit(string $reply): ?string { return coreui_pftools_extract_block($reply, 'DATEI_AENDERN'); }
 function coreui_pftools_extract_write(string $reply): ?string { return coreui_pftools_extract_block($reply, 'DATEI_NEU'); }
@@ -287,19 +297,57 @@ function coreui_pftools_split(string $input): array {
 /**
  * The SUCHEN/ERSETZEN pairs of a change (pure): [[search, replace], ...].
  * Seven to nine angle brackets and equals signs are accepted, CRLF too.
+ * A block whose text holds more than one line of equals signs (a Markdown heading "Install\n=======")
+ * has several possible splits; this list keeps the first one, coreui_pftools_parse_edit_blocks() all.
  */
 function coreui_pftools_parse_edits(string $body): array {
-  $body = str_replace("\r\n", "\n", $body);
-  // 0.8.32: markers may be indented, carry a colon, or use the English words SEARCH/REPLACE.
-  preg_match_all('~^[ \t]*<{7,9}[ \t]*(?:SUCHEN|SEARCH):?[ \t]*\n(.*?)^[ \t]*={7,9}[ \t]*\n(.*?)^[ \t]*>{7,9}[ \t]*(?:ERSETZEN|REPLACE):?[ \t]*$~msu',
-    $body, $all, PREG_SET_ORDER);
-  $pairs = [];
-  foreach ($all as $m) {
-    $search = (string)preg_replace('~\n$~', '', $m[1]);
-    $replace = (string)preg_replace('~\n$~', '', $m[2]);
-    $pairs[] = [$search, $replace];
+  return array_map(static fn(array $choices): array => $choices[0], coreui_pftools_parse_edit_blocks($body));
+}
+
+/**
+ * Stabilize 0.8.33 (pure): every SUCHEN/ERSETZEN block with each possible split at a separator line:
+ * [[[search, replace], ...], ...]. Read line by line, so a large change cannot fail on a regex limit.
+ * 0.8.32: markers may be indented, carry a colon, or use the English words SEARCH/REPLACE.
+ */
+function coreui_pftools_parse_edit_blocks(string $body): array {
+  $lines = explode("\n", str_replace("\r\n", "\n", $body));
+  $blocks = [];
+  $inside = null;
+  foreach ($lines as $line) {
+    if ($inside === null) {
+      if (preg_match('~^[ \t]*<{7,9}[ \t]*(?:SUCHEN|SEARCH):?[ \t]*$~u', $line) === 1) $inside = [];
+      continue;
+    }
+    if (preg_match('~^[ \t]*>{7,9}[ \t]*(?:ERSETZEN|REPLACE):?[ \t]*$~u', $line) !== 1) { $inside[] = $line; continue; }
+    $choices = [];
+    foreach ($inside as $k => $candidate) {
+      if (preg_match('~^[ \t]*={7,9}[ \t]*$~', $candidate) !== 1) continue;
+      $choices[] = [implode("\n", array_slice($inside, 0, $k)), implode("\n", array_slice($inside, $k + 1))];
+    }
+    if ($choices !== []) $blocks[] = $choices;
+    $inside = null;
   }
-  return $pairs;
+  return $blocks;
+}
+
+/**
+ * Stabilize 0.8.33 (pure): one block with several possible splits gets the split whose search text
+ * occurs exactly once in $text (verbatim, or after the tolerant whole-line matching). Returns the
+ * pair, or ['error'=>...] when no split or more than one split fits.
+ */
+function coreui_pftools_pick_split(string $text, array $choices, int $n): array {
+  if (count($choices) === 1) return $choices[0];
+  $fits = [];
+  foreach ($choices as $pair) {
+    if (trim($pair[0]) === '') continue;
+    $count = substr_count($text, $pair[0]);
+    if ($count === 0) $count = coreui_pftools_loose_match($text, $pair[0], $pair[1])['count'];
+    if ($count === 1) $fits[] = $pair;
+  }
+  if (count($fits) === 1) return $fits[0];
+  if ($fits === []) return $choices[0];
+  return ['error'=>'Block ' . $n . ': die Trennzeile ======= steht mehrfach im Block, die Trennung zwischen SUCHEN und ERSETZEN '
+    . 'ist nicht eindeutig (eine Ueberschrift aus Gleichheitszeichen?). Nimm einen SUCHEN-Text ohne solche Zeile.'];
 }
 
 /**
@@ -313,8 +361,14 @@ function coreui_pftools_apply_edits(string $content, array $pairs): array {
   $added = 0;
   $removed = 0;
   $tolerant = [];
-  foreach ($pairs as $i => [$search, $replace]) {
+  foreach ($pairs as $i => $pair) {
     $n = $i + 1;
+    // Stabilize 0.8.33: a block from coreui_pftools_parse_edit_blocks() may offer several splits.
+    if (isset($pair[0]) && is_array($pair[0])) {
+      $pair = coreui_pftools_pick_split($text, $pair, $n);
+      if (isset($pair['error'])) return ['ok'=>false, 'content'=>$content, 'added'=>0, 'removed'=>0, 'error'=>$pair['error']];
+    }
+    [$search, $replace] = $pair;
     if (trim($search) === '') {
       return ['ok'=>false, 'content'=>$content, 'added'=>0, 'removed'=>0,
         'error'=>'Block ' . $n . ': SUCHEN ist leer. Fuer eine ganze Datei nimm [DATEI_NEU: pfad].'];
@@ -742,7 +796,7 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
     $path = coreui_pfiles_path($rawPath);
     if ($kind === 'pfile_edit') {
       $file = coreui_pfiles_get($pdo, $uid, $projectId, $path);
-      $applied = coreui_pftools_apply_edits($file['content'], coreui_pftools_parse_edits($body));
+      $applied = coreui_pftools_apply_edits($file['content'], coreui_pftools_parse_edit_blocks($body));
       if (!$applied['ok']) {
         coreui_pftools_record($pdo, 'error', 'Projektdatei nicht geaendert', ['count'=>0]);
         return 'Die Datei ' . $path . ' wurde NICHT geaendert: ' . $applied['error'];
@@ -817,6 +871,12 @@ function coreui_pftools_run(PDO $pdo, int $uid, string $sessionId, array $tool, 
         . coreui_pftools_current_file_inventory($pdo,$uid,$projectId)
         . "\nEinen vorhandenen Pfad waehlen oder eine beauftragte Datei erstellen. "
         . "Fehlgeschlagenen Leseaufruf nicht wiederholen.";
+    }
+    // Stabilize 0.8.33: a change of a file that does not exist is correctable; the Core gets the list.
+    if ($kind==='pfile_edit' && $e->getMessage()==='file_not_found') {
+      return 'Das ging nicht: ' . $why . ".\n"
+        . coreui_pftools_current_file_inventory($pdo,$uid,$projectId)
+        . "\nAendere einen vorhandenen Pfad oder lege eine neue Datei mit [DATEI_NEU: pfad] an.";
     }
     return 'Das ging nicht: ' . $why . '.';
   }
