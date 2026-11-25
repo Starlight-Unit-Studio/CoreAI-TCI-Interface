@@ -52,7 +52,10 @@ const root = path.resolve(__dirname,'..');
       assert.equal(await page.locator('.work-narration.work-error .work-note-text').evaluate(el=>getComputedStyle(el).borderLeftWidth),'0px');
       assert.equal(await page.locator('.work-site-status').allTextContents().then(x=>x.join('|')),'Suchtreffer|Besucht|Aktuelle Seite');
       assert.equal(await page.locator('.work-research-current').count(),2);
-      assert.equal(await page.locator('.work-research-label').first().innerText(),'1 Quelle gefunden');
+      // Since 0.7.67 (commit 436f982d, CHANGELOG "Suchtreffer sind keine besuchten Webseiten") a search hit is labelled as such, never as a found/visited source;
+      // the live list with two visited pages counts visits.
+      assert.equal(await page.locator('.work-research-label').first().innerText(),'1 Suchtreffer');
+      assert.equal(await page.locator('.work-research-label').last().innerText(),'2 Webseiten besucht');
       assert.equal(await page.locator('.work-research-history').first().getAttribute('open'),null);
       assert.equal(await page.locator('.work-research-url').last().innerText(),'news.example.org/update');
       assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');

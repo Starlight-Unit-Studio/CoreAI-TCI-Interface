@@ -35,7 +35,15 @@
       });
     });
   }
-  request('uninstall_status').then(function (result) {
+  // 0.8.34: ask for the uninstall status only for the owner. Every other account (also one the Admin Core
+  // gate turns away) made a denied admin request on each page load.
+  fetch(new URL('../api/auth.php?action=me', document.baseURI).href, {credentials: 'include', cache: 'no-store',
+      headers: {Accept: 'application/json'}}).then(function (response) {
+    return response.json().catch(function () { return {}; });
+  }).then(function (me) {
+    if (!me || me.ok !== true || me.is_guest || Number(me.permission_level) !== 0) throw new Error('not_owner');
+    return request('uninstall_status');
+  }).then(function (result) {
     if (result.owner !== true) return;
     card.hidden = false;
     csrf = result.csrf_token || '';

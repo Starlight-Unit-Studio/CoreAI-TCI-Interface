@@ -13,7 +13,13 @@ const css = read('css/console.css');
 new vm.Script(code, {filename:'coreui-model-library.js'});
 assert(!/innerHTML|insertAdjacentHTML/.test(code), 'external catalog entries are rendered as text');
 assert(html.includes('id="coreInstallLibraryOpen"'), 'general Core management has one library entry');
-assert(!html.includes('id="insightChips"'), 'the redundant Core/Kontext/Werkzeuge/Projekt toolbar is removed');
+// 0.6.91 removed the Core/Kontext/Werkzeuge/Projekt toolbar from the welcome screen; 0.7.4 deliberately
+// restored it for active chats only (CHANGELOG 0.7.4 and 0.7.10). It is mounted once, starts hidden and
+// only the active-chat switch in js/console-app.js shows it, so the welcome screen stays free of it.
+const insightChipTags = html.match(/<div class="insight-chips" id="insightChips"[^>]*>/g) || [];
+assert(insightChipTags.length === 1 && /\shidden(?=[\s>])/.test(insightChipTags[0])
+  && read('js/console-app.js').includes('if (insightChips) insightChips.hidden = !active;'),
+  'the Core/Kontext/Werkzeuge/Projekt toolbar is hidden on the welcome screen and shown only in active chats');
 assert(html.includes('id="welcomeGreeting"') && html.includes('class="welcome-suggestions"')
   && html.includes('id="inputMessage"'), 'greeting, example prompts and composer remain intact');
 assert(html.includes('<span>DENKEN</span>') && !html.includes('DENKAUFWAND'),
@@ -31,9 +37,15 @@ assert(html.includes('CORE-BIBLIOTHEK') && html.includes('Ollama + Hugging Face'
 assert(html.includes('href="https://ollama.com/search"'), 'official fallback link is retained');
 assert(html.indexOf('js/coreui-core-install.js') < html.indexOf('js/coreui-model-library.js'),
   'library controller starts after the TCI install controller');
-assert(css.includes('.core-library-provider--future')
-  && css.includes('grid-template-columns: repeat(3, minmax(0, 1fr))')
-  && css.includes('@media (max-width: 520px)'),
+// 0.7.76 (Unified Core library, commit e7506f74): one shared Ollama + Hugging Face discovery tab beside
+// the installed Cores tab. The dashed "future" provider tab is gone; desktop and the phone layout both
+// split the tab row into two balanced columns.
+const providerTabs = html.match(/<button type="button" class="core-library-provider[ "]/g) || [];
+const providerGrid = (css.match(/\n\.core-library-providers \{[^}]*\}/) || [''])[0];
+const providerPhone = /@media \(max-width: 520px\) \{[^@]*?\n  \.core-library-providers \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/;
+assert(providerTabs.length === 2 && !css.includes('.core-library-provider--future')
+  && providerGrid.includes('grid-template-columns: repeat(2, minmax(0, 1fr));')
+  && providerPhone.test(css),
   'the two shared tabs include a responsive mobile layout');
 
 class Element {

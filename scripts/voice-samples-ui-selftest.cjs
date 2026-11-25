@@ -128,7 +128,9 @@ async function open(browser, level, viewport, state) {
         'Zahlen: Dein Kontextfenster ist auf 32.768 Tokens eingestellt.Gesprochen als: Dein Kontextfenster ist auf zweiunddreißigtausendsiebenhundertachtundsechzig Tokens eingestellt.',
         "Englisch, Begrüßung: Hello, I'm Mara."]);
     assert.equal(await page.locator('#ttsSentences .tts-spoken').count(), 1, 'spoken text only where it differs');
-    assert.deepEqual(await page.$$eval('.tts-voice-name strong', l => l.map(x => x.textContent)), ['Anna', 'Ramona', 'Kerstin (Klon)', 'Eve englisch']);
+    // 0.7.61: the 4B encoder A/B diagnostic (#imageAbCard) in the same Betrieb view reuses the .tts-voice look,
+    // so the voices are read from the voice list of this card only.
+    assert.deepEqual(await page.$$eval('#ttsVoices .tts-voice-name strong', l => l.map(x => x.textContent)), ['Anna', 'Ramona', 'Kerstin (Klon)', 'Eve englisch']);
     assert.deepEqual(await page.$$eval('.tts-badge', l => l.map(x => x.textContent)), ['FREI', 'PRÜFEN', 'FREI', 'FREI'], 'license badge per voice');
     // 0.6.6: each voice gets the sentences of its language only.
     assert.equal(await page.locator('[data-voice="pocket-de-anna"] .tts-play').count(), 2, 'German voice: German sentences');
@@ -173,7 +175,7 @@ async function open(browser, level, viewport, state) {
     assert.deepEqual(await page.$$eval('#ttsRunSelect option', l => l.map(o => o.textContent)),
       ['04.11.2026, 15:30 Uhr (3 von 4)', '03.11.2026, 09:00 Uhr (1 von 1)']);
     await page.selectOption('#ttsRunSelect', OLD.stamp);
-    await page.waitForFunction(() => document.querySelectorAll('.tts-voice').length === 1);
+    await page.waitForFunction(() => document.querySelectorAll('#ttsVoices .tts-voice').length === 1);
     assert.equal(srv.calls.filter(c => c.action === 'tts_runs').pop().run, OLD.stamp, 'asks for the chosen run');
     await page.click('[data-voice="pocket-de-anna"] .tts-play >> nth=0');
     played = await page.evaluate(() => window.__played.slice());

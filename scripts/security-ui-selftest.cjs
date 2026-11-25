@@ -2,7 +2,7 @@
 //   node scripts/security-ui-selftest.cjs
 // A stand-in for api/account_security.php and api/auth.php keeps the state; Chromium's virtual
 // authenticator (CDP WebAuthn) makes real passkeys. Checks: the overview like the reference
-// (rows, counts, planned PIN, push and CSP), password confirmation (wrong, then right), the
+// (rows, counts, the Konto-PIN active since 0.7.22 with its sub page, planned push and CSP), password confirmation (wrong, then right), the
 // authenticator app with QR code and key, recovery codes (shown once, copy, file), the E-Mail
 // code, Lockdown-Modus, a real passkey added (client data checked) and renamed and removed,
 // sessions with "Überall abmelden", the history, advanced account security (needs a passkey,
@@ -139,7 +139,19 @@ async function confirmWith(page, password) {
     assert.deepEqual(await page.$$eval('#secMain .sec-row strong', l => l.map(x => x.textContent)), ['Passkeys und Sicherheitsschlüssel', 'Passwort', 'Konto-PIN',
       'Authenticator-App', 'Push-Benachrichtigungen', 'E-Mail-Code', 'Wiederherstellungscodes', 'Aktive Sitzungen', 'Sicherheitsverlauf',
       'Erweiterte Kontosicherheit', 'Lockdown-Modus', 'CSP für benutzerdefinierte Apps durchsetzen']);
-    for (const id of ['pin', 'push', 'csp']) assert.match(await page.textContent('#secRow-' + id), /IN VORBEREITUNG/, id + ' planned');
+    for (const id of ['push', 'csp']) assert.match(await page.textContent('#secRow-' + id), /IN VORBEREITUNG/, id + ' planned');
+    // 0.7.22 (chat lock): the Konto-PIN is no longer planned; it opens its own create/change page.
+    assert.doesNotMatch(await page.textContent('#secRow-pin'), /IN VORBEREITUNG/, 'Konto-PIN is active');
+    assert.equal(await page.textContent('#secPinState'), 'Einrichten', 'no PIN yet');
+    assert.equal(await page.isDisabled('#secRow-pin .sec-open'), false);
+    await page.click('#secRow-pin .sec-open');
+    await page.waitForSelector('#secSub-pin:not([hidden])');
+    assert.equal(await page.textContent('#secPinTitle'), 'Konto-PIN erstellen');
+    assert.equal(await page.textContent('#secPinSave'), 'KONTO-PIN ERSTELLEN');
+    assert.equal(await page.isDisabled('#secPinSave'), false);
+    assert.equal(await page.isVisible('#secPinOldRow'), false, 'no old PIN field before a PIN exists');
+    await page.click('#secSub-pin [data-sec-back]');
+    await page.waitForSelector('#secSub-pin', {state: 'hidden'});
     assert.equal(await page.isDisabled('#secPushMfa'), true);
     assert.equal(await page.isDisabled('#secCsp'), true);
     assert.equal(await page.textContent('#secPasskeyCount'), '0');
@@ -346,7 +358,7 @@ async function confirmWith(page, password) {
     assert.deepEqual(loginErrors, []);
     await context.close();
 
-    console.log('CoreAI security UI: overview like the reference, planned PIN/push/CSP, password confirmation, authenticator app with QR and key, '
+    console.log('CoreAI security UI: overview like the reference, Konto-PIN page, planned push/CSP, password confirmation, authenticator app with QR and key, '
       + 'recovery codes once with file, E-Mail code, Lockdown-Modus, real passkey added/renamed (virtual authenticator), sessions, history, '
       + 'advanced account security (needs a passkey, codes first, signs out), Überall abmelden, phone; sign-in: second step (wrong, mail, '
       + 'recovery), real passkey sign-in, passkey_required OK');

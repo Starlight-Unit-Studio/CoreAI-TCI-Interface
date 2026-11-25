@@ -28,7 +28,13 @@ assert.equal(file.type, 'text/markdown;charset=utf-8');
 assert.equal(file.text, raw, 'Never trim or alter the original pasted text');
 assert.equal(file.size, new TextEncoder().encode(raw).length);
 assert.equal(html.includes('<textarea'), true);
-assert.equal(html.includes('maxlength="12000"'), false);
+// 0.5.37: the chat composer itself has no character cap (long pastes become a Markdown file).
+// The check is scoped to the composer: since 0.7.x the separate project settings dialog
+// (#projectSettingsInstructions) deliberately mirrors the server's 12000-character limit
+// for project instructions (api/console_project_store.php), which is not the chat input.
+const composer = (html.match(/<textarea\b[^>]*\bid="inputMessage"[^>]*>/) || [])[0];
+assert(composer, 'the chat composer textarea #inputMessage exists');
+assert.equal(/\bmaxlength\s*=/.test(composer), false, 'the chat composer has no maxlength');
 const state = {waitingEmber:false};
 let available = 0, rendered = 0, uploads = 0;
 let messages = 0;

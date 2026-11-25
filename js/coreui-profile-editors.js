@@ -23,7 +23,8 @@
       active = kind;
       doc.body.style.overflow = 'hidden';
       modal.hidden = false;
-      var target = modal.querySelector('input[type="text"],button');
+      // 0.8.34: the text field first; a combined selector took the close button (first in the markup).
+      var target = modal.querySelector('input[type="text"]') || modal.querySelector('button');
       if (target && typeof target.focus === 'function') target.focus({preventScroll: true});
       else modal.focus({preventScroll: true});
       return true;

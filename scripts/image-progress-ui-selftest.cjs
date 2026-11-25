@@ -35,10 +35,16 @@ assert(/<script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>\n  <sc
   && /coreui-work-events\.js\?v=\d+"><\/script>\n  <script src="\.\/js\/coreui-image-progress\.js\?v=\d+"><\/script>/.test(read('app.html')),
   'app.html loads the module after the work view');
 const store = read('api/console_work_store.php');
-assert(store.includes("'steps','image_px'];") && store.includes("preg_match('/^[a-f0-9]{32}$/D', $raw['image_uuid'])"),
+// 0.7.63 extended the same number whitelist with the worker-confirmed reference count, time limit,
+// elapsed time and peak RAM (CHANGELOG 0.7.63 "Fehlerdiagnose mit echten Messwerten").
+assert(store.includes("'steps','image_px','reference_count','time_limit_s','elapsed_s','peak_rss_mb'];")
+  && store.includes("preg_match('/^[a-f0-9]{32}$/D', $raw['image_uuid'])"),
   'the work store keeps steps, width and the image id');
 const chat = read('api/chat.php');
-assert(chat.includes("coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), coreui_image_progress_meta($job));")
+// 0.7.61 ("Bildfehler nachvollziehbar"): the progress meta is kept in $lastImageProgress so a failed job
+// still reports the last confirmed worker phase; the same meta is announced for every step.
+assert(chat.includes("$lastImageProgress = coreui_image_progress_meta($job);")
+  && chat.includes("coreui_work_record($pdo, 'tool', 'info', coreui_image_progress_title($job), $lastImageProgress);")
   && chat.includes("'image_uuid'=>(string)$result['uuid'], 'image_px'=>(int)$result['width']]);"), 'progress and the finished image are announced');
 
 // 0.6.42: a preview image, pixel by pixel.

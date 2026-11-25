@@ -437,6 +437,7 @@ UI_FILES=(
   css/coreui-image-viewer.css
   js/coreui-image-progress.js
   scripts/image-progress-ui-selftest.cjs
+  scripts/progress-browser-selftest.cjs
   api/console_composer_intent.php
   api/composer_tools.php
   js/coreui-composer-menu.js
@@ -2001,6 +2002,22 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
       fi
     else
       warn 'Profile: UI test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.8.34: research cards in a real browser (hits vs. visited pages, no overflow); needs Playwright for Node.
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+      if node "$PROJECT_ROOT/scripts/progress-browser-selftest.cjs" >/dev/null 2>&1; then
+        ok 'Research cards: search hits and visited pages verified in browser.'
+      else
+        fail 'Research cards: browser test failed.'
+      fi
+    else
+      warn 'Research cards: browser test skipped (Playwright for Node.js is not installed).'
+    fi
+    # 0.8.34: the image progress card was only listed as a required file, never run.
+    if node "$PROJECT_ROOT/scripts/image-progress-ui-selftest.cjs" >/dev/null 2>&1; then
+      ok 'Image progress card: steps, width and image id verified.'
+    else
+      fail 'Image progress card: UI test failed.'
     fi
     # 0.6.85: Sicherheit und Anmeldung and the sign-in with second step and passkey; needs Playwright for Node.
     if node -e "require('playwright')" >/dev/null 2>&1; then
