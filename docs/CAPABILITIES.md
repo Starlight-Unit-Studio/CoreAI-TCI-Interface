@@ -1,6 +1,6 @@
 # CoreAI: detailed capability catalog
 
-**Scope:** CoreAI source 0.8.33. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
+**Scope:** CoreAI source 0.8.34. [Product README](../README.md) | [Changelog](../CHANGELOG.md) | [Roadmap](../ROADMAP.md) | [Implementation matrix](COREUI_FEATURE_MATRIX.md)
 
 Mara's OpenPet v2 chat Pet uses separate animation states for working, tool-waiting, reviewing, completing, errors, waving and dragging, plus idle gaze poses. Touch controls support tapping, double-tapping and dragging; legacy Pets remain compatible.
 

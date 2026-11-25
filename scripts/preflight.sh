@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CoreAI: TCI Interface 0.8.33: a project run that changes one file again and again is asked to finish, then pauses.
+# CoreAI: TCI Interface 0.8.34: stabilisation (account limits, file history, stream and loop fixes, image saving with a named cause).
 set -Eeuo pipefail
 IFS=$'\n\t'
 
