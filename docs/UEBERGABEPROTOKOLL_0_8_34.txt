@@ -145,7 +145,16 @@ TESTS (in dieser Sitzung ausgefuehrt)
   bestanden, 2 fehlgeschlagen (browse-image: Playwright fuer Python fehlt in der Testumgebung;
   image-progress-ui: Assertion auf die alte Zahlenliste im Arbeitsweg-Speicher, angepasst).
   Auf main 0.8.33 in derselben Umgebung waren 14 Tests rot.
-- Gesamte Testreihe auf dem Endstand: wird nach dem Lauf hier nachgetragen.
+- Jeder Befund der Gegenpruefung hat einen Test, der mit dem alten Code faellt (Fehlereinbau
+  je Korrektur zurueckgedreht: Umbenennen, Einfuegeschleife in zwei Varianten, Recherche dann
+  Datei in zwei Varianten, Dateilisten in drei Varianten, Kontextfenster, Warteschlange in zwei
+  Varianten, ein Core im RAM, PDF ohne popen).
+- Gesamte Testreihe (alle scripts/*selftest*, tests/*) auf dem Endstand 6cf2643b: 229 bestanden,
+  1 fehlgeschlagen: browse-image-selftest.py, weil Playwright fuer Python in dieser Testumgebung
+  fehlt (auf main 0.8.33 genauso). python-worker-selftest braucht die Datenbank und laeuft hier
+  nicht. Auf main 0.8.33 waren in derselben Umgebung 14 Tests rot.
+- GitHub-Jobs auf 6cf2643b: 15 von 15 gruen (der erste Lauf auf 80825e88 war in drei Jobs rot,
+  weil agent-loop-selftest noch die alte Fortsetzungsbedingung pruefte; angepasst).
 
 NICHT GETESTET
 - Ein echter Lauf mit Core Normal und ein echtes Bild auf dem Server; der gesamte Compose- und
