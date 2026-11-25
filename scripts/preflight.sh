@@ -246,6 +246,8 @@ UI_FILES=(
   scripts/project-file-tools-selftest.php
   scripts/edit-tolerance-selftest.php
   scripts/file-change-pause-selftest.php
+  scripts/stabilize-security-selftest.php
+  scripts/stabilize-history-selftest.php
   database/migrations/056_chat_workspaces.sql
   js/coreui-chat-dev.js
   css/coreui-chat-dev.css
@@ -355,6 +357,7 @@ UI_FILES=(
   database/migrations/012_console_work_events.sql
   database/migrations/013_console_agent_runs.sql
   database/migrations/057_task_journal.sql
+  database/migrations/058_project_file_history.sql
   api/console_task_journal.php
   scripts/task-journal-selftest.php
   api/console_work_events.php
@@ -1583,6 +1586,24 @@ if (( ${#COMPOSE_CMD[@]} > 0 )); then
   else
     file_change_pause_test_exit=$?
     fail "File change pause self-test (exit ${file_change_pause_test_exit}): ${file_change_pause_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  security_hardening_test=''
+  if security_hardening_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-security-selftest.php 2>&1)"; then
+    ok 'Accounts: limits for second-factor codes and password resets, capped attachments, no database text in answers.'
+  else
+    security_hardening_test_exit=$?
+    fail "Security hardening self-test (exit ${security_hardening_test_exit}): ${security_hardening_test:-No PHP output; inspect the PHP service logs}"
+  fi
+
+  # 0.8.34 stabilization.
+  file_history_test=''
+  if file_history_test="$(compose exec -T php php -d display_errors=stderr -d log_errors=1 scripts/stabilize-history-selftest.php 2>&1)"; then
+    ok 'Project files: saved states survive a change of working state.'
+  else
+    file_history_test_exit=$?
+    fail "File history self-test (exit ${file_history_test_exit}): ${file_history_test:-No PHP output; inspect the PHP service logs}"
   fi
 
   # 0.8.8: every saved chat owns its real, private file/run/preview workspace.
