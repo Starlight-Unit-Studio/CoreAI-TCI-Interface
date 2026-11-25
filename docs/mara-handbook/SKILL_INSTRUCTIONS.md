@@ -2009,3 +2009,47 @@ Für echte APK/AAB/IPA-Ausgabe Buildprotokoll, Artefaktdaten, Emulator-/Gerätet
 
 Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: mobile-apps/references/IMPLEMENTATION.md] nachladen.
 
+## skill.property-testing
+
+Skill: Eigenschaftstests | Category: Qualität | Version: 1.0.0 | Required: no
+
+Search terms: property-testing, Eigenschaftstests, property based testing, eigenschaftstests, invariantentest, fuzz testing, fuzztest, quickcheck, hypothesis test, fast-check.
+
+Source: `skills/property-testing/SKILL.md` (Git blob b2a2904796f57fd1619e339c729e8294dc3ed452).
+
+---
+name: property-testing
+description: "Eigenschaftstests: Testinvarianten. Einsatz bei property based testing, eigenschaftstests, invariantentest."
+---
+# Property-Based Testing
+
+Bei Parsern, Serialisierern, Normalisierern, Sortierern und reinen Berechnungsfunktionen überprüfbare Invarianten bestimmen: Roundtrip, Idempotenz, Eindeutigkeit, Ordnung, Grenzen und Erhaltungssätze. Aus echten Spezifikationen Eingabegeneratoren und minimale Gegenbeispiele ableiten.
+
+Nutze zum Stack passende Testtools nur nach bestätigter Installation, etwa Hypothesis oder fast-check. Seeds, Shrinking, Eingabegrenzen und Laufzeitbudget reproduzierbar festhalten. Tests mit Datenbank-, Zahlungs- oder Netz-Nebenwirkungen isolieren; nicht einfach zufällige Produktivdaten schreiben. Fehlende Invarianten nicht durch viele willkürliche Beispiele ersetzen.
+
+Bei Fehlschlag tatsächliches Gegenbeispiel und Quelle des Fehlers ermitteln, dann zielgerichtet korrigieren und Regressionstest hinzufügen. Ohne ausführbaren Test-Runner Testentwurf, Invarianten und erwartete Negativfälle bereitstellen, keinen bestandenen Test behaupten.
+
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: property-testing/references/IMPLEMENTATION.md] nachladen.
+
+## skill.database-tuning
+
+Skill: DB-Tuning | Category: Backend | Version: 1.0.0 | Required: no
+
+Search terms: database-tuning, DB-Tuning, datenbank optimieren, query optimieren, sql performance, index optimierung, explain analyze, datenbank tuning, slow query, datenbank index.
+
+Source: `skills/database-tuning/SKILL.md` (Git blob 5fc31fb4ad77d82e3982c74ce8b6357afdbcc9fc).
+
+---
+name: database-tuning
+description: "DB-Tuning: DB-Performance. Einsatz bei datenbank optimieren, query optimieren, sql performance."
+---
+# Datenbanken gezielt optimieren
+
+Ermittle tatsächlichen Datenbankmotor und Version (MariaDB/MySQL/PostgreSQL), Tabellenvolumen, Query, Indexe, Last und gewünschte Kennzahl. Supabase-/Postgres-Regeln nicht unbesehen auf MariaDB übertragen. Zuerst Query-Plan, Filter, Join-Reihenfolge, Sortierung, N+1-Zugriffe, Locks und Ressourcen messen.
+
+Nutze lesende EXPLAIN- und Monitoringabfragen vor Änderungen. EXPLAIN ANALYZE kann Queries tatsächlich ausführen; deshalb Seiteneffekte und Rechte beachten. Index- und Schemaänderungen nur mit Sicherung, Rollback, Freigabe und Test auf echten bzw. repräsentativen Daten vorbereiten. Bestehende Zugriffsrechte und Mandantentrennung erhalten.
+
+Ergebnis: beobachteter Engpass, nachvollziehbare Metrik, konkrete Optimierung, Risiko, Migrationsplan und erneute Messung. Ohne DB-Verbindung keine beschleunigte Abfrage behaupten; SQL-Vorschläge als ungetestet kennzeichnen.
+
+Vollständige Zielwerkzeuge, Negativtests und spätere technische Integrationen: references/IMPLEMENTATION.md. Bei Bedarf mit [SKILL: database-tuning/references/IMPLEMENTATION.md] nachladen.
+
