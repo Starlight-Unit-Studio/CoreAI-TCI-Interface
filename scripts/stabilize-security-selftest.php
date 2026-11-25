@@ -98,6 +98,26 @@ sec_test(str_starts_with(trim($small), 'len=10 '), 'a normal document is read co
 $att = (string)file_get_contents($root . '/api/ember_attachments.php');
 sec_test(str_contains($att, "stream_get_contents(\$pipe, EMBER_ATTACH_EXTRACT_BYTES)") && str_contains($att, "escapeshellarg(\$timeout) . ' 60 '"),
   'pdftotext output is capped and time limited');
+// Review 0.8.34: with popen disabled (the header of ember_attachments.php names such a server) a PDF is still read,
+// through shell_exec and head -c; before, the call to the disabled popen() crashed every PDF turn.
+if (trim((string)shell_exec('command -v pdftotext 2>/dev/null')) !== '') {
+  $objs = ["<< /Type /Catalog /Pages 2 0 R >>", "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 144] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    "<< /Length 44 >>\nstream\nBT /F1 18 Tf 20 100 Td (Hallo PDF) Tj ET\nendstream", "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"];
+  $pdf = "%PDF-1.4\n"; $offsets = [];
+  foreach ($objs as $i => $o) { $offsets[] = strlen($pdf); $pdf .= ($i + 1) . " 0 obj\n" . $o . "\nendobj\n"; }
+  $xref = strlen($pdf);
+  $pdf .= "xref\n0 " . (count($objs) + 1) . "\n0000000000 65535 f \n";
+  foreach ($offsets as $o) $pdf .= sprintf("%010d 00000 n \n", $o);
+  $pdf .= "trailer\n<< /Size " . (count($objs) + 1) . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF\n";
+  file_put_contents($tmp . '/probe.pdf', $pdf);
+  file_put_contents($tmp . '/pdfprobe.php', '<?php require $argv[1] . "/api/ember_attachments.php"; echo json_encode(ember_attach_read_pdf($argv[2], 1000));');
+  foreach (['' => 'popen', '-d disable_functions=popen,proc_open' => 'shell_exec'] as $flag => $way) {
+    $got = (string)shell_exec(escapeshellarg(PHP_BINARY) . ' ' . $flag . ' ' . escapeshellarg($tmp . '/pdfprobe.php') . ' '
+      . escapeshellarg($root) . ' ' . escapeshellarg($tmp . '/probe.pdf') . ' 2>&1');
+    sec_test(str_contains($got, 'Hallo PDF'), 'a PDF is read through ' . $way . ': ' . trim($got));
+  }
+}
 array_map('unlink', glob($tmp . '/*') ?: []);
 @rmdir($tmp);
 

@@ -147,10 +147,18 @@ function ember_attach_read_pdf(string $path, int $max): ?string {
   $timeout = ember_attach_bin('timeout');
   $cmd = ($timeout !== null ? escapeshellarg($timeout) . ' 60 ' : '')
     . escapeshellcmd($bin) . ' -layout -q -enc UTF-8 ' . escapeshellarg($path) . ' - 2>/dev/null';
-  $pipe = @popen($cmd, 'r');
-  if (!is_resource($pipe)) return null;
-  $out = (string)stream_get_contents($pipe, EMBER_ATTACH_EXTRACT_BYTES);
-  pclose($pipe);
+  // Review 0.8.34: popen may be disabled on a server (see the header). Then shell_exec reads the text
+  // through head -c, which keeps the same byte cap; without either the PDF stays unread, not a crash.
+  if (function_exists('popen')) {
+    $pipe = @popen($cmd, 'r');
+    if (!is_resource($pipe)) return null;
+    $out = (string)stream_get_contents($pipe, EMBER_ATTACH_EXTRACT_BYTES);
+    pclose($pipe);
+  } elseif (function_exists('shell_exec') && ($head = ember_attach_bin('head')) !== null) {
+    $out = (string)@shell_exec($cmd . ' | ' . escapeshellarg($head) . ' -c ' . EMBER_ATTACH_EXTRACT_BYTES);
+  } else {
+    return null;
+  }
   if (trim($out) === '') return null;
   return ember_attach_clean_text($out, $max);
 }
