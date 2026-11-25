@@ -606,7 +606,9 @@ $GLOBALS['COREUI_WORK_CONTEXT'] = ['user_id'=>7, 'session_id'=>'session_demo', '
 ember_core_in_use_mark('gemma4:e4b');
 ember_core_in_use_mark('llava:13b');
 unset($GLOBALS['COREUI_WORK_CONTEXT']);
-stab_test(ember_core_in_use_models() === ['gemma4:e4b', 'llava:13b'], 'a run keeps every Core it used');
+// Review 0.8.34: only the Core the run calls now is protected (0.8.16: one local Core in RAM); the run's own
+// call to another Core (vision) leaves the earlier one unprotected, so it can leave the RAM.
+stab_test(ember_core_in_use_models() === ['llava:13b'], 'a run protects only the Core it calls now: ' . json_encode(ember_core_in_use_models()));
 ember_core_in_use_release();
 stab_test(ember_core_in_use_models() === [] && !is_file(STU_EMBER_CORE_IN_USE_DIR . '/' . str_repeat('f', 32) . '.json'),
   'the mark goes when the run ends');

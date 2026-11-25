@@ -4374,7 +4374,7 @@ function ember_core_in_use_file(string $runId): string {
   return ember_core_in_use_dir() . DIRECTORY_SEPARATOR . $runId . '.json';
 }
 
-/** Marks the local Core this request's agent run is about to call (no run, no mark). */
+/** Marks the local Core this request's agent run is about to call (no run, no mark); it replaces the earlier one. */
 function ember_core_in_use_mark(string $model): void {
   $ctx = $GLOBALS['COREUI_WORK_CONTEXT'] ?? null;
   $runId = is_array($ctx) ? (string)($ctx['agent_run_id'] ?? '') : '';
@@ -4388,8 +4388,9 @@ function ember_core_in_use_mark(string $model): void {
       register_shutdown_function(static function (): void { ember_core_in_use_release(); });
     }
   }
-  $key = ember_core_key($model);
-  if (!in_array($key, $mark['models'], true)) $mark['models'] = array_slice(array_merge($mark['models'], [$key]), -4);
+  // Review 0.8.34: only the Core the run calls now is protected, not every Core it used (a vision Core, an
+  // earlier tier): the 0.8.16 "one local Core in RAM" stays true apart from that single running Core.
+  $mark['models'] = [ember_core_key($model)];
   $GLOBALS['COREUI_RUN_CORES'] = $mark;
   @file_put_contents(ember_core_in_use_file($runId), json_encode(['models'=>$mark['models']], JSON_UNESCAPED_SLASHES), LOCK_EX);
 }
