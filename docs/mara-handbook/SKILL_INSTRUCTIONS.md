@@ -204,3 +204,201 @@ description: "Für Tastaturbedienung, verständliche Labels und zugängliche Zus
 
 Prüfe alle wichtigen Abläufe ohne Maus. Fokus muss sichtbar und sinnvoll geordnet sein; Dialoge brauchen kontrollierten Fokus und eine Rückkehr zum Auslöser. Nutze native Elemente vor nachgebauten Widgets. Beschrifte Steuerelemente verständlich, kennzeichne Fehler textlich und verlasse dich nicht nur auf Farbe. Prüfe Kontraste und Zoom. Melde dynamische Statusänderungen sparsam über geeignete Live-Regionen.
 
+## skill.assets
+
+Skill: Assets | Category: Frontend | Version: 1.0.4 | Required: no
+
+Search terms: assets, Assets, bilder, images, assets, grafiken, image, bilddateien.
+
+Source: `skills/assets/SKILL.md` (Git blob 25ceebb6b985b577d27f416ea0fac34a18b615ec).
+
+---
+name: assets
+description: "Für vollständige Bildressourcen und funktionierende lokale Verweise."
+---
+# Bilder und Projektressourcen
+
+Erstelle ein Inventar aller referenzierten Bilder, Icons, Fonts und Styles. Verknüpfe nur Dateien, die tatsächlich geliefert werden oder als externe Abhängigkeit ausdrücklich vorgesehen sind. Erfinde keine Bilddateien. Nutze bei fehlenden Bildern eine ehrliche, funktionsfähige Alternative im Projekt. Lege sinnvolle Bildabmessungen und Alternativtexte fest. Prüfe Pfade einschließlich Groß-/Kleinschreibung im fertigen Paket.
+
+Kontrolliere ebenso relative Verweise auf Fonts, CSS und JavaScript im exportierten Projekt. Unklare Bildrechte und nicht vorhandene Mediendateien als offene Abhängigkeiten kennzeichnen statt unsichtbar zu ersetzen.
+
+## skill.fetch-api
+
+Skill: Fetch API | Category: Backend | Version: 1.0.3 | Required: no
+
+Search terms: fetch-api, Fetch API, fetch, http client, api aufrufen, rest client, netzwerkfehler.
+
+Source: `skills/fetch-api/SKILL.md` (Git blob 603607a22f13732570fa04848d8900dcb460aa72).
+
+---
+name: fetch-api
+description: "Für HTTP-Aufrufe mit expliziten Fehlern und Abbruchverhalten."
+---
+# HTTP-Client und Fetch
+
+Prüfe HTTP-Status und erwarteten Inhaltstyp, bevor du die Antwort verwendest. Netzwerkfehler und fachliche Fehler sind unterschiedliche Zustände. Plane Zeitlimits beziehungsweise AbortController und bereinige abgebrochene Requests. Verhindere, dass alte Antworten einen neueren Zustand überschreiben. Wiederhole schreibende Aufrufe nur bei geklärter Idempotenz. Sende Cookies und Zugangsdaten nur an vorgesehene Ziele.
+
+## skill.rest-api
+
+Skill: REST API | Category: Backend | Version: 1.0.4 | Required: no
+
+Search terms: rest-api, REST API, rest, endpoint, endpunkt, api design, http status.
+
+Source: `skills/rest-api/SKILL.md` (Git blob 7e91fbbafbc157f36d434dec514296b29f073f7c).
+
+---
+name: rest-api
+description: "Für konsistente API-Verträge und nachvollziehbare Fehlerantworten."
+---
+# REST-Endpunkte
+
+Definiere Methode, Eingabeschema, Berechtigungen, Ausgabe und Fehlerfälle pro Endpunkt. Prüfe Eingaben vor Nebenwirkungen. Wähle HTTP-Status passend zum Ergebnis und liefere konsistente maschinenlesbare Fehler. Trenne unauthentifizierte von unberechtigten Zugriffen. Begrenze Listen und Nutzlasten. Dokumentiere Idempotenz und teste ungültige Eingaben sowie nicht vorhandene Ressourcen.
+
+## skill.php-pdo
+
+Skill: PHP/PDO | Category: Backend | Version: 1.0.2 | Required: no
+
+Search terms: php-pdo, PHP/PDO, php, pdo, mariadb.
+
+Source: `skills/php-pdo/SKILL.md` (Git blob 9ddb76165591b0108c933a761d0fa554882a669d).
+
+---
+name: php-pdo
+description: "Für PHP-Backends mit vorbereiteten SQL-Anweisungen."
+---
+# PHP und PDO
+
+Prüfe die eingesetzte PHP-Version. Nutze PDO-Parameter für Werte; Spalten- und Tabellennamen müssen aus einer festen Liste stammen. Definiere Typen und behandle Fehler an sinnvollen Grenzen. Mehrere zusammengehörige Schreibvorgänge benötigen eine Transaktion und Rollback bei Fehlern. Liefere keine internen SQL-Fehler an Clients. Prüfe Syntax und mindestens den betroffenen Datenfluss.
+
+## skill.python
+
+Skill: Python | Category: Backend | Version: 1.0.4 | Required: no
+
+Search terms: python, Python, python, py, script, skript.
+
+Source: `skills/python/SKILL.md` (Git blob 84f131ecdd41d806e911a528b386405b047742d7).
+
+---
+name: python
+description: "Für wartbare Python-Skripte und gezielte Fehlerbehandlung."
+---
+# Python-Programme
+
+Trenne Ein-/Ausgabe von der eigentlichen Logik. Nutze Kontextmanager für Dateien und explizite Zeichencodierung. Validiere Eingaben, bevor Seiteneffekte beginnen. Fange nur erwartete Exceptions und ergänze verständlichen Kontext. Prüfe Syntax, den normalen Ablauf und relevante Randfälle. Nutze die tatsächlich vorhandenen Bibliotheken; installiere oder importiere keine erfundenen Pakete.
+
+## skill.sql-security
+
+Skill: SQL-Schutz | Category: Sicherheit | Version: 1.0.2 | Required: no
+
+Search terms: sql-security, SQL-Schutz, sql, sql injection, datenbank, database.
+
+Source: `skills/sql-security/SKILL.md` (Git blob da950dcd3c7bbba118bc4629337eee5c5d2430af).
+
+---
+name: sql-security
+description: "Für sichere Datenbankabfragen und begrenzte Datenzugriffe."
+---
+# SQL-Sicherheit
+
+Binde Werte über Parameter. Für dynamische Identifikatoren und Sortierrichtungen verwende eine Allowlist. Prüfe Eigentümerschaft direkt in der Datenbankabfrage, wenn Daten einem Konto gehören. Gib dem Datenbankkonto nur notwendige Rechte. Escape-Funktionen ersetzen keine saubere Abfragestruktur. Prüfe manipulierte Werte und Zugriffe auf fremde IDs.
+
+## skill.xss-prevention
+
+Skill: XSS-Schutz | Category: Sicherheit | Version: 1.0.2 | Required: no
+
+Search terms: xss-prevention, XSS-Schutz, xss, innerhtml, html injection, sanitizer.
+
+Source: `skills/xss-prevention/SKILL.md` (Git blob c4293db14c4263c2b42dff5b6740e723126bbecc).
+
+---
+name: xss-prevention
+description: "Für sichere Darstellung fremder Texte und erlaubter HTML-Inhalte."
+---
+# XSS-Schutz
+
+Behandle externe Texte als Daten. Nutze textContent für Textausgabe und kontextgerechte Kodierung an anderen Ausgabestellen. HTML darf nur nach einer passenden, gepflegten Sanitizer-Policy dargestellt werden. Prüfe URL-Schemata separat. Vermeide String-Zusammenbau für Script- oder Eventhandler-Kontexte. Teste gefährliche Eingaben in genau dem Kontext, in dem sie erscheinen.
+
+## skill.authorization
+
+Skill: Zugriffsrechte | Category: Sicherheit | Version: 1.0.3 | Required: no
+
+Search terms: authorization, Zugriffsrechte, authorization, berechtigung, auth, login, konten, user isolation.
+
+Source: `skills/authorization/SKILL.md` (Git blob 7aee0dc65856cb937709f3181242262c1901fef0).
+
+---
+name: authorization
+description: "Für serverseitige Rechteprüfung und strikte Trennung von Konten."
+---
+# Konten und Zugriffsrechte
+
+Leite Identität aus der geprüften Sitzung ab, niemals aus frei übermittelten Nutzer-IDs. Prüfe Berechtigungen bei jedem Zugriff auf ein Objekt, auch Downloads und Hintergrundjobs. Verweigere unbekannte Fälle standardmäßig. Ein ausgeblendeter Button ist keine Zugriffskontrolle. Teste mindestens Besitzer, fremdes Konto und ausgeloggten Zugriff. Rechte dürfen nicht durch neue URLs oder alternative Methoden umgangen werden.
+
+## skill.browser-testing
+
+Skill: Browsertests | Category: Qualität | Version: 1.0.4 | Required: no
+
+Search terms: browser-testing, Browsertests, playwright, browser test, e2e, end-to-end.
+
+Source: `skills/browser-testing/SKILL.md` (Git blob fee1b7d003df7b2aab6036d28e384bd2741ad2ba).
+
+---
+name: browser-testing
+description: "Für reproduzierbare Tests aus Sicht der Benutzer."
+---
+# Browser-Tests
+
+Teste sichtbares Verhalten mit benannten Rollen und Labels. Isoliere Sitzungen und Daten zwischen Tests. Warte auf erwartete Zustände statt auf feste Schlafzeiten. Prüfe Erfolgs-, Fehler- und Leerzustände sowie einen schmalen Viewport. Halte Testdaten kontrolliert und unabhängig von fremden Diensten. Berichte nur tatsächlich gelaufene Tests samt Ergebnis.
+
+Prüfe besonders schmale Android-Viewports, Textumbruch, überlange Dialoge, Scrollbereiche und Download-/Reload-Fälle. Unterscheide einen simulierten Browser-Viewport vom echten Android-Livetest; nur tatsächlich ausgeführte Prüfungen als bestanden melden.
+
+Für Webapp-Tests mit Playwright zuerst prüfen, ob der Browser-Runner tatsächlich verfügbar ist. Hauptpfade und Grenzfälle samt sichtbaren Ergebnissen prüfen; bei Fehlern Screenshot/Trace nur aus real ausgeführten Tests nennen. Ohne Browser-Runner verfügbare Projektprüfungen ausführen und Browserfälle für die offene Abnahme dokumentieren. Erkläre, welche Prüfungen tatsächlich gelaufen sind.
+
+## skill.unit-testing
+
+Skill: Unit-Tests | Category: Qualität | Version: 1.0.3 | Required: no
+
+Search terms: unit-testing, Unit-Tests, pytest, unittest, unit test, regression, tests.
+
+Source: `skills/unit-testing/SKILL.md` (Git blob de4356897827e3bbee6396a113dab860861ea1be).
+
+---
+name: unit-testing
+description: "Für kleine, unabhängige Tests an relevanten Verhaltensgrenzen."
+---
+# Unit- und Regressionstests
+
+Wähle Fälle anhand des Risikos: normale Eingabe, Randfall und erwarteter Fehler. Erzeuge frische Testdaten und räume Ressourcen zuverlässig auf. Teile Fixtures nur, wenn ihr Zustand und ihre Lebensdauer klar sind. Ein Test soll Verhalten prüfen, nicht den Produktionscode nachbauen. Bei einem Bug muss der Regressionstest das ursprüngliche Problem erkennen. Dokumentiere nicht verfügbare Testumgebungen.
+
+## skill.docker
+
+Skill: Docker | Category: Betrieb | Version: 1.0.2 | Required: no
+
+Search terms: docker, Docker, docker, dockerfile, container, compose.
+
+Source: `skills/docker/SKILL.md` (Git blob c25618e43efe72ab554aa250bae67164f5aafcaa).
+
+---
+name: docker
+description: "Für reproduzierbare Container mit begrenzten Abhängigkeiten."
+---
+# Docker und Container
+
+Prüfe Basisimage und unterstützte Laufzeitversion. Nutze mehrstufige Builds, wenn Build-Werkzeuge nicht ins Laufzeitimage gehören. Halte den Build-Kontext über dockerignore klein. Kopiere keine Zugangsdaten ins Image. Nutze soweit möglich einen unprivilegierten Laufzeitnutzer und getrennte persistente Daten. Dokumentiere Ports, Volumes und Startvoraussetzungen. Ein erfolgreicher Build ersetzt keinen Starttest.
+
+## skill.git-review
+
+Skill: Git-Review | Category: Arbeitsweise | Version: 1.0.3 | Required: no
+
+Search terms: git-review, Git-Review, git, diff, pull request, commit, review, merge.
+
+Source: `skills/git-review/SKILL.md` (Git blob 8c1c38bd40ef5864533aec43685d60eae5c2047d).
+
+---
+name: git-review
+description: "Für nachvollziehbare Änderungen und gezielte Prüfung vor Veröffentlichung."
+---
+# Git und Code-Review
+
+Prüfe Status und Diff, einschließlich neuer Dateien, bevor du einen Commit vorbereitest. Erhalte unabhängige Änderungen. Kontrolliere besonders Löschungen, Konfiguration und versehentlich enthaltene Geheimnisse. Beschreibe Problem, Änderung und tatsächliche Tests. Veröffentliche nur den beauftragten Umfang. Nach einem Merge dieses CoreUI-Projekts ist ein neues TXT-Übergabeprotokoll mit Commit, Prüfungen und offenen Punkten erforderlich.
+
